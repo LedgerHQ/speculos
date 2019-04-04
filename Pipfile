@@ -1,0 +1,19 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+pyelftools = "*"
+mnemonic = "*"
+construct = "*"
+websockify = "*"
+
+[requires]
+python_version = "3.8"
+
+[scripts]
+blue = "./speculos.py -m blue ./apps/blue#btc#1.5#00000000.elf -n -v 41000 -a 40000"
+test_docker = 'python scripts/test_docker.py'
