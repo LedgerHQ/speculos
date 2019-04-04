@@ -1,0 +1,17 @@
+*.a
+*.o
+.cache/
+.idea/
+__pycache__/
+apps/*vault*
+build/
+src/launcher
+vnc/vnc_server
+vnc/vnc_server.o
+tests/hello
+tests/test_aes
+tests/test_crc16
+tests/test_ecdh
+tests/test_hmac
+tests/test_ripemd
+tests/test_sha2
