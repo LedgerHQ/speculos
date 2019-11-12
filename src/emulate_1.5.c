@@ -35,6 +35,8 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
 
   SYSCALL0i(os_sched_last_status, os_sched_last_status_1_5);
 
+  SYSCALL0(os_global_pin_is_validated);
+
   SYSCALL0(reset);
 
   default:

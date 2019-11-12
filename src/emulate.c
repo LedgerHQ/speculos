@@ -215,8 +215,6 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
 
   SYSCALL0(os_flags);
 
-  SYSCALL0(os_global_pin_is_validated);
-
   SYSCALL0(os_global_pin_invalidate);
 
   SYSCALL1(os_lib_throw, "(0x%x)",
