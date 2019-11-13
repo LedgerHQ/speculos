@@ -132,10 +132,10 @@ unsigned long sys_check_api_level(void)
   return 0;
 }
 
-unsigned long sys_os_sched_exit(void)
+unsigned long sys_os_sched_exit(unsigned int code)
 {
-  fprintf(stderr, "[*] exit syscall called (skipped)\n");
-  return 0;
+  fprintf(stderr, "[*] exit called (%d)\n", code);
+  _exit(0);
 }
 
 unsigned long sys_reset(void)

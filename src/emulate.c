@@ -239,8 +239,6 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            uint8_t *,    buffer,
            size_t,       length);
 
-  SYSCALL0(os_sched_exit);
-
   SYSCALL1(os_ux, "(%p)", bolos_ux_params_t *, params);
 
   SYSCALL0(try_context_get);
