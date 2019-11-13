@@ -33,6 +33,10 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
            uint8_t *,    buffer,
            size_t,       length);
 
+  SYSCALL1(os_sched_exit, "(%u)", unsigned int, code);
+
+  SYSCALL0(os_global_pin_is_validated);
+
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);
     break;
