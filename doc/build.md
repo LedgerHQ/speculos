@@ -21,6 +21,10 @@ cmake -Bbuild -H.
 make -C build/
 ```
 
+Please note that the first build can take some time because a tarball of OpenSSL
+is downloaded (the integrity of the downloaded tarball is checked) before being
+built. Further invocations of `make` skip this step.
+
 ### VNC support (optional)
 
 Pass the `WITH_VNC` option to CMake:
