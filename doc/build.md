@@ -13,18 +13,6 @@ sudo apt install libvncserver-dev
 
 ## Build
 
-OpenSSL is currently required for Elliptic Curve cryptography operations. It
-should be replaced by BOLOS code at some point. Meanwhile:
-
-### OpenSSL
-
-```console
-git submodule update --init
-cd openssl/
-./Configure --cross-compile-prefix=arm-linux-gnueabihf- no-asm no-threads no-shared no-sock linux-armv4
-make CFLAGS=-mthumb
-```
-
 ### speculos
 
 ```console
