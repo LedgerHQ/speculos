@@ -14,12 +14,16 @@ This script is highly experimental. Skins are PNG files where the first black
 
 Requirements: python-gtk-vnc. Unfortunately, there seems to be no Python 3
 version of gtkvnc.
+
+This script is based on the example from
+https://github.com/jwendell/gtk-vnc/blob/master/examples/gvncviewer.py
 '''
 
 import argparse
 import gtk
 import gtkvnc
 import sys
+import time
 import cairo
 
 from gtk import gdk
@@ -54,6 +58,15 @@ def motion_notify_event(box, event):
     x = int(event.x_root - OFFSET_X)
     y = int(event.y_root - OFFSET_Y)
     window.move(x, y)
+
+def vnc_screenshot(src, ev, vnc):
+    if ev.keyval == gtk.gdk.keyval_from_name("s"):
+        filename = "/tmp/speculos-{}.png".format(int(time.time()))
+        pix = vnc.get_pixbuf()
+        pix.save(filename, "png")
+        print("[*] screenshot saved to {}".format(filename))
+
+    return False
 
 def vnc_grab(src, window):
     pass
@@ -141,6 +154,7 @@ if __name__ == '__main__':
     box.connect("button_press_event", button_press_event)
     box.connect("button_release_event", button_release_event)
     box.connect("motion_notify_event", motion_notify_event)
+    window.connect("key-press-event", vnc_screenshot, vnc)
 
     # borderless
     window.set_decorated(False)
