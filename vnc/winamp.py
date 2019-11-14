@@ -132,24 +132,28 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-o', '--host', default='127.0.0.1', help='VNC host')
     parser.add_argument('-p', '--port', default='5902', help='VNC port')
-    parser.add_argument('-s', '--skin', required=True, help='PNG image')
+    parser.add_argument('-s', '--skin', default=None, help='PNG image')
     args = parser.parse_args()
 
-    image = Image.open(args.skin)
-    IMG_PATH = args.skin
-    IMG_WIDTH, IMG_HEIGHT = image.size
-    x, y = find_screen_position(image)
-    image.close()
-
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
-    window.set_default_size(IMG_WIDTH, IMG_HEIGHT)
     vnc = gtkvnc.Display()
 
-    fix = gtk.Fixed()
-    fix.put(vnc, x, y)
-    box = gtk.EventBox()
-    window.add(box)
-    box.add(fix)
+    if args.skin:
+        image = Image.open(args.skin)
+        IMG_PATH = args.skin
+        IMG_WIDTH, IMG_HEIGHT = image.size
+        x, y = find_screen_position(image)
+        image.close()
+
+        window.set_default_size(IMG_WIDTH, IMG_HEIGHT)
+        fix = gtk.Fixed()
+        fix.put(vnc, x, y)
+        box = gtk.EventBox()
+        window.add(box)
+        box.add(fix)
+    else:
+        window.add(vnc)
+        box = window
 
     box.connect("button_press_event", button_press_event)
     box.connect("button_release_event", button_release_event)
@@ -182,6 +186,7 @@ if __name__ == '__main__':
     vnc.connect("vnc-initialized", vnc_initialized, window)
     vnc.connect("vnc-disconnected", vnc_disconnected)
 
-    vnc.connect("expose-event", expose)
+    if args.skin:
+        vnc.connect("expose-event", expose)
 
     gtk.main()
