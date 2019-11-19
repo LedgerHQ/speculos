@@ -40,6 +40,16 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
 
   SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_6);
 
+  SYSCALL8(os_perso_derive_node_with_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
+           unsigned int,         mode,
+           cx_curve_t,           curve,
+           const unsigned int *, path,
+           unsigned int,         pathLength,
+           unsigned char *,      privateKey,
+           unsigned char *,      chain,
+           unsigned char *,      seed_key,
+           unsigned int,         seed_key_length);
+
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);
     break;

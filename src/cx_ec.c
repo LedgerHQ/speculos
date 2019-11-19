@@ -107,9 +107,66 @@ cx_curve_weierstrass_t const C_cx_secp256r1 = {
   (unsigned char*)C_cx_secp256r1_b,
 };
 
+static unsigned char const C_cx_Ed25519_a[]  = {
+    0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xec};
+static unsigned char const C_cx_Ed25519_d[]  = {
+    //d:  0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3
+    0x52, 0x03, 0x6c, 0xee, 0x2b, 0x6f, 0xfe, 0x73, 0x8c, 0xc7, 0x40, 0x79, 0x77, 0x79, 0xe8, 0x98,
+    0x00, 0x70, 0x0a, 0x4d, 0x41, 0x41, 0xd8, 0xab, 0x75, 0xeb, 0x4d, 0xca, 0x13, 0x59, 0x78, 0xa3};
+static unsigned char const C_cx_Ed25519_q[]  = {
+    //q:  0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed
+    0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xed};
+static unsigned char const C_cx_Ed25519_Hq[]  = {
+    //Hq: 0x00000000000000000000000000000000000000000000000000000000000005a4
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05, 0xa4};
+static unsigned char const C_cx_Ed25519_Bx[] = {
+    0x21, 0x69, 0x36, 0xd3, 0xcd, 0x6e, 0x53, 0xfe, 0xc0, 0xa4, 0xe2, 0x31, 0xfd, 0xd6, 0xdc, 0x5c,
+    0x69, 0x2c, 0xc7, 0x60, 0x95, 0x25, 0xa7, 0xb2, 0xc9, 0x56, 0x2d, 0x60, 0x8f, 0x25, 0xd5, 0x1a};
+static unsigned char const C_cx_Ed25519_By[] = {
+    0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+    0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x58};
+static unsigned char const C_cx_Ed25519_l[]  = {
+    //l:  0x1000000000000000000000000000000014DEF9DEA2F79CD65812631A5CF5D3ED
+    0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x14, 0xDE, 0xF9, 0xDE, 0xA2, 0xF7, 0x9C, 0xD6, 0x58, 0x12, 0x63, 0x1A, 0x5C, 0xF5, 0xD3, 0xED};
+static unsigned char const C_cx_Ed25519_Hl[]  = {
+    //Hl: 0x0399411b7c309a3dceec73d217f5be65d00e1ba768859347a40611e3449c0f01
+    0x03, 0x99, 0x41, 0x1b, 0x7c, 0x30, 0x9a, 0x3d, 0xce, 0xec, 0x73, 0xd2, 0x17, 0xf5, 0xbe, 0x65,
+    0xd0, 0x0e, 0x1b, 0xa7, 0x68, 0x85, 0x93, 0x47, 0xa4, 0x06, 0x11, 0xe3, 0x44, 0x9c, 0x0f, 0x01};
+static unsigned char const C_cx_Ed25519_I[]  = {
+    //I: 0x2b8324804fc1df0b2b4d00993dfbd7a72f431806ad2fe478c4ee1b274a0ea0b0
+    0x2b, 0x83, 0x24, 0x80, 0x4f, 0xc1, 0xdf, 0x0b, 0x2b, 0x4d, 0x00, 0x99, 0x3d, 0xfb, 0xd7, 0xa7,
+    0x2f, 0x43, 0x18, 0x06, 0xad, 0x2f, 0xe4, 0x78, 0xc4, 0xee, 0x1b, 0x27, 0x4a, 0x0e, 0xa0, 0xb0};
+static unsigned char const C_cx_Ed25519_Qplus3div8[]  = {
+    //q3: 0x0ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe
+    0x0f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe};
+
+#define C_cx_Ed25519_h 8
+
+cx_curve_twisted_edward_t const C_cx_Ed25519 = {
+    CX_CURVE_Ed25519,
+    256, 32,
+    (unsigned char*)C_cx_Ed25519_q,
+    (unsigned char*)C_cx_Ed25519_Hq,
+    (unsigned char*)C_cx_Ed25519_Bx,
+    (unsigned char*)C_cx_Ed25519_By,
+    (unsigned char*)C_cx_Ed25519_l,
+    (unsigned char*)C_cx_Ed25519_Hl,
+    C_cx_Ed25519_h,
+    (unsigned char*)C_cx_Ed25519_a,
+    (unsigned char*)C_cx_Ed25519_d,
+    (unsigned char*)C_cx_Ed25519_I,
+    (unsigned char*)C_cx_Ed25519_Qplus3div8,
+};
+
 cx_curve_domain_t const * const C_cx_allCurves[]= {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
   (const cx_curve_domain_t *)&C_cx_secp256r1,
+  (const cx_curve_domain_t *)&C_cx_Ed25519,
 };
 
 static int nid_from_curve(cx_curve_t curve) {
@@ -150,8 +207,120 @@ static int nid_from_curve(cx_curve_t curve) {
   return nid;
 }
 
-int sys_cx_ecfp_generate_pair(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key, int keep_private)
-{
+static void cx_encode_int(uint8_t *v, size_t len) {
+  uint8_t t;
+  int i, j;
+  i = 0;
+  j = len - 1;
+  len = len / 2;
+  while (len--) {
+    t = v[i];
+    v[i] = v[j];
+    v[j] = t;
+    i++;
+    j--;
+  }
+}
+
+static void cx_compress(uint8_t *p, size_t size) {
+  if (p[size - 1] & 1) {
+    p[size] |= 0x80;
+  }
+  cx_encode_int(p + size, size);
+}
+
+/* Unexported functions from OpenSSL, in ec/curve25519.c. Dirty hack... */
+int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
+                 const uint8_t public_key[32], const uint8_t private_key[32]);
+int ED25519_verify(const uint8_t *message, size_t message_len,
+                   const uint8_t signature[64], const uint8_t public_key[32]);
+void ED25519_public_from_private(uint8_t out_public_key[32],
+                                 const uint8_t private_key[32]);
+
+int cx_edward_compress_point(cx_curve_t curve, uint8_t *p, size_t p_len) {
+  cx_curve_twisted_edward_t *domain;
+  size_t size;
+
+  domain = (cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
+  size = domain->length;
+  if (curve != CX_CURVE_Ed25519 || p_len < (1 + 2 * size)) {
+    return -1;
+  }
+
+  cx_compress(p + 1, size);
+  memmove(p + 1, p + 1 + size, size);
+  p[0] = 0x02;
+  return 0;
+}
+
+int cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t hashID,
+                             cx_ecfp_public_key_t *pu_key) {
+  if (hashID != CX_SHA512 || pv_key->d_len != 32) {
+    return -1;
+  }
+  pu_key->W[0] = 0x04;
+  ED25519_public_from_private(pu_key->W + 1, pv_key->d);
+  /* Clear second coordinate. Differ from device implementation. */
+  memset(pu_key->W + 1 + 32, 0, 32);
+
+  pu_key->curve = CX_CURVE_Ed25519;
+  pu_key->W_len = 1 + 2 * 32;
+  return 0;
+}
+
+int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey,
+                      int mode __attribute__((unused)), cx_md_t hashID,
+                      const unsigned char *hash, unsigned int hash_len,
+                      const unsigned char *ctx __attribute__((unused)),
+                      unsigned int ctx_len __attribute__((unused)),
+                      unsigned char *sig, unsigned int sig_len,
+                      unsigned int *info __attribute__((unused))) {
+  uint8_t public_key[32];
+
+  /* Only SHA-512 is supported in Speculos, as it is the only supported hash
+   * in OpenSSL */
+  if (hashID != CX_SHA512) {
+    return -1;
+  }
+  if (sig_len < 64) {
+    return -1;
+  }
+  /* Key must be a Ed25519 private key */
+  if (pvkey->curve != CX_CURVE_Ed25519 || pvkey->d_len != 32) {
+    return -1;
+  }
+  ED25519_public_from_private(public_key, pvkey->d);
+  if (ED25519_sign(sig, hash, hash_len, public_key, pvkey->d) == 1) {
+    return 64;
+  }
+  return -1;
+}
+
+int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
+                        int mode __attribute__((unused)), cx_md_t hashID,
+                        const unsigned char *hash, unsigned int hash_len,
+                        const unsigned char *ctx __attribute__((unused)),
+                        unsigned int ctx_len __attribute__((unused)),
+                        const unsigned char *sig, unsigned int sig_len) {
+  /* Only SHA-512 is supported in Speculos, as it is the only supported hash
+   * in OpenSSL */
+  if (hashID != CX_SHA512) {
+    return 0;
+  }
+  if (sig_len != 64) {
+    return 0;
+  }
+  if (pu_key->curve != CX_CURVE_Ed25519 || pu_key->W_len != 1 + 2 * 32 ||
+      pu_key->W[0] != 0x04) {
+    return 0;
+  }
+  return ED25519_verify(hash, hash_len, sig, pu_key->W + 1);
+}
+
+int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
+                               cx_ecfp_public_key_t *public_key,
+                               cx_ecfp_private_key_t *private_key,
+                               int keep_private, cx_md_t hashID) {
   const EC_GROUP *group;
   EC_POINT *pub;
   BN_CTX *ctx;
@@ -159,61 +328,69 @@ int sys_cx_ecfp_generate_pair(cx_curve_t curve, cx_ecfp_public_key_t *public_key
   BIGNUM *bn;
   int nid;
 
-  nid = nid_from_curve(curve);
-  key = EC_KEY_new_by_curve_name(nid);
-  if (key == NULL) {
-    errx(1, "ssl: EC_KEY_new_by_curve_name");
-  }
-
-  group = EC_KEY_get0_group(key);
-
-  ctx = BN_CTX_new();
-
-  if (!keep_private) {
-    if (EC_KEY_generate_key(key) == 0) {
-      errx(1, "ssl: EC_KEY_generate_key");
+  if (curve == CX_CURVE_Ed25519) {
+    return cx_eddsa_get_public_key(private_key, hashID, public_key);
+  } else {
+    nid = nid_from_curve(curve);
+    key = EC_KEY_new_by_curve_name(nid);
+    if (key == NULL) {
+      errx(1, "ssl: EC_KEY_new_by_curve_name");
     }
 
-    bn = (BIGNUM *)EC_KEY_get0_private_key(key);
-    if (BN_num_bytes(bn) > (int)sizeof(private_key->d)) {
+    group = EC_KEY_get0_group(key);
+
+    ctx = BN_CTX_new();
+
+    if (!keep_private) {
+      if (EC_KEY_generate_key(key) == 0) {
+        errx(1, "ssl: EC_KEY_generate_key");
+      }
+
+      bn = (BIGNUM *)EC_KEY_get0_private_key(key);
+      if (BN_num_bytes(bn) > (int)sizeof(private_key->d)) {
+        errx(1, "ssl: invalid bn");
+      }
+      private_key->curve = curve;
+      private_key->d_len = BN_bn2bin(bn, private_key->d);
+    } else {
+      BIGNUM *priv;
+
+      priv = BN_new();
+      BN_bin2bn(private_key->d, private_key->d_len, priv);
+      if (EC_KEY_set_private_key(key, priv) == 0) {
+        errx(1, "ssl: EC_KEY_set_private_key");
+      }
+
+      pub = EC_POINT_new(group);
+      if (EC_POINT_mul(group, pub, priv, NULL, NULL, ctx) == 0) {
+        errx(1, "ssl: EC_POINT_mul");
+      }
+
+      if (EC_KEY_set_public_key(key, pub) == 0) {
+        errx(1, "ssl: EC_KEY_set_public_key");
+      }
+
+      BN_free(priv);
+    }
+
+    bn = BN_new();
+    pub = (EC_POINT *)EC_KEY_get0_public_key(key);
+    EC_POINT_point2bn(group, pub, POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
+    if (BN_num_bytes(bn) > (int)sizeof(public_key->W)) {
       errx(1, "ssl: invalid bn");
     }
-    private_key->curve = curve;
-    private_key->d_len = BN_bn2bin(bn, private_key->d);
-  } else {
-    BIGNUM *priv;
+    public_key->curve = curve;
+    public_key->W_len = BN_bn2bin(bn, public_key->W);
 
-    priv = BN_new();
-    BN_bin2bn(private_key->d, private_key->d_len, priv);
-    if (EC_KEY_set_private_key(key, priv) == 0) {
-      errx(1, "ssl: EC_KEY_set_private_key");
-    }
-
-    pub = EC_POINT_new(group);
-    if (EC_POINT_mul(group, pub, priv, NULL, NULL, ctx) == 0) {
-      errx(1, "ssl: EC_POINT_mul");
-    }
-
-    if (EC_KEY_set_public_key(key, pub) == 0) {
-      errx(1, "ssl: EC_KEY_set_public_key");
-    }
-
-    BN_free(priv);
+    EC_KEY_free(key);
+    BN_CTX_free(ctx);
   }
-
-  bn = BN_new();
-  pub = (EC_POINT *)EC_KEY_get0_public_key(key);
-  EC_POINT_point2bn(group, pub, POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
-  if (BN_num_bytes(bn) > (int)sizeof(public_key->W)) {
-    errx(1, "ssl: invalid bn");
-  }
-  public_key->curve = curve;
-  public_key->W_len = BN_bn2bin(bn, public_key->W);
-
-  EC_KEY_free(key);
-  BN_CTX_free(ctx);
-
   return 0;
+}
+
+int sys_cx_ecfp_generate_pair(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key,
+                          int keep_private) {
+  return sys_cx_ecfp_generate_pair2(curve, public_key, private_key, keep_private, CX_SHA512);
 }
 
 int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key, unsigned int key_len, cx_ecfp_private_key_t *key)

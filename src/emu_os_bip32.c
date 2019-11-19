@@ -183,3 +183,20 @@ unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *p
 
   return 0;
 }
+
+unsigned long sys_os_perso_derive_node_with_seed_key(
+  unsigned int mode, cx_curve_t curve,
+  const unsigned int *path, unsigned int pathLength,
+  unsigned char *privateKey, unsigned char *chain,
+  unsigned char *seed_key, unsigned int seed_key_length) {
+  (void) mode;
+  (void) curve;
+  (void) path;
+  (void) pathLength;
+  (void) chain;
+  (void) seed_key;
+  (void) seed_key_length;
+  memset(privateKey, 0xaa, 32);
+  return 0;
+}
+

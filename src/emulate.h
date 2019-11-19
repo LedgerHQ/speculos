@@ -61,13 +61,11 @@ unsigned long sys_os_perso_isonboarded(void);
 unsigned long sys_os_flags(void);
 int sys_nvm_write(void *dst_addr, void* src_addr, size_t src_len);
 unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain);
+unsigned long sys_os_perso_derive_node_with_seed_key(unsigned int mode, cx_curve_t curve, const unsigned int *path, unsigned int pathLength,
+    unsigned char *privateKey, unsigned char *chain, unsigned char *seed_key, unsigned int seed_key_length);
 unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buffer, size_t length);
 unsigned long sys_os_ux(bolos_ux_params_t *params);
 
-int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, uint8_t *sig, unsigned int sig_len, unsigned int *info);
-int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, const uint8_t *sig,  unsigned int sig_len);
-int sys_cx_ecfp_generate_pair(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key, int keep_private);
-int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key, unsigned int key_len, cx_ecfp_private_key_t *key);
 unsigned long sys_cx_hash(cx_hash_t *hash, int mode, const uint8_t *in, size_t len, uint8_t *out, size_t out_len);
 unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length);
 unsigned long sys_cx_rng_u8(void);
@@ -251,4 +249,40 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     break;                                                              \
   }
 
+#define SYSCALL9(_name, _fmt, _type0, _arg0, _type1, _arg1, _type2, _arg2, _type3, _arg3, _type4, _arg4, _type5, _arg5, _type6, _arg6, _type7, _arg7, _type8, _arg8) \
+  case SYSCALL_ ## _name ## _ID_IN: {                                   \
+    _type0 _arg0 = (_type0)parameters[0];                               \
+    _type1 _arg1 = (_type1)parameters[1];                               \
+    _type2 _arg2 = (_type2)parameters[2];                               \
+    _type3 _arg3 = (_type3)parameters[3];                               \
+    _type4 _arg4 = (_type4)parameters[4];                               \
+    _type5 _arg5 = (_type5)parameters[5];                               \
+    _type6 _arg6 = (_type6)parameters[6];                               \
+    _type7 _arg7 = (_type7)parameters[7];                               \
+    _type8 _arg8 = (_type8)parameters[8];                               \
+    print_syscall(# _name "" _fmt, (_type0)_arg0, (_type1)_arg1, (_type2)_arg2, (_type3)_arg3, (_type4)_arg4, (_type5)_arg5, (_type6)_arg6, (_type7)_arg7, (_type8)_arg8); \
+    *ret = sys_ ## _name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7, _arg8); \
+    print_ret(*ret);                                                    \
+    retid = SYSCALL_ ## _name ## _ID_OUT;                               \
+    break;                                                              \
+  }
+
+#define SYSCALL10(_name, _fmt, _type0, _arg0, _type1, _arg1, _type2, _arg2, _type3, _arg3, _type4, _arg4, _type5, _arg5, _type6, _arg6, _type7, _arg7, _type8, _arg8, _type9, _arg9) \
+  case SYSCALL_ ## _name ## _ID_IN: {                                   \
+    _type0 _arg0 = (_type0)parameters[0];                               \
+    _type1 _arg1 = (_type1)parameters[1];                               \
+    _type2 _arg2 = (_type2)parameters[2];                               \
+    _type3 _arg3 = (_type3)parameters[3];                               \
+    _type4 _arg4 = (_type4)parameters[4];                               \
+    _type5 _arg5 = (_type5)parameters[5];                               \
+    _type6 _arg6 = (_type6)parameters[6];                               \
+    _type7 _arg7 = (_type7)parameters[7];                               \
+    _type8 _arg8 = (_type8)parameters[8];                               \
+    _type9 _arg9 = (_type9)parameters[9];                               \
+    print_syscall(# _name "" _fmt, (_type0)_arg0, (_type1)_arg1, (_type2)_arg2, (_type3)_arg3, (_type4)_arg4, (_type5)_arg5, (_type6)_arg6, (_type7)_arg7, (_type8)_arg8, (_type9)_arg9); \
+    *ret = sys_ ## _name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7, _arg8, _arg9); \
+    print_ret(*ret);                                                    \
+    retid = SYSCALL_ ## _name ## _ID_OUT;                               \
+    break;                                                              \
+  }
 #endif

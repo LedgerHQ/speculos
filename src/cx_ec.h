@@ -1,6 +1,8 @@
 #ifndef _CX_EC_H
 #define _CX_EC_H
 
+#include "cx_hash.h"
+
 #define CX_MASK_EC                  (7<<12)
 #define CX_ECDH_POINT               (1<<12)
 #define CX_ECDH_X                   (2<<12)
@@ -117,6 +119,24 @@ struct cx_curve_weierstrass_s {
 /** Convenience type. See #cx_curve_weierstrass_s. */
 typedef struct cx_curve_weierstrass_s cx_curve_weierstrass_t;
 
+/*
+ * Twisted Edward curve : a*x^2+y^2=1+d*x2*y2  over F(q)
+ */
+struct cx_curve_twisted_edward_s {
+  CX_CURVE_HEADER;
+  /**  a coef */
+  unsigned char *a;
+  /**  d coef */
+  unsigned char *d;
+  /** @internal Square root of -1 or zero */
+  unsigned char *I;
+  /** @internal  (q+3)/8 or (q+1)/4*/
+  unsigned char *Qq;
+
+} ;
+/** Convenience type. See #cx_curve_twisted_edward_s. */
+typedef struct cx_curve_twisted_edward_s cx_curve_twisted_edward_t;
+
 struct cx_curve_domain_s {
   CX_CURVE_HEADER;
 } ;
@@ -161,6 +181,40 @@ typedef struct cx_ecfp_256_extended_private_key_s cx_ecfp_256_extended_private_k
 typedef struct cx_ecfp_256_public_key_s cx_ecfp_public_key_t;
 typedef struct cx_ecfp_256_private_key_s cx_ecfp_private_key_t;
 
+/** Up to 512 bits Public Elliptic Curve key */
+struct cx_ecfp_512_public_key_s {
+  /** curve ID #cx_curve_e */
+  cx_curve_t    curve;
+  /** Public key length in bytes */
+  unsigned int  W_len;
+  /** Public key value starting at offset 0 */
+  unsigned char W[129];
+};
+/** Up to 512 bits Private Elliptic Curve key */
+struct cx_ecfp_512_private_key_s{
+  /** curve ID #cx_curve_e */
+  cx_curve_t    curve;
+  /** Public key length in bytes */
+  unsigned int  d_len;
+  /** Public key value starting at offset 0 */
+  unsigned char d[64];
+};
+/** Up to 512 bits Extended Private Elliptic Curve key */
+struct cx_ecfp_512_extented_private_key_s{
+  /** curve ID #cx_curve_e */
+  cx_curve_t    curve;
+  /** Public key length in bytes */
+  unsigned int  d_len;
+  /** Public key value starting at offset 0 */
+  unsigned char d[128];
+};
+/** Convenience type. See #cx_ecfp_512_public_key_s. */
+typedef struct cx_ecfp_512_public_key_s cx_ecfp_512_public_key_t                                                           ;
+/** Convenience type. See #cx_ecfp_512_private_key_s. */
+typedef struct cx_ecfp_512_private_key_s cx_ecfp_512_private_key_t;
+/** Convenience type. See #cx_ecfp_512_extented_private_key_s. */
+typedef struct cx_ecfp_512_extented_private_key_s cx_ecfp_512_extented_private_key_t;
+
 /** Up to 640 bits Public Elliptic Curve key */
 struct cx_ecfp_640_public_key_s {
   /** curve ID #cx_curve_e */
@@ -188,7 +242,13 @@ const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve);
 
 unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve, const unsigned char *rawkey, unsigned int key_len, cx_ecfp_public_key_t *key);
 int sys_cx_ecfp_generate_pair(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key, int keep_private);
+int sys_cx_ecfp_generate_pair2(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key, int keep_private, cx_md_t hashID);
 int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key, unsigned int key_len, cx_ecfp_private_key_t *key);
 int sys_cx_ecdh(const cx_ecfp_private_key_t *key, int mode, const uint8_t *public_point, size_t P_len, uint8_t *secret, size_t secret_len);
-
+int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, uint8_t *sig, unsigned int sig_len, unsigned int *info);
+int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, const uint8_t *sig,  unsigned int sig_len);
+int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey, int mode, cx_md_t hashID, const unsigned char *hash, unsigned int hash_len,
+                      const unsigned char *ctx, unsigned int ctx_len, unsigned char *sig, unsigned int sig_len, unsigned int *info);
+int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key, int mode, cx_md_t hashID, const unsigned char *hash, unsigned int hash_len,
+                        const unsigned char  *ctx , unsigned int ctx_len, const unsigned char *sig,  unsigned int sig_len);
 #endif
