@@ -517,7 +517,7 @@ static int run_app(char *name, unsigned long *parameters, hw_platform_t plat)
     "bx  %3\n"
     "bkpt\n" /* the call should neved return */
     :
-    : "r"(stack_end), "r"(stack_start), "r"(parameters), "r"(f)
+    : "r"(stack_start), "r"(stack_end), "r"(parameters), "r"(f)
     : "r0", "r9", "sp");
 
   /* never reached */
