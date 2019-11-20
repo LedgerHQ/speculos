@@ -33,12 +33,22 @@ def set_pdeath(sig):
     libc = ctypes.cdll.LoadLibrary('libc.so.6')
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
-def get_load_offset(app_path):
+def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
-        section = ELFFile(fp).get_section_by_name('.text')
-    sh_offset = section['sh_offset']
-    sh_size = section['sh_size']
-    return hex(sh_offset), hex(sh_size)
+        elf = ELFFile(fp)
+        text = elf.get_section_by_name('.text')
+        symtab =  elf.get_section_by_name('.symtab')
+        bss = elf.get_section_by_name('.bss')
+        sh_offset = text['sh_offset']
+        sh_size = text['sh_size']
+        stack = bss['sh_addr']
+        sym_estack = symtab.get_symbol_by_name('_estack')
+        if sym_estack is not None:
+            estack = sym_estack[0]['st_value']
+        else:
+            estack = stack + bss['sh_size']
+    stack_size = estack - stack
+    return hex(sh_offset), hex(sh_size), hex(stack), hex(stack_size)
 
 def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, model=None, rampage=None, pagesize=None, sdk_version="1.5"):
     args = [ 'qemu-arm-static' ]
@@ -61,8 +71,8 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
 
     for lib in [ f'main:{app_path}' ] + libraries:
         name, lib_path = lib.split(':')
-        load_offset, load_size = get_load_offset(lib_path)
-        args.append(f'{name}:{lib_path}:{load_offset}:{load_size}')
+        load_offset, load_size, stack, stack_size = get_elf_infos(lib_path)
+        args.append(f'{name}:{lib_path}:{load_offset}:{load_size}:{stack}:{stack_size}')
 
     pid = os.fork()
     if pid != 0:
