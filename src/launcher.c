@@ -27,10 +27,6 @@
 //                  CONTENTS, ALLOC, LOAD, DATA
 //  2 .bss          0000132c  20001800  20001800  00001800  2**2
 
-// TODO: get these from Elf
-#define DATA_VADDR		0x20001800
-#define DATA_VSIZE		0x1800 // 6k
-
 #define CODE_SIZE       0x10000
 #define LOAD_ADDR		((void *)0x40000000)
 
@@ -47,11 +43,17 @@ typedef enum
 
 #define platform_string(platform)  (platform) == BLUE ? "Blue" : (platform) == NANOX ? "Nano X" : "Nano S"
 
+struct elf_info_s {
+  unsigned long load_offset;
+  unsigned long load_size;
+  unsigned long stack_addr;
+  unsigned long stack_size;
+};
+
 struct app_s {
   char *name;
   int fd;
-  unsigned long load_offset;
-  unsigned long load_size;
+  struct elf_info_s elf;
 };
 
 struct memory_s {
@@ -293,7 +295,7 @@ static struct app_s *search_app_by_name(char *name)
 }
 
 /* open the app file */
-static int open_app(char *name, char *filename, unsigned long offset, unsigned long size)
+static int open_app(char *name, char *filename, struct elf_info_s *elf)
 {
   int fd;
 
@@ -315,8 +317,10 @@ static int open_app(char *name, char *filename, unsigned long offset, unsigned l
 
   apps[napp].name = name;
   apps[napp].fd = fd;
-  apps[napp].load_offset = offset;
-  apps[napp].load_size = size;
+  apps[napp].elf.load_offset = elf->load_offset;
+  apps[napp].elf.load_size = elf->load_size;
+  apps[napp].elf.stack_addr = elf->stack_addr;
+  apps[napp].elf.stack_size = elf->stack_size;
 
   napp++;
 
@@ -362,19 +366,19 @@ int replace_current_code(struct app_s *app)
 
   flags = MAP_PRIVATE | MAP_FIXED;
   prot = PROT_READ | PROT_EXEC;
-  memory.code = mmap(LOAD_ADDR, app->load_size, prot, flags, app->fd, app->load_offset);
+  memory.code = mmap(LOAD_ADDR, app->elf.load_size, prot, flags, app->fd, app->elf.load_offset);
   if (memory.code == MAP_FAILED) {
     warn("mmap code");
     return -1;
   }
 
-  if (patch_svc(memory.code, app->load_size) != 0) {
+  if (patch_svc(memory.code, app->elf.load_size) != 0) {
     /* this should never happen, because the svc were already patched without
      * error during the first load */
     _exit(1);
   }
 
-  memory.code_size = app->load_size;
+  memory.code_size = app->elf.load_size;
   current_app = app;
 
   return 0;
@@ -406,9 +410,6 @@ static void *load_app(char *name, hw_platform_t plat)
   code = MAP_FAILED;
   data = MAP_FAILED;
 
-  data_addr = get_lower_page_aligned_addr(DATA_VADDR);
-  data_size = get_upper_page_aligned_size(DATA_VSIZE);
-
   app = search_app_by_name(name);
   if (app == NULL) {
     warnx("failed to find app \"%s\"", name);
@@ -420,19 +421,22 @@ static void *load_app(char *name, hw_platform_t plat)
     goto error;
   }
 
-  if (app->load_offset > st.st_size) {
-      warnx("app load offset is larger than file size (%ld > %lld)\n", app->load_offset, st.st_size);
+  if (app->elf.load_offset > st.st_size) {
+      warnx("app load offset is larger than file size (%ld > %lld)\n", app->elf.load_offset, st.st_size);
       goto error;
   }
 
-  size = app->load_size;
-  if (size > st.st_size - app->load_offset) {
-      warnx("app load size is larger than file size (%ld > %lld)\n", app->load_size, st.st_size);
+  size = app->elf.load_size;
+  if (size > st.st_size - app->elf.load_offset) {
+      warnx("app load size is larger than file size (%ld > %lld)\n", app->elf.load_size, st.st_size);
       goto error;
   }
+
+  data_addr = get_lower_page_aligned_addr(app->elf.stack_addr);
+  data_size = get_upper_page_aligned_size(app->elf.stack_size + app->elf.stack_addr - (unsigned long)data_addr);
 
   /* load code */
-  code = mmap(LOAD_ADDR, size, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, app->fd, app->load_offset);
+  code = mmap(LOAD_ADDR, size, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED, app->fd, app->elf.load_offset);
   if (code == MAP_FAILED) {
     warn("mmap code");
     goto error;
@@ -490,21 +494,33 @@ static void *load_app(char *name, hw_platform_t plat)
 
 static int run_app(char *name, unsigned long *parameters, hw_platform_t plat)
 {
+  unsigned long stack_end, stack_start;
   void (*f)(unsigned long *);
+  struct app_s *app;
   void *p;
 
   p = load_app(name, plat);
   if (p == NULL)
     return -1;
 
+  app = get_current_app();
+
   /* thumb mode */
   f = (void *)((unsigned long)p | 1);
+  stack_end = app->elf.stack_addr;
+  stack_start = app->elf.stack_addr + app->elf.stack_size;
 
-  __asm("mov r9, %0" :: "r"(DATA_VADDR));
-  __asm("mov sp, %0" :: "r"(DATA_VADDR+DATA_VSIZE));
-  f(parameters);
+  asm volatile (
+    "mov r0, %2\n"
+    "mov r9, %1\n"
+    "mov sp, %0\n"
+    "bx  %3\n"
+    "bkpt\n" /* the call should neved return */
+    :
+    : "r"(stack_end), "r"(stack_start), "r"(parameters), "r"(f)
+    : "r0", "r9", "sp");
 
-  /* should never return */
+  /* never reached */
   errx(1, "the app returned, exiting...");
 
   return 0;
@@ -533,65 +549,43 @@ int run_lib(char *name, unsigned long *parameters)
 
 /*
  * Libraries are given with the following format:
- * name:path:load_offset:load_size. eg. Bitcoin:apps/btc.elf:0x1000:0x9fc0
+ * name:path:load_offset:load_size. eg. Bitcoin:apps/btc.elf:0x1000:0x9fc0:0x20001800:0x1800
  */
-static char *parse_app_infos(char *arg, char **filename, unsigned long *load_offset, unsigned long *load_size)
+static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
 {
-  char *libname, *offset, *p, *size;
-  size_t len;
+  char *libname;
+  int ret;
 
   libname = strdup(arg);
-  if (libname == NULL) {
+  *filename = strdup(arg);
+  if (libname == NULL || *filename == NULL) {
     err(1, "strdup");
   }
 
-  p = strchr(libname, ':');
-  if (p == NULL) {
-    warnx("invalid app name (\"%s\"): missing semicolon", libname);
+  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx",
+               libname, *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr, &elf->stack_size);
+  if (ret != 6) {
+    warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
+    free(*filename);
     return NULL;
   }
-
-  *p = '\x00';
-
-  offset = strchr(p + 1, ':');
-  if (offset == NULL) {
-    warnx("invalid app offset (\"%s\"): missing semicolon", libname);
-    free(libname);
-    return NULL;
-  }
-
-  *offset = '\x00';
-
-  size = strchr(offset + 1, ':');
-  if (size == NULL) {
-    warnx("invalid app size (\"%s\"): missing semicolon", libname);
-    free(libname);
-    return NULL;
-  }
-
-  *size = '\x00';
-
-  len = strlen(libname);
-  *filename = libname + len + 1;
-  *load_offset = strtoul(offset + 1, NULL, 16);
-  *load_size = strtoul(size + 1, NULL, 16);
 
   return libname;
 }
 
 static int load_apps(int argc, char *argv[])
 {
-  unsigned long offset, size;
   char *filename, *libname;
+  struct elf_info_s elf;
   int i;
 
   for (i = 0; i < argc; i++) {
-    libname = parse_app_infos(argv[i], &filename, &offset, &size);
+    libname = parse_app_infos(argv[i], &filename, &elf);
     if (libname == NULL)
       return -1;
 
-    if (open_app(libname, filename, offset, size) != 0)
+    if (open_app(libname, filename, &elf) != 0)
       return -1;
   }
 
@@ -614,7 +608,7 @@ static sdk_version_t str2sdkver(char *arg)
 
 static void usage(char *argv0)
 {
-  fprintf(stderr, "Usage: %s [-t] [-r <rampage_address> -s <rampage_size> -k <sdk_version>] <app.elf> [libname:lib.elf:0x1000:0x9fc0 ...]\n", argv0);
+  fprintf(stderr, "Usage: %s [-t] [-r <rampage_address> -s <rampage_size> -k <sdk_version>] <app.elf> [libname:lib.elf:0x1000:0x9fc0:0x20001800:0x1800 ...]\n", argv0);
   fprintf(stderr, "\n\
   -r <rampage_address>: Hex address (prefixed with '0x') of extra ram page to map\n\
                         app.elf memory. Requires '-s' parameter.\n\
