@@ -40,6 +40,10 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
 
   SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_6);
 
+  SYSCALL2(os_version, "(%p, %u)",
+           uint8_t *,    buffer,
+           size_t,       length);
+
   SYSCALL8(os_perso_derive_node_with_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
            unsigned int,         mode,
            cx_curve_t,           curve,

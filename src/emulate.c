@@ -258,10 +258,6 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            uint8_t *,    buffer,
            size_t,       length);
 
-  SYSCALL2(os_version, "(%p, %u)",
-           uint8_t *,    buffer,
-           size_t,       length);
-
   SYSCALL1(os_ux, "(%p)", bolos_ux_params_t *, params);
 
   SYSCALL0(try_context_get);

@@ -39,6 +39,10 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
 
   SYSCALL1(os_sched_exit, "(%u)", unsigned int, code);
 
+  SYSCALL2(os_version, "(%p, %u)",
+           uint8_t *,    buffer,
+           size_t,       length);
+
   SYSCALL0(reset);
 
   default:
