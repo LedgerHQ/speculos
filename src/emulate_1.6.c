@@ -44,6 +44,10 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
            uint8_t *,    buffer,
            size_t,       length);
 
+  SYSCALL2(os_seph_version, "(%p %u)",
+           uint8_t *, buffer,
+           size_t,    length);
+
   SYSCALL8(os_perso_derive_node_with_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
            unsigned int,         mode,
            cx_curve_t,           curve,

@@ -92,6 +92,20 @@ unsigned long sys_os_version(uint8_t *buffer, unsigned int len)
   return 0;
 }
 
+unsigned long sys_os_seph_version(uint8_t *buffer, size_t len) {
+  const char *kMcuVersion = "SpeculosMCU";
+  const size_t kLen = strlen(kMcuVersion);
+
+  if (len > 0) {
+    strncpy((char *)buffer, kMcuVersion, len);
+    if (len < kLen) {
+      return len;
+    } else {
+      return kLen;
+    }
+  }
+  return 0;
+}
 
 unsigned long sys_os_lib_end(void)
 {

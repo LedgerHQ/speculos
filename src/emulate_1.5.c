@@ -43,6 +43,10 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
            uint8_t *,    buffer,
            size_t,       length);
 
+  SYSCALL2(os_seph_version, "(%p %u)",
+           uint8_t *, buffer,
+           size_t,    length);
+
   SYSCALL0(reset);
 
   default:
