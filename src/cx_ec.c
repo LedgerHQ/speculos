@@ -798,11 +798,11 @@ static int ecdh_simple_compute_key_hack(unsigned char *pout, size_t* poutlen,
     }
 
     pout[0] = 0x04;
-    if (xLen != (size_t)BN_bn2bin(x, pout + 1)) {
+    if (xLen != (size_t)BN_bn2binpad(x, pout + 1, 32)) {
         ECerr(EC_F_ECDH_SIMPLE_COMPUTE_KEY, ERR_R_BN_LIB);
         goto err;
     }
-    if (yLen != (size_t)BN_bn2bin(y, pout + 1 + xLen)) {
+    if (yLen != (size_t)BN_bn2binpad(y, pout + 1 + xLen, 32)) {
         ECerr(EC_F_ECDH_SIMPLE_COMPUTE_KEY, ERR_R_BN_LIB);
         goto err;
     }
