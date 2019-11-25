@@ -12,6 +12,7 @@ import pytest
 import os
 import socket
 import subprocess
+import sys
 import time
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
