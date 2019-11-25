@@ -43,10 +43,12 @@ def get_elf_infos(app_path):
         sh_size = text['sh_size']
         stack = bss['sh_addr']
         sym_estack = symtab.get_symbol_by_name('_estack')
-        if sym_estack is not None:
-            estack = sym_estack[0]['st_value']
-        else:
-            estack = stack + bss['sh_size']
+        if sym_estack is None:
+            sym_estack = symtab.get_symbol_by_name('END_STACK')
+        if sym_estack is None:
+            print('[-] failed to find _estack/END_STACK symbol', file=sys.stderr)
+            sys.exit(1)
+        estack = sym_estack[0]['st_value']
     stack_size = estack - stack
     return hex(sh_offset), hex(sh_size), hex(stack), hex(stack_size)
 
