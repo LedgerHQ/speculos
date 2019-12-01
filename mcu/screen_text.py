@@ -56,6 +56,11 @@ class TextWidget:
 
     def _redraw(self):
         p = self.pixels
+        if p == self.previous_screen:
+            return
+        else:
+            self.previous_screen = p.copy()
+            
         f = lambda x,y:p.get((x,y),0)
 
         self.stdscr.clear()
