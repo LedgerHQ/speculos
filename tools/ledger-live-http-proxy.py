@@ -47,17 +47,20 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         if args.verbose:
             print('<', binascii.hexlify(apdu))
 
-        # forward the APDU to the APDU server
-        apdu = len(apdu).to_bytes(4, 'big') + apdu
-        s.sendall(apdu)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(('127.0.0.1', int(args.port)))
 
-        # receive the APDU server response
-        data = _recvall(s, 4)
-        size = int.from_bytes(data, byteorder='big')
-        packet = _recvall(s, size + 2)
+            # forward the APDU to the APDU server
+            apdu = len(apdu).to_bytes(4, 'big') + apdu
+            s.sendall(apdu)
 
-        if args.verbose:
-            print('>', binascii.hexlify(packet))
+            # receive the APDU server response
+            data = _recvall(s, 4)
+            size = int.from_bytes(data, byteorder='big')
+            packet = _recvall(s, size + 2)
+
+            if args.verbose:
+                print('>', binascii.hexlify(packet))
 
         # forward the APDU response to the client, embedded in response body
         data = { 'data': str(binascii.hexlify(packet), 'ascii'), 'error': None }
@@ -76,12 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('127.0.0.1', int(args.port)))
-
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer((HOST, PORT), SimpleHTTPRequestHandler) as httpd:
         print("serving at port", PORT)
         httpd.serve_forever()
-
-    s.close()
