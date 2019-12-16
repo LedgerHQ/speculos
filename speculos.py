@@ -49,8 +49,10 @@ def get_elf_infos(app_path):
             print('[-] failed to find _estack/END_STACK symbol', file=sys.stderr)
             sys.exit(1)
         estack = sym_estack[0]['st_value']
+        supp_ram = elf.get_section_by_name('.rfbss')
+        ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram.data_size) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return hex(sh_offset), hex(sh_size), hex(stack), hex(stack_size)
+    return hex(sh_offset), hex(sh_size), hex(stack), hex(stack_size), hex(ram_addr), hex(ram_size)
 
 def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, model=None, rampage=None, pagesize=None, sdk_version="1.5"):
     args = [ 'qemu-arm-static' ]
@@ -63,9 +65,6 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     if trace_syscalls:
         args += [ '-t' ]
 
-    if rampage is not None and pagesize is not None:
-        args += [ '-r' , rampage ] + [ '-s' , pagesize ]
-
     if model is not None:
         args += ['-m', model]
 
@@ -73,8 +72,15 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
 
     for lib in [ f'main:{app_path}' ] + libraries:
         name, lib_path = lib.split(':')
-        load_offset, load_size, stack, stack_size = get_elf_infos(lib_path)
+        load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
         args.append(f'{name}:{lib_path}:{load_offset}:{load_size}:{stack}:{stack_size}')
+
+    if rampage is not None and pagesize is not None:
+        print('[+] using user-provided additional RAM page')
+        args += [ '-r' , rampage ] + [ '-s' , pagesize ]
+    else:
+        print('[*] using probed additional RAM page')
+        args += [ '-r' , ram_addr ] + [ '-s' , ram_size]
 
     pid = os.fork()
     if pid != 0:
@@ -116,7 +122,7 @@ if __name__ == '__main__':
     parser.add_argument('-x', '--text', action='store_true', help="Text UI (implies --headless)")
     parser.add_argument('-y', '--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
     parser.add_argument('-r', '--rampage', required='--pagesize' in sys.argv or '-q' in sys.argv, type=lambda x: f"{int(x,16):X}", action='store', help='Hex address (prefixed or not with \'0x\') of one additional RAM page available to the app. Requires -q.')
-    parser.add_argument('-q', '--pagesize', required='--rampage' in sys.argv or '-r' in sys.argv, type=lambda x: f"{int(x,16):X}", action='store', help='Byte size (in decimal or in hex if prefixed with \'0x\') of the additional RAM page available to the app. Requires -r.')
+    parser.add_argument('-q', '--pagesize', required='--rampage' in sys.argv or '-r' in sys.argv, type=lambda x: f"{int(x,16):X}", action='store', help='Byte size (in hexadecimal, prefixed or not with \'0x\') of the additional RAM page available to the app. Requires -r.')
     group_progressive = parser.add_mutually_exclusive_group()
     group_progressive.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements (default for Blue, can be disabled with -P)')
     group_progressive.add_argument('-P', '--flushed', action='store_true', help='Disable step-by-step rendering of graphical elements (default for Nano S)')
