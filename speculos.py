@@ -50,7 +50,7 @@ def get_elf_infos(app_path):
             sys.exit(1)
         estack = sym_estack[0]['st_value']
         supp_ram = elf.get_section_by_name('.rfbss')
-        ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram.data_size) if supp_ram is not None else (0, 0)
+        ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
