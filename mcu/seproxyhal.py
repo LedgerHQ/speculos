@@ -52,6 +52,7 @@ class SeProxyHal:
         self.queue = []
         self.last_ticker_sent_at = 0.0
         self.sending_ticker_event = threading.Lock()
+        self.status_received = True
 
     def _recvall(self, size):
         data = b''
@@ -69,7 +70,7 @@ class SeProxyHal:
 
         size = len(data).to_bytes(2, 'big')
         packet = tag.to_bytes(1, 'big') + size + data
-        #print('[*] seproxyhal: send %s\n' % binascii.hexlify(packet), file=sys.stderr)
+        #print('[*] seproxyhal: send %s' % binascii.hexlify(packet), file=sys.stderr)
         try:
             self.s.sendall(packet)
         except BrokenPipeError:
@@ -79,7 +80,9 @@ class SeProxyHal:
     def _send_ticker_event(self):
         self.sending_ticker_event.release()
         self.last_ticker_sent_at = time.time()
-        self._send_packet(SEPROXYHAL_TAG_TICKER_EVENT)
+        # don't send an event if a command is being processed
+        if self.status_received:
+            self._send_packet(SEPROXYHAL_TAG_TICKER_EVENT)
 
     def send_ticker_event_defered(self):
         if self.sending_ticker_event.acquire(False):
@@ -88,6 +91,24 @@ class SeProxyHal:
                 DeferedTicketEventSender(self, name = "DeferedTicketEvent").start()
             else:
                 self._send_ticker_event()
+                self.status_received = False
+
+    def send_next_event(self):
+        # don't send an event if a command is being processed
+        if not self.status_received:
+            return
+
+        if len(self.queue) > 0:
+            # if we've received events from the outside world, send them
+            # whenever the SE is ready (i.e. now as we've received a
+            # GENERAL_STATUS)
+            tag, data = self.queue.pop()
+            self._send_packet(tag, data)
+            self.status_received = False
+        else:
+            # if no real event available in the queue, send a ticker event
+            # every 100ms
+            self.send_ticker_event_defered()
 
     def can_read(self, s, screen):
         '''
@@ -107,43 +128,41 @@ class SeProxyHal:
 
         #print('[*] seproxyhal: received (tag: 0x%02x, size: 0x%02x): %s' % (tag, size, repr(data)), file=sys.stderr)
 
-        if tag == SEPROXYHAL_TAG_GENERAL_STATUS:
-            if int.from_bytes(data[:2], 'big') == SEPROXYHAL_TAG_GENERAL_STATUS_LAST_COMMAND:
-                screen.screen_update()
+        if tag & 0xf0 == SEPROXYHAL_TAG_GENERAL_STATUS:
+            self.status_received = True
 
-            if len(self.queue) > 0:
-                # if we've received events from the outside world, send them
-                # whenever the SE is ready (i.e. now as we've received a
-                # GENERAL_STATUS)
-                tag, data = self.queue.pop()
-                self._send_packet(tag, data)
+            if tag == SEPROXYHAL_TAG_GENERAL_STATUS:
+                if int.from_bytes(data[:2], 'big') == SEPROXYHAL_TAG_GENERAL_STATUS_LAST_COMMAND:
+                    screen.screen_update()
+
+            elif tag == SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS:
+                #print('[*] seproxyhal: DISPLAY_STATUS %s' % repr(data), file=sys.stderr)
+                screen.display_status(data)
+                self._queue_event_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
+
+            elif tag == SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS:
+                #print('SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS', file=sys.stderr)
+                screen.display_raw_status(data)
+                self._queue_event_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
+                if screen.rendering == RENDER_METHOD.PROGRESSIVE:
+                    screen.screen_update()
+
+            elif tag == SEPROXYHAL_TAG_PRINTF_STATUS:
+                for b in data:
+                    sys.stdout.write('%c' % chr(b))
+                sys.stdout.flush()
+                self._queue_event_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
+                if screen.rendering == RENDER_METHOD.PROGRESSIVE:
+                    screen.screen_update()
+
             else:
-                # if no real event available in the queue, send a ticker event
-                # every 100ms
-                self.send_ticker_event_defered()
+                print('unknown tag: 0x%x' % tag)
+                sys.exit(0)
 
-        elif tag == SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS:
-            #print('[*] seproxyhal: DISPLAY_STATUS %s' % repr(data), file=sys.stderr)
-            screen.display_status(data)
-            self._send_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
-
-        elif tag == SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS:
-            #print('SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS', file=sys.stderr)
-            screen.display_raw_status(data)
-            self._send_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
-            if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                screen.screen_update()
+            self.send_next_event()
 
         elif tag == SEPROXYHAL_TAG_RAPDU:
             screen.forward_to_apdu_client(data)
-
-        elif tag == SEPROXYHAL_TAG_PRINTF_STATUS:
-            for b in data:
-                sys.stdout.write('%c' % chr(b))
-            sys.stdout.flush()
-            self._send_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
-            if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                screen.screen_update()
 
         elif tag in [ SEPROXYHAL_TAG_MCU, SEPROXYHAL_TAG_USB_CONFIG, SEPROXYHAL_TAG_USB_EP_PREPARE ]:
             pass
@@ -153,8 +172,8 @@ class SeProxyHal:
             sys.exit(0)
 
     def _queue_event_packet(self, tag, data=b''):
-        # self._send_packet(tag, data)
         self.queue.append((tag, data))
+        self.send_next_event()
 
     def handle_button(self, button, pressed):
         '''Forward button press/release from the GUI to the app.'''
