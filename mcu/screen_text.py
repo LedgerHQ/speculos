@@ -2,7 +2,7 @@ import sys
 import select
 import curses
 from . import bagl
-from .display import Display, MODELS
+from .display import Display, MODELS, RENDER_METHOD
 import time
 wait_time = 0.01
 
@@ -85,6 +85,7 @@ class TextScreen(Display):
         self.apdu = apdu
         self.seph = seph
         self.model = model
+        self.rendering = RENDER_METHOD.FLUSHED
         self.notifiers = {}
 
         self.width, self.height = MODELS[model].screen_size
