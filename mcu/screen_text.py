@@ -2,7 +2,7 @@ import sys
 import select
 import curses
 from . import bagl
-from .display import Display, MODELS, RENDER_METHOD
+from .display import Display, FrameBuffer, MODELS, RENDER_METHOD
 import time
 wait_time = 0.01
 
@@ -36,10 +36,9 @@ M[0b1111] = '\u2588'
 def map_pix(a,b,c,d):
     return M[d<<3 | c<<2 | b<<1 | a]
 
-class TextWidget:
+class TextWidget(FrameBuffer):
     def __init__(self, parent, model):
-        self.pixels = {}
-        self.model = model
+        super().__init__(model)
         self.width = parent.width
         self.height = parent.height
         self.previous_screen = 0
@@ -81,21 +80,14 @@ class TextWidget:
         self.pixels[(x, y)] = int(color!=0)
 
 class TextScreen(Display):
-    def __init__(self, apdu, seph, button_tcp, model, keymap):
-        self.apdu = apdu
-        self.seph = seph
-        self.model = model
-        self.rendering = RENDER_METHOD.FLUSHED
-        self.notifiers = {}
+    def __init__(self, apdu, seph, button_tcp=None, model='nanos', rendering=RENDER_METHOD.FLUSHED, keymap=None, **_):
+        super().__init__(apdu, seph, model, rendering)
 
         self.width, self.height = MODELS[model].screen_size
-
         self.m = TextWidget(self, model)
-        self.bagl = bagl.Bagl(self.m, self.width, self.height)
+        self.bagl = bagl.Bagl(self.m, MODELS[model].screen_size)
 
-        self._init_notifiers([ apdu, seph ])
-        if button_tcp:
-            self.add_notifier(button_tcp)
+        self._init_notifiers(apdu, seph, button_tcp)
 
         if keymap is not None:
             self.ARROW_KEYS = list(map(ord, keymap))
@@ -111,26 +103,11 @@ class TextScreen(Display):
     def display_status(self, data):
         self.bagl.display_status(data)
 
+    def display_raw_status(self, data):
+        self.bagl.display_raw_status(data)
+
     def screen_update(self):
         self.m._redraw()
-
-    def _init_notifiers(self, classes):
-        for klass in classes:
-            self.add_notifier(klass)
-
-    def forward_to_app(self, packet):
-        self.seph.to_app(packet)
-
-    def forward_to_apdu_client(self, packet):
-        self.apdu.forward_to_client(packet)
-
-    def add_notifier(self, klass):
-        assert klass.s.fileno() not in self.notifiers
-        self.notifiers[klass.s.fileno()] = klass
-
-    def remove_notifier(self, fd):
-        n = self.notifiers.pop(fd)
-        del n
 
     def get_keypress(self):
         key = self.m.stdscr.getch()

@@ -141,11 +141,11 @@ if __name__ == '__main__':
             raise ValueError("-x (--text) and -o (--ontop) are mutually exclusive")
 
         args.headless = True
-        from mcu import screen_text as screen
+        from mcu.screen_text import TextScreen as Screen
     elif args.headless:
-        from mcu import headless as screen
+        from mcu.headless import Headless as Screen
     else:
-        from mcu import screen
+        from mcu.screen import QtScreen as Screen
 
     s1, s2 = socket.socketpair()
 
@@ -168,6 +168,7 @@ if __name__ == '__main__':
         zoom = {'nanos':2, 'blue': 1}.get(args.model, 1)
 
     render_method = display.RENDER_METHOD.PROGRESSIVE if args.progressive == True else display.RENDER_METHOD.FLUSHED
-    screen.display(apdu, seph, button_tcp=button_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=render_method, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    screen = Screen(apdu, seph, button_tcp=button_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=render_method, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    screen.run()
 
     s2.close()

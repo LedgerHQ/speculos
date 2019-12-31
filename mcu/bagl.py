@@ -62,10 +62,9 @@ SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START = 0x00
 DrawState = namedtuple('DrawState', 'x y width height colors bpp xx yy')
 
 class Bagl:
-    def __init__(self, m, width, height):
+    def __init__(self, m, size):
         self.m = m
-        self.SCREEN_WIDTH = width
-        self.SCREEN_HEIGHT = height
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
 
         self.draw_state = DrawState(0, 0, 0, 0, [], 0, 0, 0)
 

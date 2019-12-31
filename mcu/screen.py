@@ -7,30 +7,32 @@ from PyQt5.QtCore import Qt, QObject, QRunnable, QMetaObject, QSocketNotifier, \
     pyqtSlot, pyqtSignal, QSettings
 
 from . import bagl
-from .display import Display, COLORS, MODELS, RENDER_METHOD
+from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
 
 BUTTON_LEFT  = 1
 BUTTON_RIGHT = 2
 
+class FB(FrameBuffer):
+    def __init__(self, model):
+        super().__init__(model)
 
 class PaintWidget(QWidget):
     def __init__(self, parent, model, pixel_size, vnc=None):
-        super(PaintWidget, self).__init__(parent)
+        super().__init__(parent)
+        self.fb = FrameBuffer(model)
         self.pixel_size = pixel_size
         self.mPixmap = QPixmap()
-        self.pixels = {}
-        self.model = model
         self.vnc = vnc
 
     def paintEvent(self, event):
-        if self.pixels:
+        if self.fb.pixels:
             pixmap = QPixmap(self.size())
             pixmap.fill(Qt.white)
             painter = QPainter(pixmap)
             painter.drawPixmap(0, 0, self.mPixmap)
             self._redraw(painter)
             self.mPixmap = pixmap
-            self.pixels = {}
+            self.fb.pixels = {}
 
         qp = QPainter(self)
         copied_pixmap = self.mPixmap
@@ -42,40 +44,73 @@ class PaintWidget(QWidget):
         qp.drawPixmap(0, 0, copied_pixmap )
 
     def _redraw(self, qp):
-        for (x, y), color in self.pixels.items():
+        for (x, y), color in self.fb.pixels.items():
             qp.setPen(QColor.fromRgb(color))
             qp.drawPoint(x, y)
 
         if self.vnc:
-            self.vnc.redraw(self.pixels)
+            self.vnc.redraw(self.fb.pixels)
 
     def draw_point(self, x, y, color):
-        # There are only 2 colors on Nano S but the one passed in argument isn't
-        # always valid. Fix it here.
-        if self.model == 'nanos' and color != 0x000000:
-            color = 0x00fffb
-        self.pixels[(x, y)] = color
+        return self.fb.draw_point(x, y, color)
 
-class Screen(QMainWindow, Display):
+class Screen(Display):
+    def __init__(self, app, apdu, seph, button_tcp, model, rendering, vnc):
+        self.app = app
+        super().__init__(apdu, seph, model, rendering)
+        self._init_notifiers(apdu, seph, button_tcp, vnc)
+        self.bagl = bagl.Bagl(app.m, MODELS[model].screen_size)
+
+    def add_notifier(self, klass):
+        n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self.app)
+        n.activated.connect(lambda s: klass.can_read(s, self))
+
+        assert klass.s.fileno() not in self.notifiers
+        self.notifiers[klass.s.fileno()] = n
+
+    def enable_notifier(self, fd, enabled=True):
+        n = self.notifiers[fd]
+        n.setEnabled(enabled)
+
+    def remove_notifier(self, fd):
+        # just in case
+        self.enable_notifier(fd, False)
+
+        n = self.notifiers.pop(fd)
+        n.disconnect()
+        del n
+
+    def _key_event(self, event, pressed):
+        key = event.key()
+        if key in [ Qt.Key_Left, Qt.Key_Right ]:
+            buttons = { Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT }
+            # forward this event to seph
+            self.seph.handle_button(buttons[key], pressed)
+        elif key == Qt.Key_Q and not pressed:
+            self.app.close()
+
+    def display_status(self, data):
+        self.bagl.display_status(data)
+        if MODELS[self.model].name == 'blue':
+            self.screen_update()    # Actually, this method doesn't work
+
+    def display_raw_status(self, data):
+        self.bagl.display_raw_status(data)
+        if MODELS[self.model].name == 'blue':
+            self.screen_update()    # Actually, this method doesn't work
+
+    def screen_update(self):
+        self.bagl.refresh()
+
+class App(QMainWindow):
     def __init__(self, apdu, seph, button_tcp, color, model, ontop, rendering, vnc, pixel_size):
-        self.apdu = apdu
-        self.seph = seph
-        self.model = model
-        self.rendering = rendering
+        super().__init__()
+
+        self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
 
         self.width, self.height = MODELS[model].screen_size
         self.box_position_x, self.box_position_y = MODELS[model].box_position
         box_size_x, box_size_y = MODELS[model].box_size
-
-        super().__init__()
-
-        self._init_notifiers([ apdu, seph ])
-        if button_tcp:
-            self.add_notifier(button_tcp)
-        if vnc:
-            self.add_notifier(vnc)
-
-        self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
 
         # If the position of the window has been saved in the settings, restore
         # it.
@@ -97,76 +132,25 @@ class Screen(QMainWindow, Display):
         p.setColor(self.backgroundRole(), QColor.fromRgb(COLORS[color]))
         self.setPalette(p)
 
-        #painter.drawEllipse(QPointF(x,y), radius, radius);
-
         # Add paint widget and paint
         self.m = PaintWidget(self, model, pixel_size, vnc)
         self.m.move(self.box_position_x * pixel_size, self.box_position_y * pixel_size)
         self.m.resize(self.width * pixel_size, self.height * pixel_size)
 
+        self.screen = Screen(self, apdu, seph, button_tcp, model, rendering, vnc)
+
         self.setWindowIcon(QIcon('mcu/icon.png'))
 
         self.show()
 
-        self.bagl = bagl.Bagl(self.m, self.width, self.height)
-
-    def add_notifier(self, klass):
-        n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self)
-        n.activated.connect(lambda s: klass.can_read(s, self))
-
-        assert klass.s.fileno() not in self.notifiers
-        self.notifiers[klass.s.fileno()] = n
-
-    def _init_notifiers(self, classes):
-        self.notifiers = {}
-        for klass in classes:
-            self.add_notifier(klass)
-
-    def enable_notifier(self, fd, enabled=True):
-        n = self.notifiers[fd]
-        n.setEnabled(enabled)
-
-    def remove_notifier(self, fd):
-        # just in case
-        self.enable_notifier(fd, False)
-
-        n = self.notifiers.pop(fd)
-        n.disconnect()
-        del n
-
-    def forward_to_app(self, packet):
-        self.seph.to_app(packet)
-
-    def forward_to_apdu_client(self, packet):
-        self.apdu.forward_to_client(packet)
-
-    def _key_event(self, event, pressed):
-        key = event.key()
-        if key in [ Qt.Key_Left, Qt.Key_Right ]:
-            buttons = { Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT }
-            # forward this event to seph
-            self.seph.handle_button(buttons[key], pressed)
-        elif key == Qt.Key_Q and not pressed:
-            self.close()
+    def screen_update(self):
+        self.screen.screen_update()
 
     def keyPressEvent(self, event):
-        self._key_event(event, True)
+        self.screen._key_event(event, True)
 
     def keyReleaseEvent(self, event):
-        self._key_event(event, False)
-
-    def display_status(self, data):
-        self.bagl.display_status(data)
-        if MODELS[self.model].name == 'blue':
-            self.screen_update()    # Actually, this method doesn't work
-
-    def display_raw_status(self, data):
-        self.bagl.display_raw_status(data)
-        if MODELS[self.model].name == 'blue':
-            self.screen_update()    # Actually, this method doesn't work
-
-    def screen_update(self):
-        self.bagl.refresh()
+        self.screen._key_event(event, False)
 
     def mousePressEvent(self, event):
         '''Get the mouse location.'''
@@ -201,9 +185,11 @@ class Screen(QMainWindow, Display):
         window_x = settings.setValue("window_x", self.pos().x())
         window_y = settings.setValue("window_y", self.pos().y())
 
+class QtScreen:
+    def __init__(self, apdu, seph, button_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
+        self.app = QApplication(sys.argv)
+        App(apdu, seph, button_tcp, color, model, ontop, rendering, vnc, pixel_size)
 
-def display(apdu, seph, button_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
-    app = QApplication(sys.argv)
-    display = Screen(apdu, seph, button_tcp, color, model, ontop, rendering, vnc, pixel_size)
-    app.exec_()
-    app.quit()
+    def run(self):
+        self.app.exec_()
+        self.app.quit()
