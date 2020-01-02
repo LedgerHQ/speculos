@@ -44,11 +44,11 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         apdu = json.loads(body)
         apdu = binascii.unhexlify(apdu['apduHex'])
 
-        if args.verbose:
-            print('<', binascii.hexlify(apdu))
-
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect(('127.0.0.1', int(args.port)))
+
+            if args.verbose:
+                print('<', binascii.hexlify(apdu))
 
             # forward the APDU to the APDU server
             apdu = len(apdu).to_bytes(4, 'big') + apdu
