@@ -1,6 +1,0 @@
-[submodule "openssl"]
-	path = openssl
-	url = https://github.com/openssl/openssl.git
-[submodule "tests/cmocka"]
-	path = tests/cmocka
-	url = git://git.cryptomilk.org/projects/cmocka.git
