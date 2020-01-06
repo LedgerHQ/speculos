@@ -176,6 +176,7 @@ typedef union {
 #endif
 } cx_hash_ctx;
 
+int cx_blake2b_init(cx_blake2b_t  *hash, unsigned int size);
 int cx_blake2b_init2(cx_blake2b_t  *hash, unsigned int size,
                      unsigned char *salt, unsigned int salt_len,
                      unsigned char *perso, unsigned int perso_len);
@@ -214,6 +215,7 @@ int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
 
 #define sys_cx_hmac_sha256    cx_hmac_sha256
 
+#define sys_cx_blake2b_init   cx_blake2b_init
 #define sys_cx_blake2b_init2  cx_blake2b_init2
 #define sys_cx_sha256_init    cx_sha256_init
 #define sys_cx_ripemd160_init cx_ripemd160_init

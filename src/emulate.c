@@ -65,6 +65,10 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            unsigned int,    key_len,
            cx_aes_key_t *,  key);
 
+  SYSCALL2(cx_blake2b_init, "(%p, %u)",
+           cx_blake2b_t *, hash,
+           unsigned int,   size);
+
   SYSCALL6(cx_blake2b_init2, "(%p, %u, %p, %u, %p, %u)",
            cx_blake2b_t *, hash,
            unsigned int,   size,
