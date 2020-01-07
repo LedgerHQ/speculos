@@ -60,6 +60,7 @@ class Screen(Display):
         super().__init__(apdu, seph, model, rendering)
         self._init_notifiers(apdu, seph, button_tcp, vnc)
         self.bagl = bagl.Bagl(app.m, MODELS[model].screen_size)
+        self.seph = seph
 
     def add_notifier(self, klass):
         n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self.app)
@@ -108,6 +109,7 @@ class App(QMainWindow):
 
         self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
 
+        self.seph = seph
         self.width, self.height = MODELS[model].screen_size
         self.box_position_x, self.box_position_y = MODELS[model].box_position
         box_size_x, box_size_y = MODELS[model].box_size
