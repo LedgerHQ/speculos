@@ -25,6 +25,12 @@ Please note that the first build can take some time because a tarball of OpenSSL
 is downloaded (the integrity of the downloaded tarball is checked) before being
 built. Further invocations of `make` skip this step.
 
+The following command line can be used for a debug build:
+
+```console
+cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
+```
+
 ### VNC support (optional)
 
 Pass the `WITH_VNC` option to CMake:
