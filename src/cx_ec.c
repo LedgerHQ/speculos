@@ -737,7 +737,7 @@ static int ecdh_simple_compute_key_hack(unsigned char *pout, size_t* poutlen,
     BN_CTX *ctx;
     EC_POINT *tmp = NULL;
     BIGNUM *x = NULL, *y = NULL;
-    size_t xLen, yLen;
+    int xLen, yLen;
     const BIGNUM *priv_key;
     const EC_GROUP *group;
     int ret = 0;
@@ -790,19 +790,19 @@ static int ecdh_simple_compute_key_hack(unsigned char *pout, size_t* poutlen,
         goto err;
     }
 
-    xLen = BN_num_bytes(x);
-    yLen = BN_num_bytes(y);
-    if(*poutlen < (1 + xLen + yLen)){
+    if(*poutlen < (1 + 32 + 32)){
       ECerr(EC_F_ECDH_SIMPLE_COMPUTE_KEY, EC_R_INVALID_ARGUMENT);
       goto err;
     }
 
     pout[0] = 0x04;
-    if (xLen != (size_t)BN_bn2binpad(x, pout + 1, 32)) {
+    xLen = BN_bn2binpad(x, pout + 1, 32);
+    if (xLen < 0) {
         ECerr(EC_F_ECDH_SIMPLE_COMPUTE_KEY, ERR_R_BN_LIB);
         goto err;
     }
-    if (yLen != (size_t)BN_bn2binpad(y, pout + 1 + xLen, 32)) {
+    yLen = BN_bn2binpad(y, pout + 1 + xLen, 32);
+    if (yLen < 0) {
         ECerr(EC_F_ECDH_SIMPLE_COMPUTE_KEY, ERR_R_BN_LIB);
         goto err;
     }
