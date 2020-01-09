@@ -1,7 +1,8 @@
 #ifndef _EXCEPTION_H
 #define _EXCEPTION_H
 
-#include <setjmp.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #define EXCEPTION             1
 #define INVALID_PARAMETER     2
@@ -23,22 +24,16 @@
 #define EXCEPTION_SYSTEM      18
 #define NOT_ENOUGH_SPACE      19
 
-/* Since there is no kernel in this emulator, THROW is identical from syscalls
- * and from the app itself. */
-#define THROW(exception)	os_longjmp(exception)
+#define THROW(exception)    do {                         \
+  fprintf(stderr, "\nUnhandled exception %d at %s:%d\n", \
+          exception, __FILE__, __LINE__);                \
+  fprintf(stderr, "Exiting.\n");                         \
+  _exit(1);                                              \
+} while (0)
 
-struct try_context_s {
-  unsigned int jmp_buf[10];
-  unsigned short ex;
-};
+typedef struct try_context_s try_context_t;
 
-static inline __attribute__((noreturn)) void os_longjmp(unsigned int exception)
-{
-  struct try_context_s *current_ctx;
-
-  __asm volatile ("mov %0, r9":"=r"(current_ctx));
-
-  longjmp((struct __jmp_buf_tag *)current_ctx->jmp_buf, exception);
-}
+unsigned long sys_try_context_set(try_context_t *context);
+unsigned long sys_try_context_get(void);
 
 #endif
