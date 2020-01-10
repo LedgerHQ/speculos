@@ -460,7 +460,13 @@ static void *load_app(char *name, hw_platform_t plat)
         warn("mmap extra RAM page");
         goto error;
       }
-      fprintf(stderr, "[*] platform = %s, using extra RAM page @%p (size: %u bytes)\n", platform_string(plat), extra_addr, extra_size);
+      fprintf(stderr, "[*] platform = %s, using extra RAM page [@=%p, size=%u bytes]", platform_string(plat), extra_addr, extra_size);
+      if (extra_addr != extra_rampage_addr || extra_size != extra_rampage_size) {
+        fprintf(stderr, ", realigned from [@=%p, size=%u bytes]\n", extra_rampage_addr, extra_rampage_size);
+      }
+      else {
+        fprintf(stderr, "\n");
+      }
     }
     else  {
       fprintf(stderr, "[*] platform = %s, not using extra RAM\n", platform_string(plat));

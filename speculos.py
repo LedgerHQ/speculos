@@ -54,8 +54,40 @@ def get_elf_infos(app_path):
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
+def sanitize_ram_args(model: str, rampage: str, pagesize: str, extra_ram: dict):
+    ''' Check RAM pages probed from main app & libs are identical and throw an error if it's
+    not the case. This is not generic but is sufficient as far as FW Apps team is concerned.
+    (Note: Generic code would merge overlapping pages and remove duplicate ones so that the 
+    list of pages passed to launcher contains unique items).  
+    Also discard extra RAM pages probed from main app or libraries when not running on Blue
+    '''
+    args = []
+    origin = ['*', 'probed']
+    if model == 'blue':
+        if rampage is not None and pagesize is not None:    # then user-provided values supercede probed values
+            (rampage, pagesize) = (int(rampage, 16), int(pagesize, 16))     # Convert to int
+            if extra_ram is None:
+                extra_ram = [{}]
+            # First extra_ram list entry is main app extra RAM params, replace it by user-provided {rampage, pagesize}
+            _ = extra_ram.pop(0)
+            extra_ram.insert(0, {'addr':rampage, 'size':pagesize})
+            origin=['+', 'user-provided']
+
+        if extra_ram is not None:
+            if  len(extra_ram) > 1:     # then all pages shall be identical
+                # Remove identical extra ram params,the python way. Throw an error if resulting list length is not 1
+                extra_ram = [dict(s) for s in set(tuple(d.items()) for d in extra_ram)]
+                if len(extra_ram) > 1:
+                    raise ValueError("Different extra RAM pages for main app and/or libraries!")
+            page = extra_ram[0]
+            print(f'[{origin[0]}] using {origin[1]} {page["size"]:d}-byte additional RAM page @0x{page["addr"]:08x}')
+            args.extend(['-r', f'{hex(page["addr"])}'] + ['-s', f'{hex(page["size"])}'])
+    return args     # either [] or ['-r', '<adress>', '-s', '<size>']
+
+
 def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, model=None, rampage=None, pagesize=None, sdk_version="1.5"):
     args = [ 'qemu-arm-static' ]
+    extra_ram = []
 
     if debug:
         args += [ '-g', '1234', '-singlestep' ]
@@ -73,19 +105,12 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     for lib in [ f'main:{app_path}' ] + libraries:
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
+        # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
+        if (ram_addr, ram_size) != (0, 0):
+            extra_ram.append({'addr':ram_addr, 'size':ram_size})
         args.append(f'{name}:{lib_path}:{hex(load_offset)}:{hex(load_size)}:{hex(stack)}:{hex(stack_size)}')
 
-    if rampage is not None and pagesize is not None:
-        (rampage, pagesize) = (int(rampage, 16), int(pagesize, 16))     # Convert to int
-        if rampage != 0 and pagesize != 0:
-            print(f'[+] using user-provided {pagesize:d}-byte additional RAM page @0x{rampage:08x}')
-    elif ram_addr != 0 and ram_size != 0:
-        print(f'[*] using probed {ram_size:d}-byte additional RAM page @0x{ram_addr:08x}')
-        (rampage, pagesize) = (ram_addr, ram_size)
-    else:
-        (rampage, pagesize) = (0, 0)
-    if rampage != 0 and pagesize != 0:
-        args += ['-r', f'{hex(rampage)}'] + ['-s', f'{hex(pagesize)}']
+    args.extend(sanitize_ram_args(model, rampage, pagesize, extra_ram))
 
     pid = os.fork()
     if pid != 0:
@@ -103,13 +128,9 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     os.environ['SPECULOS_SEED'] = binascii.hexlify(seed).decode('ascii')
 
     #print('[*] seproxyhal: executing qemu', file=sys.stderr)
-    try:
-        os.execvp(args[0], args)
-    except FileNotFoundError:
-        print('[-] failed to execute qemu: "%s" not found' % args[0], file=sys.stderr)
-        sys.exit(1)
+    os.execvp(args[0], args)
+    sys.exit(0)
 
-    sys.exit(1)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
@@ -139,29 +160,40 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.model.lower()
 
-    if not (args.flushed or args.progressive):
-        if args.model == 'blue':
-            args.progressive = True
+    try:
+        if not (args.flushed or args.progressive):
+            if args.model == 'blue':
+                args.progressive = True
+            else:
+                args.flushed = True
+
+        if args.model != 'blue' and (args.rampage != None or args.pagesize != None):
+            # Extra RAM page only allowed on Blue device
+            raise ValueError(f"Extra RAM page arguments -r (--rampage) & -q (--pagesize)) require '-m blue'")
+
+        if args.text:
+            if args.model != 'nanos':
+                raise ValueError(f"Unsupported model '{args.model}' with -x")
+            if args.ontop:
+                raise ValueError("-x (--text) and -o (--ontop) are mutually exclusive")
+
+            args.headless = True
+            from mcu.screen_text import TextScreen as Screen
+        elif args.headless:
+            from mcu.headless import Headless as Screen
         else:
-            args.flushed = True
+            from mcu.screen import QtScreen as Screen
 
-    if args.text:
-        if args.model != 'nanos':
-            raise ValueError(f"Unsupported model '{args.model}' with -x")
-        if args.ontop:
-            raise ValueError("-x (--text) and -o (--ontop) are mutually exclusive")
+        s1, s2 = socket.socketpair()
 
-        args.headless = True
-        from mcu.screen_text import TextScreen as Screen
-    elif args.headless:
-        from mcu.headless import Headless as Screen
-    else:
-        from mcu.screen import QtScreen as Screen
-
-    s1, s2 = socket.socketpair()
-
-    run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.model, args.rampage, args.pagesize, args.sdk)
-    s1.close()
+        run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.model, args.rampage, args.pagesize, args.sdk)
+        s1.close()
+    except ValueError as e:
+        print('[-] Error: {0}'.format(e), file=sys.stderr)
+        sys.exit(1)
+    except FileNotFoundError:
+        print(f'[-] failed to execute qemu: {args[0]} not found', file=sys.stderr)
+        sys.exit(1)
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(s2)
