@@ -89,7 +89,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     os.dup2(s1.fileno(), sys.stdin.fileno())
 
     # handle both BIP39 mnemonics and hex seeds
-    if "hex:" in seed:
+    if seed.startswith("hex:"):
         seed = bytes.fromhex(seed[4:])
     else:
         seed = mnemonic.Mnemonic.to_seed(seed)
