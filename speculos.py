@@ -88,7 +88,12 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     # replace stdin with the socket
     os.dup2(s1.fileno(), sys.stdin.fileno())
 
-    seed = mnemonic.Mnemonic.to_seed(seed)
+    # handle both BIP39 mnemonics and hex seeds
+    if seed.startswith("hex:"):
+        seed = bytes.fromhex(seed[4:])
+    else:
+        seed = mnemonic.Mnemonic.to_seed(seed)
+
     os.environ['SPECULOS_SEED'] = binascii.hexlify(seed).decode('ascii')
 
     #print('[*] seproxyhal: executing qemu', file=sys.stderr)
@@ -120,7 +125,7 @@ if __name__ == '__main__':
     group_progressive = parser.add_mutually_exclusive_group()
     group_progressive.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements (default for Blue, can be disabled with -P)')
     group_progressive.add_argument('-P', '--flushed', action='store_true', help='Disable step-by-step rendering of graphical elements (default for Nano S)')
-    parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='Seed')
+    parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
     parser.add_argument('-v', '--vnc-port', type=int, help='Start a VNC server on the specified port')
     parser.add_argument('-z', '--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
