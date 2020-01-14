@@ -149,6 +149,27 @@ struct cx_blake2b_s {
 /** Convenience type. See #cx_blake2b_s. */
 typedef struct cx_blake2b_s    cx_blake2b_t;
 
+/**
+ * KECCAK, SHA3 and SHA3-XOF context
+ */
+struct cx_sha3_s {
+  /** @copydoc cx_ripemd160_s::header */
+  struct cx_hash_header_s header;
+
+ /** @internal output digest size*/
+  unsigned int     output_size;
+  /** @internal input block size*/
+  unsigned int    block_size;
+  /** @internal @copydoc cx_ripemd160_s::blen */
+  unsigned int     blen;
+  /** @internal @copydoc cx_ripemd160_s::block */
+  unsigned char    block[200];
+   /** @copydoc cx_ripemd160_s::acc */
+  uint64_t         acc[25];
+};
+/** Convenience type. See #cx_sha3_s. */
+typedef struct cx_sha3_s          cx_sha3_t;
+
 /* Generic API */
 typedef struct {
   cx_md_t md_type;
@@ -171,9 +192,7 @@ typedef union {
   cx_groestl_t groestl;
 #endif
   cx_ripemd160_t ripemd160;
-#if 0
   cx_sha3_t sha3;
-#endif
 } cx_hash_ctx;
 
 int cx_blake2b_init(cx_blake2b_t  *hash, unsigned int size);
@@ -202,10 +221,21 @@ int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len);
 int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest);
 int cx_ripemd160_validate_context(const cx_ripemd160_t *ctx);
 
+int cx_sha3_init(cx_sha3_t *hash, unsigned int size);
+int cx_keccak_init(cx_sha3_t *hash, unsigned int size);
+int cx_shake128_init(cx_sha3_t *hash, unsigned int out_size);
+int cx_shake256_init(cx_sha3_t *hash, unsigned int out_size);
+int cx_sha3_xof_init(cx_sha3_t *hash, unsigned int size, unsigned int out_length);
+int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len);
+int cx_sha3_final(cx_sha3_t* ctx, uint8_t *digest);
+int cx_sha3_validate_context(const cx_sha3_t *ctx);
+int cx_shake_validate_context(const cx_sha3_t *ctx);
+size_t cx_sha3_get_output_size(const cx_sha3_t *ctx);
+
 const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type);
 size_t cx_hash_get_size(const cx_hash_ctx *ctx);
-int cx_hash_init2(cx_hash_ctx *ctx, cx_md_t md_type);
-int cx_hash_init2_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size);
+int cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type);
+int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size);
 int cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len);
 int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest);
 
@@ -219,5 +249,8 @@ int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
 #define sys_cx_blake2b_init2  cx_blake2b_init2
 #define sys_cx_sha256_init    cx_sha256_init
 #define sys_cx_ripemd160_init cx_ripemd160_init
+#define sys_cx_keccak_init    cx_keccak_init
+#define sys_cx_sha3_init      cx_sha3_init
+#define sys_cx_sha3_xof_init  cx_sha3_xof_init
 
 #endif

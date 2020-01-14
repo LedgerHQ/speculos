@@ -178,6 +178,10 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            uint8_t *,       out,
            unsigned int,    out_len);
 
+  SYSCALL2(cx_keccak_init, "(%p, %u)",
+          cx_sha3_t *,      hash,
+          unsigned int,     size);
+
   SYSCALL3(cx_hmac_sha256_init, "(%p, %p, %u)",
            cx_hmac_sha256_t *, hmac,
            const uint8_t *,    key,
@@ -225,6 +229,15 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
   SYSCALL0(cx_rng_u8);
 
   SYSCALL1(cx_sha256_init, "(%p)", cx_sha256_t *, hash);
+
+  SYSCALL2(cx_sha3_init, "(%p, %u)",
+          cx_sha3_t *, hash,
+          unsigned int, size);
+
+  SYSCALL3(cx_sha3_xof_init, "(%p, %u, %u)",
+          cx_sha3_t *, hash,
+          unsigned int, size,
+          unsigned int, out_length);
 
   SYSCALL3(nvm_write,  "(%p, %p, %u)",
            void *, dst_addr,

@@ -7,6 +7,7 @@ add_library(emu
         cx_ripemd160.c
         cx_scc.c
         cx_sha256.c
+        cx_sha3.c
         cx_sha512.c
         cx_utils.c
         emulate.c
