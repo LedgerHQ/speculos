@@ -49,7 +49,6 @@ static const cx_hash_info_t cx_sha512_info = {
     (int (*)(const void *ctx))cx_sha512_validate_context,
     NULL};
 
-#if 0
 static const cx_hash_info_t cx_sha3_info = {
     CX_SHA3,
     0,
@@ -93,7 +92,6 @@ static const cx_hash_info_t cx_shake256_info = {
     (int (*)(void *ctx, size_t output_size))cx_shake256_init,
     (int (*)(const void *ctx))cx_shake_validate_context,
     (size_t(*)(const void *ctx))cx_sha3_get_output_size};
-#endif
 
 static const cx_hash_info_t cx_ripemd160_info = {
     CX_RIPEMD160,
@@ -142,7 +140,6 @@ const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type) {
     return &cx_sha384_info;
   case CX_SHA512:
     return &cx_sha512_info;
-#if 0
   case CX_SHA3:
     return &cx_sha3_info;
   case CX_KECCAK:
@@ -151,6 +148,7 @@ const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type) {
     return &cx_shake128_info;
   case CX_SHAKE256:
     return &cx_shake256_info;
+#if 0
   case CX_BLAKE2B:
     return &cx_blake2b_info;
   case CX_GROESTL:
@@ -172,13 +170,13 @@ size_t cx_hash_get_size(const cx_hash_ctx *ctx) {
   return info->output_size_func(ctx);
 }
 
-int cx_hash_init2(cx_hash_ctx *ctx, cx_md_t md_type) {
+int cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type) {
   const cx_hash_info_t *info = cx_hash_get_info(md_type);
   if (info == NULL) {
     return 0;
   }
-  /* variable output size, must use cx_hash_init2_ex */
-  if (info->output_size == 0) {
+  if (info->output_size ==
+      0) { /* variable output size, must use cx_hash_init_ex */
     return 0;
   }
   ctx->header.algo = md_type;
@@ -186,7 +184,7 @@ int cx_hash_init2(cx_hash_ctx *ctx, cx_md_t md_type) {
   return 1;
 }
 
-int cx_hash_init2_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size) {
+int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size) {
   const cx_hash_info_t *info = cx_hash_get_info(md_type);
   if (info == NULL) {
     return 0;
@@ -195,11 +193,10 @@ int cx_hash_init2_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size) {
     if (info->output_size != output_size) {
       return 0;
     }
-    return cx_hash_init2(ctx, md_type);
+    return cx_hash_init(ctx, md_type);
   }
-
   ctx->header.algo = md_type;
-  info->init_ex_func(ctx, output_size);
+  info->init_ex_func(ctx, output_size * 8);
   return 1;
 }
 

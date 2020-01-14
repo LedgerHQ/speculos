@@ -37,8 +37,7 @@ void test_cavp_short_msg_with_size(const char *filename, cx_md_t md_type, size_t
 
     uint8_t data[data_len];
     uint8_t md[CX_MAX_DIGEST_SIZE], expected[CX_MAX_DIGEST_SIZE];
-
-    assert_int_equal(cx_hash_init2_ex(&ctx, md_type, digest_size), 1);
+    assert_int_equal(cx_hash_init_ex(&ctx, md_type, digest_size), 1);
 
     assert_int_equal(md_len, cx_hash_get_size(&ctx));
     assert_int_equal(hexstr2bin(pos1 + 1, data, data_len), data_len);
@@ -82,7 +81,7 @@ void test_cavp_long_msg_with_size(const char *filename, cx_md_t md_type, size_t 
 
     uint8_t md[CX_MAX_DIGEST_SIZE], expected[CX_MAX_DIGEST_SIZE];
 
-    assert_int_equal(cx_hash_init2_ex(&ctx, md_type, digest_size), 1);
+    assert_int_equal(cx_hash_init_ex(&ctx, md_type, digest_size), 1);
     assert_int_equal(md_len, cx_hash_get_size(&ctx));
 
     assert_int_equal(hexstr2bin(pos1 + 1, data, data_len), data_len);
@@ -106,7 +105,7 @@ void test_cavp_monte_with_size(cx_md_t md_type, uint8_t *initial_seed, const uin
   uint8_t tmp[CX_MAX_DIGEST_SIZE];
   uint8_t *seed = initial_seed;
 
-  assert_int_equal(cx_hash_init2_ex(&ctx, md_type, digest_size), 1);
+  assert_int_equal(cx_hash_init_ex(&ctx, md_type, digest_size), 1);
   size_t md_len = (size_t)cx_hash_get_size(&ctx);
 
   for (int j = 0; j < 100; j++) {
@@ -115,7 +114,7 @@ void test_cavp_monte_with_size(cx_md_t md_type, uint8_t *initial_seed, const uin
     memcpy(md2, seed, md_len);
 
     for (int i = 0; i < 1000; i++) {
-      assert_int_equal(cx_hash_init2_ex(&ctx, md_type, digest_size), 1);
+      assert_int_equal(cx_hash_init_ex(&ctx, md_type, digest_size), 1);
       assert_int_equal(cx_hash_update(&ctx, md0, md_len), 1);
       assert_int_equal(cx_hash_update(&ctx, md1, md_len), 1);
       assert_int_equal(cx_hash_update(&ctx, md2, md_len), 1);

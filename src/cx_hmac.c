@@ -72,7 +72,7 @@ int cx_hmac_init(cx_hmac_ctx *ctx, cx_md_t hash_id, const uint8_t *key,
 
   if (key) {
     if (key_len > block_size) {
-      cx_hash_init2(hash_ctx, hash_id);
+      cx_hash_init(hash_ctx, hash_id);
       cx_hash_update(hash_ctx, key, key_len);
       cx_hash_final(hash_ctx, ctx->key);
     } else {
@@ -84,7 +84,7 @@ int cx_hmac_init(cx_hmac_ctx *ctx, cx_md_t hash_id, const uint8_t *key,
     }
   }
 
-  cx_hash_init2(hash_ctx, hash_id);
+  cx_hash_init(hash_ctx, hash_id);
   cx_hash_update(hash_ctx, ctx->key, block_size);
   return 1;
 }
@@ -125,7 +125,7 @@ int cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len) {
     hkey[i] ^= OPAD ^ IPAD;
   }
 
-  cx_hash_init2(hash_ctx, hash_algorithm);
+  cx_hash_init(hash_ctx, hash_algorithm);
   cx_hash_update(hash_ctx, hkey, block_size);
   cx_hash_update(hash_ctx, inner_hash, hash_output_size);
   cx_hash_final(hash_ctx, hkey);
