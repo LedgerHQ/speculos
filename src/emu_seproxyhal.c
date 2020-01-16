@@ -4,6 +4,13 @@
 #include <unistd.h>
 
 #include "emulate.h"
+#include "exception.h"
+
+#define SEPROXYHAL_TAG_STATUS_MASK  0x60
+
+static bool status_sent = false;
+static uint8_t last_tag;
+static size_t next_length;
 
 static ssize_t read_helper(int fd, void *buf, size_t count)
 {
@@ -57,14 +64,44 @@ static ssize_t writeall(int fd, const void *buf, size_t count)
 
 unsigned long sys_io_seproxyhal_spi_is_status_sent(void)
 {
-  return 0;
+  return (unsigned long)status_sent;
 }
 
 unsigned long sys_io_seph_is_status_sent(void) __attribute__ ((weak, alias ("sys_io_seproxyhal_spi_is_status_sent")));
 
 unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
 {
-  return writeall(SEPH_FILENO, buffer, length);
+  unsigned long ret;
+
+  if (length == 0) {
+    return 0;
+  }
+
+  if (next_length == 0) {
+    if (length < 3) {
+      THROW(INVALID_PARAMETER);
+    }
+    last_tag = buffer[0];
+    next_length = (buffer[1] << 8) | buffer[2];
+    next_length += 3;
+
+    if (next_length > 300) {
+      THROW(INVALID_PARAMETER);
+    }
+  } else {
+    if (length > next_length) {
+      THROW(INVALID_PARAMETER);
+    }
+  }
+
+  ret = writeall(SEPH_FILENO, buffer, length);
+
+  next_length -= length;
+  if (next_length == 0 && (last_tag & SEPROXYHAL_TAG_STATUS_MASK) == SEPROXYHAL_TAG_STATUS_MASK) {
+    status_sent = true;
+  }
+
+  return ret;
 }
 
 unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length) __attribute__ ((weak, alias ("sys_io_seproxyhal_spi_send")));
@@ -80,6 +117,8 @@ unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength, un
 
   if (size <= 0)
     _exit(1);
+
+  status_sent = false;
 
   return size;
 }
