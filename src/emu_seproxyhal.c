@@ -33,6 +33,9 @@ static ssize_t writeall(int fd, const void *buf, size_t count)
   const char *p;
   ssize_t i;
 
+  if (count == 0)
+    return 0;
+
   p = buf;
   do {
     i = write(fd, p, count);
