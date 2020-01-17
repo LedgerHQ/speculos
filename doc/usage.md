@@ -1,6 +1,6 @@
 # Usage
 
-Basic usage:
+## Basic usage
 
 ```console
 ./speculos.py apps/btc.elf
@@ -24,11 +24,30 @@ If the target app is not build against the version `1.6` of the SDK, use the
 
 For more options, pass the `-h` or `--help` flag.
 
-Keyboard control:
+#### Keyboard control
 
 - The keyboard left and right arrow keys are use instead of the Nano buttons.
 - The `Q` key exits the application.
 
+## Docker
+
+#### Build
+```console
+docker build ./ -t speculos
+```
+
+#### Run
+```console
+docker run -it -e DEVICE_MODEL=nanos -e SDK_VERSION=1.6 -e APP_FILE=btc.elf -e DEVICE_SEED=<SEED> speculos
+```
+
+#### docker-compose setup
+You have to edit `docker-compose.yml` to configure port forwarding and environment variables to fill your needs then type:
+```console
+docker-compose up [-d]
+```
+
+Default configuration is nanos / 1.6 / btc.elf / <EMPTY_SEED>
 
 ## Bitcoin Testnet app
 

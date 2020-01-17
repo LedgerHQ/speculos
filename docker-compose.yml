@@ -1,0 +1,17 @@
+version: "3.7"
+
+services:
+  nanos:
+    build: .
+    image: speculos
+    ports:
+      - "1234:1234"
+      - "50000:50000"
+      - "60000:60000"
+    environment:
+      - DEBUG_MODE=
+      - DEVICE_MODEL=nanos
+      - SDK_VERSION=1.6
+      - APP_FILE=btc.elf
+      - DEVICE_SEED=<SEED>
+      - EXTRA_OPTIONS=
