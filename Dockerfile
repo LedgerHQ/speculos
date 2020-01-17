@@ -10,4 +10,3 @@ EXPOSE 1234
 EXPOSE 50000
 EXPOSE 60000
 CMD [ "/app/run.sh" ]
-
