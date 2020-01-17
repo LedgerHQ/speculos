@@ -42,12 +42,12 @@ docker run -it -e DEVICE_MODEL=nanos -e SDK_VERSION=1.6 -e APP_FILE=btc.elf -e D
 ```
 
 #### docker-compose setup
-You have to edit `docker-compose.yml` to configure port forwarding and environment variables to fill your needs then type:
 ```console
 docker-compose up [-d]
 ```
+> Default configuration is nanos / 1.6 / btc.elf / <EMPTY_SEED>
 
-Default configuration is nanos / 1.6 / btc.elf / <EMPTY_SEED>
+Edit `docker-compose.yml` to configure port forwarding and environment variables that fit your needs.
 
 ## Bitcoin Testnet app
 
