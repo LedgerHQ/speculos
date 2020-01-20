@@ -617,12 +617,9 @@ static sdk_version_t str2sdkver(char *arg)
 
 static void usage(char *argv0)
 {
-  fprintf(stderr, "Usage: %s [-t] [-r <rampage_address> -s <rampage_size> -k <sdk_version>] <app.elf> [libname:lib.elf:0x1000:0x9fc0:0x20001800:0x1800 ...]\n", argv0);
+  fprintf(stderr, "Usage: %s [-t] [-r <rampage:ramsize> -k <sdk_version>] <app.elf> [libname:lib.elf:0x1000:0x9fc0:0x20001800:0x1800 ...]\n", argv0);
   fprintf(stderr, "\n\
-  -r <rampage_address>: Hex address (prefixed with '0x') of extra ram page to map\n\
-                        app.elf memory. Requires '-s' parameter.\n\
-  -s <rampage_size>:    Size in bytes of the extra RAM page provided by '-r'.\n\
-                        Value must be provided in hex, prefixed with '0x'.\n\
+  -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
                         ted. Currently supports \"nanos\" and \"blue\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n");
@@ -649,10 +646,8 @@ int main(int argc, char *argv[])
       trace_syscalls = true;
       break;
     case 'r':
-      sscanf(optarg, "%p", &extra_rampage_addr);
-      break;
-    case 's':
-      sscanf(optarg, "%x", &extra_rampage_size);
+      if (sscanf(optarg, "%p:%x", &extra_rampage_addr, &extra_rampage_size) != 2)
+        errx(1, "invalid extram ram page/size\n");
       break;
     case 'm':
       if (!strcmp(optarg, "nanos")) {
