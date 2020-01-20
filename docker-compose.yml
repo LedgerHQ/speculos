@@ -4,6 +4,8 @@ services:
   nanos:
     build: .
     image: speculos
+    volumes:
+      - ./apps:/speculos/apps
     ports:
       - "1234:1234"
       - "50000:50000"

@@ -37,8 +37,9 @@ docker build ./ -t speculos
 ```
 
 #### Run
+From the root of the speculos project
 ```console
-docker run -it -e DEVICE_MODEL=nanos -e SDK_VERSION=1.6 -e APP_FILE=btc.elf -e DEVICE_SEED=<SEED> speculos
+docker run -it -v "$(pwd)"/apps:/speculos/apps -e DEVICE_MODEL=nanos -e SDK_VERSION=1.6 -e APP_FILE=btc.elf -e DEVICE_SEED=<SEED> speculos
 ```
 
 #### docker-compose setup
