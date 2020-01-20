@@ -134,9 +134,7 @@ if __name__ == '__main__':
     parser.add_argument('-x', '--text', action='store_true', help="Text UI (implies --headless)")
     parser.add_argument('-y', '--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
     parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. 0x123000:0x100). Supercedes the internal probing for such page.')
-    group_progressive = parser.add_mutually_exclusive_group()
-    group_progressive.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements (default for Blue, can be disabled with -P)')
-    group_progressive.add_argument('-P', '--flushed', action='store_true', help='Disable step-by-step rendering of graphical elements (default for Nano S)')
+    parser.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
     parser.add_argument('-v', '--vnc-port', type=int, help='Start a VNC server on the specified port')
@@ -145,11 +143,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.model.lower()
 
-    if not (args.flushed or args.progressive):
-        if args.model == 'blue':
-            args.progressive = True
-        else:
-            args.flushed = True
+    rendering = display.RENDER_METHOD.FLUSHED
+    if args.progressive:
+        rendering = display.RENDER_METHOD.PROGRESSIVE
 
     if args.rampage:
         if args.model != 'blue':
@@ -194,8 +190,7 @@ if __name__ == '__main__':
     if zoom is None:
         zoom = {'nanos':2, 'blue': 1}.get(args.model, 1)
 
-    render_method = display.RENDER_METHOD.PROGRESSIVE if args.progressive == True else display.RENDER_METHOD.FLUSHED
-    screen = Screen(apdu, seph, button_tcp=button_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=render_method, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    screen = Screen(apdu, seph, button_tcp=button_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
     screen.run()
 
     s2.close()
