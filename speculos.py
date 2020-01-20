@@ -49,11 +49,44 @@ def get_elf_infos(app_path):
             print('[-] failed to find _estack/END_STACK symbol', file=sys.stderr)
             sys.exit(1)
         estack = sym_estack[0]['st_value']
+        supp_ram = elf.get_section_by_name('.rfbss')
+        ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return hex(sh_offset), hex(sh_size), hex(stack), hex(stack_size)
+    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
+
+def sanitize_ram_args(model: str, rampage: str, pagesize: str, extra_ram: dict):
+    ''' Check RAM pages probed from main app & libs are identical and throw an error if it's
+    not the case. This is not generic but is sufficient as far as FW Apps team is concerned.
+    (Note: Generic code would merge overlapping pages and remove duplicate ones so that the 
+    list of pages passed to launcher contains unique items).  
+    Also discard extra RAM pages probed from main app or libraries when not running on Blue
+    '''
+    args = []
+    origin = ['*', 'probed']
+    if rampage is not None and pagesize is not None:    # then user-provided values supercede probed values
+        if extra_ram is None:
+            extra_ram = [{}]
+        # First extra_ram list entry is main app extra RAM params, replace it by user-provided {rampage, pagesize}
+        _ = extra_ram.pop(0)
+        extra_ram.insert(0, {'addr':rampage, 'size':pagesize})
+        origin=['+', 'user-provided']
+
+    if extra_ram is not None:
+        if  len(extra_ram) > 1:     # then all pages shall be identical
+            # Remove identical extra ram params,the python way. Throw an error if resulting list length is not 1
+            extra_ram = [dict(s) for s in set(tuple(d.items()) for d in extra_ram)]
+            if len(extra_ram) > 1:
+                print("[-] Error: different extra RAM pages for main app and/or libraries!")
+                sys.exit(1)
+        page = extra_ram[0]
+        print(f'[{origin[0]}] using {origin[1]} {page["size"]}-byte additional RAM page @0x{hex(page["addr"])}')
+        args.extend(['-r', hex(page["addr"])] + ['-s', hex(page["size"])])
+    return args     # either [] or ['-r', '<adress>', '-s', '<size>']
+
 
 def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, model=None, rampage=None, pagesize=None, sdk_version="1.5"):
     args = [ 'qemu-arm-static' ]
+    extra_ram = []
 
     if debug:
         args += [ '-g', '1234', '-singlestep' ]
@@ -63,9 +96,6 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     if trace_syscalls:
         args += [ '-t' ]
 
-    if rampage is not None and pagesize is not None:
-        args += [ '-r' , rampage ] + [ '-s' , pagesize ]
-
     if model is not None:
         args += ['-m', model]
 
@@ -73,8 +103,14 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
 
     for lib in [ f'main:{app_path}' ] + libraries:
         name, lib_path = lib.split(':')
-        load_offset, load_size, stack, stack_size = get_elf_infos(lib_path)
-        args.append(f'{name}:{lib_path}:{load_offset}:{load_size}:{stack}:{stack_size}')
+        load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
+        # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
+        if (ram_addr, ram_size) != (0, 0):
+            extra_ram.append({'addr':ram_addr, 'size':ram_size})
+        args.append(f'{name}:{lib_path}:{hex(load_offset)}:{hex(load_size)}:{hex(stack)}:{hex(stack_size)}')
+
+    if model == 'blue':
+        args.extend(sanitize_ram_args(model, rampage, pagesize, extra_ram))
 
     pid = os.fork()
     if pid != 0:
@@ -102,8 +138,8 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     except FileNotFoundError:
         print('[-] failed to execute qemu: "%s" not found' % args[0], file=sys.stderr)
         sys.exit(1)
+    sys.exit(0)
 
-    sys.exit(1)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
@@ -120,8 +156,8 @@ if __name__ == '__main__':
     group.add_argument('-o', '--ontop', action='store_true', help='The window stays on top of all other windows')
     parser.add_argument('-x', '--text', action='store_true', help="Text UI (implies --headless)")
     parser.add_argument('-y', '--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
-    parser.add_argument('-r', '--rampage', required='--pagesize' in sys.argv or '-q' in sys.argv, type=lambda x: f"{int(x,16):X}", action='store', help='Hex address (prefixed or not with \'0x\') of one additional RAM page available to the app. Requires -q.')
-    parser.add_argument('-q', '--pagesize', required='--rampage' in sys.argv or '-r' in sys.argv, type=lambda x: f"{int(x,16):X}", action='store', help='Byte size (in decimal or in hex if prefixed with \'0x\') of the additional RAM page available to the app. Requires -r.')
+    parser.add_argument('-r', '--rampage', required='--pagesize' in sys.argv or '-q' in sys.argv, type=lambda x: int(x,16), action='store', help='Hex address (prefixed or not with \'0x\') of one additional RAM page available to the app. Requires -q. Supercedes the internal probing for such page.')
+    parser.add_argument('-q', '--pagesize', required='--rampage' in sys.argv or '-r' in sys.argv, type=lambda x: int(x,16), action='store', help='Byte size (in hexadecimal, prefixed or not with \'0x\') of the additional RAM page available to the app. Requires -r.  Supercedes the internal probing for such page.')
     group_progressive = parser.add_mutually_exclusive_group()
     group_progressive.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements (default for Blue, can be disabled with -P)')
     group_progressive.add_argument('-P', '--flushed', action='store_true', help='Disable step-by-step rendering of graphical elements (default for Nano S)')
@@ -139,11 +175,18 @@ if __name__ == '__main__':
         else:
             args.flushed = True
 
+    if args.model != 'blue' and (args.rampage != None or args.pagesize != None):
+        # Extra RAM page only allowed on Blue device
+        print("Extra RAM page arguments -r (--rampage) & -q (--pagesize)) require '-m blue'")
+        sys.exit(1)
+
     if args.text:
         if args.model != 'nanos':
-            raise ValueError(f"Unsupported model '{args.model}' with -x")
+            print(f"[-] Error: Unsupported model '{args.model}' with argument -x", file=sys.stderr)
+            sys.exit(1)
         if args.ontop:
-            raise ValueError("-x (--text) and -o (--ontop) are mutually exclusive")
+            print(f"-x (--text) and -o (--ontop) are mutually exclusive")
+            sys.exit(1)
 
         args.headless = True
         from mcu.screen_text import TextScreen as Screen
