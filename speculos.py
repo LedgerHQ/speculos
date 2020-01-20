@@ -63,25 +63,24 @@ def sanitize_ram_args(model: str, rampage: str, pagesize: str, extra_ram: dict):
     '''
     args = []
     origin = ['*', 'probed']
-    if model == 'blue':
-        if rampage is not None and pagesize is not None:    # then user-provided values supercede probed values
-            if extra_ram is None:
-                extra_ram = [{}]
-            # First extra_ram list entry is main app extra RAM params, replace it by user-provided {rampage, pagesize}
-            _ = extra_ram.pop(0)
-            extra_ram.insert(0, {'addr':rampage, 'size':pagesize})
-            origin=['+', 'user-provided']
+    if rampage is not None and pagesize is not None:    # then user-provided values supercede probed values
+        if extra_ram is None:
+            extra_ram = [{}]
+        # First extra_ram list entry is main app extra RAM params, replace it by user-provided {rampage, pagesize}
+        _ = extra_ram.pop(0)
+        extra_ram.insert(0, {'addr':rampage, 'size':pagesize})
+        origin=['+', 'user-provided']
 
-        if extra_ram is not None:
-            if  len(extra_ram) > 1:     # then all pages shall be identical
-                # Remove identical extra ram params,the python way. Throw an error if resulting list length is not 1
-                extra_ram = [dict(s) for s in set(tuple(d.items()) for d in extra_ram)]
-                if len(extra_ram) > 1:
-                    print("[-] Error: different extra RAM pages for main app and/or libraries!")
-                    sys.exit(1)
-            page = extra_ram[0]
-            print(f'[{origin[0]}] using {origin[1]} {page["size"]}-byte additional RAM page @0x{hex(page["addr"])}')
-            args.extend(['-r', hex(page["addr"])] + ['-s', hex(page["size"])])
+    if extra_ram is not None:
+        if  len(extra_ram) > 1:     # then all pages shall be identical
+            # Remove identical extra ram params,the python way. Throw an error if resulting list length is not 1
+            extra_ram = [dict(s) for s in set(tuple(d.items()) for d in extra_ram)]
+            if len(extra_ram) > 1:
+                print("[-] Error: different extra RAM pages for main app and/or libraries!")
+                sys.exit(1)
+        page = extra_ram[0]
+        print(f'[{origin[0]}] using {origin[1]} {page["size"]}-byte additional RAM page @0x{hex(page["addr"])}')
+        args.extend(['-r', hex(page["addr"])] + ['-s', hex(page["size"])])
     return args     # either [] or ['-r', '<adress>', '-s', '<size>']
 
 
@@ -129,7 +128,11 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     os.environ['SPECULOS_SEED'] = binascii.hexlify(seed).decode('ascii')
 
     #print('[*] seproxyhal: executing qemu', file=sys.stderr)
-    os.execvp(args[0], args)
+    try:
+        os.execvp(args[0], args)
+    except FileNotFoundError:
+        print('[-] failed to execute qemu: "%s" not found' % args[0], file=sys.stderr)
+        sys.exit(1)
     sys.exit(0)
 
 
