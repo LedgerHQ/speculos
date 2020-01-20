@@ -4,28 +4,16 @@
 # and we dont really need multi-stage build.
 # and docker squash is not stable
 
-install_python_deps() {
+install_deps() {
+    # install python deps
     pip install --upgrade pip pipenv
     pipenv install
     source $(pipenv --venv)/bin/activate
-}
-
-install_openssl() {
-    git submodule update --init
-    cd openssl/
-    ./Configure --cross-compile-prefix=arm-linux-gnueabihf- no-asm no-threads no-shared linux-armv4
-    make CFLAGS=-mthumb
-}
-
-install_deps() {
-    # build openssl, vnc, and python deps
-    install_openssl &
-    install_python_deps &
-    make -C vnc/ &
-    wait
 
     # build speculos
-    make -C src/
+    mkdir -p build
+    cmake -Bbuild -H. -DWITH_VNC=1
+    make -C build/
 }
 
 set -euxo pipefail
@@ -41,6 +29,7 @@ libc6-dev-armhf-cross
 gcc-arm-linux-gnueabihf
 build-essential
 git
+cmake
 EOF
 )
 
