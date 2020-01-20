@@ -128,10 +128,8 @@ if __name__ == '__main__':
     parser.add_argument('-k', '--sdk', default='1.6', help='SDK version')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
     parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('-n', '--headless', action='store_true', help="Don't display the GUI")
-    group.add_argument('-o', '--ontop', action='store_true', help='The window stays on top of all other windows')
-    parser.add_argument('-x', '--text', action='store_true', help="Text UI (implies --headless)")
+    parser.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
+    parser.add_argument('-o', '--ontop', action='store_true', help='The window stays on top of all other windows')
     parser.add_argument('-y', '--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
     parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. 0x123000:0x100). Supercedes the internal probing for such page.')
     parser.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
@@ -155,17 +153,25 @@ if __name__ == '__main__':
             print("[-] Invalid ram page argument", file=sys.stderr)
             sys.exit(1)
 
-    if args.text:
-        if args.model != 'nanos':
-            print(f"[-] Error: Unsupported model '{args.model}' with argument -x", file=sys.stderr)
-            sys.exit(1)
-        if args.ontop:
-            print(f"[-] -x (--text) and -o (--ontop) are mutually exclusive", file=sys.stderr)
-            sys.exit(1)
+    if args.display == 'text' and args.model != 'nanos':
+        print(f"[-] Error: Unsupported model '{args.model}' with argument -x", file=sys.stderr)
+        sys.exit(1)
 
-        args.headless = True
+    if args.ontop and args.display != 'qt':
+        print("[-] -o (--ontop) can only be used with --display qt", file=sys.stderr)
+        sys.exit(1)
+
+    if args.zoom and args.display != 'qt':
+        print("[-] -z (--zoom) can only be used with --display qt", file=sys.stderr)
+        sys.exit(1)
+
+    if args.keymap and args.display != 'text':
+        print("[-] -y (--keymap) can only be used with --display text", file=sys.stderr)
+        sys.exit(1)
+
+    if args.display == 'text':
         from mcu.screen_text import TextScreen as Screen
-    elif args.headless:
+    elif args.display == 'headless':
         from mcu.headless import Headless as Screen
     else:
         from mcu.screen import QtScreen as Screen
