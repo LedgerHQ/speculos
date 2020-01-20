@@ -81,7 +81,7 @@ def sanitize_ram_args(model: str, rampage: str, pagesize: str, extra_ram: dict):
                     sys.exit(1)
             page = extra_ram[0]
             print(f'[{origin[0]}] using {origin[1]} {page["size"]}-byte additional RAM page @0x{hex(page["addr"])}')
-            args.extend(['-r', f'{hex(page["addr"])}'] + ['-s', f'{hex(page["size"])}'])
+            args.extend(['-r', hex(page["addr"])] + ['-s', hex(page["size"])])
     return args     # either [] or ['-r', '<adress>', '-s', '<size>']
 
 
@@ -106,11 +106,12 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
-        if model == 'blue' and (ram_addr, ram_size) != (0, 0):
+        if (ram_addr, ram_size) != (0, 0):
             extra_ram.append({'addr':ram_addr, 'size':ram_size})
         args.append(f'{name}:{lib_path}:{hex(load_offset)}:{hex(load_size)}:{hex(stack)}:{hex(stack_size)}')
 
-    args.extend(sanitize_ram_args(model, rampage, pagesize, extra_ram))
+    if model == 'blue':
+        args.extend(sanitize_ram_args(model, rampage, pagesize, extra_ram))
 
     pid = os.fork()
     if pid != 0:
@@ -186,14 +187,10 @@ if __name__ == '__main__':
     else:
         from mcu.screen import QtScreen as Screen
 
-    try:
-        s1, s2 = socket.socketpair()
+    s1, s2 = socket.socketpair()
 
-        run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.model, args.rampage, args.pagesize, args.sdk)
-        s1.close()
-    except Exception as e:
-        print(f'[-] Error: {0}'.format(e), file=sys.stderr)
-        sys.exit(1)
+    run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.model, args.rampage, args.pagesize, args.sdk)
+    s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(s2)
