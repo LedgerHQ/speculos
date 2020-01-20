@@ -121,9 +121,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
-    parser.add_argument('-a', '--apdu-port', default=9999, type=int, help='ApduServer TCP port')
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
-    parser.add_argument('-b', '--button-tcp', action='store_true', help='Spawn a TCP server on port 1235 to receive button press (lLrR)')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
     parser.add_argument('-k', '--sdk', default='1.6', help='SDK version')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
@@ -132,13 +130,17 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
 
+    group = parser.add_argument_group('network arguments')
+    group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
+    group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
+    group.add_argument('--button-port', action='store_true', help='Spawn a TCP server on port 1235 to receive button press (lLrR)')
+
     group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display method.')
     group.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
-    group.add_argument('-o', '--ontop', action='store_true', help='The window stays on top of all other windows')
-    group.add_argument('-y', '--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
-    group.add_argument('-p', '--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
-    group.add_argument('-z', '--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
-    group.add_argument('-v', '--vnc-port', type=int, help='Start a VNC server on the specified port')
+    group.add_argument('--ontop', action='store_true', help='The window stays on top of all other windows')
+    group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
+    group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
+    group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
 
     args = parser.parse_args()
     args.model.lower()
@@ -187,7 +189,7 @@ if __name__ == '__main__':
     seph = seproxyhal.SeProxyHal(s2)
 
     button_tcp = None
-    if args.button_tcp:
+    if args.button_port:
         button_tcp = FakeButton()
 
     vnc = None
