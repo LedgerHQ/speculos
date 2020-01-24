@@ -133,7 +133,7 @@ if __name__ == '__main__':
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
-    group.add_argument('--button-port', action='store_true', help='Spawn a TCP server on port 1235 to receive button press (lLrR)')
+    group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button press (lLrR)')
 
     group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display method.')
     group.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     button_tcp = None
     if args.button_port:
-        button_tcp = FakeButton()
+        button_tcp = FakeButton(args.button_port)
 
     vnc = None
     if args.vnc_port:
