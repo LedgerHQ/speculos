@@ -71,7 +71,7 @@ def sanitize_ram_args(model: str, rampage: str, pagesize: str, extra_ram: dict):
         extra_ram.insert(0, {'addr':rampage, 'size':pagesize})
         origin=['+', 'user-provided']
 
-    if extra_ram is not None:
+    if extra_ram:
         if  len(extra_ram) > 1:     # then all pages shall be identical
             # Remove identical extra ram params,the python way. Throw an error if resulting list length is not 1
             extra_ram = [dict(s) for s in set(tuple(d.items()) for d in extra_ram)]
