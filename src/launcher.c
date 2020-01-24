@@ -448,6 +448,9 @@ static void *load_app(char *name, hw_platform_t plat)
       warn("mmap data");
       goto error;
     }
+    /* initialize .bss (and the stack) to 0xa5 to mimic BOLOS behavior, even if
+     * it violates section 3.5.7 of the C89 standard */
+    memset(data_addr, 0xa5, data_size);
   }
 
   /* setup extra page as additional RAM available to the app */
