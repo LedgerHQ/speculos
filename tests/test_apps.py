@@ -37,7 +37,7 @@ class App:
         cmd = [ os.path.join(SCRIPT_DIR, '..', 'speculos.py') ]
         cmd += args
         if headless:
-            cmd += [ '--headless' ]
+            cmd += [ '--display', 'headless' ]
         cmd += [ '--model', self.model ]
         cmd += [ '--sdk', self.sdk ]
         cmd += [ self.path ]
