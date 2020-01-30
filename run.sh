@@ -11,6 +11,6 @@ exec ./speculos.py ${DEBUG_MODE:-} \
     --sdk ${SDK_VERSION} \
     --seed "${DEVICE_SEED}" \
     ${EXTRA_OPTIONS:-} \
-    --headless \
+    --display headless \
     --vnc-port 41000 \
     --apdu-port 40000
