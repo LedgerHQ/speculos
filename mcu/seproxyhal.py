@@ -102,7 +102,7 @@ class SeProxyHal:
             # if we've received events from the outside world, send them
             # whenever the SE is ready (i.e. now as we've received a
             # GENERAL_STATUS)
-            tag, data = self.queue.pop()
+            tag, data = self.queue.pop(0)
             self._send_packet(tag, data)
             self.status_received = False
         else:
