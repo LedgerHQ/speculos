@@ -6,6 +6,7 @@ import time
 import threading
 
 from . import apdu
+from . import usb
 from .display import RENDER_METHOD
 
 SEPROXYHAL_TAG_BUTTON_PUSH_EVENT = 0x05
@@ -53,6 +54,7 @@ class SeProxyHal:
         self.last_ticker_sent_at = 0.0
         self.sending_ticker_event = threading.Lock()
         self.status_received = True
+        self.usb = usb.USB(self._queue_event_packet)
 
     def _recvall(self, size):
         data = b''
@@ -164,7 +166,15 @@ class SeProxyHal:
         elif tag == SEPROXYHAL_TAG_RAPDU:
             screen.forward_to_apdu_client(data)
 
-        elif tag in [ SEPROXYHAL_TAG_MCU, SEPROXYHAL_TAG_USB_CONFIG, SEPROXYHAL_TAG_USB_EP_PREPARE ]:
+        elif tag == SEPROXYHAL_TAG_USB_CONFIG:
+            self.usb.config(data)
+
+        elif tag == SEPROXYHAL_TAG_USB_EP_PREPARE:
+            data = self.usb.prepare(data)
+            if data:
+                screen.forward_to_apdu_client(data)
+
+        elif tag == SEPROXYHAL_TAG_MCU:
             pass
 
         else:
@@ -196,6 +206,13 @@ class SeProxyHal:
         self._queue_event_packet(SEPROXYHAL_TAG_FINGER_EVENT, packet)
 
     def to_app(self, packet):
-        '''Forward raw APDU to the app.'''
+        '''
+        Forward raw APDU to the app.
 
-        self._queue_event_packet(SEPROXYHAL_TAG_CAPDU_EVENT, packet)
+        Packets can be forwarded directly to the SE thanks to
+        SEPROXYHAL_TAG_CAPDU_EVENT, but it doesn't work with messages are larger
+        than G_io_seproxyhal_spi_buffer. Emulating a basic USB stack is more
+        reliable, see issue #11.
+        '''
+
+        self.usb.xfer(packet)
