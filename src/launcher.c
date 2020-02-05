@@ -175,19 +175,33 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 
 static int setup_alternate_stack(void)
 {
+  size_t page_size, size;
   stack_t ss = {};
+  char *mem;
+
   /* HANDLER_STACK_SIZE + 2 guard pages before/after */
-  char* mem = mmap (NULL,
-                HANDLER_STACK_SIZE + 2 * getpagesize(),
-                PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON,
-                -1, 0);
-  mprotect(mem, getpagesize(), PROT_NONE);
-  mprotect(mem + getpagesize() + HANDLER_STACK_SIZE, getpagesize(), PROT_NONE);
-  ss.ss_sp = mem + getpagesize();
+  page_size = getpagesize();
+  size = HANDLER_STACK_SIZE + 2 * page_size;
+  mem = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
+  if (mem == MAP_FAILED) {
+    warn("failed to mmap alternate stack pages");
+    return -1;
+  }
+
+  if (mprotect(mem, page_size, PROT_NONE) != 0 ||
+      mprotect(mem + page_size + HANDLER_STACK_SIZE, page_size, PROT_NONE) != 0) {
+    warn("mprotect guard pages");
+    munmap(mem, size);
+    return -1;
+  }
+
+  ss.ss_sp = mem + page_size;
   ss.ss_size = HANDLER_STACK_SIZE;
   ss.ss_flags = 0;
 
   if (sigaltstack(&ss, NULL) != 0) {
+    warn("sigaltstack");
+    munmap(mem, size);
     return -1;
   }
 
