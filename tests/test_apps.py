@@ -108,12 +108,10 @@ class App:
         assert connected
         s.settimeout(0.5)
 
-        try:
-            data, status = self._exchange(s, packet, verbose)
-        except socket.timeout:
-            # unfortunately, the app can take some time to start...
-            # let's give a 2nd try in that case
-            data, status = self._exchange(s, packet, verbose)
+        # unfortunately, the app can take some time to start...
+        time.sleep(1.0)
+
+        data, status = self._exchange(s, packet, verbose)
 
         s.close()
         return data, status
