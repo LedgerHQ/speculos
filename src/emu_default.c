@@ -53,7 +53,11 @@ int sys_nvm_write(void *dst_addr, void* src_addr, size_t src_len)
     err(1, "nvm_write: mprotect(PROT_WRITE)");
   }
 
-  memcpy(dst_addr, src_addr, src_len);
+  if (src_addr != NULL) {
+    memcpy(dst_addr, src_addr, src_len);
+  } else {
+    memset(dst_addr, 0, src_len);
+  }
 
   if (mprotect(p, size, PROT_READ | PROT_EXEC) != 0) {
     err(1, "nvm_write: mprotect(PROT_READ | PROT_EXEC)");
