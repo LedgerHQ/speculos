@@ -93,4 +93,6 @@ void cx_swap_buffer64(uint64bits_t *v, int len);
 
 #endif
 
+int sys_cx_math_next_prime(uint8_t *buf, unsigned int len);
+
 #endif

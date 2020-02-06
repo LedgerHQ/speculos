@@ -1,3 +1,7 @@
+#include <err.h>
+
+#include <openssl/bn.h>
+
 #include "cx_utils.h"
 /* ======================================================================= */
 /*                          32 BITS manipulation                           */
@@ -172,3 +176,37 @@ void cx_add_64(uint64bits_t *x,uint64bits_t *y) {
   }
 }
 #endif
+
+int sys_cx_math_next_prime(uint8_t *buf, unsigned int len)
+{
+  BN_CTX *ctx;
+  BIGNUM *p;
+  int ret;
+
+  ctx = BN_CTX_new();
+  p = BN_new();
+
+  BN_bin2bn(buf, len, p);
+
+  if (BN_mod_word(p, 2) == 0) {
+    if (!BN_sub_word(p, 1)) {
+      errx(1, "BN_sub_word");
+    }
+  }
+
+  do {
+    if (!BN_add_word(p, 2)) {
+      errx(1, "BN_add_word");
+    }
+
+    ret = BN_is_prime_ex(p, 20, ctx, NULL);
+  } while (ret == 0);
+
+  if (ret == -1) {
+    errx(1, "isprime");
+  }
+
+  BN_CTX_free(ctx);
+
+  return 0;
+}

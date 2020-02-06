@@ -8,6 +8,7 @@
 #include "cx_hash.h"
 #include "cx_hmac.h"
 #include "cx_math.h"
+#include "cx_utils.h"
 #include "emulate.h"
 #include "emu_endorsement.h"
 
@@ -219,6 +220,10 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            const uint8_t *, b,
            const uint8_t *, m,
            unsigned int,    len);
+
+  SYSCALL2(cx_math_next_prime, "(%p, %u)",
+           uint8_t *,          buf,
+           unsigned int,       len);
 
   SYSCALL1(cx_ripemd160_init, "(%p)", cx_ripemd160_t *, hash);
 
