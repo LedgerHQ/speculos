@@ -68,7 +68,7 @@ Debug an app thanks to gdb:
 ./tools/debug.sh apps/btc.elf
 ```
 
-[semihosting](semihosting.md) features can be used as an additional debug
+[Semihosting](semihosting.md) features can be used as an additional debug
 mechanism.
 
 ## Clients
