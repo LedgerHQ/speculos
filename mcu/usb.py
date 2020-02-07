@@ -104,10 +104,11 @@ class USB:
     def _send_xfer(self, tag, packet=b'', length=USB_SIZE, seq=0):
         data = hid_header.build(dict(channel=USB_CHANNEL, command=USB_COMMAND, seq=seq, length=length))
         size = len(data) + len(packet)
-        data = usb_header.build(dict(endpoint=HidEndpoint.OUT_ADDR, tag=tag, length=size)) + data
         if seq != 0:
             # strip hid_header.length
+            size -= 2
             data = data[:-2]
+        data = usb_header.build(dict(endpoint=HidEndpoint.OUT_ADDR, tag=tag, length=size)) + data
         data += packet
         logging.debug('[SEND_XFER] {}'.format(binascii.hexlify(data)))
         self._queue_event_packet(SephUsbTag.XFER_EVENT, data)
