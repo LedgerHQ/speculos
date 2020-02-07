@@ -4,30 +4,32 @@ import select
 import sys
 import time
 import threading
+from enum import IntEnum
 
 from . import apdu
 from . import usb
 from .display import RENDER_METHOD
 
-SEPROXYHAL_TAG_BUTTON_PUSH_EVENT = 0x05
-SEPROXYHAL_TAG_FINGER_EVENT = 0x0c
-SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT = 0x0d
-SEPROXYHAL_TAG_TICKER_EVENT = 0x0e
-SEPROXYHAL_TAG_CAPDU_EVENT = 0x16
+class SephTag(IntEnum):
+    BUTTON_PUSH_EVENT           = 0x05
+    FINGER_EVENT                = 0x0c
+    DISPLAY_PROCESSED_EVENT     = 0x0d
+    TICKER_EVENT                = 0x0e
+    CAPDU_EVENT                 = 0x16
 
-SEPROXYHAL_TAG_MCU = 0x31
-SEPROXYHAL_TAG_USB_CONFIG = 0x4f
-SEPROXYHAL_TAG_USB_EP_PREPARE = 0x50
+    MCU                         = 0x31
+    USB_CONFIG                  = 0x4f
+    USB_EP_PREPARE              = 0x50
 
-SEPROXYHAL_TAG_RAPDU = 0x53
-SEPROXYHAL_TAG_GENERAL_STATUS = 0x60
-SEPROXYHAL_TAG_GENERAL_STATUS_LAST_COMMAND = 0x0000
-SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS = 0x65
-SEPROXYHAL_TAG_PRINTF_STATUS = 0x66
-SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS = 0x69
+    RAPDU                       = 0x53
+    GENERAL_STATUS              = 0x60
+    GENERAL_STATUS_LAST_COMMAND = 0x0000
+    SCREEN_DISPLAY_STATUS       = 0x65
+    PRINTF_STATUS               = 0x66
+    SCREEN_DISPLAY_RAW_STATUS   = 0x69
 
-SEPROXYHAL_TAG_FINGER_EVENT_TOUCH   = 0x01
-SEPROXYHAL_TAG_FINGER_EVENT_RELEASE = 0x02
+    FINGER_EVENT_TOUCH          = 0x01
+    FINGER_EVENT_RELEASE        = 0x02
 
 TICKER_DELAY = 0.1
 
@@ -84,7 +86,7 @@ class SeProxyHal:
         self.last_ticker_sent_at = time.time()
         # don't send an event if a command is being processed
         if self.status_received:
-            self._send_packet(SEPROXYHAL_TAG_TICKER_EVENT)
+            self._send_packet(SephTag.TICKER_EVENT)
 
     def send_ticker_event_defered(self):
         if self.sending_ticker_event.acquire(False):
@@ -130,30 +132,30 @@ class SeProxyHal:
 
         #print('[*] seproxyhal: received (tag: 0x%02x, size: 0x%02x): %s' % (tag, size, repr(data)), file=sys.stderr)
 
-        if tag & 0xf0 == SEPROXYHAL_TAG_GENERAL_STATUS:
+        if tag & 0xf0 == SephTag.GENERAL_STATUS:
             self.status_received = True
 
-            if tag == SEPROXYHAL_TAG_GENERAL_STATUS:
-                if int.from_bytes(data[:2], 'big') == SEPROXYHAL_TAG_GENERAL_STATUS_LAST_COMMAND:
+            if tag == SephTag.GENERAL_STATUS:
+                if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     screen.screen_update()
 
-            elif tag == SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS:
+            elif tag == SephTag.SCREEN_DISPLAY_STATUS:
                 #print('[*] seproxyhal: DISPLAY_STATUS %s' % repr(data), file=sys.stderr)
                 screen.display_status(data)
-                self._queue_event_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
+                self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
-            elif tag == SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS:
-                #print('SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS', file=sys.stderr)
+            elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
+                #print('SephTag.SCREEN_DISPLAY_RAW_STATUS', file=sys.stderr)
                 screen.display_raw_status(data)
-                self._queue_event_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
+                self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
-            elif tag == SEPROXYHAL_TAG_PRINTF_STATUS:
+            elif tag == SephTag.PRINTF_STATUS:
                 for b in data:
                     sys.stdout.write('%c' % chr(b))
                 sys.stdout.flush()
-                self._queue_event_packet(SEPROXYHAL_TAG_DISPLAY_PROCESSED_EVENT)
+                self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
@@ -163,18 +165,18 @@ class SeProxyHal:
 
             self.send_next_event()
 
-        elif tag == SEPROXYHAL_TAG_RAPDU:
+        elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)
 
-        elif tag == SEPROXYHAL_TAG_USB_CONFIG:
+        elif tag == SephTag.USB_CONFIG:
             self.usb.config(data)
 
-        elif tag == SEPROXYHAL_TAG_USB_EP_PREPARE:
+        elif tag == SephTag.USB_EP_PREPARE:
             data = self.usb.prepare(data)
             if data:
                 screen.forward_to_apdu_client(data)
 
-        elif tag == SEPROXYHAL_TAG_MCU:
+        elif tag == SephTag.MCU:
             pass
 
         else:
@@ -189,28 +191,28 @@ class SeProxyHal:
         '''Forward button press/release from the GUI to the app.'''
 
         if pressed:
-            self._queue_event_packet(SEPROXYHAL_TAG_BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
+            self._queue_event_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
         else:
-            self._queue_event_packet(SEPROXYHAL_TAG_BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
+            self._queue_event_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
 
     def handle_finger(self, x, y, pressed):
         '''Forward finger press/release from the GUI to the app.'''
 
         if pressed:
-            packet = SEPROXYHAL_TAG_FINGER_EVENT_TOUCH.to_bytes(1, 'big')
+            packet = SephTag.FINGER_EVENT_TOUCH.to_bytes(1, 'big')
         else:
-            packet = SEPROXYHAL_TAG_FINGER_EVENT_RELEASE.to_bytes(1, 'big')
+            packet = SephTag.FINGER_EVENT_RELEASE.to_bytes(1, 'big')
         packet += x.to_bytes(2, 'big')
         packet += y.to_bytes(2, 'big')
 
-        self._queue_event_packet(SEPROXYHAL_TAG_FINGER_EVENT, packet)
+        self._queue_event_packet(SephTag.FINGER_EVENT, packet)
 
     def to_app(self, packet):
         '''
         Forward raw APDU to the app.
 
         Packets can be forwarded directly to the SE thanks to
-        SEPROXYHAL_TAG_CAPDU_EVENT, but it doesn't work with messages are larger
+        SephTag.CAPDU_EVENT, but it doesn't work with messages are larger
         than G_io_seproxyhal_spi_buffer. Emulating a basic USB stack is more
         reliable, see issue #11.
         '''
