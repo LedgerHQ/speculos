@@ -55,7 +55,7 @@ def get_elf_infos(app_path):
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
-def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, model=None, ram_arg=None, sdk_version="1.5"):
+def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, deterministic_rng="", model=None, ram_arg=None, sdk_version="1.5"):
     args = [ 'qemu-arm-static' ]
 
     if debug:
@@ -109,6 +109,9 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
 
     os.environ['SPECULOS_SEED'] = binascii.hexlify(seed).decode('ascii')
 
+    if deterministic_rng:
+        os.environ['RNG_SEED'] = deterministic_rng
+
     #print('[*] seproxyhal: executing qemu', file=sys.stderr)
     try:
         os.execvp(args[0], args)
@@ -123,6 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
+    parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce deterministic randomness')
     parser.add_argument('-k', '--sdk', default='1.6', help='SDK version')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
     parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
@@ -182,7 +186,7 @@ if __name__ == '__main__':
 
     s1, s2 = socket.socketpair()
 
-    run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.model, args.rampage, args.sdk)
+    run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.deterministic_rng, args.model, args.rampage, args.sdk)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
