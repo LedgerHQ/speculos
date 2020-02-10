@@ -20,6 +20,8 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
            uint8_t *, buffer,
            uint16_t,  length);
 
+  SYSCALL0(os_flags);
+
   SYSCALL0(os_perso_isonboarded);
 
   SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_6);

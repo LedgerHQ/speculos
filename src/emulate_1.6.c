@@ -32,6 +32,8 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
            uint8_t *, buffer,
            uint16_t,  length);
 
+  SYSCALL0(os_flags);
+
   SYSCALL0(os_perso_isonboarded);
 
   SYSCALL0(os_global_pin_is_validated);
