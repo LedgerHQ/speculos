@@ -70,7 +70,7 @@ class ApduClient:
             self.s.close()
             return
 
-        print('[*] packet', repr(packet))
+        print('[*] packet', packet.hex())
         screen.forward_to_app(packet)
 
     def forward_to_client(self, packet):
