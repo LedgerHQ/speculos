@@ -8,8 +8,8 @@ services:
       - ./apps:/speculos/apps
     ports:
       - "1234:1234"
-      - "50000:50000"
-      - "60000:60000"
+      - "40000:40000" # apdu
+      - "41000:41000" # vnc
     environment:
       - DEBUG_MODE=
       - DEVICE_MODEL=nanos
