@@ -3,12 +3,14 @@
 
 #include "emulate.h"
 
-#define BOLOS_TAG_APPNAME			0x01
-#define BOLOS_TAG_APPVERSION	0x02
+#define BOLOS_TAG_APPNAME       0x01
+#define BOLOS_TAG_APPVERSION    0x02
 
-#define PATH_MAX  1024
+#define PATH_MAX                1024
 
-#define MAX_LIBCALL	3
+#define MAX_LIBCALL             3
+
+#define MIN(a,b)                ((a) < (b) ? (a) : (b))
 
 struct libcall_s {
     struct app_s *app;
@@ -35,9 +37,11 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buf
   switch (tag) {
   case BOLOS_TAG_APPNAME:
     strncpy((char *)buffer, "speculos", length);
+    length = MIN(length, 9);
     break;
   case BOLOS_TAG_APPVERSION:
     strncpy((char *)buffer, "1.33.7", length);
+    length = MIN(length, 7);
     break;
   default:
     length = 0;
