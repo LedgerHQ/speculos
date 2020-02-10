@@ -7,6 +7,6 @@ WORKDIR /speculos
 RUN /speculos/scripts/docker_install.sh
 # default port for dev env
 EXPOSE 1234
-EXPOSE 50000
-EXPOSE 60000
+EXPOSE 40000
+EXPOSE 41000
 CMD [ "/speculos/run.sh" ]

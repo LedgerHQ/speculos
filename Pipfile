@@ -9,7 +9,6 @@ verify_ssl = true
 pyelftools = "*"
 mnemonic = "*"
 construct = "*"
-websockify = "*"
 
 [requires]
 python_version = "3.8"
