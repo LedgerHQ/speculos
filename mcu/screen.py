@@ -55,10 +55,10 @@ class PaintWidget(QWidget):
         return self.fb.draw_point(x, y, color)
 
 class Screen(Display):
-    def __init__(self, app, apdu, seph, button_tcp, model, rendering, vnc):
+    def __init__(self, app, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc):
         self.app = app
         super().__init__(apdu, seph, model, rendering)
-        self._init_notifiers(apdu, seph, button_tcp, vnc)
+        self._init_notifiers(apdu, seph, button_tcp, finger_tcp, vnc)
         self.bagl = bagl.Bagl(app.m, MODELS[model].screen_size)
         self.seph = seph
 
@@ -104,7 +104,7 @@ class Screen(Display):
         self.bagl.refresh()
 
 class App(QMainWindow):
-    def __init__(self, apdu, seph, button_tcp, color, model, ontop, rendering, vnc, pixel_size):
+    def __init__(self, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size):
         super().__init__()
 
         self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
@@ -139,7 +139,7 @@ class App(QMainWindow):
         self.m.move(self.box_position_x * pixel_size, self.box_position_y * pixel_size)
         self.m.resize(self.width * pixel_size, self.height * pixel_size)
 
-        self.screen = Screen(self, apdu, seph, button_tcp, model, rendering, vnc)
+        self.screen = Screen(self, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc)
 
         self.setWindowIcon(QIcon('mcu/icon.png'))
 
@@ -188,9 +188,9 @@ class App(QMainWindow):
         window_y = settings.setValue("window_y", self.pos().y())
 
 class QtScreen:
-    def __init__(self, apdu, seph, button_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
+    def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
         self.app = QApplication(sys.argv)
-        App(apdu, seph, button_tcp, color, model, ontop, rendering, vnc, pixel_size)
+        App(apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
 
     def run(self):
         self.app.exec_()

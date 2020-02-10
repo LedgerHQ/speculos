@@ -21,6 +21,7 @@ from mcu import apdu as apdu_server
 from mcu import display
 from mcu import seproxyhal
 from mcu.button_tcp import FakeButton
+from mcu.finger_tcp import FakeFinger
 from mcu.vnc import VNC
 
 DEFAULT_SEED = 'glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact monster seven myth punch hobby comfort wild raise skin'
@@ -138,6 +139,7 @@ if __name__ == '__main__':
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
     group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button press (lLrR)')
+    group.add_argument('--finger-port', type=int, help='Spawn a TCP server on the specified port to receive finger touch (x,y,pressed)+')
 
     group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display method.')
     group.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
@@ -196,6 +198,10 @@ if __name__ == '__main__':
     if args.button_port:
         button_tcp = FakeButton(args.button_port)
 
+    finger_tcp = None
+    if args.finger_port:
+        finger_tcp = FakeFinger(args.finger_port)
+
     vnc = None
     if args.vnc_port:
         vnc = VNC(args.vnc_port, args.model)
@@ -204,7 +210,7 @@ if __name__ == '__main__':
     if zoom is None:
         zoom = {'nanos':2, 'blue': 1}.get(args.model, 1)
 
-    screen = Screen(apdu, seph, button_tcp=button_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    screen = Screen(apdu, seph, button_tcp=button_tcp, finger_tcp=finger_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
     screen.run()
 
     s2.close()
