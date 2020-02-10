@@ -217,4 +217,8 @@ class SeProxyHal:
         reliable, see issue #11.
         '''
 
-        self.usb.xfer(packet)
+        if packet.startswith(b'RAW!') and len(packet) > 4:
+            tag, packet = packet[4], packet[5:]
+            self._queue_event_packet(tag, packet)
+        else:
+            self.usb.xfer(packet)
