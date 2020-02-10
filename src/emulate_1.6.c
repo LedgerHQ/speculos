@@ -36,6 +36,11 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
 
   SYSCALL0(os_global_pin_is_validated);
 
+  SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
+           unsigned int, tag,
+           uint8_t *,    buffer,
+           size_t,       length);
+
   SYSCALL1(os_sched_exit, "(%u)", unsigned int, code);
 
   SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_6);
