@@ -4,14 +4,14 @@ project(Speculos C)
 
 include(ExternalProject)
 
-set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
-set(CMAKE_EXE_LINKER_FLAGS -static)
+# set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
+# set(CMAKE_EXE_LINKER_FLAGS -static)
 
 enable_testing()
 
 option(WITH_VNC "Support for VNC" OFF)
 
-add_compile_options(-mthumb -W -Wall -fPIC)
+# add_compile_options(-mthumb -W -Wall -fPIC -march=armv6t2+vfpv2)
 add_definitions(-DOS_LITTLE_ENDIAN -DNATIVE_64BITS)
 
 option(
@@ -38,6 +38,8 @@ if (CODE_COVERAGE)
   endif()
 endif()
 
+find_library(openssl REQUIRED)
+
 include_directories(sdk src)
 
 if (PRECOMPILED_DEPENDENCIES_DIR)
@@ -47,27 +49,9 @@ if (PRECOMPILED_DEPENDENCIES_DIR)
 else()
   message(STATUS "Building OpenSSL and cmoka...")
   set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install)
-
-  ExternalProject_Add(
-    openssl
-    URL https://www.openssl.org/source/openssl-1.1.1f.tar.gz
-    URL_HASH SHA256=186c6bfe6ecfba7a5b48c47f8a1673d0f3b0e5ba2e25602dd23b629975da3f35
-    CONFIGURE_COMMAND ./Configure --cross-compile-prefix=arm-linux-gnueabihf- no-afalgeng no-aria no-asan no-asm no-async no-autoalginit no-autoerrinit no-autoload-config no-bf no-buildtest-c++ no-camellia no-capieng no-cast no-chacha no-cmac no-cms no-comp no-crypto-mdebug no-crypto-mdebug-backtrace no-ct no-deprecated no-des no-devcryptoeng no-dgram no-dh no-dsa no-dso no-dtls no-ec2m no-ecdh no-egd no-engine no-err no-external-tests no-filenames no-fuzz-afl no-fuzz-libfuzzer no-gost no-heartbeats no-hw no-idea no-makedepend no-md2 no-md4 no-mdc2 no-msan no-multiblock no-nextprotoneg no-ocb no-ocsp no-pinshared no-poly1305 no-posix-io no-psk no-rc2 no-rc4 no-rc5 no-rdrand no-rfc3779 no-scrypt no-sctp no-seed no-shared no-siphash no-sm2 no-sm3 no-sm4 no-sock no-srp no-srtp no-sse2 no-ssl no-ssl3-method no-ssl-trace no-stdio no-tests no-threads no-tls no-ts no-ubsan no-ui-console no-unit-test no-whirlpool no-zlib no-zlib-dynamic linux-armv4 --prefix=${INSTALL_DIR}
-    BUILD_COMMAND make CFLAGS=-mthumb
-    INSTALL_COMMAND make install_sw
-    BUILD_IN_SOURCE 1
-  )
-
-  ExternalProject_Add(cmocka
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cmocka
-    URL https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz
-    URL_HASH SHA256=f0ccd8242d55e2fd74b16ba518359151f6f8383ff8aef4976e48393f77bba8b6
-    CMAKE_ARGS += -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_C_FLAGS=-mthumb -DWITH_STATIC_LIB=true -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-  )
 endif()
 
-add_library(cmocka-static STATIC SHARED IMPORTED)
-add_dependencies(cmocka-static cmocka)
+add_library(cmocka UNKNOWN IMPORTED)
 
 include_directories(${INSTALL_DIR}/include)
 link_directories(${INSTALL_DIR}/lib)

@@ -1,6 +1,6 @@
 add_definitions(-DST31)
 
-link_libraries(emu -lcmocka-static)
+link_libraries(emu -lcmocka)
 
 add_executable(hello hello.c)
 
