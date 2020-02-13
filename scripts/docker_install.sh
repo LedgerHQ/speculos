@@ -7,8 +7,7 @@
 install_deps() {
     # install python deps
     pip install --upgrade pip pipenv
-    pipenv install
-    source $(pipenv --venv)/bin/activate
+    pipenv install --deploy --system
 
     # build speculos
     mkdir -p build

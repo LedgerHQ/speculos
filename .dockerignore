@@ -1,3 +1,8 @@
 apps
-certificate
 node_server
+Dockerfile
+docker-compose.yml
+.dockerignore
+.git*
+doc
+README.md
