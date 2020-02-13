@@ -9,4 +9,5 @@ RUN /speculos/scripts/docker_install.sh
 EXPOSE 1234
 EXPOSE 40000
 EXPOSE 41000
-CMD [ "/speculos/run.sh" ]
+
+ENTRYPOINT [ "python", "./speculos.py" ]

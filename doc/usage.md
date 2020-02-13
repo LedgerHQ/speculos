@@ -36,17 +36,23 @@ For more options, pass the `-h` or `--help` flag.
 docker build ./ -t speculos
 ```
 
+#### Debug
+```console
+docker run -it -v "$(pwd)"/apps:/speculos/apps -p 1234:1234 -p 40000:40000 -p 41000:41000 --entrypoint /bin/bash speculos
+```
+
 #### Run
 From the root of the speculos project
 ```console
-docker run -it -v "$(pwd)"/apps:/speculos/apps -e DEVICE_MODEL=nanos -e SDK_VERSION=1.6 -e APP_FILE=btc.elf -e DEVICE_SEED=<SEED> speculos
+docker run -it -v "$(pwd)"/apps:/speculos/apps -p 1234:1234 -p 40000:40000 -p 41000:41000 \
+speculos --model nanos ./apps/btc.elf --sdk 1.6 --seed "secret" --display headless --apdu-port 40000 --vnc-port 41000
 ```
 
 #### docker-compose setup
 ```console
 docker-compose up [-d]
 ```
-> Default configuration is nanos / 1.6 / btc.elf / <EMPTY_SEED>
+> Default configuration is nanos / 1.6 / btc.elf / seed "secret"
 
 Edit `docker-compose.yml` to configure port forwarding and environment variables that fit your needs.
 
