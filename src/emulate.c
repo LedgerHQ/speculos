@@ -144,7 +144,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            cx_md_t,                       hashID,
            cx_ecfp_public_key_t *,        pu_key);
 
-  SYSCALL10(cx_eddsa_sign, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u, %p)",
+  /* SYSCALL10(cx_eddsa_sign, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u, %p)",
             const cx_ecfp_private_key_t *, pvkey,
             int,                           mode,
             cx_md_t,                       hashID,
@@ -165,7 +165,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
     const unsigned char *,        ctx,
     unsigned int,                 ctx_len,
     const unsigned char *,        sig,
-    unsigned int,                 sig_len);
+    unsigned int,                 sig_len);  */
 
   SYSCALL3(cx_edward_compress_point, "(0x%x, %p, %u)",
            cx_curve_t, curve,
