@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "emulate.h"
@@ -29,19 +30,33 @@ unsigned long sys_os_flags(void)
 
 unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buffer, size_t length)
 {
+  char *name, *p, *str, *version;
+
   if (length < 1) {
     return 0;
   }
 
-  /* TODO */
+  name = "app";
+  version = "1.33.7";
+
+  str = getenv("SPECULOS_APPNAME");
+  if (str != NULL && (str = strdup(str)) != NULL) {
+    p = strstr(str, ":");
+    if (p != NULL) {
+      *p = '\x00';
+      name = str;
+      version = p + 1;
+    }
+  }
+
   switch (tag) {
   case BOLOS_TAG_APPNAME:
-    strncpy((char *)buffer, "speculos", length);
-    length = MIN(length, 9);
+    strncpy((char *)buffer, name, length);
+    length = MIN(length, strlen(name));
     break;
   case BOLOS_TAG_APPVERSION:
-    strncpy((char *)buffer, "1.33.7", length);
-    length = MIN(length, 7);
+    strncpy((char *)buffer, version, length);
+    length = MIN(length, strlen(version));
     break;
   default:
     length = 0;
@@ -49,6 +64,7 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buf
   }
 
   buffer[length] = '\x00';
+  free(str);
 
   return length;
 }
