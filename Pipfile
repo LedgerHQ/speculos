@@ -9,6 +9,7 @@ verify_ssl = true
 pyelftools = "*"
 mnemonic = "*"
 construct = "*"
+websockify = "*"  # Used by weblue to forward apdu and vnc port over wss
 
 [requires]
 python_version = "3.8"

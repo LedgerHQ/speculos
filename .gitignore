@@ -2,6 +2,7 @@
 *.o
 .cache/
 .idea/
+.DS_Store
 __pycache__/
 apps/*vault*
 build/
