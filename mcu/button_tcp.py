@@ -11,6 +11,7 @@ Usage example:
 '''
 
 import socket
+import time
 
 class FakeButtonClient:
     actions = {
@@ -43,6 +44,7 @@ class FakeButtonClient:
                 key, pressed = self.actions[c]
                 print('[*] button %d release: %s' % (key, repr(pressed)))
                 screen.seph.handle_button(key, pressed)
+                time.sleep(0.1)
             else:
                 #print('[*] ignoring byte %s' % repr(c))
                 pass
