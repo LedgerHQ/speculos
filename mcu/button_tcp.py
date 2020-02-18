@@ -14,10 +14,10 @@ import socket
 
 class FakeButtonClient:
     actions = {
-        'L': (1, False),
-        'l': (1, True),
-        'R': (2, False),
-        'r': (2, True),
+        'L': (1, True),
+        'l': (1, False),
+        'R': (2, True),
+        'r': (2, False),
     }
     def __init__(self, s):
         self.s = s
