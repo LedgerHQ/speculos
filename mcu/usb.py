@@ -3,6 +3,7 @@ Forward USB packets between the MCU and the SE using the (custom) SE Proxy HAL
 protocol.
 """
 
+from collections import namedtuple
 from construct import *
 import binascii
 import enum
@@ -68,6 +69,8 @@ hid_header = Struct(
     "length"  / Int16ub,
 )
 
+QueuedPacket = namedtuple('QueuedPacket', ['tag', 'packet', 'length', 'seq'])
+
 class UsbPacket:
     def __init__(self):
         self.reset(0)
@@ -102,6 +105,16 @@ class USB:
         logging.basicConfig(level=level, format='%(asctime)s.%(msecs)03d - USB: %(message)s', datefmt='%H:%M:%S')
 
     def _send_xfer(self, tag, packet=b'', length=USB_SIZE, seq=0):
+        if self.state != UsbDevState.CONFIGURED or len(self.packets_to_send) > 0:
+            # don't send packets until the endpoint is configured
+            packet = QueuedPacket(tag, packet, length, seq)
+            self.packets_to_send.append(packet)
+            if self.state == UsbDevState.DEFAULT:
+                self.state = UsbDevState.ADDRESSED
+                logging.debug('set_address sent!')
+                self._send_setup(UsbReq.SET_ADDRESS, 1)
+                return
+
         data = hid_header.build(dict(channel=USB_CHANNEL, command=USB_COMMAND, seq=seq, length=length))
         size = len(data) + len(packet)
         if seq != 0:
@@ -137,9 +150,10 @@ class USB:
         self._queue_event_packet(SephUsbTag.XFER_EVENT, data)
 
     def _flush_packets(self):
-        for packet in self.packets_to_send:
-            self._send_xfer_out(packet)
+        packets_to_send = self.packets_to_send
         self.packets_to_send = []
+        for packet in packets_to_send:
+            self._send_xfer(*packet)
 
     def config(self, data):
         """Parse a config packet. If the endpoint address is set, configure it."""
@@ -153,6 +167,10 @@ class USB:
         if self.state == UsbDevState.DISCONNECTED:
             if tag == SephUsbConfig.CONNECT:
                 self.state = UsbDevState.DEFAULT
+            return
+        elif tag == SephUsbConfig.DISCONNECT:
+            self.state = UsbDevState.DISCONNECTED
+            self.usb_packet.reset(0)
             return
 
         if tag == SephUsbConfig.ADDR:
@@ -200,12 +218,4 @@ class USB:
         return answer
 
     def xfer(self, packet):
-        if self.state != UsbDevState.CONFIGURED or len(self.packets_to_send) > 0:
-            # don't send packets until the endpoint is configured
-            self.packets_to_send.append(packet)
-            if self.state == UsbDevState.DEFAULT:
-                self.state = UsbDevState.ADDRESSED
-                logging.debug('set_address sent!')
-                self._send_setup(UsbReq.SET_ADDRESS, 1)
-        else:
-            self._send_xfer_out(packet)
+        self._send_xfer_out(packet)
