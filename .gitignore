@@ -5,9 +5,6 @@
 __pycache__/
 apps/*vault*
 build/
-src/launcher
-vnc/vnc_server
-vnc/vnc_server.o
 tests/hello
 tests/test_aes
 tests/test_crc16
