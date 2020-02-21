@@ -104,7 +104,6 @@ static const cx_hash_info_t cx_ripemd160_info = {
     (int (*)(const void *ctx))cx_ripemd160_validate_context,
     NULL};
 
-#if 0
 static const cx_hash_info_t cx_blake2b_info = {
     CX_BLAKE2B,
     0,
@@ -116,6 +115,7 @@ static const cx_hash_info_t cx_blake2b_info = {
     (int (*)(const void *ctx))cx_blake2b_validate_context,
     (size_t(*)(const void *ctx))cx_blake2b_get_output_size};
 
+#if 0
 static const cx_hash_info_t cx_groestl_info = {
     CX_GROESTL,
     0,
@@ -148,9 +148,9 @@ const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type) {
     return &cx_shake128_info;
   case CX_SHAKE256:
     return &cx_shake256_info;
-#if 0
   case CX_BLAKE2B:
     return &cx_blake2b_info;
+#if 0
   case CX_GROESTL:
     return &cx_groestl_info;
 #endif

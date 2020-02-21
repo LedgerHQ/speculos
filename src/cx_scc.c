@@ -233,10 +233,11 @@ int cx_scc_struct_size_hash(const cx_hash_t *hash) {
 
   case CX_GROESTL:
     return sizeof(cx_groestl_t);
+  #endif
 
   case CX_BLAKE2B:
     return sizeof(cx_blake2b_t);
-  #endif
+
   default:
     break;
    }
