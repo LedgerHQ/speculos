@@ -4,7 +4,6 @@
 #include "cx.h"
 #include "cx_aes.h"
 #include "cx_ec.h"
-#include "cx_crc.h"
 #include "cx_hash.h"
 #include "cx_hmac.h"
 #include "cx_math.h"

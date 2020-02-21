@@ -16,6 +16,8 @@
 /* for cx_hash_t */
 #include "cx_hash.h"
 
+#include "cx_crc.h"
+
 typedef enum {
   SDK_1_5,
   SDK_1_6,
