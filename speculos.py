@@ -83,7 +83,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
                 print("[-] Error: different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
             extra_ram = arg
-        args.append(f'{name}:{lib_path}:{hex(load_offset)}:{hex(load_size)}:{hex(stack)}:{hex(stack_size)}')
+        args.append(f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}:{stack:#x}:{stack_size:#x}')
 
     if model == 'blue':
         if ram_arg:
@@ -114,7 +114,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     if deterministic_rng:
         os.environ['RNG_SEED'] = deterministic_rng
 
-    #print('[*] seproxyhal: executing qemu', file=sys.stderr)
+    #print('[*] seproxyhal: executing qemu: {}'.format(args), file=sys.stderr)
     try:
         os.execvp(args[0], args)
     except FileNotFoundError:
