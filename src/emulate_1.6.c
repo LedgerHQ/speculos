@@ -9,6 +9,9 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
   int retid;
 
   switch(syscall) {
+  SYSCALL3(cx_crc16_update, "(%u, %p, %u)",
+           unsigned short, crc, const void *, b, size_t, len);
+
   SYSCALL1(os_lib_call, "(%p)", unsigned long *, call_parameters);
 
   case SYSCALL_os_lib_end_ID_IN: {

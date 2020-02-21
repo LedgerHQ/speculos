@@ -9,6 +9,9 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
   int retid;
 
   switch(syscall) {
+  SYSCALL3(cx_crc16_update, "(%u, %p, %u)",
+           unsigned short, crc, const void *, b, size_t, len);
+
   SYSCALL3(io_seph_recv, "(%p, %u, 0x%x)",
            uint8_t *,    buffer,
            uint16_t,     maxlength,
