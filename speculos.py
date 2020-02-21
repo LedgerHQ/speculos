@@ -82,6 +82,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
             if extra_ram and arg != extra_ram:
                 print("[-] Error: different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
+            extra_ram = arg
         args.append(f'{name}:{lib_path}:{hex(load_offset)}:{hex(load_size)}:{hex(stack)}:{hex(stack_size)}')
 
     if model == 'blue':
