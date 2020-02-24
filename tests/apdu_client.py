@@ -1,23 +1,13 @@
-#!/usr/bin/env python3
-
-'''
-Tests to ensure that speculos launches correctly all the apps in app/.
-
-Usage: pytest-3 -v -s ./tests/test_apps.py
-'''
-
 import binascii
-import pathlib
-import pytest
-import os
 import socket
 import subprocess
 import sys
 import time
+import os
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-class App:
+class APDUClient:
     # default APDU TCP server
     HOST, PORT = ('127.0.0.1', 9999)
 
@@ -26,8 +16,9 @@ class App:
         self.process = None
         # name example: nanos#btc#1.5#5b6693b8.elf
         self.model, self.name, self.sdk, self.revision = os.path.basename(path).split('#')
+        self.touch_events = []
 
-    def run(self, headless=True, args=[]):
+    def run(self, headless=True, finger_port=0, deterministic_rng='', seed="", rampage="", args=[]):
         '''Launch an app.'''
 
         # if the app is already running, do nothing
@@ -38,12 +29,21 @@ class App:
         cmd += args
         if headless:
             cmd += [ '--display', 'headless' ]
+        if finger_port:
+            cmd += ['--finger-port', finger_port]
+        if deterministic_rng:
+            cmd += ['--deterministic-rng', deterministic_rng]
+        if seed:
+            cmd += ['--seed', seed]
+        if rampage:
+            cmd += ['--rampage', rampage]
         cmd += [ '--model', self.model ]
         cmd += [ '--sdk', self.sdk ]
         cmd += [ self.path ]
 
         print('[*]', cmd)
         self.process = subprocess.Popen(cmd)
+        time.sleep(1)
 
     def stop(self):
         # if the app is already running, do nothing
@@ -88,6 +88,7 @@ class App:
         s.sendall(packet)
 
         data, status = self._recv_packet(s)
+
         if verbose:
             print('[<]', binascii.hexlify(data), hex(status))
 
@@ -106,7 +107,7 @@ class App:
                 connected = False
 
         assert connected
-        s.settimeout(0.5)
+        s.settimeout(1.5)
 
         # unfortunately, the app can take some time to start...
         time.sleep(1.0)
@@ -115,88 +116,3 @@ class App:
 
         s.close()
         return data, status
-
-@pytest.fixture(scope="function")
-def stop_app(request):
-    yield
-    app = request.getfixturevalue('app')
-    app.stop()
-
-class TestBtc:
-    '''Tests for Bitcoin app.'''
-
-    def test_btc_get_version(self, app, stop_app):
-        '''Send a get_version APDU to the BTC app.'''
-
-        app.run()
-
-        packet = binascii.unhexlify('E0C4000000')
-        data, status = app.exchange(packet)
-        assert status == 0x9000
-
-        app.stop()
-
-class TestBtcTestnet:
-    '''Tests for Bitcoin Testnet app.'''
-
-    def test_btc_lib(self, app, stop_app):
-        # assumes that the Bitcoin version of the app also exists.
-        btc_app = app.path.replace('btc-test', 'btc')
-        assert os.path.exists(btc_app)
-
-        args = [ '-l', 'Bitcoin:%s' % btc_app ]
-        app.run(args=args)
-
-        packet = binascii.unhexlify('E0C4000000')
-        data, status = app.exchange(packet)
-        assert status == 0x9000
-
-class TestVault:
-    '''Tests for Vault app.'''
-
-    def test_version(self, app, stop_app):
-        app.run()
-
-        # send an invalid packet
-        packet = binascii.unhexlify('E0C4000000')
-        data, status = app.exchange(packet)
-        assert status == 0x6D00
-
-def listapps(app_dir):
-    '''List every available apps in the app/ directory.'''
-
-    paths = [ filename for filename in os.listdir(app_dir) if pathlib.Path(filename).suffix == '.elf' ]
-    # ignore app whose name doesn't match the expected pattern
-    paths = [ path for path in paths if path.count('#') == 3 ]
-    return [ App(os.path.join(app_dir, path)) for path in paths ]
-
-def filter_apps(cls, apps):
-    '''
-    Filter apps by the class name of the test.
-
-    If no filter matches the class name, all available apps are returned.
-    '''
-
-    app_filter = {
-        'TestBtc': [ 'btc' ],
-        'TestBtcTestnet': [ 'btc-test' ],
-        'TestVault': [ 'vault' ],
-    }
-
-    class_name = cls.__name__.split('.')[-1]
-    if class_name in app_filter:
-        names = app_filter[class_name]
-        apps = [ app for app in apps if app.name in names ]
-
-    return apps
-
-def pytest_generate_tests(metafunc):
-    # retrieve the list of apps in the ../apps directory
-    app_dir = os.path.join(SCRIPT_DIR, '..', 'apps')
-    apps = listapps(app_dir)
-    apps = filter_apps(metafunc.cls, apps)
-
-    # if a test function has an app parameter, give the list of app
-    if 'app' in metafunc.fixturenames:
-        # test are run on each app
-        metafunc.parametrize('app', apps, scope='class')
