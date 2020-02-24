@@ -69,7 +69,7 @@ hid_header = Struct(
     "length"  / Int16ub,
 )
 
-QueuedPacket = namedtuple('QueuedPacket', ['tag', 'packet', 'length', 'seq'])
+QueuedPacket = namedtuple('QueuedPacket', ['tag', 'data', 'length', 'seq'])
 
 class UsbPacket:
     def __init__(self):
@@ -104,42 +104,43 @@ class USB:
             level = logging.DEBUG
         logging.basicConfig(level=level, format='%(asctime)s.%(msecs)03d - USB: %(message)s', datefmt='%H:%M:%S')
 
-    def _send_xfer(self, tag, packet=b'', length=USB_SIZE, seq=0):
+    def _send_xfer(self, tag, data=b'', length=USB_SIZE, seq=0):
         if self.state != UsbDevState.CONFIGURED or len(self.packets_to_send) > 0:
             # don't send packets until the endpoint is configured
-            packet = QueuedPacket(tag, packet, length, seq)
+            packet = QueuedPacket(tag, data, length, seq)
             self.packets_to_send.append(packet)
             if self.state == UsbDevState.DEFAULT:
                 self.state = UsbDevState.ADDRESSED
                 logging.debug('set_address sent!')
                 self._send_setup(UsbReq.SET_ADDRESS, 1)
-                return
+            return
 
-        data = hid_header.build(dict(channel=USB_CHANNEL, command=USB_COMMAND, seq=seq, length=length))
-        size = len(data) + len(packet)
+        header = hid_header.build(dict(channel=USB_CHANNEL, command=USB_COMMAND, seq=seq, length=length))
+        size = len(header) + len(data)
         if seq != 0:
             # strip hid_header.length
             size -= 2
-            data = data[:-2]
-        data = usb_header.build(dict(endpoint=HidEndpoint.OUT_ADDR, tag=tag, length=size)) + data
-        data += packet
-        logging.debug('[SEND_XFER] {}'.format(binascii.hexlify(data)))
-        self._queue_event_packet(SephUsbTag.XFER_EVENT, data)
+            header = header[:-2]
+        packet = usb_header.build(dict(endpoint=HidEndpoint.OUT_ADDR, tag=tag, length=size))
+        packet += header
+        packet += data
+        logging.debug('[SEND_XFER] {}'.format(binascii.hexlify(packet)))
+        self._queue_event_packet(SephUsbTag.XFER_EVENT, packet)
 
-    def _send_xfer_out(self, packet):
+    def _send_xfer_out(self, data):
         seq = 0
         offset = 0
-        while offset < len(packet):
+        while offset < len(data):
             size = USB_SIZE - hid_header.sizeof() - 10
             if seq != 0:
                 size += 2
-            chunk = packet[offset:offset+size]
+            chunk = data[offset:offset+size]
             chunk = chunk.ljust(size, b'\x00')
             if seq == 0:
-                length = len(packet)
+                length = len(data)
             else:
                 length = len(chunk)
-            self._send_xfer(SephUsbTag.XFER_OUT, seq=seq, packet=chunk, length=length)
+            self._send_xfer(SephUsbTag.XFER_OUT, seq=seq, data=chunk, length=length)
             offset += len(chunk)
             seq += 1
 
@@ -217,5 +218,5 @@ class USB:
 
         return answer
 
-    def xfer(self, packet):
-        self._send_xfer_out(packet)
+    def xfer(self, data):
+        self._send_xfer_out(data)
