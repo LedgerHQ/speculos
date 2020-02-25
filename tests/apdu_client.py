@@ -30,7 +30,7 @@ class APDUClient:
         if headless:
             cmd += [ '--display', 'headless' ]
         if finger_port:
-            cmd += ['--finger-port', finger_port]
+            cmd += ['--finger-port', str(finger_port)]
         if deterministic_rng:
             cmd += ['--deterministic-rng', deterministic_rng]
         if seed:
