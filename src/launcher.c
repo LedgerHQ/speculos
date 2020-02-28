@@ -116,6 +116,46 @@ static bool is_syscall_instruction(unsigned long addr)
   return false;
 }
 
+/*
+ * The SVC instruction pushes eight registers to the SP (and after returning
+ * from the ISR, the processor automatically pops the eight registers from the
+ * stack).
+ *
+ * Mimic this behavior to ensure that subtle stack overflow bugs happening on
+ * real devices can be reproduced.
+ */
+static void update_svc_stack(bool push)
+{
+  unsigned long *sp = (unsigned long *)context->uc_mcontext.arm_sp;
+
+  if (push) {
+    *--sp = context->uc_mcontext.arm_cpsr;
+    *--sp = context->uc_mcontext.arm_pc;
+    *--sp = context->uc_mcontext.arm_lr;
+    *--sp = context->uc_mcontext.arm_ip;
+    *--sp = context->uc_mcontext.arm_r3;
+    *--sp = context->uc_mcontext.arm_r2;
+    *--sp = context->uc_mcontext.arm_r1;
+    *--sp = context->uc_mcontext.arm_r0;
+    context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
+
+    /* the OS also saves these registers on the stack */
+    *--sp = context->uc_mcontext.arm_fp;
+    *--sp = context->uc_mcontext.arm_r10;
+    *--sp = context->uc_mcontext.arm_r9;
+    *--sp = context->uc_mcontext.arm_r8;
+    *--sp = context->uc_mcontext.arm_r7;
+    *--sp = context->uc_mcontext.arm_r6;
+    *--sp = context->uc_mcontext.arm_r5;
+    *--sp = context->uc_mcontext.arm_r4;
+    context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
+  }
+  else {
+    context->uc_mcontext.arm_sp += 16 * sizeof(unsigned long);
+  }
+
+}
+
 static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 {
   unsigned long pc, syscall, ret;
@@ -135,6 +175,8 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
   }
 
   //fprintf(stderr, "[*] syscall: 0x%08lx (pc: 0x%08lx)\n", syscall, pc);
+
+  update_svc_stack(true);
 
   ret = 0;
   retid = emulate(syscall, parameters, &ret, trace_syscalls, sdk_version);
@@ -171,6 +213,8 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 
   /* skip undefined (originally svc) instruction */
   context->uc_mcontext.arm_pc += 2;
+
+  update_svc_stack(false);
 }
 
 static int setup_alternate_stack(void)
