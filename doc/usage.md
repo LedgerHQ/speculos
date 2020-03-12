@@ -29,6 +29,20 @@ For more options, pass the `-h` or `--help` flag.
 - The keyboard left and right arrow keys are use instead of the Nano buttons.
 - The `Q` key exits the application.
 
+#### Display
+
+Several display options are available through the `--display` parameter:
+
+- `qt`: default, requires a X server
+- `headless`: nothing is displayed
+- `text`: the UI is displayed in the console (handy on Windows)
+
+These options can be used along `--vnc-port` which spawns a VNC server on the
+specified port. macOS users should also add `--vnc-password <password>` if using
+the built-in VNC client because unauthenticated sessions doesn't seem to be
+supported (issue #34).
+
+
 ## Docker
 
 #### Build
@@ -49,7 +63,6 @@ docker run -it -v "$(pwd)"/apps:/speculos/apps \
 speculos --model nanos ./apps/btc.elf --sdk 1.6 --seed "secret" --display headless \
 --apdu-port 40000 --vnc-port 41000 --button-port 42000
 ```
-> Add `--vnc-password "<password>"` for macos users to use built-in vnc client.
 
 #### docker-compose setup
 ```console
