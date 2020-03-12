@@ -23,7 +23,6 @@
 
 #include "cursor.h"
 
-#define DEFAULT_PORT	  5900
 #define DEFAULT_WIDTH	  320
 #define DEFAULT_HEIGHT	  480
 
@@ -157,12 +156,10 @@ static void draw_point(int x, int y, int color)
 
 static void usage(char *argv0)
 {
-    fprintf(stderr, "Usage: %s [-s <size] [-p <port>] [-v]\n\n"
-            "-p <port>: tcp port (default: %d)\n"
+    fprintf(stderr, "Usage: %s [-s <size] [-v] -- [libvncserver options]\n\n"
             "-s <size>: screen size (default: %dx%d)\n"
             "-v:        verbose (display libvncserver logs, default: false)\n",
             argv0,
-            DEFAULT_PORT,
             DEFAULT_WIDTH, DEFAULT_HEIGHT);
     exit(EXIT_FAILURE);
 }
@@ -174,15 +171,15 @@ static int parse_size(char *s, unsigned int *width, unsigned int *height)
 
 int main(int argc, char **argv)
 {
+    int libvnc_argc, nfds, opt;
     struct draw_event event;
     struct timeval timeout;
-    int nfds, opt, port;
     sigset_t mask;
     bool verbose;
     fd_set fds;
 
     verbose = false;
-    port = DEFAULT_PORT;
+    opterr = 0;
 
     while ((opt = getopt(argc, argv, "s:p:v")) != -1) {
         switch (opt) {
@@ -191,9 +188,6 @@ int main(int argc, char **argv)
                 fprintf(stderr, "invalid size (%s)\n", optarg);
                 return EXIT_FAILURE;
             }
-            break;
-        case 'p':
-            port = atoi(optarg);
             break;
         case 'v':
             verbose = true;
@@ -204,8 +198,6 @@ int main(int argc, char **argv)
         }
     }
 
-    rfbLogEnable(verbose);
-
     framebuffer = malloc(width * height * bytes_per_pixel);
     if (framebuffer == NULL) {
         err(1, "malloc");
@@ -213,12 +205,17 @@ int main(int argc, char **argv)
     /* initialize the framebuffer to white */
     memset(framebuffer, 0xff, width * height * bytes_per_pixel);
 
-    screen = rfbGetScreen(&argc, argv, width, height, bits_per_sample, samples_per_pixel, bytes_per_pixel);
+    /* Pass remaining options (after "--") to rfbGetScreen. The first argument
+     * will be invalid (either "--" or the last option given) but it's
+     * considered as the filename and eventually ignored. */
+    opterr = 1;
+    libvnc_argc = argc - optind + 1;
+
+    rfbLogEnable(verbose);
+    screen = rfbGetScreen(&libvnc_argc, &argv[optind-1], width, height, bits_per_sample, samples_per_pixel, bytes_per_pixel);
 
     screen->kbdAddEvent = kbdAddEvent;
     screen->ptrAddEvent = ptrAddEvent;
-    screen->port = port;
-    screen->ipv6port = port;
 
 #ifdef CUSTOM_CURSOR
     {

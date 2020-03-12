@@ -16,11 +16,19 @@ class VNC:
         width, height = MODELS[model].screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../build/vnc/vnc_server')
-
         cmd = [ server ]
+
+        # custom options
+        cmd += [ '-s', f'{width}x{height}' ]
         if verbose:
             cmd += [ '-v' ]
 
+        # libvncserver options
+        cmd += [
+            '--',
+            '-rfbport', f'{port}',
+            '-rfbportv6', f'{port}',
+        ]
         if password is not None:
             cmd += [ '-passwd', password ]
 
