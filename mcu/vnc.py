@@ -12,11 +12,26 @@ import sys
 from .display import MODELS
 
 class VNC:
-    def __init__(self, port, model):
+    def __init__(self, port, model, password=None, verbose=False):
         width, height = MODELS[model].screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../build/vnc/vnc_server')
-        cmd = [ server, '-p', str(port), '-s', f'{width}x{height}' ]
+        cmd = [ server ]
+
+        # custom options
+        cmd += [ '-s', f'{width}x{height}' ]
+        if verbose:
+            cmd += [ '-v' ]
+
+        # libvncserver options
+        cmd += [
+            '--',
+            '-rfbport', f'{port}',
+            '-rfbportv6', f'{port}',
+        ]
+        if password is not None:
+            cmd += [ '-passwd', password ]
+
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
         # required by Screen.add_notifier
