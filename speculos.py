@@ -139,6 +139,7 @@ if __name__ == '__main__':
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
+    group.add_argument('--vnc-password', type=str, help='VNC plain-text password (required for MacOS Screen Sharing)')
     group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button press (lLrR)')
     group.add_argument('--finger-port', type=int, help='Spawn a TCP server on the specified port to receive finger touch (x,y,pressed)+')
 
@@ -180,6 +181,10 @@ if __name__ == '__main__':
         print("[-] -y (--keymap) can only be used with --display text", file=sys.stderr)
         sys.exit(1)
 
+    if args.vnc_password and not args.vnc_port:
+        print("[-] --vnc-password can only be used with --vnc-port", file=sys.stderr)
+        sys.exit(1)
+
     if args.display == 'text':
         from mcu.screen_text import TextScreen as Screen
     elif args.display == 'headless':
@@ -205,7 +210,7 @@ if __name__ == '__main__':
 
     vnc = None
     if args.vnc_port:
-        vnc = VNC(args.vnc_port, args.model)
+        vnc = VNC(args.vnc_port, args.model, args.vnc_password)
 
     zoom = args.zoom
     if zoom is None:
