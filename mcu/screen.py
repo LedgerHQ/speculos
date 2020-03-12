@@ -111,6 +111,7 @@ class App(QMainWindow):
 
         self.seph = seph
         self.width, self.height = MODELS[model].screen_size
+        self.pixel_size = pixel_size
         self.box_position_x, self.box_position_y = MODELS[model].box_position
         box_size_x, box_size_y = MODELS[model].box_size
 
@@ -154,17 +155,23 @@ class App(QMainWindow):
     def keyReleaseEvent(self, event):
         self.screen._key_event(event, False)
 
+    def _get_x_y(self):
+        x = self.mouse_offset.x() // self.pixel_size - (self.box_position_x + 1)
+        y = self.mouse_offset.y() // self.pixel_size - (self.box_position_y + 1)
+        return x, y
+
     def mousePressEvent(self, event):
         '''Get the mouse location.'''
 
         self.mouse_offset = event.pos()
 
-        self.seph.handle_finger(self.mouse_offset.x(), self.mouse_offset.y(), True)
+        x, y = self._get_x_y()
+        if x >= 0 and x < self.width and y >= 0 and y < self.height:
+            self.seph.handle_finger(x, y, True)
         QApplication.setOverrideCursor(Qt.DragMoveCursor)
 
     def mouseReleaseEvent(self, event):
-        x = self.mouse_offset.x() - (self.box_position_x + 1)
-        y = self.mouse_offset.y() - (self.box_position_y + 1)
+        x, y = self._get_x_y()
         if x >= 0 and x < self.width and y >= 0 and y < self.height:
             self.seph.handle_finger(x, y, False)
         QApplication.restoreOverrideCursor()
