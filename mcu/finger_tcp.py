@@ -38,8 +38,8 @@ class FakeFingerClient:
         for action in actions:
             x = int(action[0])
             y = int(action[1])
-            pressed = "pressed" if int(action[2]) else "release"
-            self.logger.debug(f"touch event on ({x},{y}) coordinates, {pressed}")
+            pressed = int(action[2])
+            self.logger.debug(f"touch event on ({x},{y}) coordinates, {'pressed' if pressed else 'release'}")
             screen.seph.handle_finger(x, y, pressed)
 
 class FakeFinger:
