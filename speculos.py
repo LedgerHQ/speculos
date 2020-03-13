@@ -8,6 +8,7 @@ import argparse
 import binascii
 import ctypes
 from elftools.elf.elffile import ELFFile
+import logging
 from mnemonic import mnemonic
 import os
 import re
@@ -48,7 +49,7 @@ def get_elf_infos(app_path):
         if sym_estack is None:
             sym_estack = symtab.get_symbol_by_name('END_STACK')
         if sym_estack is None:
-            print('[-] failed to find _estack/END_STACK symbol', file=sys.stderr)
+            logger.error('failed to find _estack/END_STACK symbol')
             sys.exit(1)
         estack = sym_estack[0]['st_value']
         supp_ram = elf.get_section_by_name('.rfbss')
@@ -80,7 +81,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
             if extra_ram and arg != extra_ram:
-                print("[-] Error: different extra RAM pages for main app and/or libraries!")
+                logger.error("different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
             extra_ram = arg
         args.append(f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}:{stack:#x}:{stack_size:#x}')
@@ -114,11 +115,11 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     if deterministic_rng:
         os.environ['RNG_SEED'] = deterministic_rng
 
-    #print('[*] seproxyhal: executing qemu: {}'.format(args), file=sys.stderr)
+    logger.debug(f"executing qemu: {args}")
     try:
         os.execvp(args[0], args)
     except FileNotFoundError:
-        print('[-] failed to execute qemu: "%s" not found' % args[0], file=sys.stderr)
+        logger.error('failed to execute qemu: "%s" not found' % args[0])
         sys.exit(1)
     sys.exit(0)
 
@@ -153,36 +154,39 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.model.lower()
 
+    logger = logging.getLogger("speculos")
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(module)s: %(message)s', datefmt='%H:%M:%S')
+
     rendering = display.RENDER_METHOD.FLUSHED
     if args.progressive:
         rendering = display.RENDER_METHOD.PROGRESSIVE
 
     if args.rampage:
         if args.model != 'blue':
-            print("[-] Extra RAM page arguments -r (--rampage) require '-m blue'", file=sys.stderr)
+            logger.error("extra RAM page arguments -r (--rampage) require '-m blue'")
             sys.exit(1)
         if not re.match('(0x)?[0-9a-fA-F]+:(0x)?[0-9a-fA-F]+$', args.rampage):
-            print("[-] Invalid ram page argument", file=sys.stderr)
+            logger.error("invalid ram page argument")
             sys.exit(1)
 
     if args.display == 'text' and args.model != 'nanos':
-        print(f"[-] Error: Unsupported model '{args.model}' with argument -x", file=sys.stderr)
+        logger.error(f"unsupported model '{args.model}' with argument -x")
         sys.exit(1)
 
     if args.ontop and args.display != 'qt':
-        print("[-] -o (--ontop) can only be used with --display qt", file=sys.stderr)
+        logger.error("-o (--ontop) can only be used with --display qt")
         sys.exit(1)
 
     if args.zoom and args.display != 'qt':
-        print("[-] -z (--zoom) can only be used with --display qt", file=sys.stderr)
+        logger.error("-z (--zoom) can only be used with --display qt")
         sys.exit(1)
 
     if args.keymap and args.display != 'text':
-        print("[-] -y (--keymap) can only be used with --display text", file=sys.stderr)
+        logger.error("-y (--keymap) can only be used with --display text")
         sys.exit(1)
 
     if args.vnc_password and not args.vnc_port:
-        print("[-] --vnc-password can only be used with --vnc-port", file=sys.stderr)
+        logger.error("--vnc-password can only be used with --vnc-port")
         sys.exit(1)
 
     if args.display == 'text':

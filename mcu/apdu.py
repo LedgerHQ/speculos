@@ -7,6 +7,7 @@ communicate.
 
 import binascii
 import errno
+import logging
 import socket
 import sys
 
@@ -32,6 +33,7 @@ class ApduServer:
 class ApduClient:
     def __init__(self, s):
         self.s = s
+        self.logger = logging.getLogger("apdu")
 
     def _recvall(self, size):
         data = b''
@@ -41,7 +43,7 @@ class ApduClient:
             except ConnectionResetError:
                 tmp = b''
             if len(tmp) == 0:
-                print("[-] apduthread: connection with client closed", file=sys.stderr)
+                self.logger.debug("connection with client closed")
                 return None
             data += tmp
             size -= len(tmp)
@@ -70,13 +72,13 @@ class ApduClient:
             self.s.close()
             return
 
-        print('[*] packet', packet.hex())
+        self.logger.info("> {}".format(packet.hex()))
         screen.forward_to_app(packet)
 
     def forward_to_client(self, packet):
         '''Encode and forward APDU to the client.'''
 
-        print('[*] apdupthread: RAPDU: %s' % binascii.hexlify(packet), file=sys.stderr)
+        self.logger.info("< {}".format(packet.hex()))
 
         size = len(packet) - 2
         packet = size.to_bytes(4, 'big') + packet
