@@ -215,7 +215,7 @@ class Hid(Transport):
         return answer
 
 class USB:
-    def __init__(self, _queue_event_packet, debug=False, transport='hid'):
+    def __init__(self, _queue_event_packet, transport='hid'):
         self._queue_event_packet = _queue_event_packet
         self.packets_to_send = []
         self.state = UsbDevState.DISCONNECTED
@@ -225,10 +225,7 @@ class USB:
         else:
             self.transport = U2f(self.send_xfer)
 
-        level = logging.INFO
-        if debug:
-            level = logging.DEBUG
-        logging.basicConfig(level=level, format='%(asctime)s.%(msecs)03d - USB: %(message)s', datefmt='%H:%M:%S')
+        self.logger = logging.getLogger("usb")
 
     def send_xfer(self, packet):
         # don't send packets until the endpoint is configured
@@ -236,17 +233,17 @@ class USB:
             self.packets_to_send.append(packet)
             if self.state == UsbDevState.DEFAULT:
                 self.state = UsbDevState.ADDRESSED
-                logging.debug('set_address sent!')
+                self.logger.debug("set_address sent")
                 self._send_setup(UsbReq.SET_ADDRESS, 1)
             return
 
-        logging.debug('[SEND_XFER] {}'.format(binascii.hexlify(packet)))
+        self.logger.debug("[SEND_XFER] {}".format(binascii.hexlify(packet)))
         self._queue_event_packet(SephUsbTag.XFER_EVENT, packet)
 
     def _send_setup(self, breq, wValue):
         data = usb_header.build(dict(endpoint=self.transport.endpoint_out, tag=SephUsbTag.XFER_SETUP, length=0))
         data += usb_setup.build(dict(bmreq=UsbReq.RECIPIENT_DEVICE, breq=breq, wValue=wValue, wIndex=0, wLength=0))
-        logging.debug('[SEND_SETUP] {}'.format(binascii.hexlify(data)))
+        self.logger.debug("[SEND_SETUP] {}".format(binascii.hexlify(data)))
         self._queue_event_packet(SephUsbTag.XFER_EVENT, data)
 
     def _flush_packets(self):
@@ -259,7 +256,7 @@ class USB:
         """Parse a config packet. If the endpoint address is set, configure it."""
 
         tag = SephUsbConfig(data[0])
-        logging.debug('[CONFIG] {} {}'.format(repr(tag), binascii.hexlify(data)))
+        self.logger.debug("[CONFIG] {} {}".format(repr(tag), binascii.hexlify(data)))
 
         # The USB stack is shut down with USB_power(0) before being powered on.
         # Wait for the first CONNECT config message to ensure that USBD_Start()
@@ -276,7 +273,7 @@ class USB:
             if self.state == UsbDevState.ADDRESSED:
                 self.state = UsbDevState.CONFIGURED
                 self._send_setup(UsbReq.SET_CONFIGURATION, 1)
-                logging.debug('configured!')
+                self.logger.debug("configured")
 
         elif tag == SephUsbConfig.ENDPOINTS:
             # once the endpoint is configured, queued packets can be sent
@@ -290,7 +287,7 @@ class USB:
         header = usb_header.parse(data[:3])
         answer = None
         tag = SephUsbPrepare(header.tag)
-        logging.debug('[PREPARE] {} {} {}'.format(repr(self.state), repr(tag), binascii.hexlify(data)))
+        self.logger.debug("[PREPARE] {} {} {}".format(repr(self.state), repr(tag), binascii.hexlify(data)))
 
         if tag == SephUsbPrepare.IN:
             if header.endpoint == self.transport.endpoint_in:
