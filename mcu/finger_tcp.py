@@ -9,16 +9,17 @@ Usage example:
     $ echo -n 128,300,0,110,41,0 | nc -nv 127.0.0.1 1236
 '''
 
+import logging
 import socket
-
 
 class FakeFingerClient:
     def __init__(self, s):
         self.s = s
+        self.logger = logging.getLogger("finger")
 
     def _close(self, screen):
         screen.remove_notifier(self.s.fileno())
-        print('[*] connection closed with fake button client')
+        self.logger.debug("connection closed with fake button client")
 
     def can_read(self, s, screen):
         try:
@@ -37,11 +38,9 @@ class FakeFingerClient:
         for action in actions:
             x = int(action[0])
             y = int(action[1])
-            pressed = int(action[2])
-            print('[*] Touch event on (%d,%d) coordinates, %s' \
-                  % (x, y, "pressed" if pressed else "release"))
+            pressed = "pressed" if int(action[2]) else "release"
+            self.logger.debug(f"touch event on ({x},{y}) coordinates, {pressed}")
             screen.seph.handle_finger(x, y, pressed)
-
 
 class FakeFinger:
     def __init__(self, port):
@@ -49,9 +48,10 @@ class FakeFinger:
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind(('0.0.0.0', port))
         self.s.listen(5)
+        self.logger = logging.getLogger("finger")
 
     def can_read(self, s, screen):
         c, addr = self.s.accept()
-        print('[*] new finger-tcp client from', addr)
+        self.logger.debug(f"new client from {addr}")
         client = FakeFingerClient(c)
         screen.add_notifier(client)

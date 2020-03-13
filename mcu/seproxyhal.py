@@ -1,4 +1,5 @@
 import binascii
+import logging
 import os
 import select
 import sys
@@ -45,7 +46,6 @@ class DeferedTicketEventSender(threading.Thread):
         self.parent = parent
 
     def run(self):
-        # print(f"[*] sleeping for {self.parent.sleep_time}")
         time.sleep(self.parent.sleep_time)
         self.parent._send_ticker_event()
 
@@ -57,13 +57,14 @@ class SeProxyHal:
         self.sending_ticker_event = threading.Lock()
         self.status_received = True
         self.usb = usb.USB(self._queue_event_packet)
+        self.logger = logging.getLogger("seproxyhal")
 
     def _recvall(self, size):
         data = b''
         while size > 0:
             tmp = self.s.recv(size)
             if len(tmp) == 0:
-                print('[-] seproxyhal: fd closed', file=sys.stderr)
+                self.logger.debug("fd closed")
                 sys.exit(1)
             data += tmp
             size -= len(tmp)
@@ -74,7 +75,7 @@ class SeProxyHal:
 
         size = len(data).to_bytes(2, 'big')
         packet = tag.to_bytes(1, 'big') + size + data
-        #print('[*] seproxyhal: send %s' % binascii.hexlify(packet), file=sys.stderr)
+        #self.logger.debug("send {}" .format(packet.hex()))
         try:
             self.s.sendall(packet)
         except BrokenPipeError:
@@ -130,7 +131,7 @@ class SeProxyHal:
         data = self._recvall(size)
         assert len(data) == size
 
-        #print('[*] seproxyhal: received (tag: 0x%02x, size: 0x%02x): %s' % (tag, size, repr(data)), file=sys.stderr)
+        #self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
         if tag & 0xf0 == SephTag.GENERAL_STATUS:
             self.status_received = True
@@ -140,27 +141,26 @@ class SeProxyHal:
                     screen.screen_update()
 
             elif tag == SephTag.SCREEN_DISPLAY_STATUS:
-                #print('[*] seproxyhal: DISPLAY_STATUS %s' % repr(data), file=sys.stderr)
+                #self.logger.debug(f"DISPLAY_STATUS {data!r}")
                 screen.display_status(data)
                 self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
-                #print('SephTag.SCREEN_DISPLAY_RAW_STATUS', file=sys.stderr)
+                self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
                 self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
             elif tag == SephTag.PRINTF_STATUS:
-                for b in data:
-                    sys.stdout.write('%c' % chr(b))
-                sys.stdout.flush()
+                for b in [ chr(b) for b in data ]:
+                    self.logger.info(f"printf: {b!r}")
                 self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
             else:
-                print('unknown tag: 0x%x' % tag)
+                self.logger.error(f"unknown tag: {tag:#x}")
                 sys.exit(0)
 
             self.send_next_event()
@@ -180,7 +180,7 @@ class SeProxyHal:
             pass
 
         else:
-            print('unknown tag: 0x%x' % tag)
+            self.logger.error(f"unknown tag: {tag:#x}")
             sys.exit(0)
 
     def _queue_event_packet(self, tag, data=b''):

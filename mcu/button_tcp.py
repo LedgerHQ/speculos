@@ -10,6 +10,7 @@ Usage example:
     $ echo -n LRlr | nc -nv 127.0.0.1 1235
 '''
 
+import logging
 import socket
 import time
 
@@ -22,10 +23,11 @@ class FakeButtonClient:
     }
     def __init__(self, s):
         self.s = s
+        self.logger = logging.getLogger("button")
 
     def _close(self, screen):
         screen.remove_notifier(self.s.fileno())
-        print('[*] connection closed with fake button client')
+        self.logger.debug("connection closed with fake button client")
 
     def can_read(self, s, screen):
         try:
@@ -42,12 +44,11 @@ class FakeButtonClient:
             c = chr(c)
             if c in self.actions.keys():
                 key, pressed = self.actions[c]
-                print('[*] button %d release: %s' % (key, repr(pressed)))
+                self.logger.debug(f"button {key} release: {pressed}")
                 screen.seph.handle_button(key, pressed)
                 time.sleep(0.1)
             else:
-                #print('[*] ignoring byte %s' % repr(c))
-                pass
+                self.logger.debug(f"ignoring byte {c!r}")
 
 class FakeButton:
     def __init__(self, port):
@@ -55,9 +56,10 @@ class FakeButton:
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.s.bind(('0.0.0.0', port))
         self.s.listen(5)
+        self.logger = logging.getLogger("button")
 
     def can_read(self, s, screen):
         c, addr = self.s.accept()
-        print('[*] new client from', addr)
+        self.logger.debug(f"new client from {addr}")
         client = FakeButtonClient(c)
         screen.add_notifier(client)

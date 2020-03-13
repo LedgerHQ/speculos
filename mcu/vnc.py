@@ -6,6 +6,7 @@ true color: 24 bbp).
 '''
 
 import os
+import logging
 import subprocess
 import sys
 
@@ -13,6 +14,8 @@ from .display import MODELS
 
 class VNC:
     def __init__(self, port, model, password=None, verbose=False):
+        self.logger = logging.getLogger("vnc")
+
         width, height = MODELS[model].screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../build/vnc/vnc_server')
@@ -68,7 +71,7 @@ class VNC:
         while len(data) != 6:
             tmp = self.p.stdout.read(6 - len(data))
             if not tmp:
-                print("connection with vnc stdout closed")
+                self.logger.info("connection with vnc stdout closed")
                 sys.exit(0)
             data += tmp
 
@@ -84,4 +87,4 @@ class VNC:
             pressed = (data[4] == 0x11)
             screen.seph.handle_button(button, pressed)
         else:
-            print('invalid message from the VNC server')
+            self.logger.error("invalid message from the VNC server")
