@@ -123,6 +123,22 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
         sys.exit(1)
     sys.exit(0)
 
+def setup_logging(args):
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(module)s: %(message)s', datefmt='%H:%M:%S')
+
+    for arg in args.log_level:
+        if ":" not in arg:
+            logging.getLogger("speculos").error(f"invalid --log argument {arg}")
+            sys.exit(1)
+        name, level = arg.split(":", 1)
+        logger = logging.getLogger(name)
+        try:
+            logger.setLevel(level)
+        except ValueError as e:
+            logging.getLogger("speculos").error(f"invalid --log argument: {e}")
+            sys.exit(1)
+
+    return logging.getLogger("speculos")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
@@ -132,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce deterministic randomness')
     parser.add_argument('-k', '--sdk', default='1.6', help='SDK version')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
+    parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), can be specified multiple times')
     parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
     parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. 0x123000:0x100). Supercedes the internal probing for such page.')
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"')
@@ -154,8 +171,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.model.lower()
 
-    logger = logging.getLogger("speculos")
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(module)s: %(message)s', datefmt='%H:%M:%S')
+    logger = setup_logging(args)
 
     rendering = display.RENDER_METHOD.FLUSHED
     if args.progressive:
