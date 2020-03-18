@@ -16,7 +16,6 @@ sudo apt install libvncserver-dev
 ### speculos
 
 ```console
-mkdir -p build
 cmake -Bbuild -H.
 make -C build/
 ```

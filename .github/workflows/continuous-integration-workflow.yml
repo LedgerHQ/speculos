@@ -1,0 +1,35 @@
+# Build speculos and run tests using GitHub Actions
+
+name: Continuous Integration
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master, ci ]
+  pull_request:
+    branches: [ master, ci ]
+
+jobs:
+  build:
+    name: Clone, build, test
+    runs-on: ubuntu-latest
+
+    # Use https://hub.docker.com/r/ledgerhq/speculos-builder which has all the
+    # required dependencies
+    container:
+      image: docker://ledgerhq/speculos-builder:latest
+
+    steps:
+    - name: Clone
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: |
+        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install
+        make -C build
+
+    - name: Test
+      run: |
+        make -C build/ test
+        pytest
