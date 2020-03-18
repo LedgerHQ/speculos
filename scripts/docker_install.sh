@@ -10,7 +10,6 @@ install_deps() {
     pipenv install --deploy --system
 
     # build speculos
-    mkdir -p build
     cmake -Bbuild -H. -DWITH_VNC=1
     make -C build/
 }

@@ -26,7 +26,6 @@ jobs:
 
     - name: Build
       run: |
-        mkdir -p build
         cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install
         make -C build
 
