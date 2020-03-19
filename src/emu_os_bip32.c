@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#include "emu_os_bip32.h"
+
 #include "cx.h"
 #include "cx_ec.h"
 #include "cx_math.h"
@@ -184,19 +186,63 @@ unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *p
   return 0;
 }
 
-unsigned long sys_os_perso_derive_node_with_seed_key(
-  unsigned int mode, cx_curve_t curve,
-  const unsigned int *path, unsigned int pathLength,
-  unsigned char *privateKey, unsigned char *chain,
-  unsigned char *seed_key, unsigned int seed_key_length) {
-  (void) mode;
-  (void) curve;
-  (void) path;
-  (void) pathLength;
-  (void) chain;
-  (void) seed_key;
-  (void) seed_key_length;
-  memset(privateKey, 0xaa, 32);
+#define SLIP21_NODE_SIZE  64
+
+int slip21_derive_master_node(uint8_t *out) {
+  const uint8_t slip21_key[] = {'S', 'y', 'm', 'm', 'e', 't', 'r', 'i', 'c',
+                                ' ', 'k', 'e', 'y', ' ', 's', 'e', 'e', 'd'};
+  uint8_t seed[64];
+  ssize_t seed_size = get_seed_from_env("SPECULOS_SEED", seed, sizeof(seed));
+  if (seed_size < 0) {
+    return seed_size;
+  }
+  cx_hmac_sha512(slip21_key, sizeof(slip21_key), seed, seed_size, out,
+                 SLIP21_NODE_SIZE);
   return 0;
 }
 
+int slip21_derive_child_node(const uint8_t *master_node, const uint8_t *path,
+                             size_t path_len, uint8_t *child_node) {
+  if (path == NULL || path_len == 0 || path[0] != 0) {
+    return -1;
+  }
+  cx_hmac_sha512(master_node, 32, path, path_len, child_node, SLIP21_NODE_SIZE);
+  return 0;
+}
+
+unsigned long sys_os_perso_derive_node_with_seed_key(
+    unsigned int mode, cx_curve_t curve, const unsigned int *path,
+    unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
+    unsigned char *seed_key, unsigned int seed_key_length) {
+  (void)curve;
+  (void)seed_key;
+  (void)seed_key_length;
+
+  uint8_t master_node[SLIP21_NODE_SIZE], child_node[SLIP21_NODE_SIZE];
+
+  switch (mode) {
+  case HDW_NORMAL:
+  case HDW_ED25519_SLIP10:
+    memset(privateKey, 0xaa, 32);
+    break;
+  case HDW_SLIP21:
+    if (slip21_derive_master_node(master_node) < 0) {
+      THROW(EXCEPTION);
+    }
+    if (slip21_derive_child_node(master_node, (uint8_t *)path, pathLength,
+                                 child_node) < 0) {
+      THROW(EXCEPTION);
+    }
+
+    if (chain) {
+      memcpy(chain, child_node, 32);
+    }
+    if (privateKey) {
+      memcpy(privateKey, child_node + 32, 32);
+    }
+    break;
+  default:
+    THROW(EXCEPTION);
+  }
+  return 0;
+}
