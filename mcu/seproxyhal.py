@@ -153,8 +153,7 @@ class SeProxyHal:
                     screen.screen_update()
 
             elif tag == SephTag.PRINTF_STATUS:
-                for b in [ chr(b) for b in data ]:
-                    self.logger.info(f"printf: {b!r}")
+                self.logger.info(f"printf: {data}")
                 self._queue_event_packet(SephTag.DISPLAY_PROCESSED_EVENT)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
