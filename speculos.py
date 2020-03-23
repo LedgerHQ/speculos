@@ -124,7 +124,7 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
     sys.exit(0)
 
 def setup_logging(args):
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(module)s: %(message)s', datefmt='%H:%M:%S')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(name)s: %(message)s', datefmt='%H:%M:%S')
 
     for arg in args.log_level:
         if ":" not in arg:
