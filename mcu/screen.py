@@ -87,9 +87,10 @@ class Screen(Display):
             self.app.close()
 
     def display_status(self, data):
-        self.bagl.display_status(data)
+        ret = self.bagl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
+        return ret
 
     def display_raw_status(self, data):
         self.bagl.display_raw_status(data)
