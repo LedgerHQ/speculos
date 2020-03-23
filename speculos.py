@@ -15,6 +15,7 @@ import re
 import signal
 import socket
 import sys
+import threading
 
 import pkg_resources
 
@@ -35,6 +36,16 @@ def set_pdeath(sig):
     PR_SET_PDEATHSIG = 1
     libc = ctypes.cdll.LoadLibrary('libc.so.6')
     libc.prctl(PR_SET_PDEATHSIG, sig)
+
+def sigchld_handler(sig, frame):
+    """Get notified when QEMU exits."""
+
+    logger.debug("SIGCHLD received")
+
+    for thread in threading.enumerate():
+        if thread.name == "packet":
+            logger.debug("stopping packet thread")
+            thread.force_stop()
 
 def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
@@ -91,6 +102,8 @@ def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, tra
             extra_ram = ram_arg
         if extra_ram:
             args.extend([ '-r', extra_ram ])
+
+    signal.signal(signal.SIGCHLD, sigchld_handler)
 
     pid = os.fork()
     if pid != 0:

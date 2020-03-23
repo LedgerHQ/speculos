@@ -92,6 +92,13 @@ class PacketThread(threading.Thread):
         self.queue_packet(SephTag.TICKER_EVENT)
         return not self.exited
 
+    def force_stop(self):
+        # This thread might get stuck waiting for a status notification if the
+        # app exited before sending a status. Force the delivery of this
+        # notification.
+        self.stop = True
+        self.status_event.set()
+
     def run(self):
         while not self.stop:
             # wait for a packet to be available in the queue
