@@ -36,25 +36,29 @@ TICKER_DELAY = 0.1
 
 
 def ticker(add_tick):
-    """Function ran in a thread to trigger a tick each TICKER_DELAY second."""
+    """
+    Function ran in a thread to trigger a tick at a periodic interval.
+
+    There is no need to prevent clock drift.
+    """
 
     logger = logging.getLogger("seproxyhal.ticker")
 
-    while add_tick():
+    while True:
+        add_tick()
         time.sleep(TICKER_DELAY)
 
     logger.debug("exiting")
 
 class PacketThread(threading.Thread):
     def __init__(self, s, status_event, *args, **kwargs):
-        super(PacketThread, self).__init__(name="packet")
+        super(PacketThread, self).__init__(name="packet", daemon=True)
         self.s = s
         self.queue_condition = threading.Condition()
         self.queue = []
         self.status_event = status_event
-        self.logger = logging.getLogger("seproxyhal.send")
+        self.logger = logging.getLogger("seproxyhal.packet")
         self.stop = False
-        self.exited = False
 
     def _send_packet(self, tag, data=b''):
         """Send a packet to the app."""
@@ -83,21 +87,9 @@ class PacketThread(threading.Thread):
             self.queue_condition.notify()
 
     def add_tick(self):
-        """
-        Add a ticker event to the queue.
-
-        Return False if the tick can't be sent.
-        """
+        """Add a ticker event to the queue."""
 
         self.queue_packet(SephTag.TICKER_EVENT)
-        return not self.exited
-
-    def force_stop(self):
-        # This thread might get stuck waiting for a status notification if the
-        # app exited before sending a status. Force the delivery of this
-        # notification.
-        self.stop = True
-        self.status_event.set()
 
     def run(self):
         while not self.stop:
@@ -115,8 +107,6 @@ class PacketThread(threading.Thread):
             self._send_packet(tag, data)
 
         self.logger.debug("exiting")
-        # notify the ticker thread it should exit
-        self.exited = True
 
 class SeProxyHal:
     def __init__(self, s):
@@ -130,7 +120,8 @@ class SeProxyHal:
 
         self.ticker_thread = threading.Thread(name="ticker",
                                               target=ticker,
-                                              args=(self.packet_thread.add_tick,))
+                                              args=(self.packet_thread.add_tick,),
+                                              daemon=True)
         self.ticker_thread.start()
         self.usb = usb.USB(self.packet_thread.queue_packet)
 
