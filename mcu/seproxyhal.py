@@ -73,14 +73,19 @@ class PacketThread(threading.Thread):
         except OSError:
             self.stop = True
 
-    def queue_packet(self, tag, data=b''):
+    def queue_packet(self, tag, data=b'', priority=False):
         """
         Append a packet to the queue of packets to be sent.
 
         This function is meant to called by other threads.
         """
 
-        self.queue.append((tag, data))
+        if not priority:
+            self.queue.append((tag, data))
+        else:
+            # Some status packets expect a specific event to be answered before
+            # any other events. Put it at the beginning of the queue.
+            self.queue.insert(0, (tag, data))
 
         # notify this thread that a new packet is available
         with self.queue_condition:
@@ -93,15 +98,15 @@ class PacketThread(threading.Thread):
 
     def run(self):
         while not self.stop:
-            # wait for a packet to be available in the queue
-            with self.queue_condition:
-                while len(self.queue) == 0:
-                    self.queue_condition.wait()
-
             # wait for a status notification
             while not self.status_event.is_set():
                 self.status_event.wait()
             self.status_event.clear()
+
+            # wait for a packet to be available in the queue
+            with self.queue_condition:
+                while len(self.queue) == 0:
+                    self.queue_condition.wait()
 
             tag, data = self.queue.pop(0)
             self._send_packet(tag, data)
@@ -152,12 +157,9 @@ class SeProxyHal:
         data = self._recvall(size)
         assert len(data) == size
 
-        #self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
+        self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
         if tag & 0xf0 == SephTag.GENERAL_STATUS:
-            # signal the sending thread that a status has been received
-            self.status_event.set()
-
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     screen.screen_update()
@@ -165,24 +167,36 @@ class SeProxyHal:
             elif tag == SephTag.SCREEN_DISPLAY_STATUS:
                 #self.logger.debug(f"DISPLAY_STATUS {data!r}")
                 screen.display_status(data)
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
 
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+                # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
+                #
+                # io_seproxyhal_spi_recv() accepts any packet from the MCU after
+                # having sent SCREEN_DISPLAY_RAW_STATUS. If some event (eg.
+                # TICKER_EVENT) is replied before DISPLAY_PROCESSED_EVENT, it
+                # will be silently ignored.
+                #
+                # A DISPLAY_PROCESSED_EVENT should be answered immediately,
+                # hence priority=True.
+                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
             elif tag == SephTag.PRINTF_STATUS:
                 self.logger.info(f"printf: {data}")
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
             else:
                 self.logger.error(f"unknown tag: {tag:#x}")
                 sys.exit(0)
+
+            # signal the sending thread that a status has been received
+            self.status_event.set()
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)
