@@ -109,9 +109,6 @@ class APDUClient:
         assert connected
         s.settimeout(1.5)
 
-        # unfortunately, the app can take some time to start...
-        time.sleep(1.0)
-
         data, status = self._exchange(s, packet, verbose)
 
         s.close()

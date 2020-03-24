@@ -231,10 +231,6 @@ class USB:
         # don't send packets until the endpoint is configured
         if self.state != UsbDevState.CONFIGURED or len(self.packets_to_send) > 0:
             self.packets_to_send.append(packet)
-            if self.state == UsbDevState.DEFAULT:
-                self.state = UsbDevState.ADDRESSED
-                self.logger.debug("set_address sent")
-                self._send_setup(UsbReq.SET_ADDRESS, 1)
             return
 
         self.logger.debug("[SEND_XFER] {}".format(binascii.hexlify(packet)))
@@ -263,7 +259,9 @@ class USB:
         # has been called.
         if tag == SephUsbConfig.CONNECT:
             if self.state == UsbDevState.DISCONNECTED:
-                self.state = UsbDevState.DEFAULT
+                self.state = UsbDevState.ADDRESSED
+                self.logger.debug("set_address sent")
+                self._send_setup(UsbReq.SET_ADDRESS, 1)
 
         elif tag == SephUsbConfig.DISCONNECT:
             self.state = UsbDevState.DISCONNECTED
