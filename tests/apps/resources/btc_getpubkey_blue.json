@@ -1,0 +1,12 @@
+{
+    "version": 1,
+    "rules": [
+        {
+            "text": "CONFIRM ACCOUNT",
+            "actions": [
+                [ "finger", 249, 435, true ],
+                [ "finger", 249, 435, false ]
+            ]
+        }
+    ]
+}

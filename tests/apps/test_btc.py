@@ -6,9 +6,10 @@ Tests to ensure that speculos launches correctly the BTC apps.
 
 import binascii
 import os
+import pkg_resources
+import pytest
 import socket
 import time
-import pytest
 
 class Vnc:
     def __init__(self, port):
@@ -42,6 +43,12 @@ class Vnc:
 class TestBtc:
     '''Tests for Bitcoin app.'''
 
+    @staticmethod
+    def get_automation_path(name):
+        path = os.path.join("resources", name)
+        path = pkg_resources.resource_filename(__name__, path)
+        return f"file:{path}"
+
     def test_btc_get_version(self, app, stop_app):
         '''Send a get_version APDU to the BTC app.'''
 
@@ -66,6 +73,21 @@ class TestBtc:
 
         response, status = app.exchange(apdu)
         assert status == 0x9000
+
+    def test_btc_automation(self, app):
+        """Retrieve the pubkey, which requires a validation"""
+
+        if app.revision == '00000000' and app.model == 'nanos':
+            pytest.skip("unsupported get pubkey ux for this app version")
+
+        args = [ '--automation', TestBtc.get_automation_path(f'btc_getpubkey_{app.model}.json') ]
+        app.run(args=args)
+
+        packet = binascii.unhexlify('e040010115058000003180000000800000000000000000000000')
+        data, status = app.exchange(packet)
+        assert status == 0x9000
+
+        app.stop()
 
     def test_vnc_no_password(self, app, stop_app):
         port = 5900
