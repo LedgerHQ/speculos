@@ -1,0 +1,9 @@
+{
+    "version": 1,
+    "rules": [
+        {
+            "text": "Application",
+            "invalid key": 35
+        }
+    ]
+}

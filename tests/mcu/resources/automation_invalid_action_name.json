@@ -1,0 +1,18 @@
+{
+    "version": 1,
+    "rules": [
+        {
+            "text": "Application",
+            "x": 35,
+            "y": 3,
+            "conditions": [
+                [ "seen", false ]
+            ],
+            "actions": [
+                [ "button", 2, true ],
+                [ "invalid action name", 2, false ],
+                [ "setbool", "seen", true ]
+            ]
+        }
+    ]
+}
