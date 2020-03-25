@@ -128,12 +128,12 @@ void test_cavp_sha3_xof(const char *filename, cx_md_t md_type) {
 }
 
 void test_sha3_224_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/sha3_224_short_msg.data",
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/sha3_224_short_msg.data",
                                 CX_SHA3, 28);
 }
 
 void test_sha3_224_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_224_long_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_224_long_msg.data",
                                CX_SHA3, 28);
 }
 
@@ -151,12 +151,12 @@ void test_sha3_224_monte_carlo(void **state __attribute__((unused))) {
 }
 
 void test_sha3_256_short_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_256_short_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_256_short_msg.data",
                                CX_SHA3, 32);
 }
 
 void test_sha3_256_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_256_long_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_256_long_msg.data",
                                CX_SHA3, 32);
 }
 
@@ -174,12 +174,12 @@ void test_sha3_256_monte_carlo(void **state __attribute__((unused))) {
 }
 
 void test_sha3_384_short_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_384_short_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_384_short_msg.data",
                                CX_SHA3, 48);
 }
 
 void test_sha3_384_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_384_long_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_384_long_msg.data",
                                CX_SHA3, 48);
 }
 
@@ -200,12 +200,12 @@ void test_sha3_384_monte_carlo(void **state __attribute__((unused))) {
 }
 
 void test_sha3_512_short_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_512_short_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_512_short_msg.data",
                                CX_SHA3, 64);
 }
 
 void test_sha3_512_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/sha3_512_long_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/sha3_512_long_msg.data",
                                CX_SHA3, 64);
 }
 
@@ -230,17 +230,17 @@ void test_sha3_512_monte_carlo(void **state __attribute__((unused))) {
 }
 
 void test_shake128_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/shake128_short_msg.data",
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/shake128_short_msg.data",
                                 CX_SHAKE128, 16);
 }
 
 void test_shake128_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/shake128_long_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/shake128_long_msg.data",
                                CX_SHAKE128, 16);
 }
 
 void test_shake128_variable_output(void **state __attribute__((unused))) {
-  test_cavp_sha3_xof("../../tests/cavp/shake128_variable_output.data",
+  test_cavp_sha3_xof("../../../tests/syscalls/cavp/shake128_variable_output.data",
                      CX_SHAKE128);
 }
 
@@ -257,17 +257,17 @@ void test_shake128_monte_carlo(void **state __attribute__((unused))) {
 }
 
 void test_shake256_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/shake256_short_msg.data",
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/shake256_short_msg.data",
                                 CX_SHAKE256, 32);
 }
 
 void test_shake256_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/shake256_long_msg.data",
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/shake256_long_msg.data",
                                CX_SHAKE256, 32);
 }
 
 void test_shake256_variable_output(void **state __attribute__((unused))) {
-  test_cavp_sha3_xof("../../tests/cavp/shake256_variable_output.data",
+  test_cavp_sha3_xof("../../../tests/syscalls/cavp/shake256_variable_output.data",
                      CX_SHAKE256);
 }
 
@@ -284,35 +284,35 @@ void test_shake256_monte_carlo(void **state __attribute__((unused))) {
 }
 
 void test_keccak_224_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/keccak_224_short_msg.data", CX_KECCAK, 28);
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/keccak_224_short_msg.data", CX_KECCAK, 28);
 }
 
 void test_keccak_224_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/keccak_224_long_msg.data", CX_KECCAK, 28);
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/keccak_224_long_msg.data", CX_KECCAK, 28);
 }
 
 void test_keccak_256_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/keccak_256_short_msg.data", CX_KECCAK, 32);
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/keccak_256_short_msg.data", CX_KECCAK, 32);
 }
 
 void test_keccak_256_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/keccak_256_long_msg.data", CX_KECCAK, 32);
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/keccak_256_long_msg.data", CX_KECCAK, 32);
 }
 
 void test_keccak_384_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/keccak_384_short_msg.data", CX_KECCAK, 48);
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/keccak_384_short_msg.data", CX_KECCAK, 48);
 }
 
 void test_keccak_384_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/keccak_384_long_msg.data", CX_KECCAK, 48);
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/keccak_384_long_msg.data", CX_KECCAK, 48);
 }
 
 void test_keccak_512_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg_with_size("../../tests/cavp/keccak_512_short_msg.data", CX_KECCAK, 64);
+  test_cavp_short_msg_with_size("../../../tests/syscalls/cavp/keccak_512_short_msg.data", CX_KECCAK, 64);
 }
 
 void test_keccak_512_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../tests/cavp/keccak_512_long_msg.data", CX_KECCAK, 64);
+  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/keccak_512_long_msg.data", CX_KECCAK, 64);
 }
 
 int main(void) {

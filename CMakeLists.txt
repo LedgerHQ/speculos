@@ -51,7 +51,7 @@ link_directories(${INSTALL_DIR}/lib)
 link_libraries(ssl crypto dl)
 
 add_subdirectory(src)
-add_subdirectory(tests)
+add_subdirectory(tests/syscalls)
 
 if (WITH_VNC)
     externalproject_add(vnc_server

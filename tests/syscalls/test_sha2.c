@@ -14,11 +14,11 @@
 #include "emulate.h"
 
 void test_sha256_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg("../../tests/cavp/sha256_short_msg.data", CX_SHA256);
+  test_cavp_short_msg("../../../tests/syscalls/cavp/sha256_short_msg.data", CX_SHA256);
 }
 
 void test_sha256_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg("../../tests/cavp/sha256_long_msg.data", CX_SHA256);
+  test_cavp_long_msg("../../../tests/syscalls/cavp/sha256_long_msg.data", CX_SHA256);
 }
 
 void test_sha256_monte(void **state __attribute__((unused))) {
@@ -35,11 +35,11 @@ void test_sha256_monte(void **state __attribute__((unused))) {
 }
 
 void test_sha224_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg("../../tests/cavp/sha224_short_msg.data", CX_SHA224);
+  test_cavp_short_msg("../../../tests/syscalls/cavp/sha224_short_msg.data", CX_SHA224);
 }
 
 void test_sha224_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg("../../tests/cavp/sha224_long_msg.data", CX_SHA224);
+  test_cavp_long_msg("../../../tests/syscalls/cavp/sha224_long_msg.data", CX_SHA224);
 }
 
 void test_sha224_monte(void **state __attribute__((unused))) {
@@ -56,11 +56,11 @@ void test_sha224_monte(void **state __attribute__((unused))) {
 }
 
 void test_sha384_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg("../../tests/cavp/sha384_short_msg.data", CX_SHA384);
+  test_cavp_short_msg("../../../tests/syscalls/cavp/sha384_short_msg.data", CX_SHA384);
 }
 
 void test_sha384_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg("../../tests/cavp/sha384_long_msg.data", CX_SHA384);
+  test_cavp_long_msg("../../../tests/syscalls/cavp/sha384_long_msg.data", CX_SHA384);
 }
 
 void test_sha384_monte(void **state __attribute__((unused))) {
@@ -81,11 +81,11 @@ void test_sha384_monte(void **state __attribute__((unused))) {
 }
 
 void test_sha512_short_msg(void **state __attribute__((unused))) {
-  test_cavp_short_msg("../../tests/cavp/sha512_short_msg.data", CX_SHA512);
+  test_cavp_short_msg("../../../tests/syscalls/cavp/sha512_short_msg.data", CX_SHA512);
 }
 
 void test_sha512_long_msg(void **state __attribute__((unused))) {
-  test_cavp_long_msg("../../tests/cavp/sha512_long_msg.data", CX_SHA512);
+  test_cavp_long_msg("../../../tests/syscalls/cavp/sha512_long_msg.data", CX_SHA512);
 }
 
 void test_sha512_monte(void **state __attribute__((unused))) {

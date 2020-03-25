@@ -169,7 +169,7 @@ void test_ecdh_overflow(void **state) {
 void test_wycheproof_ecdh_secp256k1(void **state) {
   (void)state;
   test_wycheproof_vectors(
-      "../../tests/wycheproof/ecdh_secp256k1.data");
+      "../../../tests/syscalls/wycheproof/ecdh_secp256k1.data");
 }
 
 static void test_ecdh_secp256k1(void **state) {
