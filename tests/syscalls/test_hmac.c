@@ -161,11 +161,11 @@ void test_cavp_long_msg_with_size_old_api(const char *filename) {
 }
 
 void test_hmac_sha256_old_api(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size_old_api("../../../tests/syscalls/cavp/hmac.data");
+  test_cavp_long_msg_with_size_old_api(TESTS_PATH "cavp/hmac.data");
 }
 
 void test_hmac_sha2(void **state __attribute__((unused))) {
-  test_cavp_long_msg_with_size("../../../tests/syscalls/cavp/hmac.data");
+  test_cavp_long_msg_with_size(TESTS_PATH "cavp/hmac.data");
 }
 
 int main(void) {
