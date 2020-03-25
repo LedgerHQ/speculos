@@ -15,7 +15,8 @@ class APDUClient:
         self.path = path
         self.process = None
         # name example: nanos#btc#1.5#5b6693b8.elf
-        self.model, self.name, self.sdk, self.revision = os.path.basename(path).split('#')
+        root, ext = os.path.splitext(path)
+        self.model, self.name, self.sdk, self.revision = os.path.basename(root).split('#')
         self.touch_events = []
 
     def run(self, headless=True, finger_port=0, deterministic_rng='', seed="", rampage="", args=[]):
