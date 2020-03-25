@@ -62,4 +62,4 @@ def pytest_generate_tests(metafunc):
     # if a test function has an app parameter, give the list of app
     if 'app' in metafunc.fixturenames:
         # test are run on each app
-        metafunc.parametrize('app', apps, scope='class')
+        metafunc.parametrize('app', apps, scope='function')
