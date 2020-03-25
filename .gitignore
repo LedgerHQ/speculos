@@ -5,11 +5,3 @@
 __pycache__/
 apps/*vault*
 build/
-tests/hello
-tests/test_aes
-tests/test_blake2
-tests/test_crc16
-tests/test_ecdh
-tests/test_hmac
-tests/test_ripemd
-tests/test_sha2
