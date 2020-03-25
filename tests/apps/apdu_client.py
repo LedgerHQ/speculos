@@ -25,7 +25,7 @@ class APDUClient:
         if self.process:
             return
 
-        cmd = [ os.path.join(SCRIPT_DIR, '..', 'speculos.py') ]
+        cmd = [ os.path.join(SCRIPT_DIR, '..', '..', 'speculos.py') ]
         cmd += args
         if headless:
             cmd += [ '--display', 'headless' ]

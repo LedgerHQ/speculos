@@ -55,7 +55,7 @@ def filter_apps(cls, apps):
 
 def pytest_generate_tests(metafunc):
     # retrieve the list of apps in the ../apps directory
-    app_dir = os.path.join(SCRIPT_DIR, '..', 'apps')
+    app_dir = os.path.join(SCRIPT_DIR, '..', '..', 'apps')
     apps = listapps(app_dir)
     apps = filter_apps(metafunc.cls, apps)
 

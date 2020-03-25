@@ -235,7 +235,7 @@ static void test_eddsa_wycheproof(void **state) {
   char *line = malloc(MAX_LINE_LENGTH);
   assert_non_null(line);
 
-  FILE *f = fopen("../../tests/wycheproof/eddsa.data", "r");
+  FILE *f = fopen(TESTS_PATH "wycheproof/eddsa.data", "r");
   assert_non_null(f);
 
   enum wycheproof_result res;

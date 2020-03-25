@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 '''
-Tests to ensure that speculos launches correctly the BTC apps in app/.
-
-Usage: pytest-3 -v -s ./tests/test_btc.py
+Tests to ensure that speculos launches correctly the BTC apps.
 '''
 
 import binascii
