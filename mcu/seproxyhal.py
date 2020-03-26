@@ -118,6 +118,7 @@ class SeProxyHal:
         self.s = s
         self.last_ticker_sent_at = 0.0
         self.logger = logging.getLogger("seproxyhal")
+        self.printf_queue = ''
 
         self.status_event = threading.Event()
         self.packet_thread = PacketThread(self.s, self.status_event)
@@ -186,7 +187,12 @@ class SeProxyHal:
                     screen.screen_update()
 
             elif tag == SephTag.PRINTF_STATUS:
-                self.logger.info(f"printf: {data}")
+                for b in [ chr(b) for b in data ]:
+                    if b == '\n':
+                        self.logger.info(f"printf: {self.printf_queue}")
+                        self.printf_queue = ''
+                    else:
+                        self.printf_queue += b
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
