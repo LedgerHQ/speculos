@@ -12,7 +12,7 @@ class FingerClient(threading.Thread):
         threading.Thread.__init__(self)
         self.host = host
         self.port = port
-        self.running = True
+        self.running = False
         self.eventsLoop = ""
 
     def run(self):

@@ -21,8 +21,9 @@ def finger_client():
     finger = FingerClient()
     yield finger
     # teardown
-    finger.stop()
-    finger.join()
+    if finger.running:
+        finger.stop()
+        finger.join()
 
 
 def listapps(app_dir):
