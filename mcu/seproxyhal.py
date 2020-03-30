@@ -43,14 +43,22 @@ def ticker(add_tick):
     """
 
     logger = logging.getLogger("seproxyhal.ticker")
+    flood = False
 
     while True:
-        add_tick()
+        if not add_tick():
+            if not flood:
+                logger.warn("skipping ticker events (expected within a debugger)")
+                flood = True
+        else:
+            flood = False
         time.sleep(TICKER_DELAY)
 
     logger.debug("exiting")
 
 class PacketThread(threading.Thread):
+    TICKER_PACKET = (SephTag.TICKER_EVENT, b'')
+
     def __init__(self, s, status_event, *args, **kwargs):
         super(PacketThread, self).__init__(name="packet", daemon=True)
         self.s = s
@@ -94,7 +102,14 @@ class PacketThread(threading.Thread):
     def add_tick(self):
         """Add a ticker event to the queue."""
 
+        # Don't add too many ticker packets to the queue. For instance, the app
+        # might be stuck if a breakpoint is hit within a debugger. It avoids
+        # flooding the app on resume.
+        if self.queue.count(self.TICKER_PACKET) > 10:
+            return False
+
         self.queue_packet(SephTag.TICKER_EVENT)
+        return True
 
     def run(self):
         while not self.stop:
