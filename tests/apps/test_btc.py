@@ -6,7 +6,7 @@ Tests to ensure that speculos launches correctly the BTC apps.
 
 import binascii
 import os
-
+import pytest
 
 class TestBtc:
     '''Tests for Bitcoin app.'''
@@ -21,6 +21,22 @@ class TestBtc:
         assert status == 0x9000
 
         app.stop()
+
+    def test_btc_get_public_key_with_user_approval(self, app, stop_app, finger_client):
+        if app.model != "blue":
+            pytest.skip("Device not supported")
+
+        app.run(finger_port=1236, headless=True)
+
+        finger_client.eventsLoop = ["220,440,1", "220,440,0"]  # x,y,pressed
+        finger_client.start()
+       
+        bip32_path = bytes.fromhex("8000002C" + "80000000" + "80000000" + "00000000" + "00000000")
+        payload = bytes([len(bip32_path)//4]) + bip32_path
+        apdu = bytes.fromhex("e0400100") +  bytes([len(payload)]) + payload
+
+        response, status = app.exchange(apdu)
+        assert status == 0x9000
 
 class TestBtcTestnet:
     '''Tests for Bitcoin Testnet app.'''

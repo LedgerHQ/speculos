@@ -45,6 +45,7 @@ def filter_apps(cls, apps):
         'TestBtc': [ 'btc' ],
         'TestBtcTestnet': [ 'btc-test' ],
         'TestVault': [ 'vault' ],
+        'TestRamPage': ['ram-page']
     }
 
     class_name = cls.__name__.split('.')[-1]
