@@ -23,6 +23,10 @@
 
 #include "cursor.h"
 
+#ifndef DISABLE_SANDBOX
+#include "seccomp-bpf.h"
+#endif
+
 #define DEFAULT_WIDTH	  320
 #define DEFAULT_HEIGHT	  480
 
@@ -169,6 +173,63 @@ static int parse_size(char *s, unsigned int *width, unsigned int *height)
     return sscanf(s, "%ux%u", width, height) != 2;
 }
 
+static int load_seccomp(void)
+{
+#ifndef DISABLE_SANDBOX
+    struct sock_filter filter[] = {
+        /* Validate architecture. */
+        VALIDATE_ARCHITECTURE,
+        /* Grab the system call number. */
+        EXAMINE_SYSCALL,
+        /* List allowed syscalls. */
+        ALLOW_SYSCALL(accept),
+        ALLOW_SYSCALL(access),
+        ALLOW_SYSCALL(bind),
+        ALLOW_SYSCALL(brk),
+        ALLOW_SYSCALL(close),
+        ALLOW_SYSCALL(exit_group),
+        ALLOW_SYSCALL(fcntl),
+        ALLOW_SYSCALL(futex),
+        ALLOW_SYSCALL(getpeername),
+        ALLOW_SYSCALL(getpid),
+        ALLOW_SYSCALL(getrandom),
+        ALLOW_SYSCALL(listen),
+        ALLOW_SYSCALL(mmap),
+        ALLOW_SYSCALL(munmap),
+        ALLOW_SYSCALL(prlimit64),
+        ALLOW_SYSCALL(read),
+        ALLOW_SYSCALL(recvfrom),
+        ALLOW_SYSCALL(rt_sigaction),
+        ALLOW_SYSCALL(rt_sigprocmask),
+        ALLOW_SYSCALL(select),
+        ALLOW_SYSCALL(setsockopt),
+        ALLOW_SYSCALL(shutdown),
+        ALLOW_SYSCALL(socket),
+        ALLOW_SYSCALL(stat),
+        ALLOW_SYSCALL(uname),
+        ALLOW_SYSCALL(write),
+        KILL_PROCESS,
+    };
+
+    struct sock_fprog prog = {
+        .len = (unsigned short)(sizeof(filter)/sizeof(filter[0])),
+        .filter = filter,
+    };
+
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+        warn("prctl(NO_NEW_PRIVS)");
+        return -1;
+    }
+
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog)) {
+        warn("prctl(SECCOMP)");
+        return -1;
+    }
+#endif
+
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
     int libvnc_argc, nfds, opt;
@@ -177,6 +238,11 @@ int main(int argc, char **argv)
     sigset_t mask;
     bool verbose;
     fd_set fds;
+
+    if (load_seccomp() != 0) {
+        fprintf(stderr, "failed to load seccomp\n");
+        return EXIT_FAILURE;
+    }
 
     verbose = false;
     opterr = 0;
