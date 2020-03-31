@@ -21,8 +21,9 @@ def finger_client():
     finger = FingerClient()
     yield finger
     # teardown
-    finger.stop()
-    finger.join()
+    if finger.running:
+        finger.stop()
+        finger.join()
 
 
 def listapps(app_dir):
@@ -44,6 +45,7 @@ def filter_apps(cls, apps):
         'TestBtc': [ 'btc' ],
         'TestBtcTestnet': [ 'btc-test' ],
         'TestVault': [ 'vault' ],
+        'TestRamPage': ['ram-page']
     }
 
     class_name = cls.__name__.split('.')[-1]
