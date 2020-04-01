@@ -26,8 +26,8 @@ else()
 
   ExternalProject_Add(
     openssl
-    URL https://www.openssl.org/source/openssl-1.1.1d.tar.gz
-    URL_HASH SHA256=1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2
+    URL https://www.openssl.org/source/openssl-1.1.1f.tar.gz
+    URL_HASH SHA256=186c6bfe6ecfba7a5b48c47f8a1673d0f3b0e5ba2e25602dd23b629975da3f35
     CONFIGURE_COMMAND ./Configure --cross-compile-prefix=arm-linux-gnueabihf- no-asm no-threads no-shared no-sock linux-armv4 --prefix=${INSTALL_DIR}
     BUILD_COMMAND make CFLAGS=-mthumb
     INSTALL_COMMAND make install_sw
