@@ -230,6 +230,19 @@ static int load_seccomp(void)
     return 0;
 }
 
+/* The libvncserver logging function rfbDefaultLog() calls localtime() which
+ * open /etc/localtime. Since the openat syscall is forbidden by seccomp, the
+ * VNC server is killed when verbose is true.
+ *
+ * Workaround: let the libc read this file before loading the seccomp filter.  */
+static void preload_localtime(void)
+{
+    time_t log_clock;
+
+    time(&log_clock);
+    localtime(&log_clock);
+}
+
 int main(int argc, char **argv)
 {
     int libvnc_argc, nfds, opt;
@@ -238,6 +251,8 @@ int main(int argc, char **argv)
     sigset_t mask;
     bool verbose;
     fd_set fds;
+
+    preload_localtime();
 
     if (load_seccomp() != 0) {
         fprintf(stderr, "failed to load seccomp\n");
