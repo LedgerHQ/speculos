@@ -12,10 +12,6 @@ from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
 BUTTON_LEFT  = 1
 BUTTON_RIGHT = 2
 
-class FB(FrameBuffer):
-    def __init__(self, model):
-        super().__init__(model)
-
 class PaintWidget(QWidget):
     def __init__(self, parent, model, pixel_size, vnc=None):
         super().__init__(parent)
