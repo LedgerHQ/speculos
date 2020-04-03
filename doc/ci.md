@@ -1,10 +1,10 @@
 ## Speculos builder
 
-The Dockerfile `Dockerfile.build` builds a container with all required
+The Dockerfile `build.Dockerfile` builds a container with all required
 dependencies to build speculos:
 
 ```shell
-docker build -f Dockerfile.build -t ledgerhq/speculos-builder .
+docker build -f build.Dockerfile -t ledgerhq/speculos-builder .
 ```
 
 The resulting container is pushed on
