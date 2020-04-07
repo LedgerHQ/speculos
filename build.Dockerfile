@@ -18,7 +18,7 @@ RUN apt-get install -qy \
   wget
 
 # There are issues with PYTHONHOME if using distro packages, use pip instead.
-RUN pip3 install construct mnemonic pycrypto pyelftools pbkdf2 pytest
+RUN pip3 install construct jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest
 
 # Create SHA256SUMS
 RUN \
