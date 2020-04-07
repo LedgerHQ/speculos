@@ -12,7 +12,9 @@ The resulting container is pushed on
 employees, obviously):
 
 ```shell
-docker push ledgerhq/speculos-builder
+docker push ledgerhq/speculos-builder:latest
+docker image tag ledgerhq/speculos-builder:latest ledgerhq/speculos-builder:$(git rev-parse --short HEAD)
+docker push ledgerhq/speculos-builder:$(git rev-parse --short HEAD)
 ```
 
 This container can eventually be used by the CI.
