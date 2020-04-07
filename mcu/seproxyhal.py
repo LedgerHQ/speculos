@@ -129,11 +129,12 @@ class PacketThread(threading.Thread):
         self.logger.debug("exiting")
 
 class SeProxyHal:
-    def __init__(self, s):
+    def __init__(self, s, automation=None):
         self.s = s
         self.last_ticker_sent_at = 0.0
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
+        self.automation = automation
 
         self.status_event = threading.Event()
         self.packet_thread = PacketThread(self.s, self.status_event)
@@ -157,6 +158,68 @@ class SeProxyHal:
             size -= len(tmp)
         return data
 
+    def _send_packet(self, tag, data=b''):
+        '''Send packet to the app.'''
+
+        size = len(data).to_bytes(2, 'big')
+        packet = tag.to_bytes(1, 'big') + size + data
+        #self.logger.debug("send {}" .format(packet.hex()))
+        try:
+            self.s.sendall(packet)
+        except BrokenPipeError:
+            # the pipe is closed, which means the app exited
+            raise ServiceExit
+
+    def _send_ticker_event(self):
+        self.sending_ticker_event.release()
+        self.last_ticker_sent_at = time.time()
+        # don't send an event if a command is being processed
+        if self.status_received:
+            self._send_packet(SephTag.TICKER_EVENT)
+
+    def send_ticker_event_defered(self):
+        if self.sending_ticker_event.acquire(False):
+            self.sleep_time = TICKER_DELAY - (time.time() - self.last_ticker_sent_at)
+            if self.sleep_time > 0:
+                DeferedTicketEventSender(self, name = "DeferedTicketEvent").start()
+            else:
+                self._send_ticker_event()
+                self.status_received = False
+
+    def send_next_event(self):
+        # don't send an event if a command is being processed
+        if not self.status_received:
+            return
+
+        if len(self.queue) > 0:
+            # if we've received events from the outside world, send them
+            # whenever the SE is ready (i.e. now as we've received a
+            # GENERAL_STATUS)
+            tag, data = self.queue.pop(0)
+            self._send_packet(tag, data)
+            self.status_received = False
+        else:
+            # if no real event available in the queue, send a ticker event
+            # every 100ms
+            self.send_ticker_event_defered()
+
+    def apply_automation(self, text, x, y):
+        actions = self.automation.get_actions(text, x, y)
+        for action in actions:
+            self.logger.debug(f"applying automation {action}")
+            key, args = action[0], action[1:]
+            if key == "button":
+                self.handle_button(*args)
+            elif key == "finger":
+                self.handle_finger(*args)
+            elif key == "setbool":
+                self.automation.set_bool(*args)
+            elif key == "exit":
+                self.s.close()
+                sys.exit(0)
+            else:
+                assert False
+
     def can_read(self, s, screen):
         '''
         Handle packet sent by the app.
@@ -176,13 +239,14 @@ class SeProxyHal:
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
         if tag & 0xf0 == SephTag.GENERAL_STATUS:
+            ret = None
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     screen.screen_update()
 
             elif tag == SephTag.SCREEN_DISPLAY_STATUS:
-                #self.logger.debug(f"DISPLAY_STATUS {data!r}")
-                screen.display_status(data)
+                self.logger.debug(f"DISPLAY_STATUS {data!r}")
+                ret = screen.display_status(data)
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
 
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
@@ -218,6 +282,11 @@ class SeProxyHal:
 
             # signal the sending thread that a status has been received
             self.status_event.set()
+
+            # apply automation rules after having replied to the app
+            if self.automation and ret != None:
+                text, x, y = ret
+                self.apply_automation(text, x, y)
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)

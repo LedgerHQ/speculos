@@ -504,6 +504,8 @@ class Bagl:
                          text,
                          context_encoding)
 
+        return (text, component.x + halignment, y)
+
     def _display_get_alignment(self, component, context, context_encoding):
         halignment = 0
         valignment = 0
@@ -556,6 +558,7 @@ class Bagl:
         ret = self._display_get_alignment(component, context, context_encoding)
         (halignment, valignment, baseline, char_height, strwidth) = ret
 
+        ret = None
         type_ = component.type & (~BAGL_TYPE_FLAGS_MASK)
         if type_ == BAGL_NONE:
             # TODO
@@ -566,9 +569,10 @@ class Bagl:
         elif type_ == BAGL_LABEL:
             self._display_bagl_labeline(component, context, halignment, valignment, baseline, char_height, strwidth, type_)
         elif type_ == BAGL_LABELINE:
-            self._display_bagl_labeline(component, context, halignment, valignment, baseline, char_height, strwidth, type_)
+            ret = self._display_bagl_labeline(component, context, halignment, valignment, baseline, char_height, strwidth, type_)
         elif type_ == BAGL_ICON:
             self._display_bagl_icon(component, context)
+        return ret
 
     def display_raw_status(self, data):
         if data[0] == SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START:

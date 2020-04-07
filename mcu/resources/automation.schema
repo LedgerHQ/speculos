@@ -1,0 +1,96 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+
+    "definitions": {
+        "rules": {
+            "type": "array",
+            "items": [
+                { "$ref": "#/definitions/rule" }
+            ]
+        },
+        "rule": {
+            "type": "object",
+            "properties": {
+                "text":       { "type": "string" },
+                "regexp":     { "type": "string" },
+                "x":          { "type": "integer" },
+                "y":          { "type": "integer" },
+                "conditions": { "$ref": "#/definitions/conditions" },
+                "actions":    { "$ref": "#/definitions/actions" }
+            },
+            "additionalProperties": false
+        },
+        "conditions": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/condition" }
+        },
+        "condition": {
+            "type": "array",
+            "items": [
+                { "type": "string" },
+                { "type": "boolean" }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+        },
+        "actions": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/action" }
+        },
+        "action": {
+            "anyOf": [
+                { "$ref": "#/definitions/button" },
+                { "$ref": "#/definitions/finger" },
+                { "$ref": "#/definitions/setbool" },
+                { "$ref": "#/definitions/exit" }
+            ]
+        },
+        "button": {
+            "type": "array",
+            "items": [
+                { "enum": [ "button" ] },
+                { "type": "integer" },
+                { "type": "boolean" }
+            ],
+            "minItems": 3,
+            "maxItems": 3
+        },
+        "finger": {
+            "type": "array",
+            "items": [
+                { "enum": [ "finger" ] },
+                { "type": "integer" },
+                { "type": "integer" },
+                { "type": "boolean" }
+            ],
+            "minItems": 4,
+            "maxItems": 4
+        },
+        "setbool": {
+            "type": "array",
+            "items": [
+                { "enum": [ "setbool" ] },
+                { "type": "string" },
+                { "type": "boolean" }
+            ],
+            "minItems": 3,
+            "maxItems": 3
+        },
+        "exit": {
+            "type": "array",
+            "items": [
+                { "enum": [ "exit" ] }
+            ],
+            "minItems": 1,
+            "maxItems": 1
+        }
+    },
+
+    "type": "object",
+    "properties": {
+        "version": { "enum": [ 1 ] },
+        "rules":   { "$ref": "#/definitions/rules" }
+    },
+    "required": [ "version", "rules" ],
+    "additionalProperties": false
+}

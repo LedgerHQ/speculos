@@ -19,6 +19,7 @@ import sys
 import pkg_resources
 
 from mcu import apdu as apdu_server
+from mcu import automation
 from mcu import display
 from mcu import seproxyhal
 from mcu.button_tcp import FakeButton
@@ -143,6 +144,7 @@ def setup_logging(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
+    parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" to specify a path'),
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
     parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce deterministic randomness')
@@ -212,13 +214,17 @@ if __name__ == '__main__':
     else:
         from mcu.screen import QtScreen as Screen
 
+    automation_path = None
+    if args.automation:
+        automation_path = automation.Automation(args.automation)
+
     s1, s2 = socket.socketpair()
 
     run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.deterministic_rng, args.model, args.rampage, args.sdk)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
-    seph = seproxyhal.SeProxyHal(s2)
+    seph = seproxyhal.SeProxyHal(s2, automation=automation_path)
 
     button_tcp = None
     if args.button_port:

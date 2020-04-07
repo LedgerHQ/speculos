@@ -26,9 +26,10 @@ class Headless(Display):
         self.bagl = bagl.Bagl(m, MODELS[self.model].screen_size)
 
     def display_status(self, data):
-        self.bagl.display_status(data)
+        ret = self.bagl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
+        return ret
 
     def display_raw_status(self, data):
         self.bagl.display_raw_status(data)

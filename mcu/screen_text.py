@@ -101,7 +101,7 @@ class TextScreen(Display):
                         }
 
     def display_status(self, data):
-        self.bagl.display_status(data)
+        return self.bagl.display_status(data)
 
     def display_raw_status(self, data):
         self.bagl.display_raw_status(data)
