@@ -7,6 +7,8 @@ WORKDIR /speculos
 RUN /speculos/scripts/docker_install.sh
 # default port for dev env
 EXPOSE 1234
+EXPOSE 1236
+EXPOSE 9999
 EXPOSE 40000
 EXPOSE 41000
 EXPOSE 42000
