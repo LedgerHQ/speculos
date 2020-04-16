@@ -53,6 +53,7 @@ int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8
   BN_mod_add(rr, aa, bb, mm, ctx);
   BN_bn2binpad(rr, r, len);
 
+  BN_free(rr);
   BN_free(mm);
   BN_free(bb);
   BN_free(aa);
@@ -75,6 +76,7 @@ int sys_cx_math_modm(uint8_t *v, unsigned int len_v, const uint8_t *m, unsigned 
   BN_mod(rr, aa, mm, ctx);
   BN_bn2binpad(rr, v, len_v);
 
+  BN_free(rr);
   BN_free(mm);
   BN_free(aa);
   BN_CTX_free(ctx);
@@ -129,7 +131,9 @@ int sys_cx_math_multm(uint8_t *r,
   BN_mod_mul(rr, aa, bb, mm, ctx);
   BN_bn2binpad(rr, r, len);
 
+  BN_free(rr);
   BN_free(mm);
+  BN_free(bb);
   BN_free(aa);
   BN_CTX_free(ctx);
 
@@ -148,6 +152,7 @@ int sys_cx_math_is_prime(const uint8_t *r, unsigned int len)
 
   ret = BN_is_prime_ex(rr, 64, ctx, NULL);
 
+  BN_free(rr);
   BN_CTX_free(ctx);
 
   return ret;
