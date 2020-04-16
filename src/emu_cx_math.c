@@ -9,7 +9,6 @@ cx_math_invintm
 cx_math_invprimem
 cx_math_modm
 cx_math_next_prime
-cx_math_mult
 cx_math_powm
 cx_math_sub
 cx_math_subm
@@ -77,6 +76,32 @@ int sys_cx_math_modm(uint8_t *v, unsigned int len_v, const uint8_t *m, unsigned 
   BN_bn2binpad(rr, v, len_v);
 
   BN_free(mm);
+  BN_free(aa);
+  BN_CTX_free(ctx);
+
+  /* XXX: this function should return void */
+  return 0xdeadbeef;
+}
+
+int sys_cx_math_mult(uint8_t *r,
+                     const uint8_t *a,
+                     const uint8_t *b,
+                     unsigned int len)
+{
+  BIGNUM *aa, *bb, *rr;
+  BN_CTX *ctx = BN_CTX_new();
+  aa = BN_new();
+  bb = BN_new();
+  rr = BN_new();
+
+  BN_bin2bn(a, len, aa);
+  BN_bin2bn(b, len, bb);
+
+  BN_mul(rr, aa, bb, ctx);
+  BN_bn2binpad(rr, r, len);
+
+  BN_free(rr);
+  BN_free(bb);
   BN_free(aa);
   BN_CTX_free(ctx);
 

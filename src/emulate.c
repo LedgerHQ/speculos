@@ -219,6 +219,12 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            const uint8_t *, m,
            unsigned int,    len_m);
 
+  SYSCALL4(cx_math_mult, "(%p, %p, %p, %u)",
+           uint8_t *,       r,
+           const uint8_t *, a,
+           const uint8_t *, b,
+           unsigned int,    len);
+
   SYSCALL5(cx_math_multm, "(%p, %p, %p, %p, %u)",
            uint8_t *,       r,
            const uint8_t *, a,
