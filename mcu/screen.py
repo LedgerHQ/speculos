@@ -194,7 +194,7 @@ class App(QMainWindow):
 class QtScreen:
     def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
         self.app = QApplication(sys.argv)
-        App(apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
+        self.app_widget = App(apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
 
     def run(self):
         self.app.exec_()
