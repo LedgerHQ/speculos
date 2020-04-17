@@ -99,6 +99,28 @@ Clients can communicate with the emulated device using APDUs, as usual. Speculos
 embbeds a TCP server (listening on `127.0.0.1:9999`) to forward APDUs to the
 target app.
 
+### ledgerctl (ledgerwallet)
+
+[ledgerwallet](https://github.com/LedgerHQ/ledgerctl) is a library to control
+Ledger devices, also available through the command `ledgerctl` (it can be
+installed thanks to [pip](https://pypi.org/project/ledgerwallet/):
+
+```console
+pip3 install ledgerwallet
+```
+
+If the environment variables `LEDGER_PROXY_ADDRESS` and `LEDGER_PROXY_PORT` are
+set, the library tries to use the device emulated by Speculos. For instance, the
+following command-line sends the APDU `e0 c4 00 00 00` (Bitcoin app APDU to get
+the version):
+
+```console
+$ echo 'e0c4000000' | LEDGER_PROXY_ADDRESS=127.0.0.1 LEDGER_PROXY_PORT=9999 ledgerctl send -
+13:37:35.096:apdu: > e0c4000000
+13:37:35.099:apdu: < 1b3001030e0100039000
+1b3001030e0100039000
+```
+
 ### blue-loader-python (ledgerblue)
 
 Most clients relies on the
@@ -111,10 +133,7 @@ installed through pip using the following command-line:
 pip3 install ledgerblue
 ```
 
-If the environment variables `LEDGER_PROXY_ADDRESS` and `LEDGER_PROXY_PORT` are
-set, the library tries to use the device emulated by Speculos. For instance, the
-following command-line sends the APDU `e0 c4 00 00 00` (Bitcoin app APDU to get
-the version):
+The usage is similar to `ledgerctl`:
 
 ```console
 $ ./speculos.py ./apps/btc.elf &
