@@ -39,7 +39,7 @@ jobs:
       uses: docker/build-push-action@v1
       with:
         repository: ledgerhq/speculos
-        dockerfile: CI.Dockerfile
+        dockerfile: Dockerfile
         username: ${{ secrets.dockerhub_username }}
         password: ${{ secrets.dockerhub_password }}
         tag_with_sha: true
