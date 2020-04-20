@@ -6,9 +6,9 @@ name: Continuous Integration
 # events but only for the master branch
 on:
   push:
-    branches: [ master, ci ]
+    branches: [ master ]
   pull_request:
-    branches: [ master, ci ]
+    branches: [ master ]
 
 jobs:
   build:
@@ -35,6 +35,7 @@ jobs:
         pytest
 
     - name: Publish to DockerHub
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: docker/build-push-action@v1
       with:
         repository: ledgerhq/speculos
