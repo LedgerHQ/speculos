@@ -1,4 +1,9 @@
-# vault org api docker file
+# This Dockerfile assembles an image with all the dependencies required to run
+# speculos from the command-line (--display headless or --display console, no
+# GUI).
+#
+# Prerequisite: a working speculos build.
+
 FROM python:3.8-slim
 
 ADD . /speculos
@@ -21,6 +26,5 @@ EXPOSE 9999
 EXPOSE 40000
 EXPOSE 41000
 EXPOSE 42000
-
 
 ENTRYPOINT [ "python", "./speculos.py" ]
