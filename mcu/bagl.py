@@ -146,6 +146,7 @@ class Bagl:
             if height == 0:
                 break
 
+    @staticmethod
     def compute_line_width(font_id, width, text, text_encoding):
         font = bagl_font.get(font_id)
         if not font:
@@ -175,7 +176,6 @@ class Bagl:
             else:
                 ch -= font.first_char
                 ch_width = font.characters[ch].char_width
-                ch_kerning = font.char_kerning
 
             if xx + ch_width > width and width > 0:
                 return xx

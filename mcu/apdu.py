@@ -5,11 +5,9 @@ Internally, it makes use of a TCP socket server to allow these 2 components to
 communicate.
 '''
 
-import binascii
 import errno
 import logging
 import socket
-import sys
 
 class ApduServer:
     def __init__(self, host='127.0.0.1', port=9999, hid=False):

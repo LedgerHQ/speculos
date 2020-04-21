@@ -30,12 +30,7 @@ class FakeButtonClient:
         self.logger.debug("connection closed with fake button client")
 
     def can_read(self, s, screen):
-        try:
-            packet = self.s.recv(1)
-        except:
-            self._close(screen)
-            return
-
+        packet = self.s.recv(1)
         if packet == b'':
             self._close(screen)
             return

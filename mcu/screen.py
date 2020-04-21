@@ -1,10 +1,9 @@
 import sys
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel
-from PyQt5.QtGui import QPainter, QColor, QPen, QPixmap
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
+from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QObject, QRunnable, QMetaObject, QSocketNotifier, \
-    pyqtSlot, pyqtSignal, QSettings
+from PyQt5.QtCore import Qt, QObject, QSocketNotifier, QSettings
 
 from . import bagl
 from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
@@ -191,8 +190,8 @@ class App(QMainWindow):
         the settings file in order to restore it upon next speculos execution.
         '''
         settings = QSettings("ledger", "speculos")
-        window_x = settings.setValue("window_x", self.pos().x())
-        window_y = settings.setValue("window_y", self.pos().y())
+        settings.setValue("window_x", self.pos().x())
+        settings.setValue("window_y", self.pos().y())
 
 class QtScreen:
     def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):

@@ -1,13 +1,9 @@
-import binascii
 import logging
-import os
-import select
 import sys
 import time
 import threading
 from enum import IntEnum
 
-from . import apdu
 from . import usb
 from .display import RENDER_METHOD
 
@@ -53,8 +49,6 @@ def ticker(add_tick):
         else:
             flood = False
         time.sleep(TICKER_DELAY)
-
-    logger.debug("exiting")
 
 class PacketThread(threading.Thread):
     TICKER_PACKET = (SephTag.TICKER_EVENT, b'')
