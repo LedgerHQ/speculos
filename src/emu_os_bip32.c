@@ -38,7 +38,7 @@ static uint8_t const BIP32_ED_SEED[] = {
 	'e', 'd', '2', '5', '5', '1', '9', ' ', 's', 'e', 'e', 'd'
 };
 
-static void expand_seed_bip32(cx_curve_t curve, uint8_t *seed, unsigned int seed_length, uint8_t *result, const cx_curve_domain_t *domain)
+void expand_seed_bip32(cx_curve_t curve, uint8_t *seed, unsigned int seed_length, uint8_t *result, const cx_curve_domain_t *domain)
 {
   const uint8_t *seed_key;
   size_t seed_key_length;
@@ -83,7 +83,7 @@ static void expand_seed_bip32(cx_curve_t curve, uint8_t *seed, unsigned int seed
   }
 }
 
-static int unhex(uint8_t *dst, size_t dst_size, char *src, size_t src_size)
+int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size)
 {
   unsigned int i;
   uint8_t acc;
