@@ -34,6 +34,10 @@ static uint8_t const BIP32_NIST_SEED[] = {
 	'N', 'i', 's', 't', '2', '5', '6', 'p', '1', ' ', 's', 'e', 'e', 'd'
 };
 
+static uint8_t const BIP32_ED_SEED[] = {
+	'e', 'd', '2', '5', '5', '1', '9', ' ', 's', 'e', 'e', 'd'
+};
+
 static void expand_seed_bip32(cx_curve_t curve, uint8_t *seed, unsigned int seed_length, uint8_t *result, const cx_curve_domain_t *domain)
 {
   const uint8_t *seed_key;
@@ -48,17 +52,34 @@ static void expand_seed_bip32(cx_curve_t curve, uint8_t *seed, unsigned int seed
     seed_key = BIP32_NIST_SEED;
     seed_key_length = sizeof(BIP32_NIST_SEED);
     break;
-
+  case CX_CURVE_Ed25519:
+    seed_key = BIP32_ED_SEED;
+    seed_key_length = sizeof(BIP32_ED_SEED);
+    break;
   default:
     errx(1, "expand_seed_bip32: unsupported curve");
     THROW(EXCEPTION);
     break;
   }
 
+  if (curve == CX_CURVE_Ed25519) {
+    result[0] = 0x01;
+    memcpy(result + 1, seed, seed_length);
+    cx_hmac_sha256(seed_key, seed_key_length, result, 1 + seed_length, result+64, CX_SHA256_SIZE);
+  }
+
   cx_hmac_sha512(seed_key, seed_key_length, seed, seed_length, result, CX_SHA512_SIZE);
 
-  while (cx_math_is_zero(result, 32) || (cx_math_cmp(result, domain->n, 32) >= 0)) {
-    cx_hmac_sha512(seed_key, seed_key_length, result, CX_SHA512_SIZE, result, CX_SHA512_SIZE);
+  if (curve == CX_CURVE_Ed25519) {
+    while (result[31] & 0x20) {
+      cx_hmac_sha512(seed_key, seed_key_length, result, CX_SHA512_SIZE, result, CX_SHA512_SIZE);
+    }
+    result[0] &= 0xF8;
+    result[31] = (result[31] & 0x7F) | 0x40;
+  } else {
+    while (cx_math_is_zero(result, 32) || (cx_math_cmp(result, domain->n, 32) >= 0)) {
+      cx_hmac_sha512(seed_key, seed_key_length, result, CX_SHA512_SIZE, result, CX_SHA512_SIZE);
+    }
   }
 }
 
@@ -131,7 +152,7 @@ unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *p
   ssize_t seed_size;
   unsigned int i;
 
-  if (curve != CX_CURVE_256K1 && curve != CX_CURVE_SECP256R1) {
+  if (curve != CX_CURVE_256K1 && curve != CX_CURVE_SECP256R1 && curve != CX_CURVE_Ed25519) {
     errx(1, "os_perso_derive_node_bip32: curve not implemented (0x%x)", curve);
   }
 
@@ -147,6 +168,9 @@ unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *p
       memmove(tmp + 1, tmpPrivateChain, 32);
     }
     else {
+      if (curve == CX_CURVE_Ed25519) {
+        errx(1, "os_perso_derive_node_bip32: invalid path");
+      }
       cx_ecdsa_init_private_key(curve, tmpPrivateChain, 32, &tmpEcPrivate);
       cx_ecfp_generate_pair(curve, &tmpEcPublic, &tmpEcPrivate, 1);
       tmpEcPublic.W[0] = ((tmpEcPublic.W[64] & 1) ? 0x03 : 0x02);
@@ -160,6 +184,9 @@ unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *p
         tmp[36] = (path[i] & 0xff);
 
         cx_hmac_sha512(tmpPrivateChain + 32, 32, tmp, 37, tmp, 64);
+        if (curve == CX_CURVE_Ed25519) {
+          break;
+        }
 
         if (cx_math_cmp(tmp, domain->n, 32) < 0) {
           cx_math_addm(tmp, tmp, tmpPrivateChain, domain->n, 32);
@@ -222,6 +249,8 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
 
   switch (mode) {
   case HDW_NORMAL:
+    sys_os_perso_derive_node_bip32(curve, path, pathLength, privateKey, chain);
+    break;
   case HDW_ED25519_SLIP10:
     memset(privateKey, 0xaa, 32);
     break;
