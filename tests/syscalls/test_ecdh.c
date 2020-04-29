@@ -74,7 +74,6 @@ static void test_wycheproof_vectors(const char *filename) {
   // Format:
   // curve : public_key : private key : shared : result
   while (fgets(line, MAX_LINE_LENGTH, f) != NULL) {
-    printf("%s\n", line);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');
