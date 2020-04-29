@@ -30,6 +30,8 @@ jobs:
         make -C build
 
     - name: Test
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
       run: |
         make -C build/ test
         pytest
