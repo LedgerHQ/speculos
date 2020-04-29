@@ -12,3 +12,10 @@ Crypto syscalls are tested using the following command:
 ```console
 make -C build/ test
 ```
+
+Arguments can be given to `ctest`. For instance, to make the output of a
+specific test verbose:
+
+```console
+make -C build/ test ARGS='-V -R test_bip32'
+```
