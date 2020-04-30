@@ -129,12 +129,13 @@ class PacketThread(threading.Thread):
         self.logger.debug("exiting")
 
 class SeProxyHal:
-    def __init__(self, s, automation=None):
+    def __init__(self, s, automation=None, automation_server=None):
         self.s = s
         self.last_ticker_sent_at = 0.0
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
         self.automation = automation
+        self.automation_server = automation_server
 
         self.status_event = threading.Event()
         self.packet_thread = PacketThread(self.s, self.status_event)
@@ -204,21 +205,26 @@ class SeProxyHal:
             self.send_ticker_event_defered()
 
     def apply_automation(self, text, x, y):
-        actions = self.automation.get_actions(text, x, y)
-        for action in actions:
-            self.logger.debug(f"applying automation {action}")
-            key, args = action[0], action[1:]
-            if key == "button":
-                self.handle_button(*args)
-            elif key == "finger":
-                self.handle_finger(*args)
-            elif key == "setbool":
-                self.automation.set_bool(*args)
-            elif key == "exit":
-                self.s.close()
-                sys.exit(0)
-            else:
-                assert False
+        if self.automation_server:
+            event = { "text": text.decode("ascii"), "x": x, "y": y }
+            self.automation_server.broadcast(event)
+
+        if self.automation:
+            actions = self.automation.get_actions(text, x, y)
+            for action in actions:
+                self.logger.debug(f"applying automation {action}")
+                key, args = action[0], action[1:]
+                if key == "button":
+                    self.handle_button(*args)
+                elif key == "finger":
+                    self.handle_finger(*args)
+                elif key == "setbool":
+                    self.automation.set_bool(*args)
+                elif key == "exit":
+                    self.s.close()
+                    sys.exit(0)
+                else:
+                    assert False
 
     def can_read(self, s, screen):
         '''
@@ -284,7 +290,7 @@ class SeProxyHal:
             self.status_event.set()
 
             # apply automation rules after having replied to the app
-            if self.automation and ret != None:
+            if ret != None:
                 text, x, y = ret
                 self.apply_automation(text, x, y)
 
