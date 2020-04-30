@@ -15,6 +15,7 @@ import re
 import signal
 import socket
 import sys
+import threading
 
 import pkg_resources
 
@@ -22,6 +23,7 @@ from mcu import apdu as apdu_server
 from mcu import automation
 from mcu import display
 from mcu import seproxyhal
+from mcu.automation_server import AutomationClient, AutomationServer
 from mcu.button_tcp import FakeButton
 from mcu.finger_tcp import FakeFinger
 from mcu.vnc import VNC
@@ -158,6 +160,7 @@ if __name__ == '__main__':
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
+    group.add_argument('--automation-port', type=int, help='Forward text displayed on the screen to TCP clients'),
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
     group.add_argument('--vnc-password', type=str, help='VNC plain-text password (required for MacOS Screen Sharing)')
     group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button press (lLrR)')
@@ -218,13 +221,19 @@ if __name__ == '__main__':
     if args.automation:
         automation_path = automation.Automation(args.automation)
 
+    automation_server = None
+    if args.automation_port:
+        automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
+        automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
+        automation_thread.start()
+
     s1, s2 = socket.socketpair()
 
     run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.deterministic_rng, args.model, args.rampage, args.sdk)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
-    seph = seproxyhal.SeProxyHal(s2, automation=automation_path)
+    seph = seproxyhal.SeProxyHal(s2, automation=automation_path, automation_server=automation_server)
 
     button_tcp = None
     if args.button_port:
