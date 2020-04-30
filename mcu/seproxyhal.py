@@ -206,7 +206,7 @@ class SeProxyHal:
 
     def apply_automation(self, text, x, y):
         if self.automation_server:
-            event = { "text": text.decode("ascii"), "x": x, "y": y }
+            event = { "text": text.decode("ascii", "ignore"), "x": x, "y": y }
             self.automation_server.broadcast(event)
 
         if self.automation:
