@@ -1,3 +1,4 @@
+#include <err.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -25,18 +26,23 @@ typedef struct {
   cx_curve_t curve;
   const char *seed;
   /* expand_seed_bip32() doesn't compute the chain code */
-  //const char *chain_code;
+  const char *chain_code;
   const char *private_key;
   int chain_len;
   const bip32_chain_vector chain[MAX_CHAIN_LEN];
 } bip32_test_vector;
 
-const bip32_test_vector test_vectors[] = {
+/* abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about */
+static const char *default_seed = \
+  "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc1" \
+  "9a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4";
+
+static const bip32_test_vector test_vectors[] = {
   // Test vector 1 for secp256k1
   {
     .curve = CX_CURVE_256K1,
     .seed = "000102030405060708090a0b0c0d0e0f",
-    //.chain_code = "873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508",
+    .chain_code = "873dff81c02f525623fd1fe5167eac3a55a049de3d314bb42ee227ffed37d508",
     .private_key = "e8f32e723decf4051aefac8e2c93c9c5b214313817cdb01a1494b917c8436b35",
     .chain_len = 5,
     .chain = {
@@ -51,7 +57,7 @@ const bip32_test_vector test_vectors[] = {
   {
     .curve = CX_CURVE_256R1,
     .seed = "000102030405060708090a0b0c0d0e0f",
-    //.chain_code = "beeb672fe4621673f722f38529c07392fecaa61015c80c34f29ce8b41b3cb6ea",
+    .chain_code = "beeb672fe4621673f722f38529c07392fecaa61015c80c34f29ce8b41b3cb6ea",
     .private_key = "612091aaa12e22dd2abef664f8a01a82cae99ad7441b7ef8110424915c268bc2",
     .chain_len = 5,
     .chain = {
@@ -66,7 +72,7 @@ const bip32_test_vector test_vectors[] = {
   {
     .curve = CX_CURVE_SECP256K1,
     .seed = "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
-    //.chain_code = "60499f801b896d83179a4374aeb7822aaeaceaa0db1f85ee3e904c4defbd9689",
+    .chain_code = "60499f801b896d83179a4374aeb7822aaeaceaa0db1f85ee3e904c4defbd9689",
     .private_key = "4b03d6fc340455b363f51020ad3ecca4f0850280cf436c70c727923f6db46c3e",
     .chain_len = 5,
     .chain = {
@@ -81,7 +87,7 @@ const bip32_test_vector test_vectors[] = {
   {
     .curve = CX_CURVE_SECP256R1,
     .seed = "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
-    //.chain_code = "96cd4465a9644e31528eda3592aa35eb39a9527769ce1855beafc1b81055e75d",
+    .chain_code = "96cd4465a9644e31528eda3592aa35eb39a9527769ce1855beafc1b81055e75d",
     .private_key = "eaa31c2e46ca2962227cf21d73a7ef0ce8b31c756897521eb6c7b39796633357",
     .chain_len = 5,
     .chain = {
@@ -96,7 +102,7 @@ const bip32_test_vector test_vectors[] = {
   {
     .curve = CX_CURVE_SECP256R1,
     .seed = "000102030405060708090a0b0c0d0e0f",
-    //.chain_code = "beeb672fe4621673f722f38529c07392fecaa61015c80c34f29ce8b41b3cb6ea",
+    .chain_code = "beeb672fe4621673f722f38529c07392fecaa61015c80c34f29ce8b41b3cb6ea",
     .private_key = "612091aaa12e22dd2abef664f8a01a82cae99ad7441b7ef8110424915c268bc2",
     .chain_len = 2,
     .chain = {
@@ -108,70 +114,345 @@ const bip32_test_vector test_vectors[] = {
   {
     .curve = CX_CURVE_SECP256R1,
     .seed = "a7305bc8df8d0951f0cb224c0e95d7707cbdf2c6ce7e8d481fec69c7ff5e9446",
-    //.chain_code = "7762f9729fed06121fd13f326884c82f59aa95c57ac492ce8c9654e60efd130c",
+    .chain_code = "7762f9729fed06121fd13f326884c82f59aa95c57ac492ce8c9654e60efd130c",
     .private_key = "3b8c18469a4634517d6d0b65448f8e6c62091b45540a1743c5846be55d47d88f",
     .chain_len = 0,
     .chain = {}
   },
-  /* Unfortunately, these test vectors don't pass */
-  // Test vector 1 for ed25519
-  /*  {
-    .curve = CX_CURVE_Ed25519,
-    .seed = "000102030405060708090a0b0c0d0e0f",
-    //.chain_code = "90046a93de5380a72b5e45010748567d5ea02bbf6522f979e05c0d8d8ca9fffb",
-    .private_key = "2b4be7f19ee27bbf30c667b642d5f4aa69fd169872f8fc3059c08ebae2eb19e7",
-    .chain_len = 5,
-    .chain = {
-      {0x80000000, "8b59aa11380b624e81507a27fedda59fea6d0b779a778918a2fd3590e16e9c69", "68e0fe46dfb67e368c75379acec591dad19df3cde26e63b93a8e704f1dade7a3"},
-      {0x80000001, "a320425f77d1b5c2505a6b1b27382b37368ee640e3557c315416801243552f14", "b1d0bad404bf35da785a64ca1ac54b2617211d2777696fbffaf208f746ae84f2"},
-      {0x80000002, "2e69929e00b5ab250f49c3fb1c12f252de4fed2c1db88387094a0f8c4c9ccd6c", "92a5b23c0b8a99e37d07df3fb9966917f5d06e02ddbd909c7e184371463e9fc9"},
-      {0x80000002, "8f6d87f93d750e0efccda017d662a1b31a266e4a6f5993b15f5c1f07f74dd5cc", "30d1dc7e5fc04c31219ab25a27ae00b50f6fd66622f6e9c913253d6511d1e662"},
-      {0xbb9aca00, "68789923a0cac2cd5a29172a475fe9e0fb14cd6adb5ad98a3fa70333e7afa230", "8f94d394a8e8fd6b1bc2f3f49f5c47e385281d5c17e65324b0f62483e37e8793"}
-      }
-      },*/
-  // Test vector 2 for ed25519
-  /*  {
-    .curve = CX_CURVE_Ed25519,
-    .seed = "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542",
-    //.chain_code = "ef70a74db9c3a5af931b5fe73ed8e1a53464133654fd55e7a66f8570b8e33c3b",
-    .private_key = "171cb88b1b3c1db25add599712e36245d75bc65a1a5c9e18d76f9f2b1eab4012",
-    .chain_len = 5,
-    .chain = {
-      {0x80000000, "0b78a3226f915c082bf118f83618a618ab6dec793752624cbeb622acb562862d", "1559eb2bbec5790b0c65d8693e4d0875b1747f4970ae8b650486ed7470845635"},
-      {0xffffffff, "138f0b2551bcafeca6ff2aa88ba8ed0ed8de070841f0c4ef0165df8181eaad7f", "ea4f5bfe8694d8bb74b7b59404632fd5968b774ed545e810de9c32a4fb4192f4"},
-      {0x80000001, "73bd9fff1cfbde33a1b846c27085f711c0fe2d66fd32e139d3ebc28e5a4a6b90", "3757c7577170179c7868353ada796c839135b3d30554bbb74a4b1e4a5a58505c"},
-      {0xfffffffe, "0902fe8a29f9140480a00ef244bd183e8a13288e4412d8389d140aac1794825a", "5837736c89570de861ebc173b1086da4f505d4adb387c6a1b1342d5e4ac9ec72"},
-      {0x80000002, "5d70af781f3a37b829f0d060924d5e960bdc02e85423494afc0b1a41bbe196d4", "551d333177df541ad876a60ea71f00447931c0a9da16f227c11ea080d7391b8d"}
-    }
-    },*/
-  // Custom test vector for ed25519
+};
+
+struct bolos_vector {
+  int mode;
+  int curve;
+  const char *path;
+  const char *seed_key;
+  const char *chain;
+  const char *key;
+};
+
+static const struct bolos_vector bolos_vectors[] = {
   {
-    .curve = CX_CURVE_Ed25519,
-    .seed = "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4",
-    .private_key = "402b03cd9c8bed9ba9f9bd6cd9c315ce9fcc59c7c25d37c85a36096617e69d41",
-    .chain_len = 2,
-    .chain = {
-      {0x8000002c, "ddc3aaf150dff138e44f052393d76b1867f7ba725ee9bf79c810a32f8e305018", "f6117c7fd2a8662cc890a198e8750ff7cd39de14aa4a59cb4285607c64c4b36d"},
-      {0x80000094, "a0c0f81c7380a6b7d24b610f57b071e5b9ce8c59d36f3ad9a20483575dab34aa", "b4b1ed3c23d097a9e209282faf234a9f5554c56a101c46ae8c1da3c990cffaee"},
-    }
+    .mode = 2,
+    .curve = 1,
+    .path = "256/148'/0/0",
+    .seed_key = "",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "dc7866edb7b1fb075f206577e75dd6d06d69cd57fac392c123de0f3a8cf9ab0e0000000000000000000000000000000000000000000000000000000000000000"
   },
+  {
+    .mode = 2,
+    .curve = 1,
+    .path = "256/148/0/0",
+    .seed_key = "",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "77b36493cc3e93d95765cee578e488f35636aff679731eb30a6d1daaf763b11e0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 2,
+    .curve = 1,
+    .path = "256/148/1/2",
+    .seed_key = "",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "82640869c555feb779a611d815b4259b14a75b1f87ed8e6027245de9ef15abb30000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 2,
+    .curve = 2,
+    .path = "256/148'/1/2",
+    .seed_key = "",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "385c31c09a52d08ec7e0ff0b165569c869604c6e1b887b62beb371e5c61047510000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 2,
+    .curve = 1,
+    .path = "256/148'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "28733d1173df8301cf7b11a37bcd4b24ae1567265897850079e1adc925656cbd0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 2,
+    .curve = 1,
+    .path = "256/148/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "3c4f9a70d3813f0309549c75525a16ee8f0b7b4ba7b17bd8c3799a33defae4150000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 2,
+    .curve = 1,
+    .path = "256/148'/1/2",
+    .seed_key = "Seed Key!",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "c2f0ccff26956ac87e1840c07aadca070c1dfe1504a9bf9f93847c98aa414e2a0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 2,
+    .curve = 2,
+    .path = "256/148/1/2",
+    .seed_key = "Seed Key!",
+    .chain = "0000000000000000000000000000000000000000000000000000000000000000",
+    .key = "a6e59329f9b02ca2fcf20de027b73c93bd06af3081c0bdc97f5e2cac9b0955170000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 1,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "",
+    .chain = "0524d4d89a04e06f0410003751306bbe7a1c4e80608433d12469fe6a92eecb43",
+    .key = "f7dd8c0fb5023c6fce668c035560a40914abea017d83b792b15563d6feb1251b0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 1,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "",
+    .chain = "336717d2389fd2886088c3dff5ceb66ef6064ad90e0a0d07a867064d1c074864",
+    .key = "32cc0b6f100f76d724738926fd406f9b476770ba970c369318943562e70011e60000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 0,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "",
+    .chain = "cdc590746b238933166da99295ef0de9e048c9ef0717c269616613ac14e52934",
+    .key = "64461c084badf0064b2cd6c9aacf010ec073e850170bae02643d1b7f9574baf70000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 0,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "",
+    .chain = "eb9bc0b0773fcbb10c4a3078c0a3bc2309ec0b4f28065d6224c5777b6b9e83cd",
+    .key = "3cbf2b3d850e1a8f47b35271d0156ca482debef29bdfa5285386d47eefb872040000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "4294967295'",
+    .seed_key = "",
+    .chain = "f5977507899c96ab6d5f63ae730a0f2235cb98b3bced3549a10e19bd1297012d",
+    .key = "9855268c84d2eca6266238063eee03ac5d1a44c83eb9341924d5559b19e69d41d6f0b87c340f994230fac06e6bf5b87a0f3f584f9bf157f9845c7545e8d8eb78"
+  },
+  {
+    .mode = 0,
+    .curve = 1,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "be7f1cc8587fbee3ffd42d28df5c7ec3d4e15f8e049d67e28af5ab80234a4681",
+    .key = "89890b9ffb3aa9d00cc0b1e58f83724f27f204c498dcfe063ec33b42b86abf860000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 1,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "Seed Key!",
+    .chain = "1e87e79f024ab9f3cd02ce197b32a43df9eaf3bdfe05ceb061f2614824efdc17",
+    .key = "17d2bbf89decdbad2fe8d5bb50ca253b06382231cf4bcf20e0ff73cfb332c78e0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 0,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "43c105edbe7d227508fa448d58857ee43f11b490b2709c4769d0ca138a893500",
+    .key = "3d43f2a1803099b9a29ed136d48e89cdb85bb6c9a05d87bae8f695810de2dc840000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 0,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "Seed Key!",
+    .chain = "cda9bf240372898c7cb1cb42f74934c530b8a494d7e090162e797009799d64a2",
+    .key = "f00afad739969f6599f289e69b19b50f6b80f4ad6c0b1f62e25639664c14e9240000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "4294967295'",
+    .seed_key = "Seed Key!",
+    .chain = "16026ac1dc60fcdad4b37e9762f5a48cbd1347737284a028e611877771467b61",
+    .key = "a8afc87bcd088d9d59c0649738746672758cc44bc09422c6be7c47cf7e0e444b37676f1b440627a32f7a36ae93c87e07ae747c926cd7ff4fc0984015b0f72bfb"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "4294967295'",
+    .seed_key = "Seed Key!",
+    .chain = "16026ac1dc60fcdad4b37e9762f5a48cbd1347737284a028e611877771467b61",
+    .key = "a8afc87bcd088d9d59c0649738746672758cc44bc09422c6be7c47cf7e0e444b37676f1b440627a32f7a36ae93c87e07ae747c926cd7ff4fc0984015b0f72bfb"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "44'/148'/0/0",
+    .seed_key = "",
+    .chain = "3e7bea48e16cef3f4e67460e0297557f2df425d52aff8fca1c1ad2b976c57afb",
+    .key = "e0176952fb330646b3126ee91aa73bf44b4bf18f17ce4ac3a74a53d120e69d413ca5c28877f73b21fb01ebe7799233f40bde61a058fb9a9facfc10ac695c0fc9"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "44'/148/1/2",
+    .seed_key = "",
+    .chain = "40418c80e21c94bddfcab2318f9a82fb65739c687e09fee15c172778b04cc1af",
+    .key = "207c589bf02f2cbfadaf8024e1dd27a5b77f01571ddb40c4ee78d7d329e69d41a6045bdebc8c836298881804ff424ee187c4141f49f8fda253f8ac3df2cda6bf"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "44'/148'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "a213a2083f9577b519ed1e9312b48b78f0355007b2006637f1f1a6966ff20696",
+    .key = "489813484bfcc8c482db67b05eafce7419638098c2d936b893f226548a0e444b5222cb7ea2b90acefee525bb9323ecc7975237837197ed1b1696d19b4ad6fa8b"
+  },
+  {
+    .mode = 0,
+    .curve = 2,
+    .path = "44'/148/1/2",
+    .seed_key = "Seed Key!",
+    .chain = "09e4fe1d402e6e70e9084bdb4e9da9ffa99c670c2670e82167e543b6f687a09c",
+    .key = "f0aea8cc48adb7929f6c7456dc4a591a30210fe8af67cd138ffc944a8d0e444b0d401c6e0de47decc51bd9285600bd74b1476c3f320551720007c98042656295"
+  },
+  {
+    .mode = 0,
+    .curve = 1,
+    .path = "44'/148'/0/0",
+    .seed_key = "",
+    .chain = "8fff97b457b717b0cad899d2818b5d43165f350f31c5d5598cc71bbde707d604",
+    .key = "002e694a441a412fc0ca8c3a6dcc27a5da20f69341490bb27cddcd63db5b90ce0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 1,
+    .path = "44'/148/1/2",
+    .seed_key = "",
+    .chain = "7571c62ce4bb03daa49ca3b2fc664687d42e13f67c8eaa6d0654944753b3e158",
+    .key = "21bff6fea92f925a32c44617d1ef36bebf5d4657e060709aa6bd888145b1ffdb0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 0,
+    .path = "44'/148'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "ba47004dd60d1935d7f57b13982ad9700e81144ab3e66dda3fd2ec4aa856b814",
+    .key = "b47cb41d578dabcfd72a05166fe1cf2f0f3f6aa81f10268e4aa6e4720df0a8240000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 0,
+    .curve = 0,
+    .path = "44'/148/1/2",
+    .seed_key = "Seed Key!",
+    .chain = "67866455728d803b95a055357c803ec205c145be7b459093de4d339a222290ec",
+    .key = "f206f57b156380cfe0d48e419bc35c56b4e3e31512c0332c58621aa409aedbb00000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 1,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "",
+    .chain = "0524d4d89a04e06f0410003751306bbe7a1c4e80608433d12469fe6a92eecb43",
+    .key = "f7dd8c0fb5023c6fce668c035560a40914abea017d83b792b15563d6feb1251b0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 1,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "",
+    .chain = "336717d2389fd2886088c3dff5ceb66ef6064ad90e0a0d07a867064d1c074864",
+    .key = "32cc0b6f100f76d724738926fd406f9b476770ba970c369318943562e70011e60000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 0,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "",
+    .chain = "cdc590746b238933166da99295ef0de9e048c9ef0717c269616613ac14e52934",
+    .key = "64461c084badf0064b2cd6c9aacf010ec073e850170bae02643d1b7f9574baf70000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 0,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "",
+    .chain = "eb9bc0b0773fcbb10c4a3078c0a3bc2309ec0b4f28065d6224c5777b6b9e83cd",
+    .key = "3cbf2b3d850e1a8f47b35271d0156ca482debef29bdfa5285386d47eefb872040000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 1,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "be7f1cc8587fbee3ffd42d28df5c7ec3d4e15f8e049d67e28af5ab80234a4681",
+    .key = "89890b9ffb3aa9d00cc0b1e58f83724f27f204c498dcfe063ec33b42b86abf860000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 1,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "Seed Key!",
+    .chain = "1e87e79f024ab9f3cd02ce197b32a43df9eaf3bdfe05ceb061f2614824efdc17",
+    .key = "17d2bbf89decdbad2fe8d5bb50ca253b06382231cf4bcf20e0ff73cfb332c78e0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 0,
+    .path = "738197632/335544448'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "43c105edbe7d227508fa448d58857ee43f11b490b2709c4769d0ca138a893500",
+    .key = "3d43f2a1803099b9a29ed136d48e89cdb85bb6c9a05d87bae8f695810de2dc840000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 0,
+    .path = "738197504/335544320'/16777216/33554432",
+    .seed_key = "Seed Key!",
+    .chain = "cda9bf240372898c7cb1cb42f74934c530b8a494d7e090162e797009799d64a2",
+    .key = "f00afad739969f6599f289e69b19b50f6b80f4ad6c0b1f62e25639664c14e9240000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 1,
+    .path = "44'/148'/0/0",
+    .seed_key = "",
+    .chain = "8fff97b457b717b0cad899d2818b5d43165f350f31c5d5598cc71bbde707d604",
+    .key = "002e694a441a412fc0ca8c3a6dcc27a5da20f69341490bb27cddcd63db5b90ce0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 0,
+    .path = "44'/148'/0/0",
+    .seed_key = "",
+    .chain = "bba08de0a440987023821d4d82a39c46068e8c8ebe23be0e0329a7dc6467a30d",
+    .key = "7b95d7cb3fc819eb4ac356644eb3467d465d5eb5f4703f39670a03139b6cdf560000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 1,
+    .path = "44'/148'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "1640f709333de9a4572663a80dff8d41147c5eabd02adad2607a052d19d43063",
+    .key = "e9eb4cfdc8791ed95239597f4c5f34e2ac5cdb349597d98095f58b8a723e51960000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 0,
+    .path = "44'/148'/0/0",
+    .seed_key = "Seed Key!",
+    .chain = "ba47004dd60d1935d7f57b13982ad9700e81144ab3e66dda3fd2ec4aa856b814",
+    .key = "b47cb41d578dabcfd72a05166fe1cf2f0f3f6aa81f10268e4aa6e4720df0a8240000000000000000000000000000000000000000000000000000000000000000"
+  }
 };
 
 static void test_bip32_vector(const bip32_test_vector *v)
 {
   uint8_t expected_key[32], key[32], expected_chain_code[32], chain_code[32];
   unsigned int path[MAX_CHAIN_LEN];
-  const cx_curve_domain_t *domain;
-  unsigned int seed_length;
-  uint8_t seed[64];
+  extended_private_key extkey;
   int i, path_len;
 
-  seed_length = unhex(seed, sizeof(seed), v->seed, strlen(v->seed));
-  domain = cx_ecfp_get_domain(v->curve);
-  expand_seed_bip32(v->curve, seed, seed_length, key, domain);
-
-  assert_int_equal(hexstr2bin(v->private_key, expected_key, sizeof(expected_key)), sizeof(expected_key));
-  assert_memory_equal(key, expected_key, sizeof(expected_key));
+  memset(&extkey, 0, sizeof(extkey));
 
   assert_int_equal(setenv("SPECULOS_SEED", v->seed, 1), 0);
 
@@ -188,7 +469,8 @@ static void test_bip32_vector(const bip32_test_vector *v)
   }
 }
 
-void test_bip32(void **state __attribute__((unused))) {
+static void test_bip32(void **state __attribute__((unused)))
+{
   size_t i;
 
   for (i = 0; i < ARRAY_SIZE(test_vectors); i++){
@@ -196,9 +478,118 @@ void test_bip32(void **state __attribute__((unused))) {
   }
 }
 
+static int get_bip32_path(const char *str_, unsigned int *path, int max_path_len)
+{
+  char *token, *str;
+  int path_len;
+  size_t len;
+
+  str = strdup(str_);
+  if (str == NULL) {
+    warn("strdup");
+    return -1;
+  }
+
+  path_len = 0;
+  while (1) {
+    token = strtok((path_len == 0) ? str : NULL, "/");
+    if (token == NULL) {
+      break;
+    }
+
+    if (path_len >= max_path_len) {
+      return -1;
+    }
+
+    len = strlen(token);
+    if (len == 0) {
+      return -1;
+    }
+
+
+    if (token[len-1] == '\'') {
+      token[len-1] = '\x00';
+      path[path_len] = 0x80000000;
+    } else {
+      path[path_len] = 0;
+    }
+
+    path[path_len] |= strtoul(token, NULL, 10);
+
+    path_len += 1;
+  }
+
+  free(str);
+
+  return path_len;
+}
+
+static void test_bolos_vector(const struct bolos_vector *v)
+{
+  uint8_t expected_key[64], key[64], expected_chain[32], chain[32];
+  uint32_t path[MAX_CHAIN_LEN];
+  unsigned int mode;
+  cx_curve_t curve;
+  size_t sk_length;
+  ssize_t path_len;
+  uint8_t *p;
+
+  switch (v->mode) {
+  case 0: mode = HDW_NORMAL; break;
+  case 1: mode = HDW_ED25519_SLIP10; break;
+  case 2: mode = HDW_SLIP21; break;
+  default: assert_true(false); break;
+  }
+
+  switch (v->curve) {
+  case 0: curve = CX_CURVE_SECP256R1; break;
+  case 1: curve = CX_CURVE_SECP256K1; break;
+  case 2: curve = CX_CURVE_Ed25519; break;
+  default: assert_true(false); break;
+  }
+
+  if (mode == HDW_SLIP21) {
+    path_len = 1 + strlen(v->path);
+    assert_true((size_t)path_len < sizeof(path));
+    p = (uint8_t *)path;
+    p[0] = '\x00';
+    memcpy(p + 1, v->path, path_len - 1);
+  } else {
+    path_len = get_bip32_path(v->path, path, MAX_CHAIN_LEN);
+    assert_true(path_len >= 0);
+  }
+
+  sk_length = strlen(v->seed_key);
+
+  memset(chain, 0, sizeof(chain));
+  memset(key, 0, sizeof(key));
+
+  sys_os_perso_derive_node_with_seed_key(mode, curve,
+                                         path, path_len,
+                                         key, chain,
+                                         (uint8_t *)v->seed_key, sk_length);
+
+  assert_int_equal(hexstr2bin(v->key, expected_key, sizeof(expected_key)), sizeof(expected_key));
+  assert_int_equal(hexstr2bin(v->chain, expected_chain, sizeof(expected_chain)), sizeof(expected_chain));
+  assert_memory_equal(key, expected_key, sizeof(expected_key));
+  assert_memory_equal(chain, expected_chain, sizeof(chain));
+}
+
+static void test_derive(void **state __attribute__((unused)))
+{
+  unsigned int i;
+
+  assert_int_equal(setenv("SPECULOS_SEED", default_seed, 1), 0);
+
+  for (i = 0; i < ARRAY_SIZE(bolos_vectors); i++){
+    test_bolos_vector(&bolos_vectors[i]);
+  }
+}
+
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_bip32),
+    cmocka_unit_test(test_derive),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
