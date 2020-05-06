@@ -83,6 +83,9 @@ class Screen(Display):
             buttons = { Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT }
             # forward this event to seph
             self.seph.handle_button(buttons[key], pressed)
+        elif key == Qt.Key_Down:
+            self.seph.handle_button(BUTTON_LEFT, pressed)
+            self.seph.handle_button(BUTTON_RIGHT, pressed)
         elif key == Qt.Key_Q and not pressed:
             self.app.close()
 
