@@ -26,7 +26,8 @@ For more options, pass the `-h` or `--help` flag.
 
 #### Keyboard control
 
-- The keyboard left and right arrow keys are use instead of the Nano buttons.
+- The keyboard left and right arrow keys are used instead of the Nano buttons.
+  The down arrow can also be used as a more convenient shortcut.
 - The `Q` key exits the application.
 
 #### Display
