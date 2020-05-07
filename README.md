@@ -28,7 +28,12 @@ syscalls related to app install, firmware update or OS info can't be
 implemented.
 
 There is absolutely no guarantee that apps will have the same behavior on
-hardware devices and Speculos.
+hardware devices and Speculos:
+
+- Invalid syscall parameters might throw an exception on a real device while
+  being ignored on Speculos.
+- Attempts to perform unaligned accesses when not allowed (eg. dereferencing a
+  misaligned pointer) will cause an alignment fault on a hardware device.
 
 
 ## Security
