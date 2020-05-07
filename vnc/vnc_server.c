@@ -121,18 +121,9 @@ static void ptrAddEvent(int buttonMask, int x, int y, rfbClientPtr cl)
     prev_pressed = pressed;
 }
 
-/*
- * A keyboard event was received by the VNC server, forward it to speculos.
- *
- * The mouse event structure is reuse, it should actually be an union.
- */
-static void kbdAddEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl)
+static void kbdAddEventHelpher(rfbBool down, rfbKeySym keySym)
 {
     struct mouse_event event;
-
-#ifdef CUSTOM_CURSOR
-    handle_konami_code(down, keySym);
-#endif
 
     if (keySym != XK_Left && keySym != XK_Right) {
         return;
@@ -148,6 +139,25 @@ static void kbdAddEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl)
         err(1, "write");
     }
     fflush(stdout);
+}
+
+/*
+ * A keyboard event was received by the VNC server, forward it to speculos.
+ *
+ * The mouse event structure is reuse, it should actually be an union.
+ */
+static void kbdAddEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl)
+{
+#ifdef CUSTOM_CURSOR
+    handle_konami_code(down, keySym);
+#endif
+
+    if (keySym == XK_Down) {
+        kbdAddEventHelpher(down, XK_Left);
+        kbdAddEventHelpher(down, XK_Right);
+    } else if (keySym == XK_Left || keySym == XK_Right) {
+        kbdAddEventHelpher(down, keySym);
+    }
 }
 
 /* Speculos updated its framebuffer, update the local one. */
