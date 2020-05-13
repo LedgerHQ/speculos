@@ -125,6 +125,13 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            unsigned int,            key_len,
            cx_ecfp_public_key_t *,  key);
 
+  SYSCALL5(cx_ecfp_scalar_mult, "(0x%x, %p, %u, %p, %u)",
+           cx_curve_t,            curve,
+           unsigned char *,       P,
+           unsigned int,          P_len,
+           const unsigned char *, k,
+           unsigned int,          k_len);
+
   SYSCALL10(cx_eddsa_sign, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u, %p)",
             const cx_ecfp_private_key_t *, pvkey,
             int,                           mode,

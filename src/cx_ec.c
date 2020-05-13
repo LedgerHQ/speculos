@@ -7,6 +7,7 @@
 #include <openssl/err.h>
 
 #include "cx_ec.h"
+#include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "exception.h"
 #include "emulate.h"
@@ -881,4 +882,52 @@ int sys_cx_ecdh(const cx_ecfp_private_key_t *key, int mode, const uint8_t *publi
     break;
   }*/
   return secret_len;
+}
+
+int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_len, const unsigned char *k, unsigned int k_len)
+{
+  BIGNUM *Px, *Py, *Qx, *Qy, *e;
+
+  /* TODO: ensure that the point is valid */
+
+  if (P_len != 65) {
+    errx(1, "cx_ecfp_scalar_mult: invalid P_len (%u)", P_len);
+  }
+
+  Px = BN_new();
+  Py = BN_new();
+  Qx = BN_new();
+  Qy = BN_new();
+  e = BN_new();
+  if (Px == NULL || Py == NULL || Qx == NULL || Qy == NULL || e == NULL) {
+    errx(1, "cx_ecfp_scalar_mult: BN_new() failed");
+  }
+
+  BN_bin2bn(P + 1, 32, Px);
+  BN_bin2bn(P + 33, 32, Py);
+  BN_bin2bn(k, k_len, e);
+
+  switch (curve) {
+  case CX_CURVE_Ed25519:
+    if (scalarmult_ed25519(Qx, Qy, Px, Py, e) != 0) {
+      errx(1, "scalarmult_ed25519 failed");
+    }
+
+    BN_bn2binpad(Qx, P + 1, 32);
+    BN_bn2binpad(Qy, P + 33, 32);
+    break;
+  case CX_CURVE_SECP256K1:
+  case CX_CURVE_SECP256R1:
+  default:
+    errx(1, "TODO: unsupported curve");
+    break;
+  }
+
+  BN_free(Qy);
+  BN_free(Qx);
+  BN_free(Py);
+  BN_free(Px);
+  BN_free(e);
+
+  return 0;
 }
