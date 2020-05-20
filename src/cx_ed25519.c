@@ -8,7 +8,7 @@
 
 static const char *constant_q = "57896044618658097711785492504343953926634992332820282019728792003956564819949";
 static bool initialized;
-static BIGNUM *d1, *d2, *q, *q_minus_two, *two;
+static BIGNUM *d1, *d2, *q, *two;
 static const BIGNUM *one;
 static BN_CTX *ctx;
 
@@ -16,11 +16,6 @@ typedef struct {
   BIGNUM *x;
   BIGNUM *y;
 } POINT;
-
-static void inv(BIGNUM *r, BIGNUM *x)
-{
-  BN_mod_inverse(r, x, q, ctx);
-}
 
 static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1, BIGNUM *y2, BIGNUM *d)
 {
@@ -46,7 +41,7 @@ static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1, BIGNUM 
   BN_mul(b, b, y2, ctx);
   BN_add(b, one, b);
 
-  inv(b, b);
+  BN_mod_inverse(b, b, q, ctx);
 
   BN_mul(r, a, b, ctx);
 
@@ -135,26 +130,23 @@ static int initialize(void)
   d1 = BN_new();
   d2 = BN_new();
   q = BN_new();
-  q_minus_two = BN_new();
 
-  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL || q == NULL || q_minus_two == NULL) {
+  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL || q == NULL) {
     BN_CTX_free(ctx);
     BN_free(a);
     BN_free(two);
     BN_free(d1);
     BN_free(d2);
     BN_free(q);
-    BN_free(q_minus_two);
     return -1;
   }
 
   one = BN_value_one();
   BN_dec2bn(&two, "2");
   BN_dec2bn(&q, constant_q);
-  BN_sub(q_minus_two, q, two);
 
   BN_dec2bn(&a, "121666");
-  inv(a, a);
+  BN_mod_inverse(a, a, q, ctx);
   BN_dec2bn(&d1, "-121665");
   BN_mul(d1, d1, a, ctx);
 

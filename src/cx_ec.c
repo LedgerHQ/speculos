@@ -910,7 +910,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
   switch (curve) {
   case CX_CURVE_Ed25519:
     if (scalarmult_ed25519(Qx, Qy, Px, Py, e) != 0) {
-      errx(1, "scalarmult_ed25519 failed");
+      errx(1, "cx_ecfp_scalar_mult: scalarmult_ed25519 failed");
     }
 
     BN_bn2binpad(Qx, P + 1, 32);
@@ -919,7 +919,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
   case CX_CURVE_SECP256K1:
   case CX_CURVE_SECP256R1:
   default:
-    errx(1, "TODO: unsupported curve");
+    errx(1, "cx_ecfp_scalar_mult: TODO: unsupported curve (0x%x)", curve);
     break;
   }
 
