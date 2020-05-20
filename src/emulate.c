@@ -212,6 +212,18 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            const uint8_t *, b,
            unsigned int,    len);
 
+  SYSCALL4(cx_math_invintm, "(%p, %u, %p, %u)",
+           uint8_t *,       r,
+           uint32_t,        a,
+           const uint8_t *, m,
+           size_t,          len);
+
+  SYSCALL4(cx_math_invprimem, "(%p, %p, %p, %u)",
+           uint8_t *,       r,
+           const uint8_t *, a,
+           const uint8_t *, m,
+           unsigned int,    len);
+
   SYSCALL2(cx_math_is_prime, "(%p, %u)",
            const uint8_t *, r,
            unsigned int,    len);
@@ -261,6 +273,27 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
           cx_sha3_t *, hash,
           unsigned int, size,
           unsigned int, out_length);
+
+  SYSCALL6(cx_math_powm,    "(%p, %p, %p, %u, %p, %u)",
+           uint8_t *,       r,
+           const uint8_t *, a,
+           const uint8_t *, e,
+           size_t,          len_e,
+           const uint8_t *, m,
+           size_t,          len);
+
+  SYSCALL4(cx_math_sub,     "(%p, %p, %p, %u)",
+           uint8_t *,       r,
+           const uint8_t *, a,
+           const uint8_t *, b,
+           size_t,          len);
+
+  SYSCALL5(cx_math_subm,    "(%p, %p, %p, %p, %u)",
+           uint8_t *,       r,
+           const uint8_t *, a,
+           const uint8_t *, b,
+           const uint8_t *, m,
+           size_t,          len);
 
   SYSCALL3(nvm_write,  "(%p, %p, %u)",
            void *, dst_addr,
