@@ -195,7 +195,7 @@ static void cx_compress(uint8_t *x, uint8_t *y, size_t size)
     y[0] |= 0x80;
   }
 
-  cx_encode_int(y, size);
+  be2le(y, size);
 }
 
 int sys_cx_edward_compress_point(cx_curve_t curve, uint8_t *P, size_t P_len) {
@@ -283,7 +283,7 @@ static int cx_decompress(uint8_t *x, uint8_t *y, size_t size)
     goto free_bn;
   }
 
-  cx_decode_int(y, size);
+  le2be(y, size);
   negative = (y[0] & 0x80) != 0;
   y[0] &= 0x7f;
 
