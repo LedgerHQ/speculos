@@ -283,6 +283,8 @@ int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
                         const unsigned char *ctx __attribute__((unused)),
                         unsigned int ctx_len __attribute__((unused)),
                         const unsigned char *sig, unsigned int sig_len) {
+  cx_ecfp_public_key_t pub;
+
   /* Only SHA-512 is supported in Speculos, as it is the only supported hash
    * in OpenSSL */
   if (hashID != CX_SHA512) {
@@ -291,11 +293,19 @@ int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
   if (sig_len != 64) {
     return 0;
   }
-  if (pu_key->curve != CX_CURVE_Ed25519 || pu_key->W_len != 1 + 2 * 32 ||
-      pu_key->W[0] != 0x04) {
+  if (pu_key->curve != CX_CURVE_Ed25519 || pu_key->W_len != 1 + 2 * 32) {
     return 0;
   }
-  return ED25519_verify(hash, hash_len, sig, pu_key->W + 1);
+
+  /* pass a compressed key to ED25519_verify */
+  memcpy(&pub, pu_key, sizeof(pub));
+  if (pub.W[0] == 0x04) {
+    if (sys_cx_edward_compress_point(pub.curve, pub.W, pub.W_len) != 0) {
+      return 0;
+    }
+  }
+
+  return ED25519_verify(hash, hash_len, sig, pub.W + 1);
 }
 
 int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
