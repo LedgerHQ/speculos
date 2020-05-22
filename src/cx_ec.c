@@ -5,6 +5,7 @@
 #include <openssl/ec.h>
 #include <openssl/objects.h>
 #include <openssl/err.h>
+#include <openssl/sha.h>
 
 #include "cx_ec.h"
 #include "cx_ed25519.h"
@@ -223,13 +224,6 @@ static void cx_encode_int(uint8_t *v, size_t len) {
   }
 }
 
-static void cx_compress(uint8_t *p, size_t size) {
-  if (p[size - 1] & 1) {
-    p[size] |= 0x80;
-  }
-  cx_encode_int(p + size, size);
-}
-
 /* Unexported functions from OpenSSL, in ec/curve25519.c. Dirty hack... */
 int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
                  const uint8_t public_key[32], const uint8_t private_key[32]);
@@ -238,35 +232,35 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
 void ED25519_public_from_private(uint8_t out_public_key[32],
                                  const uint8_t private_key[32]);
 
-int cx_edward_compress_point(cx_curve_t curve, uint8_t *p, size_t p_len) {
-  cx_curve_twisted_edward_t *domain;
-  size_t size;
+int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t hashID, cx_ecfp_public_key_t *pu_key)
+{
+  uint8_t digest[SHA512_DIGEST_LENGTH];
 
-  domain = (cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
-  size = domain->length;
-  if (curve != CX_CURVE_Ed25519 || p_len < (1 + 2 * size)) {
+  if (hashID != CX_SHA512) {
+    errx(1, "cx_eddsa_get_public_key: invalid hashId (0x%x)", hashID);
     return -1;
   }
 
-  cx_compress(p + 1, size);
-  memmove(p + 1, p + 1 + size, size);
-  p[0] = 0x02;
-  return 0;
-}
-
-int cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t hashID,
-                             cx_ecfp_public_key_t *pu_key) {
-  if (hashID != CX_SHA512 || pv_key->d_len != 32) {
+  if (pv_key->d_len != 32) {
+    errx(1, "cx_eddsa_get_public_key: invalid key size (0x%x)", pv_key->d_len);
     return -1;
   }
-  pu_key->W[0] = 0x04;
-  ED25519_public_from_private(pu_key->W + 1, pv_key->d);
-  /* Clear second coordinate. Differ from device implementation. */
-  memset(pu_key->W + 1 + 32, 0, 32);
+
+  SHA512(pv_key->d, pv_key->d_len, digest);
+
+  digest[0] &= 0xf8;
+  digest[31] &= 0x7f;
+  digest[31] |= 0x40;
+
+  cx_decode_int(digest, 32);
 
   pu_key->curve = CX_CURVE_Ed25519;
   pu_key->W_len = 1 + 2 * 32;
-  return 0;
+  pu_key->W[0] = 0x04;
+  memcpy(pu_key->W + 1, C_cx_Ed25519_Bx, sizeof(C_cx_Ed25519_Bx));
+  memcpy(pu_key->W + 1 + 32, C_cx_Ed25519_By, sizeof(C_cx_Ed25519_By));
+
+  return sys_cx_ecfp_scalar_mult(CX_CURVE_Ed25519, pu_key->W, pu_key->W_len, digest, 32);
 }
 
 int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey,
@@ -330,7 +324,7 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
   int nid;
 
   if (curve == CX_CURVE_Ed25519) {
-    return cx_eddsa_get_public_key(private_key, hashID, public_key);
+    return sys_cx_eddsa_get_public_key(private_key, hashID, public_key);
   } else {
     nid = nid_from_curve(curve);
     key = EC_KEY_new_by_curve_name(nid);

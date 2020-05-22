@@ -15,9 +15,6 @@
 #define cx_eddsa_sign sys_cx_eddsa_sign
 #define cx_eddsa_verify sys_cx_eddsa_verify
 
-int cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t hashID,
-                            cx_ecfp_public_key_t *pu_key);
-
 typedef struct {
   const char *secret_key;
   const char *public_key;
@@ -380,7 +377,7 @@ static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
      * OpenSSL manipulates compressed points only (as most implementations), so
      * there is no need to call cx_edward_compress_point
      */
-    cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md, (cx_ecfp_public_key_t *)&pub);
+    sys_cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md, (cx_ecfp_public_key_t *)&pub);
     assert_int_equal(pub.W_len, 1 + 2 * mpi_size);
     assert_int_equal(pub.W[0], 4);
     // assert_int_equal(cx_edward_compress_point(curve, (uint8_t *) &pub.W, pub.W_len), 0);
