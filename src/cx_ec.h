@@ -252,6 +252,8 @@ int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey, int mode, cx_md_t hash
 int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key, int mode, cx_md_t hashID, const unsigned char *hash, unsigned int hash_len,
                         const unsigned char  *ctx , unsigned int ctx_len, const unsigned char *sig,  unsigned int sig_len);
 int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_len, const unsigned char *k, unsigned int k_len);
+int sys_cx_edward_compress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
+int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
 #endif
