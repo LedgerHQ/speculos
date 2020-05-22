@@ -209,21 +209,6 @@ static int nid_from_curve(cx_curve_t curve) {
   return nid;
 }
 
-static void cx_encode_int(uint8_t *v, size_t len) {
-  uint8_t t;
-  int i, j;
-  i = 0;
-  j = len - 1;
-  len = len / 2;
-  while (len--) {
-    t = v[i];
-    v[i] = v[j];
-    v[j] = t;
-    i++;
-    j--;
-  }
-}
-
 /* Unexported functions from OpenSSL, in ec/curve25519.c. Dirty hack... */
 int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
                  const uint8_t public_key[32], const uint8_t private_key[32]);

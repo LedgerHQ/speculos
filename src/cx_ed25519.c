@@ -180,3 +180,26 @@ int scalarmult_ed25519(BIGNUM *Qx, BIGNUM *Qy, BIGNUM *Px, BIGNUM *Py, BIGNUM *e
 
   return scalarmult(&Q, &P, e);
 }
+
+void cx_encode_int(uint8_t *v, size_t len)
+{
+  uint8_t t;
+  int i, j;
+
+  j = len - 1;
+  len /= 2;
+
+  for (i = 0; len > 0; i++, j--, len--) {
+    t = v[i];
+    v[i] = v[j];
+    v[j] = t;
+    i++;
+    j--;
+  }
+}
+
+void cx_decode_int(uint8_t *v, size_t len)
+{
+  return cx_encode_int(v, len);
+}
+
