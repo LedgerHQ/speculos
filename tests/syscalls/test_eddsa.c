@@ -371,18 +371,12 @@ static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
     assert_int_equal(cx_ecfp_init_private_key(curve, secret_key, mpi_size,
                                               (cx_ecfp_private_key_t *)&private_key), mpi_size);
 
-    /* TODO: this behaviour is actually different from the hardware implementation.
-     * cx_eddsa_get_public_key should return an uncompressed private key, which
-     * is then compressed using cx_edward_compress_point.
-     * OpenSSL manipulates compressed points only (as most implementations), so
-     * there is no need to call cx_edward_compress_point
-     */
     sys_cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md, (cx_ecfp_public_key_t *)&pub);
     assert_int_equal(pub.W_len, 1 + 2 * mpi_size);
     assert_int_equal(pub.W[0], 4);
-    // assert_int_equal(cx_edward_compress_point(curve, (uint8_t *) &pub.W, pub.W_len), 0);
+    assert_int_equal(sys_cx_edward_compress_point(curve, (uint8_t *) &pub.W, pub.W_len), 0);
 
-    // assert_int_equal(pub.W[0], 2);
+    assert_int_equal(pub.W[0], 2);
     assert_memory_equal(expected_key, &pub.W[1], mpi_size);
   }
 }
