@@ -10,6 +10,7 @@
 #include "cx_ec.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
+#include "cx_utils.h"
 #include "exception.h"
 #include "emulate.h"
 
@@ -237,7 +238,7 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t has
   digest[31] &= 0x7f;
   digest[31] |= 0x40;
 
-  cx_decode_int(digest, 32);
+  le2be(digest, 32);
 
   pu_key->curve = CX_CURVE_Ed25519;
   pu_key->W_len = 1 + 2 * 32;
