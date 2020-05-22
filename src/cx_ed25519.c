@@ -4,7 +4,7 @@
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 
-#include "cx_ed25519.h"
+#include "cx_utils.h"
 
 static const char *constant_q = "57896044618658097711785492504343953926634992332820282019728792003956564819949";
 static bool initialized;

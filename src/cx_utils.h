@@ -93,6 +93,9 @@ void cx_swap_buffer64(uint64bits_t *v, int len);
 
 #endif
 
+void be2le(uint8_t *v, size_t len);
+void le2be(uint8_t *v, size_t len);
+
 int sys_cx_math_next_prime(uint8_t *buf, unsigned int len);
 
 #endif

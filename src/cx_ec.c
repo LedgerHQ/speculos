@@ -10,6 +10,7 @@
 #include "cx_ec.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
+#include "cx_utils.h"
 #include "exception.h"
 #include "emulate.h"
 
@@ -209,21 +210,6 @@ static int nid_from_curve(cx_curve_t curve) {
   return nid;
 }
 
-static void cx_encode_int(uint8_t *v, size_t len) {
-  uint8_t t;
-  int i, j;
-  i = 0;
-  j = len - 1;
-  len = len / 2;
-  while (len--) {
-    t = v[i];
-    v[i] = v[j];
-    v[j] = t;
-    i++;
-    j--;
-  }
-}
-
 /* Unexported functions from OpenSSL, in ec/curve25519.c. Dirty hack... */
 int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
                  const uint8_t public_key[32], const uint8_t private_key[32]);
@@ -252,7 +238,7 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t has
   digest[31] &= 0x7f;
   digest[31] |= 0x40;
 
-  cx_decode_int(digest, 32);
+  le2be(digest, 32);
 
   pu_key->curve = CX_CURVE_Ed25519;
   pu_key->W_len = 1 + 2 * 32;
