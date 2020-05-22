@@ -7,6 +7,7 @@
 #include <openssl/ec.h>
 
 #include "cx_ec.h"
+#include "cx_utils.h"
 #include "cx_ed25519.h"
 
 static const char *constant_q = "57896044618658097711785492504343953926634992332820282019728792003956564819949";
@@ -186,28 +187,6 @@ int scalarmult_ed25519(BIGNUM *Qx, BIGNUM *Qy, BIGNUM *Px, BIGNUM *Py, BIGNUM *e
   Q.y = Qy;
 
   return scalarmult(&Q, &P, e);
-}
-
-void cx_encode_int(uint8_t *v, size_t len)
-{
-  uint8_t t;
-  int i, j;
-
-  j = len - 1;
-  len /= 2;
-
-  for (i = 0; len > 0; i++, j--, len--) {
-    t = v[i];
-    v[i] = v[j];
-    v[j] = t;
-    i++;
-    j--;
-  }
-}
-
-void cx_decode_int(uint8_t *v, size_t len)
-{
-  return cx_encode_int(v, len);
 }
 
 static void cx_compress(uint8_t *x, uint8_t *y, size_t size)

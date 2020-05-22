@@ -177,6 +177,28 @@ void cx_add_64(uint64bits_t *x,uint64bits_t *y) {
 }
 #endif
 
+void be2le(uint8_t *v, size_t len)
+{
+  uint8_t t;
+  int i, j;
+
+  j = len - 1;
+  len /= 2;
+
+  for (i = 0; len > 0; i++, j--, len--) {
+    t = v[i];
+    v[i] = v[j];
+    v[j] = t;
+    i++;
+    j--;
+  }
+}
+
+void le2be(uint8_t *v, size_t len)
+{
+  return be2le(v, len);
+}
+
 int sys_cx_math_next_prime(uint8_t *buf, unsigned int len)
 {
   BN_CTX *ctx;
