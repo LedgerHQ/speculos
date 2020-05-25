@@ -222,6 +222,12 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            const uint8_t *,    key,
            unsigned int,       key_len);
 
+  SYSCALL4(cx_math_add, "(%p, %p, %p, %u)",
+           uint8_t *,       r,
+           const uint8_t *, a,
+           const uint8_t *, b,
+           unsigned int,    len);
+
   SYSCALL5(cx_math_addm, "(%p, %p, %p, %p, %u)",
            uint8_t *,       r,
            const uint8_t *, a,

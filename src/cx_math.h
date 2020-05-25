@@ -1,6 +1,7 @@
 #ifndef _CX_MATH_H
 #define _CX_MATH_H
 
+int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int len);
 int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8_t *m, unsigned int len);
 int sys_cx_math_cmp(const uint8_t *a, const uint8_t *b, unsigned int len);
 int sys_cx_math_invintm(uint8_t *r, uint32_t a, const uint8_t *m, size_t len);
@@ -14,6 +15,7 @@ int sys_cx_math_powm(uint8_t *r, const uint8_t *a, const uint8_t *e, size_t len_
 int sys_cx_math_sub(uint8_t *r, const uint8_t *a, const uint8_t *b, size_t len);
 int sys_cx_math_subm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8_t *m, size_t len);
 
+#define cx_math_add        sys_cx_math_add
 #define cx_math_addm       sys_cx_math_addm
 #define cx_math_cmp        sys_cx_math_cmp
 #define cx_math_is_zero    sys_cx_math_is_zero
