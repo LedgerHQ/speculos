@@ -17,11 +17,6 @@ static BIGNUM *d1, *d2, *I, *q, *two;
 static const BIGNUM *one;
 static BN_CTX *ctx;
 
-typedef struct {
-  BIGNUM *x;
-  BIGNUM *y;
-} POINT;
-
 static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1, BIGNUM *y2, BIGNUM *d)
 {
   BIGNUM *a, *b;
@@ -57,7 +52,7 @@ static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1, BIGNUM 
   return ret;
 }
 
-static int edwards(POINT *R, POINT *P, POINT *Q)
+int edwards_add(POINT *R, POINT *P, POINT *Q)
 {
   BIGNUM *x1, *y1, *x2, *y2, *x3, *y3;
   int ret;
@@ -114,11 +109,11 @@ static int scalarmult_helper(POINT *Q, POINT *P, BIGNUM *e)
     return -1;
   }
 
-  if (edwards(Q, Q, Q) != 0) {
+  if (edwards_add(Q, Q, Q) != 0) {
     return -1;
   }
 
-  if (odd && edwards(Q, Q, P) != 0) {
+  if (odd && edwards_add(Q, Q, P) != 0) {
     return -1;
   }
 
