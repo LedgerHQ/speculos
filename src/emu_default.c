@@ -6,33 +6,10 @@
 
 #define PAGE_SIZE	4096
 
-#define BOLOS_UX_OK     0xB0105011
-#define BOLOS_UX_CANCEL 0xB0105022
-#define BOLOS_UX_ERROR  0xB0105033
-#define BOLOS_UX_IGNORE 0xB0105044
-#define BOLOS_UX_REDRAW	0xB0105055
-#define BOLOS_UX_CONTINUE 0
-
-/* TODO */
-unsigned long sys_os_ux(bolos_ux_params_t *UNUSED(params))
-{
-  return BOLOS_UX_OK;
-}
-
-unsigned long sys_os_global_pin_is_validated(void)
-{
-  return BOLOS_UX_OK;
-}
-
 unsigned long sys_os_global_pin_invalidate(void)
 {
   /* return void actually */
   return 0;
-}
-
-unsigned long sys_os_perso_isonboarded(void)
-{
-  return BOLOS_UX_OK;
 }
 
 /*

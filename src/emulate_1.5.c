@@ -33,9 +33,11 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
            uint8_t *, buffer,
            uint16_t,  length);
 
+  SYSCALL0i(os_perso_isonboarded, os_perso_isonboarded_1_5);
+
   SYSCALL0i(os_sched_last_status, os_sched_last_status_1_5);
 
-  SYSCALL0(os_global_pin_is_validated);
+  SYSCALL0i(os_global_pin_is_validated, os_global_pin_is_validated_1_5);
 
   SYSCALL1(os_sched_exit, "(%u)", unsigned int, code);
 
@@ -46,6 +48,8 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
   SYSCALL2(os_seph_version, "(%p %u)",
            uint8_t *, buffer,
            size_t,    length);
+
+  SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_5);
 
   SYSCALL0(reset);
 

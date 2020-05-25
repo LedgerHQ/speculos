@@ -37,9 +37,9 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
 
   SYSCALL0(os_flags);
 
-  SYSCALL0(os_perso_isonboarded);
+  SYSCALL0i(os_perso_isonboarded, os_perso_isonboarded_1_6);
 
-  SYSCALL0(os_global_pin_is_validated);
+  SYSCALL0i(os_global_pin_is_validated, os_global_pin_is_validated_1_6);
 
   SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
            unsigned int, tag,
@@ -67,6 +67,8 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
            unsigned char *,      chain,
            unsigned char *,      seed_key,
            unsigned int,         seed_key_length);
+
+  SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_6);
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

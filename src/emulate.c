@@ -333,12 +333,8 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
 
   SYSCALL0(os_flags);
 
-  SYSCALL0(os_global_pin_invalidate);
-
   SYSCALL1(os_lib_throw, "(0x%x)",
            unsigned int, exception);
-
-  SYSCALL0(os_perso_isonboarded);
 
   SYSCALL5(os_perso_derive_node_bip32, "(0x%x, %p, %u, %p, %p)",
            cx_curve_t,       curve,
@@ -352,8 +348,6 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            unsigned int, tag,
            uint8_t *,    buffer,
            size_t,       length);
-
-  SYSCALL1(os_ux, "(%p)", bolos_ux_params_t *, params);
 
   SYSCALL0(try_context_get);
 

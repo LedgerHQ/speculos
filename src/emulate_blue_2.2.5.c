@@ -25,7 +25,7 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
 
   SYSCALL0(os_flags);
 
-  SYSCALL0(os_perso_isonboarded);
+  SYSCALL0i(os_perso_isonboarded, os_perso_isonboarded_1_5);
 
   SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_6);
 
@@ -44,7 +44,9 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
 
   SYSCALL1(os_sched_exit, "(%u)", unsigned int, code);
 
-  SYSCALL0(os_global_pin_is_validated);
+  SYSCALL0i(os_global_pin_is_validated, os_global_pin_is_validated_1_5);
+
+  SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_6);
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

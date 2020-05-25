@@ -58,16 +58,19 @@ unsigned long sys_os_version(uint8_t *buffer, unsigned int len);
 unsigned long sys_os_seph_version(uint8_t *buffer, size_t len);
 unsigned long sys_os_lib_call(unsigned long *parameters);
 unsigned long sys_os_lib_end(void);
-unsigned long sys_os_global_pin_is_validated(void);
+unsigned long sys_os_global_pin_is_validated_1_5(void);
+unsigned long sys_os_global_pin_is_validated_1_6(void);
 unsigned long sys_os_global_pin_invalidate(void);
-unsigned long sys_os_perso_isonboarded(void);
+unsigned long sys_os_perso_isonboarded_1_5(void);
+unsigned long sys_os_perso_isonboarded_1_6(void);
 unsigned long sys_os_flags(void);
 int sys_nvm_write(void *dst_addr, void* src_addr, size_t src_len);
 unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain);
 unsigned long sys_os_perso_derive_node_with_seed_key(unsigned int mode, cx_curve_t curve, const unsigned int *path, unsigned int pathLength,
     unsigned char *privateKey, unsigned char *chain, unsigned char *seed_key, unsigned int seed_key_length);
 unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buffer, size_t length);
-unsigned long sys_os_ux(bolos_ux_params_t *params);
+unsigned long sys_os_ux_1_5(bolos_ux_params_t *params);
+unsigned long sys_os_ux_1_6(bolos_ux_params_t *params);
 
 unsigned long sys_cx_hash(cx_hash_t *hash, int mode, const uint8_t *in, size_t len, uint8_t *out, size_t out_len);
 unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length);
