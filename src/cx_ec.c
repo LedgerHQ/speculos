@@ -921,3 +921,68 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
 
   return 0;
 }
+
+int cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P, const uint8_t *Q, size_t X_len)
+{
+  POINT PP, QQ, RR;
+  int ret;
+
+  /* TODO: ensure that points are valid */
+
+  PP.x = BN_new();
+  PP.y = BN_new();
+  QQ.x = BN_new();
+  QQ.y = BN_new();
+  RR.x = BN_new();
+  RR.y = BN_new();
+  if (PP.x == NULL || PP.y == NULL || QQ.x == NULL || QQ.y == NULL || RR.x == NULL || RR.y == NULL) {
+    errx(1, "cx_ecfp_scalar_mult: BN_new() failed");
+    return -1;
+  }
+
+  switch (curve) {
+  case CX_CURVE_Ed25519:
+    if (X_len != 65) {
+      errx(1, "cx_ecfp_add_point: invalid X_len (%u)", X_len);
+      ret = -1;
+      break;
+    }
+
+    if (P[0] != 0x04 || Q[0] != 0x4) {
+      errx(1, "cx_ecfp_add_point: points must be uncompressed");
+      ret = -1;
+      break;
+    }
+
+    BN_bin2bn(P + 1, 32, PP.x);
+    BN_bin2bn(P + 33, 32, PP.y);
+    BN_bin2bn(Q + 1, 32, QQ.x);
+    BN_bin2bn(Q + 33, 32, QQ.y);
+
+    if (edwards_add(&RR, &PP, &QQ) != 0) {
+      errx(1, "cx_ecfp_add_point: edwards_add failed");
+      ret = -1;
+      break;
+    }
+
+    R[0] = 0x04;
+    BN_bn2binpad(RR.x, R + 1, 32);
+    BN_bn2binpad(RR.y, R + 33, 32);
+    ret = 0;
+    break;
+
+  default:
+    errx(1, "cx_ecfp_add_point: TODO: unsupported curve (0x%x)", curve);
+    ret = -1;
+    break;
+  }
+
+  BN_free(RR.y);
+  BN_free(RR.x);
+  BN_free(QQ.y);
+  BN_free(QQ.x);
+  BN_free(PP.y);
+  BN_free(PP.x);
+
+  return ret;
+}
