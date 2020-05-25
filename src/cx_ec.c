@@ -922,7 +922,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
   return 0;
 }
 
-int cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P, const uint8_t *Q, size_t X_len)
+int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P, const uint8_t *Q, size_t X_len)
 {
   POINT PP, QQ, RR;
   int ret;

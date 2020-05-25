@@ -240,6 +240,7 @@ typedef struct cx_ecfp_640_private_key_s cx_ecfp_640_private_key_t;
 
 const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve);
 
+int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P, const uint8_t *Q, size_t X_len);
 unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve, const unsigned char *rawkey, unsigned int key_len, cx_ecfp_public_key_t *key);
 int sys_cx_ecfp_generate_pair(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key, int keep_private);
 int sys_cx_ecfp_generate_pair2(cx_curve_t curve, cx_ecfp_public_key_t *public_key, cx_ecfp_private_key_t *private_key, int keep_private, cx_md_t hashID);

@@ -107,6 +107,13 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            const uint8_t *,              sig,
            unsigned int,                 sig_len);
 
+  SYSCALL5(cx_ecfp_add_point, "(0x%x, %p, %p, %p, %u)",
+           cx_curve_t, curve,
+           uint8_t *,  R,
+           uint8_t *,  P,
+           uint8_t *,  Q,
+           size_t,     X_len);
+
   SYSCALL4(cx_ecfp_generate_pair, "(0x%x, %p, %p, %d)",
            cx_curve_t,              curve,
            cx_ecfp_public_key_t *,  public_key,
@@ -159,6 +166,16 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
     unsigned int,                 ctx_len,
     const unsigned char *,        sig,
     unsigned int,                 sig_len);
+
+  SYSCALL3(cx_edward_compress_point, "(0x%x, %p, %u)",
+           cx_curve_t, curve,
+           uint8_t *,  P,
+           size_t,     P_len);
+
+  SYSCALL3(cx_edward_decompress_point, "(0x%x, %p, %u)",
+           cx_curve_t, curve,
+           uint8_t *,  P,
+           size_t,     P_len);
 
   SYSCALL6(cx_hash, "(%p, 0x%x, %p, %u, %p, %u)",
            cx_hash_t *,     hash,
