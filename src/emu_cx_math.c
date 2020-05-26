@@ -234,7 +234,7 @@ int sys_cx_math_mult(uint8_t *r,
   BN_bin2bn(b, len, bb);
 
   BN_mul(rr, aa, bb, ctx);
-  BN_bn2binpad(rr, r, len);
+  BN_bn2binpad(rr, r, 2*len);
 
   BN_free(rr);
   BN_free(bb);
