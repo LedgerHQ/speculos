@@ -585,7 +585,7 @@ static int run_app(char *name, unsigned long *parameters, hw_platform_t plat)
     "bkpt\n" /* the call should neved return */
     :
     : "r"(stack_start), "r"(stack_end), "r"(parameters), "r"(f)
-    : "r0", "r9", "sp");
+    : "r0", "r9");
 
   /* never reached */
   errx(1, "the app returned, exiting...");
