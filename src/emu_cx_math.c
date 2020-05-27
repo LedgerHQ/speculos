@@ -1,8 +1,36 @@
+#include <err.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <openssl/bn.h>
+
+/* Arbitrary maximum number size in bytes. Operations on numbers with size
+ * larger than this limit would throw an exception on a real device. */
+#define MAX_SIZE 4096
+
+/*
+ * Assumes tolen is less than or equal to MAX_SIZE.
+ * Return true if the result is truncated, false otherwise.
+ */
+static bool BN_bn2binpad_truncate(const BIGNUM *a, uint8_t *to, int tolen)
+{
+  uint8_t buf[MAX_SIZE+1];
+
+  if (BN_bn2binpad(a, to, tolen) != -1) {
+    return false;
+  }
+
+  /* this can't happen if tolen <= MAX_SIZE */
+  if (BN_bn2binpad(a, buf, sizeof(buf)) == -1) {
+    errx(1, "BN_bn2binpad failed in BN_bn2binpad_truncate");
+  }
+
+  memcpy(to, buf + sizeof(buf) - tolen, tolen);
+
+  return true;
+}
 
 int sys_cx_math_cmp(const uint8_t *a, const uint8_t *b, unsigned int len)
 {
@@ -78,6 +106,11 @@ int sys_cx_math_is_zero(const uint8_t *a, unsigned int len) {
 int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int len)
 {
   BIGNUM *aa, *bb, *rr;
+  int carry;
+
+  if (len > MAX_SIZE) {
+    errx(1, "sys_cx_math_add: size too large");
+  }
 
   aa = BN_new();
   bb = BN_new();
@@ -87,13 +120,13 @@ int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int
   BN_bin2bn(b, len, bb);
 
   BN_add(rr, aa, bb);
-  BN_bn2binpad(rr, r, len);
+  carry = BN_bn2binpad_truncate(rr, r, len) ? 1 : 0;
 
   BN_free(rr);
   BN_free(bb);
   BN_free(aa);
 
-  return 0;
+  return carry;
 }
 
 int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8_t *m, unsigned int len)
