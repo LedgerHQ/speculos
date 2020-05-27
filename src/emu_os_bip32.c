@@ -213,6 +213,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
   unsigned int i, j, len;
   uint8_t tmp[1+64+4], x;
   uint8_t *ZR, *Z, *ZL;
+  uint8_t a[33], b[33];
 
   Z = tmp + 1;
   ZL = tmp + 1;
@@ -271,7 +272,17 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
     // kR = Zr + kRP
     le2be(ZR, 32);
     le2be(kRP, 32);
-    cx_math_add(ZR, ZR, kRP, 32);
+
+    // cx_math_add(ZR, ZR, kRP, 32) can return invalid result when an overflow
+    // occurs, so perform addition on 33 bytes and truncate the result to 32
+    // bytes
+    a[0] = '\x00';
+    memcpy(a + 1, ZR, 32);
+    b[0] = '\x00';
+    memcpy(b + 1, kRP, 32);
+    cx_math_add(a, a, b, 33);
+    memcpy(ZR, a + 1, 32);
+
     be2le(ZR, 32);
     be2le(kRP, 32);
     // store new kL,kP, but keep old on to compute new c
