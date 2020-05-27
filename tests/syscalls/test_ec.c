@@ -11,8 +11,6 @@
 #include "cx.h"
 #include "cx_ec.h"
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
-
 static uint8_t const C_ED25519_G[] = {
   //uncompressed
   0x04,
