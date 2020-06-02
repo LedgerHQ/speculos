@@ -509,6 +509,58 @@ static const struct bolos_vector bolos_vectors[] = {
   }
 };
 
+/* https://github.com/satoshilabs/slips/blob/master/slip-0010.md#test-vector-1-for-ed25519 */
+static const struct bolos_vector slip10_vectors[] = {
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "",
+    .seed_key = "",
+    .chain = "90046a93de5380a72b5e45010748567d5ea02bbf6522f979e05c0d8d8ca9fffb",
+    .key = "2b4be7f19ee27bbf30c667b642d5f4aa69fd169872f8fc3059c08ebae2eb19e70000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'",
+    .seed_key = "",
+    .chain = "8b59aa11380b624e81507a27fedda59fea6d0b779a778918a2fd3590e16e9c69",
+    .key = "68e0fe46dfb67e368c75379acec591dad19df3cde26e63b93a8e704f1dade7a30000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'",
+    .seed_key = "",
+    .chain = "a320425f77d1b5c2505a6b1b27382b37368ee640e3557c315416801243552f14",
+    .key = "b1d0bad404bf35da785a64ca1ac54b2617211d2777696fbffaf208f746ae84f20000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'/2'",
+    .seed_key = "",
+    .chain = "2e69929e00b5ab250f49c3fb1c12f252de4fed2c1db88387094a0f8c4c9ccd6c",
+    .key = "92a5b23c0b8a99e37d07df3fb9966917f5d06e02ddbd909c7e184371463e9fc90000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'/2'/2'",
+    .seed_key = "",
+    .chain = "8f6d87f93d750e0efccda017d662a1b31a266e4a6f5993b15f5c1f07f74dd5cc",
+    .key = "30d1dc7e5fc04c31219ab25a27ae00b50f6fd66622f6e9c913253d6511d1e6620000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'/2'/2'/1000000000'",
+    .seed_key = "",
+    .chain = "68789923a0cac2cd5a29172a475fe9e0fb14cd6adb5ad98a3fa70333e7afa230",
+    .key = "8f94d394a8e8fd6b1bc2f3f49f5c47e385281d5c17e65324b0f62483e37e87930000000000000000000000000000000000000000000000000000000000000000"
+  }
+};
+
 static void test_bip32_vector(const bip32_test_vector *v)
 {
   uint8_t expected_key[32], key[32], expected_chain_code[32], chain_code[32];
@@ -647,6 +699,12 @@ static void test_derive(void **state __attribute__((unused)))
 
   for (i = 0; i < ARRAY_SIZE(bolos_vectors); i++){
     test_bolos_vector(&bolos_vectors[i]);
+  }
+
+  assert_int_equal(setenv("SPECULOS_SEED", "000102030405060708090a0b0c0d0e0f", 1), 0);
+
+  for (i = 0; i < ARRAY_SIZE(slip10_vectors); i++){
+    test_bolos_vector(&slip10_vectors[i]);
   }
 }
 
