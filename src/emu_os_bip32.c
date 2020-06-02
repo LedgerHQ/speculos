@@ -39,6 +39,11 @@ static uint8_t const SLIP21_SEED[] = {
   'S', 'y', 'm', 'm', 'e', 't', 'r', 'i', 'c', ' ', 'k', 'e', 'y', ' ', 's', 'e', 'e', 'd'
 };
 
+static bool is_hardened_child(uint32_t child)
+{
+  return (child & 0x80000000) != 0;
+}
+
 static ssize_t get_seed_key(cx_curve_t curve, const uint8_t **sk)
 {
   ssize_t sk_length;
@@ -98,6 +103,16 @@ void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed, uns
 
   key->private_key[0] &= 0xF8;
   key->private_key[31] = (key->private_key[31] & 0x7F) | 0x40;
+}
+
+void expand_seed_slip10(const uint8_t *sk, size_t sk_length, uint8_t *seed, unsigned int seed_length, extended_private_key *key)
+{
+  uint8_t hash[CX_SHA512_SIZE];
+
+  cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
+
+  memcpy(key->private_key, hash, 32);
+  memcpy(key->chain_code, hash + 32, 32);
 }
 
 void expand_seed_ed25519_bip32(const uint8_t *sk, size_t sk_length, uint8_t *seed, unsigned int seed_length, extended_private_key *key)
@@ -239,7 +254,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
 
     //Step 1: compute kL/Kr child
     //  if less than 0x80000000 => setup 02|A|i in tmp
-    if (((path[i] >> 24) & 0x80) == 0) {
+    if (!is_hardened_child(path[i])) {
       tmp[0] = 0x02;
       memcpy(tmp + 1, &pub.W[1], 32);
       len = 1 + 32;
@@ -283,7 +298,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
 
     //Step2: compute chain code
     // if less than 0x80000000 => set up 03|A|i in tmp
-    if (((path[i] >> 24) & 0x80) == 0) {
+    if (!is_hardened_child(path[i])) {
       tmp[0] = 0x03;
       memcpy(tmp+1, &pub.W[1], 32);
       len = 1 + 32;
@@ -315,6 +330,42 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
   return 0;
 }
 
+static int hdw_slip10(extended_private_key *key, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain)
+{
+  uint8_t tmp[1+64+4];
+  unsigned int i;
+
+  for (i = 0; i < length; i++) {
+    if (is_hardened_child(path[i])) {
+      tmp[0] = 0;
+      memcpy(tmp + 1, key->private_key, 32);
+    } else {
+      warn("hdw_slip10: invalid path (%u:0x%x)", i, path[i]);
+      return -1;
+    }
+
+    tmp[33] = (path[i] >> 24) & 0xff;
+    tmp[34] = (path[i] >> 16) & 0xff;
+    tmp[35] = (path[i] >> 8) & 0xff;
+    tmp[36] = path[i] & 0xff;
+
+    cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
+
+    memcpy(key->private_key, tmp, 32);
+    memcpy(key->chain_code, tmp + 32, 32);
+  }
+
+  if (private_key != NULL) {
+    memcpy(private_key, key->private_key, 32);
+  }
+
+  if (chain != NULL) {
+    memcpy(chain, key->chain_code, 32);
+  }
+
+  return 0;
+}
+
 static int hdw_bip32(extended_private_key *key, cx_curve_t curve, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain)
 {
   const cx_curve_domain_t *domain;
@@ -331,7 +382,7 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve, const uint32_t
   domain = cx_ecfp_get_domain(curve);
 
   for (i = 0; i < length; i++) {
-    if (((path[i] >> 24) & 0x80) != 0) {
+    if (is_hardened_child(path[i])) {
       tmp[0] = 0;
       memcpy(tmp + 1, key->private_key, 32);
     } else {
@@ -431,8 +482,8 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     /* https://github.com/satoshilabs/slips/tree/master/slip-0010 */
     /* https://github.com/satoshilabs/slips/blob/master/slip-0010.md */
     if (curve == CX_CURVE_Ed25519) {
-      expand_seed_ed25519(sk, sk_length, seed, seed_size, &key);
-      errx(1, "TODO: hdw_slip10_ed25519");
+      expand_seed_slip10(sk, sk_length, seed, seed_size, &key);
+      ret = hdw_slip10(&key, path, pathLength, privateKey, chain);
     } else {
       expand_seed(curve, sk, sk_length, seed, seed_size, &key);
       ret = hdw_bip32(&key, curve, path, pathLength, privateKey, chain);

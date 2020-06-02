@@ -442,6 +442,122 @@ static const struct bolos_vector bolos_vectors[] = {
     .seed_key = "Seed Key!",
     .chain = "ba47004dd60d1935d7f57b13982ad9700e81144ab3e66dda3fd2ec4aa856b814",
     .key = "b47cb41d578dabcfd72a05166fe1cf2f0f3f6aa81f10268e4aa6e4720df0a8240000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "738197632'/335544448'/0'/0'",
+    .seed_key = "",
+    .chain = "b609a7af6a8ae5568bff26a3747aa0c4d8b383144db5c3da28650a37015f2503",
+    .key = "9761691a62523b637c55aa267b3c4835b7cdd4bb704b399a0f7290ca570262cb0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "738197504'/335544320'/16777216'/33554432'",
+    .seed_key = "",
+    .chain = "1a8e8df02b17fd4632529dab6443887359ecf94d547291535952b412cba88420",
+    .key = "e36a66d67ea0d2dcf9af54bc4617c0fa0724b42acff17501ac9dd27588bbd7dd0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "738197632'/335544448'/0'/0'",
+    .seed_key = "Seed Key!",
+    .chain = "8448c2269776dac7e9d3d3e34e7e3d73ad540d23b51c30cb9e6a0db03dfa2109",
+    .key = "5fa451f9c515c226e3fc7056863226b6a369c0721fd10df39dc6d6e1cbfcbf810000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "738197504'/335544320'/16777216'/33554432'",
+    .seed_key = "Seed Key!",
+    .chain = "1094951fb5c6227787c0e0abbb21780f4b90139cae24b7668f38887042a11adf",
+    .key = "dc3334c721aad27324747a46b546bd762a4569e3afeee6d9d82dbb7a4b3fbf430000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "44'/148'/0'/0'",
+    .seed_key = "",
+    .chain = "ad38cb3640dd5a1e7540030761ec7ade17a8b38a203c37072647ec22eea7a3ba",
+    .key = "a044cf4dcc4c6206d64ea3a7dae79337afcd61808dc6239a22c1ba1f4618c0550000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "44'/148'/1'/2'",
+    .seed_key = "",
+    .chain = "fbc472b0a324f71f264c6b002524a93a690a3d9fd130c9ca949d0ccc1e37b07e",
+    .key = "889fc3bc31029c0f09eb6a24f1617af15b919dc9a6b3caac3c57383da094a1570000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "44'/148'/0'/0'",
+    .seed_key = "Seed Key!",
+    .chain = "5adfad756c48e9e1609a7aac3cf9a2b0b74b58ce15656f67ad6140a005eece76",
+    .key = "4f7230415199467747c14b54fd774dbf20990d00e16198302471d11a319e67c40000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "44'/148'/1'/2'",
+    .seed_key = "Seed Key!",
+    .chain = "6add42bce9e59be732d71642e3e4e3463876b6baab98ea774121fe1caf00a1ce",
+    .key = "4b3b4286aa8a4d330dbea15d0894a5194b87058ac8f58512307581b101e3be1c0000000000000000000000000000000000000000000000000000000000000000"
+  }
+};
+
+/* https://github.com/satoshilabs/slips/blob/master/slip-0010.md#test-vector-1-for-ed25519 */
+static const struct bolos_vector slip10_vectors[] = {
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "",
+    .seed_key = "",
+    .chain = "90046a93de5380a72b5e45010748567d5ea02bbf6522f979e05c0d8d8ca9fffb",
+    .key = "2b4be7f19ee27bbf30c667b642d5f4aa69fd169872f8fc3059c08ebae2eb19e70000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'",
+    .seed_key = "",
+    .chain = "8b59aa11380b624e81507a27fedda59fea6d0b779a778918a2fd3590e16e9c69",
+    .key = "68e0fe46dfb67e368c75379acec591dad19df3cde26e63b93a8e704f1dade7a30000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'",
+    .seed_key = "",
+    .chain = "a320425f77d1b5c2505a6b1b27382b37368ee640e3557c315416801243552f14",
+    .key = "b1d0bad404bf35da785a64ca1ac54b2617211d2777696fbffaf208f746ae84f20000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'/2'",
+    .seed_key = "",
+    .chain = "2e69929e00b5ab250f49c3fb1c12f252de4fed2c1db88387094a0f8c4c9ccd6c",
+    .key = "92a5b23c0b8a99e37d07df3fb9966917f5d06e02ddbd909c7e184371463e9fc90000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'/2'/2'",
+    .seed_key = "",
+    .chain = "8f6d87f93d750e0efccda017d662a1b31a266e4a6f5993b15f5c1f07f74dd5cc",
+    .key = "30d1dc7e5fc04c31219ab25a27ae00b50f6fd66622f6e9c913253d6511d1e6620000000000000000000000000000000000000000000000000000000000000000"
+  },
+  {
+    .mode = 1,
+    .curve = 2,
+    .path = "0'/1'/2'/2'/1000000000'",
+    .seed_key = "",
+    .chain = "68789923a0cac2cd5a29172a475fe9e0fb14cd6adb5ad98a3fa70333e7afa230",
+    .key = "8f94d394a8e8fd6b1bc2f3f49f5c47e385281d5c17e65324b0f62483e37e87930000000000000000000000000000000000000000000000000000000000000000"
   }
 };
 
@@ -583,6 +699,12 @@ static void test_derive(void **state __attribute__((unused)))
 
   for (i = 0; i < ARRAY_SIZE(bolos_vectors); i++){
     test_bolos_vector(&bolos_vectors[i]);
+  }
+
+  assert_int_equal(setenv("SPECULOS_SEED", "000102030405060708090a0b0c0d0e0f", 1), 0);
+
+  for (i = 0; i < ARRAY_SIZE(slip10_vectors); i++){
+    test_bolos_vector(&slip10_vectors[i]);
   }
 }
 
