@@ -39,6 +39,11 @@ static uint8_t const SLIP21_SEED[] = {
   'S', 'y', 'm', 'm', 'e', 't', 'r', 'i', 'c', ' ', 'k', 'e', 'y', ' ', 's', 'e', 'e', 'd'
 };
 
+static bool is_hardened_child(uint32_t child)
+{
+  return (child & 0x80000000) != 0;
+}
+
 static ssize_t get_seed_key(cx_curve_t curve, const uint8_t **sk)
 {
   ssize_t sk_length;
@@ -249,7 +254,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
 
     //Step 1: compute kL/Kr child
     //  if less than 0x80000000 => setup 02|A|i in tmp
-    if (((path[i] >> 24) & 0x80) == 0) {
+    if (!is_hardened_child(path[i])) {
       tmp[0] = 0x02;
       memcpy(tmp + 1, &pub.W[1], 32);
       len = 1 + 32;
@@ -293,7 +298,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
 
     //Step2: compute chain code
     // if less than 0x80000000 => set up 03|A|i in tmp
-    if (((path[i] >> 24) & 0x80) == 0) {
+    if (!is_hardened_child(path[i])) {
       tmp[0] = 0x03;
       memcpy(tmp+1, &pub.W[1], 32);
       len = 1 + 32;
@@ -331,7 +336,7 @@ static int hdw_slip10(extended_private_key *key, const uint32_t *path, size_t le
   unsigned int i;
 
   for (i = 0; i < length; i++) {
-    if (((path[i] >> 24) & 0x80) != 0) {
+    if (is_hardened_child(path[i])) {
       tmp[0] = 0;
       memcpy(tmp + 1, key->private_key, 32);
     } else {
@@ -377,7 +382,7 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve, const uint32_t
   domain = cx_ecfp_get_domain(curve);
 
   for (i = 0; i < length; i++) {
-    if (((path[i] >> 24) & 0x80) != 0) {
+    if (is_hardened_child(path[i])) {
       tmp[0] = 0;
       memcpy(tmp + 1, key->private_key, 32);
     } else {
