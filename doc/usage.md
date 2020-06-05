@@ -20,7 +20,7 @@ If the target app is not build against the version `1.6` of the SDK, use the
 ```console
 ./speculos.py --sdk 1.5 apps/btc.elf
 ```
-Supported SDK values for the `-k`/`-sdk` argument are:
+Supported SDK values for the `-k`/`--sdk` argument are:
 |     | Nano S emulation | Blue emulation |
 |-----|------------------|----------------|
 | SDK |     1.5, 1.6     |   blue-2.2.5   |
