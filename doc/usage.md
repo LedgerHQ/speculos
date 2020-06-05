@@ -15,12 +15,15 @@ the command-line:
 
 If the target app is not build against the version `1.6` of the SDK, use the
 `-k`/`--sdk` argument. For instance, to launch an app built against the SDK
-`1.5.5`:
+`1.5`:
 
 ```console
-./speculos.py --sdk 1.5.5 apps/btc.elf
+./speculos.py --sdk 1.5 apps/btc.elf
 ```
-
+Supported SDK values for the `-k`/`-sdk` argument are:
+|     | Nano S emulation | Blue emulation |
+|-----|------------------|----------------|
+| SDK |     1.5, 1.6     |   blue-2.2.5   |
 
 For more options, pass the `-h` or `--help` flag.
 
