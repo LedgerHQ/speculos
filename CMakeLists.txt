@@ -14,6 +14,30 @@ option(WITH_VNC "Support for VNC" OFF)
 add_compile_options(-mthumb -W -Wall -fPIC)
 add_definitions(-DOS_LITTLE_ENDIAN -DNATIVE_64BITS)
 
+option(
+  CODE_COVERAGE
+  "Builds targets with code coverage instrumentation. (Requires GCC or Clang)"
+  OFF
+)
+if (CODE_COVERAGE)
+  # Always disable optimisations and build with debug symbols, when building for code coverage
+  add_compile_options(-O0 -g)
+  add_link_options(-g)
+  if (CMAKE_C_COMPILER_ID MATCHES "(Apple)?[Cc]lang")
+    # Options for clang
+    message(STATUS "Building with clang code coverage...")
+    add_compile_options(-fprofile-instr-generate -fcoverage-mapping)
+    add_link_options(-fprofile-instr-generate -fcoverage-mapping)
+  elseif(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    # Options for gcc
+    message(STATUS "Building with gcc code coverage...")
+    add_compile_options(--coverage -fprofile-arcs -ftest-coverage)
+    add_link_options(--coverage -fprofile-arcs -ftest-coverage)
+  else()
+    message(FATAL_ERROR "Unable to identify the compiler! Aborting...")
+  endif()
+endif()
+
 include_directories(sdk src)
 
 if (PRECOMPILED_DEPENDENCIES_DIR)
