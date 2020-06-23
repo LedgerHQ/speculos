@@ -1,0 +1,21 @@
+# Test with:
+# podman run --rm -v $(pwd):/code -ti ubuntu:19.10 bash
+# apt update && apt install -y build-essential cmake gcc-arm-linux-gnueabihf gcc-arm-none-eabi libvncserver-dev
+# cd /code
+# # Run commands from "configure" and "build_command" sections
+extraction:
+  cpp:
+    prepare:
+      packages:
+      - cmake
+      - gcc-arm-linux-gnueabihf
+      - gcc-arm-none-eabi
+      - libvncserver-dev
+
+    configure:
+      command:
+      - cmake -Bbuild -H. -DWITH_VNC=1
+
+    index:
+      build_command:
+      - make -C build
