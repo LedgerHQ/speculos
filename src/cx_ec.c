@@ -440,6 +440,8 @@ static int asn1_read_len(uint8_t **p, const uint8_t *end, size_t *len) {
   }
   while (lenleft > 0) {
     if ((*len >> ((sizeof(size_t) - 1) * 8)) != 0) {
+      /* (*len << 8) overflows the capacity of size_t */
+      return 0;
     }
     *len = (*len << 8u) | **p;
     if (*len + lenleft > (size_t)(end - *p)) {
