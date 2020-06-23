@@ -178,9 +178,9 @@ static void usage(char *argv0)
     exit(EXIT_FAILURE);
 }
 
-static int parse_size(char *s, unsigned int *width, unsigned int *height)
+static int parse_size(char *s, unsigned int *new_width, unsigned int *new_height)
 {
-    return sscanf(s, "%ux%u", width, height) != 2;
+    return sscanf(s, "%ux%u", new_width, new_height) != 2;
 }
 
 static int load_seccomp(void)
