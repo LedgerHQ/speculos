@@ -400,7 +400,7 @@ int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key, unsig
   return key_len;
 }
 
-static int asn1_read_len(uint8_t **p, const uint8_t *end, size_t *len) {
+static int asn1_read_len(const uint8_t **p, const uint8_t *end, size_t *len) {
   /* Adapted from secp256k1 */
   int lenleft;
   unsigned int b1;
@@ -440,6 +440,8 @@ static int asn1_read_len(uint8_t **p, const uint8_t *end, size_t *len) {
   }
   while (lenleft > 0) {
     if ((*len >> ((sizeof(size_t) - 1) * 8)) != 0) {
+      /* (*len << 8) overflows the capacity of size_t */
+      return 0;
     }
     *len = (*len << 8u) | **p;
     if (*len + lenleft > (size_t)(end - *p)) {
@@ -456,7 +458,7 @@ static int asn1_read_len(uint8_t **p, const uint8_t *end, size_t *len) {
   return 1;
 }
 
-static int asn1_read_tag(uint8_t **p, const uint8_t *end, size_t *len, int tag) {
+static int asn1_read_tag(const uint8_t **p, const uint8_t *end, size_t *len, int tag) {
   if ((end - *p) < 1) return 0;
 
   if (**p != tag) return 0;
@@ -465,7 +467,7 @@ static int asn1_read_tag(uint8_t **p, const uint8_t *end, size_t *len, int tag) 
   return asn1_read_len(p, end, len);
 }
 
-static int asn1_parse_integer(uint8_t **p, const uint8_t *end, uint8_t **n, size_t *n_len) {
+static int asn1_parse_integer(const uint8_t **p, const uint8_t *end, const uint8_t **n, size_t *n_len) {
   size_t len;
   int ret = 0;
 
@@ -498,12 +500,13 @@ static int asn1_parse_integer(uint8_t **p, const uint8_t *end, uint8_t **n, size
 }
 
 int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-    size_t max_size, uint8_t **r, size_t *r_len, uint8_t **s, size_t *s_len) {
+    size_t max_size, const uint8_t **r, size_t *r_len, const uint8_t **s,
+    size_t *s_len) {
   size_t len;
   int ret = 0;
   const uint8_t *input_end = input + input_len;
 
-  uint8_t *p = (uint8_t *)input;
+  const uint8_t *p = input;
 
   if (!asn1_read_tag(&p, input_end, &len, 0x30)) /* SEQUENCE */
     goto end;
@@ -539,7 +542,7 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode), cx_md
 {
   cx_curve_weierstrass_t      *domain;
   unsigned int                 size;
-  unsigned char               *r, *s;
+  const uint8_t *r, *s;
   size_t rlen, slen;
   int nid = 0;
 
