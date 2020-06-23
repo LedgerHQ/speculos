@@ -50,6 +50,42 @@ void test_cavp_short_msg_with_size(const char *filename, cx_md_t md_type, size_t
   fclose(f);
 }
 
+void test_cavp_short_msg_with_single(const char *filename, single_hash_t hash,
+                                     size_t digest_size) {
+  char line[1024];
+
+  FILE *f = fopen(filename, "r");
+  assert_non_null(f);
+
+  while (!feof(f)) {
+    fgets(line, sizeof(line), f);
+    char *pos1 = strchr(line, ':');
+    assert_non_null(pos1);
+    char *pos2 = strchr(pos1 + 1, ':');
+    assert_non_null(pos2);
+    char *pos3 = strchr(pos1 + 1, '\n');
+
+    *pos1 = *pos2 = 0;
+    if (pos3) {
+      *pos3 = 0;
+    }
+
+    size_t data_len = strlen(pos1 + 1) / 2;
+    size_t md_len = strlen(pos2 + 1) / 2;
+
+    uint8_t data[data_len];
+    uint8_t md[CX_MAX_DIGEST_SIZE], expected[CX_MAX_DIGEST_SIZE];
+
+    assert_int_equal(md_len, digest_size);
+    assert_int_equal(hexstr2bin(pos1 + 1, data, data_len), data_len);
+    assert_int_equal(hexstr2bin(pos2 + 1, expected, md_len), md_len);
+
+    assert_int_equal(hash(data, data_len, md, md_len), (int)digest_size);
+    assert_memory_equal(expected, md, md_len);
+  }
+  fclose(f);
+}
+
 #define MAX_CAVP_LINE_LENGTH 65536
 
 void test_cavp_long_msg_with_size(const char *filename, cx_md_t md_type, size_t digest_size) {
