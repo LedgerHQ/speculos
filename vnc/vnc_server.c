@@ -261,6 +261,7 @@ int main(int argc, char **argv)
     sigset_t mask;
     bool verbose;
     fd_set fds;
+    size_t framebuffer_size;
 
     preload_localtime();
 
@@ -289,12 +290,13 @@ int main(int argc, char **argv)
         }
     }
 
-    framebuffer = malloc(width * height * bytes_per_pixel);
+    framebuffer_size = ((size_t)width) * ((size_t) height) * ((size_t)bytes_per_pixel);
+    framebuffer = malloc(framebuffer_size);
     if (framebuffer == NULL) {
         err(1, "malloc");
     }
     /* initialize the framebuffer to white */
-    memset(framebuffer, 0xff, width * height * bytes_per_pixel);
+    memset(framebuffer, 0xff, framebuffer_size);
 
     /* Pass remaining options (after "--") to rfbGetScreen. The first argument
      * will be invalid (either "--" or the last option given) but it's
