@@ -249,5 +249,5 @@ int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
   cx_sha256_init(&G_cx.sha256);
   cx_sha256_update(&G_cx.sha256, in, len);
   cx_sha256_final(&G_cx.sha256, out);
-  return 0;
+  return CX_SHA256_SIZE;
 }
