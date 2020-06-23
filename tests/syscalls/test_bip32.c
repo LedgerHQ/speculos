@@ -654,14 +654,14 @@ static void test_bolos_vector(const struct bolos_vector *v)
   case 0: mode = HDW_NORMAL; break;
   case 1: mode = HDW_ED25519_SLIP10; break;
   case 2: mode = HDW_SLIP21; break;
-  default: assert_true(false); break;
+  default: fail(); break;
   }
 
   switch (v->curve) {
   case 0: curve = CX_CURVE_SECP256R1; break;
   case 1: curve = CX_CURVE_SECP256K1; break;
   case 2: curve = CX_CURVE_Ed25519; break;
-  default: assert_true(false); break;
+  default: fail(); break;
   }
 
   if (mode == HDW_SLIP21) {
