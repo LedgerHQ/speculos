@@ -46,3 +46,19 @@ jobs:
         password: ${{ secrets.dockerhub_password }}
         tag_with_sha: true
         tags: latest
+
+    - name: Rebuild with code coverage instrumentation
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
+      run: |
+        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
+        make -C build clean
+        make -C build
+        make -C build test
+        pytest
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        name: codecov-speculos
+        fail_ci_if_error: true
