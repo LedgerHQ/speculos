@@ -16,6 +16,8 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
         self.logger = logging.getLogger("automation")
         self.clients = []
+        self.state = []
+        self.prev_state = []
 
     def add_client(self, client):
         self.clients.append(client)
@@ -23,12 +25,34 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def remove_client(self, client):
         self.clients.remove(client)
 
-    def broadcast(self, event):
-        """Broadcast an event to each connected client."""
+    def screen_event(self, text, x, y):
+        """
+        Accumulates display events in internal state structure.
 
-        self.logger.debug(f"broadcast {event} to {self.clients}")
-        for client in self.clients:
-            client.send_screen_event(event)
+        This methods accumulates display events in the `state` list member.
+        It assumes the screen display as a list of test lines so it keeps
+        the list sorted regarding the `y` coordinate of the events.
+        """
+        event = { "text": text.decode("ascii", "ignore"), "x": x, "y": y }
+        if event not in self.state:
+            self.state.append(event)
+            self.state.sort(key=lambda e: e['y'])
+
+    def broadcast_screen_state(self):
+        """
+        Broadcasts screen state to all connected clients as json contents.
+
+        This method must be called at screen refresh (`UX_REDISPLAY`).
+        In return, it checks whether the current `state` differs from the
+        previously broadcasted state in `prev_state` and if no changes
+        occurred, no event is sent.
+        """
+        if self.state and self.state != self.prev_state:
+            self.logger.debug(f"broadcast {self.state} to {self.clients}")
+            for client in self.clients:
+                client.send_screen_event(self.state)
+            self.prev_state = self.state
+        self.state = []
 
 class AutomationClient(socketserver.BaseRequestHandler):
     def setup(self):

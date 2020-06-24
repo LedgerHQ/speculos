@@ -199,10 +199,6 @@ class SeProxyHal:
             self.send_ticker_event_defered()
 
     def apply_automation(self, text, x, y):
-        if self.automation_server:
-            event = { "text": text.decode("ascii", "ignore"), "x": x, "y": y }
-            self.automation_server.broadcast(event)
-
         if self.automation:
             actions = self.automation.get_actions(text, x, y)
             for action in actions:
@@ -241,6 +237,8 @@ class SeProxyHal:
         if tag & 0xf0 == SephTag.GENERAL_STATUS:
             ret = None
             if tag == SephTag.GENERAL_STATUS:
+                if self.automation_server:
+                    self.automation_server.broadcast_screen_state()
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     screen.screen_update()
 
@@ -286,6 +284,8 @@ class SeProxyHal:
             # apply automation rules after having replied to the app
             if ret != None:
                 text, x, y = ret
+                if self.automation_server:
+                    self.automation_server.screen_event(text, x, y)
                 self.apply_automation(text, x, y)
 
         elif tag == SephTag.RAPDU:
