@@ -17,6 +17,11 @@ void test_sha256_short_msg(void **state __attribute__((unused))) {
   test_cavp_short_msg(TESTS_PATH "cavp/sha256_short_msg.data", CX_SHA256);
 }
 
+void test_sha256_short_msg_single(void **state __attribute__((unused))) {
+  test_cavp_short_msg_with_single(TESTS_PATH "cavp/sha256_short_msg.data",
+                                  sys_cx_hash_sha256, 32);
+}
+
 void test_sha256_long_msg(void **state __attribute__((unused))) {
   test_cavp_long_msg(TESTS_PATH "cavp/sha256_long_msg.data", CX_SHA256);
 }
@@ -84,6 +89,11 @@ void test_sha512_short_msg(void **state __attribute__((unused))) {
   test_cavp_short_msg(TESTS_PATH "cavp/sha512_short_msg.data", CX_SHA512);
 }
 
+void test_sha512_short_msg_single(void **state __attribute__((unused))) {
+  test_cavp_short_msg_with_single(TESTS_PATH "cavp/sha512_short_msg.data",
+                                  sys_cx_hash_sha512, 64);
+}
+
 void test_sha512_long_msg(void **state __attribute__((unused))) {
   test_cavp_long_msg(TESTS_PATH "cavp/sha512_long_msg.data", CX_SHA512);
 }
@@ -112,12 +122,14 @@ int main(void) {
                                      cmocka_unit_test(test_sha224_long_msg),
                                      cmocka_unit_test(test_sha224_monte),
                                      cmocka_unit_test(test_sha256_short_msg),
+                                     cmocka_unit_test(test_sha256_short_msg_single),
                                      cmocka_unit_test(test_sha256_long_msg),
                                      cmocka_unit_test(test_sha256_monte),
                                      cmocka_unit_test(test_sha384_short_msg),
                                      cmocka_unit_test(test_sha384_long_msg),
                                      cmocka_unit_test(test_sha384_monte),
                                      cmocka_unit_test(test_sha512_short_msg),
+                                     cmocka_unit_test(test_sha512_short_msg_single),
                                      cmocka_unit_test(test_sha512_long_msg),
                                      cmocka_unit_test(test_sha512_monte)};
   return cmocka_run_group_tests(tests, NULL, NULL);
