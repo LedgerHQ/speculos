@@ -22,7 +22,6 @@ https://github.com/jwendell/gtk-vnc/blob/master/examples/gvncviewer.py
 import argparse
 import gtk
 import gtkvnc
-import sys
 import time
 import cairo
 
@@ -79,7 +78,6 @@ def vnc_connected(src):
 
 def vnc_initialized(src, window):
     print "Connection initialized"
-    pass
     window.show_all()
 
 def vnc_disconnected(src):
