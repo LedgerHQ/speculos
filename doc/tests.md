@@ -35,7 +35,7 @@ When using gcc to build the project (which is by default), this enables instrume
 ```console
 lcov -d . --zerocounters
 lcov -d . --capture --initial -o coverage.base
-make -C build/ test
+RNG_SEED=0 make -C build/ test
 lcov -d . --rc lcov_branch_coverage=1 --capture -o coverage.capture
 lcov -d . --add-tracefile coverage.base --add-tracefile coverage.capture -o coverage.total
 genhtml coverage.total -o coverage
