@@ -50,6 +50,7 @@ jobs:
     - name: Rebuild with code coverage instrumentation
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
+        RNG_SEED: 0
       run: |
         cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
         make -C build clean

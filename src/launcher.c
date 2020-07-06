@@ -730,6 +730,7 @@ int main(int argc, char *argv[])
     errx(1, "invalid SDK version");
   }
 
+  make_openssl_random_deterministic();
   reset_memory(true);
 
   if (load_apps(argc - optind, &argv[optind]) != 0)

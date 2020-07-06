@@ -1,13 +1,14 @@
 #include <malloc.h>
+#include <setjmp.h>
 #include <stdbool.h>
 #include <string.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
 
-#include "utils.h"
 #include "cx_ec.h"
 #include "cx_hash.h"
+#include "emulate.h"
+#include "utils.h"
 
 #define cx_ecfp_init_private_key sys_cx_ecfp_init_private_key
 #define cx_ecfp_generate_pair sys_cx_ecfp_generate_pair
@@ -79,5 +80,6 @@ int main() {
       cmocka_unit_test(test_ecdsa_secp256k1),
       cmocka_unit_test(test_ecdsa_secp256r1)
   };
+  make_openssl_random_deterministic();
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

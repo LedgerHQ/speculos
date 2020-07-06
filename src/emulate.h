@@ -75,6 +75,7 @@ unsigned long sys_os_ux_1_6(bolos_ux_params_t *params);
 unsigned long sys_cx_hash(cx_hash_t *hash, int mode, const uint8_t *in, size_t len, uint8_t *out, size_t out_len);
 unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length);
 unsigned long sys_cx_rng_u8(void);
+void make_openssl_random_deterministic(void);
 
 unsigned long sys_io_seproxyhal_spi_is_status_sent(void);
 unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length);
