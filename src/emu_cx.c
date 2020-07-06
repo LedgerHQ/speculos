@@ -1,10 +1,11 @@
 #include <err.h>
-#include <time.h>
 #include <errno.h>
+#include <openssl/rand.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 #include "emulate.h"
 
@@ -47,4 +48,20 @@ unsigned long sys_cx_rng_u8(void)
   sys_cx_rng(&n, sizeof(n));
 
   return n;
+}
+
+/* Link sys_cx_rng to OpenSSL random number generator */
+static int deterministic_random_bytes(unsigned char *buf, int num)
+{
+  sys_cx_rng(buf, num);
+  return 1;
+}
+
+static const RAND_METHOD deterministic_random_methods = {
+    .bytes = deterministic_random_bytes,
+};
+
+void make_openssl_random_deterministic(void)
+{
+  RAND_set_rand_method(&deterministic_random_methods);
 }
