@@ -76,7 +76,7 @@ static const eddsa_test_vector rfc8032_test_vectors[] = {
    "dc2a4459e7369633a52b1bf277839a00201009a3efbf3ecb69bea2186c26b58909351fc9ac90b3ecfdfbc7c66431e0303dca179c138ac17ad"
    "9bef1177331a704"}};
 
-void test_scalar_mult_ec25519(void **state __attribute__((unused))) {
+void test_scalar_mult_ed25519(void **state __attribute__((unused))) {
   uint8_t Pxy[65];
   uint8_t s[32];
   uint8_t expected[65];
@@ -239,7 +239,7 @@ void test_eddsa_recover_x(void **state __attribute__((unused)))
 
 int main(void) {
   const struct CMUnitTest tests[] = {
-    cmocka_unit_test(test_scalar_mult_ec25519),
+    cmocka_unit_test(test_scalar_mult_ed25519),
     cmocka_unit_test(test_ed25519_get_public_key),
     cmocka_unit_test(test_eddsa_recover_x),
   };
