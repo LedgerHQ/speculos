@@ -6,6 +6,7 @@ add_library(emu
         cx_ed25519.c
         cx_hmac.c
         cx_ripemd160.c
+        cx_rng_rfc6979.c
         cx_scc.c
         cx_sha256.c
         cx_sha3.c

@@ -7,9 +7,11 @@
 #include <openssl/err.h>
 #include <openssl/sha.h>
 
+#include "cx.h"
 #include "cx_ec.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
+#include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
 #include "exception.h"
 #include "emulate.h"
@@ -695,10 +697,75 @@ int cx_ecfp_encode_sig_der(unsigned char* sig, unsigned int sig_len,
   return 2+sig[1];
 }
 
-int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int UNUSED(mode), cx_md_t UNUSED(hashID), const uint8_t *hash, unsigned int hash_len, uint8_t *sig, unsigned int sig_len, unsigned int *UNUSED(info))
+static ECDSA_SIG *rfc6979_ecdsa_sign(const cx_ecfp_private_key_t *key,
+                                     cx_md_t hashID, const uint8_t *hash,
+                                     unsigned int hash_len)
+{
+  cx_rnd_rfc6979_ctx_t rfc_ctx = {};
+  uint8_t rnd[CX_RFC6979_MAX_RLEN];
+  ECDSA_SIG *sig = NULL;
+
+  const cx_curve_domain_t *domain = cx_ecfp_get_domain(key->curve);
+  int nid = nid_from_curve(key->curve);
+  if (nid < 0) {
+    return NULL;
+  }
+  if (domain->length >= CX_RFC6979_MAX_RLEN) {
+    errx(1, "rfc6979_ecdsa_sign: curve too large");
+  }
+
+  BN_CTX *bn_ctx = BN_CTX_new();
+  BIGNUM *q = BN_new();
+  BIGNUM *x = BN_new();
+  BIGNUM *k = BN_new();
+  BIGNUM *kinv = BN_new();
+  BIGNUM *rp = BN_new();
+
+  BN_bin2bn(domain->n, domain->length, q);
+  BN_bin2bn(key->d, key->d_len, x);
+  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
+  EC_KEY_set_private_key(ec_key, x);
+
+  const EC_GROUP *group = EC_KEY_get0_group(ec_key);
+  EC_POINT *kg = EC_POINT_new(group);
+
+  cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash, hash_len,
+                      domain->n, domain->length);
+  for (;;) {
+    cx_rng_rfc6979_next(&rfc_ctx, rnd, domain->length);
+
+    BN_bin2bn(rnd, domain->length, k);
+    if (!EC_POINT_mul(group, kg, k, NULL, NULL, bn_ctx)) {
+      errx(1, "ssl: EC_POINT_mul");
+    }
+    if (!EC_POINT_get_affine_coordinates(group, kg, rp, NULL, bn_ctx)) {
+      errx(1, "ssl: EC_POINT_get_affine_coordinates");
+    }
+    if (!BN_nnmod(rp, rp, q, bn_ctx)) {
+      errx(1, "ssl: BN_nnmod");
+    }
+    if (BN_is_zero(rp))
+      continue;
+
+    BN_mod_inverse(kinv, k, q, bn_ctx);
+    sig = ECDSA_do_sign_ex(hash, hash_len, kinv, rp, ec_key);
+    if (sig != NULL)
+      break;
+  }
+  BN_CTX_free(bn_ctx);
+  BN_free(q);
+  BN_free(k);
+  BN_free(kinv);
+  BN_free(rp);
+  EC_POINT_free(kg);
+  return sig;
+}
+
+int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, uint8_t *sig, unsigned int sig_len, unsigned int *UNUSED(info))
 {
   int nid = 0;
   uint8_t *buf_r, *buf_s;
+  const BIGNUM *r, *s;
 
   const cx_curve_domain_t *domain = cx_ecfp_get_domain(key->curve);
   nid = nid_from_curve(key->curve);
@@ -706,12 +773,22 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int UNUSED(mode), cx_md_
     return 0;
   }
 
-  const BIGNUM *r, *s;
-  BIGNUM *x = BN_new();
-  BN_bin2bn(key->d, key->d_len, x);
   EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
-  EC_KEY_set_private_key(ec_key, x);
-  ECDSA_SIG *ecdsa_sig = ECDSA_do_sign(hash, hash_len, ec_key);
+  ECDSA_SIG *ecdsa_sig;
+
+  switch (mode & CX_MASK_RND) {
+  case CX_RND_TRNG:
+    // Use deterministic signatures with "TRNG" mode in Speculos, in order to
+    // avoid signing objects with a weak PRNG.
+  case CX_RND_RFC6979:
+    ecdsa_sig = rfc6979_ecdsa_sign(key, hashID, hash, hash_len);
+    break;
+  default:
+    THROW(INVALID_PARAMETER);
+  }
+  if (ecdsa_sig == NULL) {
+    return 0;
+  }
 
   // normalize signature (s < n/2) if needed
   BIGNUM *halfn = BN_new();
@@ -721,7 +798,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int UNUSED(mode), cx_md_
 
   BIGNUM *normalized_s = BN_new();
   ECDSA_SIG_get0(ecdsa_sig, &r, &s);
-  if (BN_cmp(s, halfn) > 0) {
+  if ((mode & CX_NO_CANONICAL) == 0 && BN_cmp(s, halfn) > 0) {
     fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
     BN_sub(normalized_s, n, s);
   } else {
@@ -740,7 +817,6 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int UNUSED(mode), cx_md_
   BN_free(normalized_s);
   BN_free(halfn);
   EC_KEY_free(ec_key);
-  BN_free(x);
   return ret;
 }
 

@@ -181,6 +181,29 @@ typedef struct cx_ecfp_256_extended_private_key_s cx_ecfp_256_extended_private_k
 typedef struct cx_ecfp_256_public_key_s cx_ecfp_public_key_t;
 typedef struct cx_ecfp_256_private_key_s cx_ecfp_private_key_t;
 
+/** Up to 384 bits Public Elliptic Curve key */
+struct cx_ecfp_384_public_key_s {
+  /** curve ID #cx_curve_e */
+  cx_curve_t curve;
+  /** Public key length in bytes */
+  size_t W_len;
+  /** Public key value starting at offset 0 */
+  uint8_t W[97];
+};
+/** Up to 384 bits Private Elliptic Curve key */
+struct cx_ecfp_384_private_key_s {
+  /** curve ID #cx_curve_e */
+  cx_curve_t curve;
+  /** Public key length in bytes */
+  size_t d_len;
+  /** Public key value starting at offset 0 */
+  uint8_t d[48];
+};
+/** Convenience type. See #cx_ecfp_384_public_key_s. */
+typedef struct cx_ecfp_384_private_key_s cx_ecfp_384_private_key_t;
+/** Convenience type. See #cx_ecfp_384_private_key_s. */
+typedef struct cx_ecfp_384_public_key_s cx_ecfp_384_public_key_t;
+
 /** Up to 512 bits Public Elliptic Curve key */
 struct cx_ecfp_512_public_key_s {
   /** curve ID #cx_curve_e */
@@ -256,5 +279,9 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
 int sys_cx_edward_compress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key, cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
+
+int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+    size_t max_size, const uint8_t **r, size_t *r_len, const uint8_t **s,
+    size_t *s_len);
 
 #endif
