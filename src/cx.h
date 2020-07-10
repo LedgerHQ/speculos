@@ -6,6 +6,9 @@
 #define CX_LAST                (1u<<0u)
 #define CX_NO_REINIT           (1<<15)
 
+#define CX_MASK_ECC_VARIANT (7 << 6)
+#define CX_NO_CANONICAL (1 << 6)
+
 #define CX_MASK_RND                 (7<<9)
 #define CX_RND_PRNG                 (1<<9)
 #define CX_RND_TRNG                 (2<<9)

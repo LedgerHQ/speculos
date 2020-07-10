@@ -5,6 +5,7 @@
 
 #include <cmocka.h>
 
+#include "cx.h"
 #include "cx_ec.h"
 #include "cx_hash.h"
 #include "emulate.h"
@@ -57,10 +58,13 @@ void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector* tv, size_
     assert_memory_equal(publicKey.W, public_key, sizeof(public_key));
     
     /* Sign the digest using the previously derived keypair*/
-    sig_len = cx_ecdsa_sign(&privateKey, 0, md, hash_to_sign, sizeof(hash_to_sign), signature, sizeof(signature), &info);
-              
+    sig_len = cx_ecdsa_sign(&privateKey, CX_RND_TRNG | CX_LAST, md,
+                            hash_to_sign, sizeof(hash_to_sign), signature,
+                            sizeof(signature), &info);
     /* Verify the signature correctness against the public key */
-    assert_int_equal(cx_ecdsa_verify(&publicKey, 0, md, hash_to_sign, sizeof(hash_to_sign), signature, sig_len), 1);
+    assert_int_equal(cx_ecdsa_verify(&publicKey, CX_LAST, md, hash_to_sign,
+                                     sizeof(hash_to_sign), signature, sig_len),
+                     1);
   }
 };
 
