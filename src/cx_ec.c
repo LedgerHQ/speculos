@@ -766,6 +766,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID
   int nid = 0;
   uint8_t *buf_r, *buf_s;
   const BIGNUM *r, *s;
+  const cx_hash_info_t *hash_info;
 
   const cx_curve_domain_t *domain = cx_ecfp_get_domain(key->curve);
   nid = nid_from_curve(key->curve);
@@ -779,7 +780,18 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID
   switch (mode & CX_MASK_RND) {
   case CX_RND_TRNG:
     // Use deterministic signatures with "TRNG" mode in Speculos, in order to
-    // avoid signing objects with a weak PRNG.
+    // avoid signing objects with a weak PRNG, only if the hash is compatible
+    // with cx_hmac_init (hash_info->output_size is defined).
+    // Otherwise, fall back to OpenSSL signature.
+    hash_info = cx_hash_get_info(hashID);
+    if (hash_info == NULL || hash_info->output_size == 0) {
+      BIGNUM *x = BN_new();
+      BN_bin2bn(key->d, key->d_len, x);
+      EC_KEY_set_private_key(ec_key, x);
+      ecdsa_sig = ECDSA_do_sign(hash, hash_len, ec_key);
+      break;
+    }
+    __attribute__((fallthrough));
   case CX_RND_RFC6979:
     ecdsa_sig = rfc6979_ecdsa_sign(key, hashID, hash, hash_len);
     break;
