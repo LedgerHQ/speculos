@@ -3,6 +3,10 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include <openssl/bn.h>
+#include <openssl/ec.h>
+#include <openssl/objects.h>
+
 #include <cmocka.h>
 
 #include "cx.h"
@@ -57,6 +61,15 @@ void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector* tv, size_
   int sig_len;
   uint8_t signature[80];
   size_t hash_len;
+  uint8_t r_len, s_len;
+  BIGNUM *q, *pt_x, *sig_s, *inv_r, *z;
+  const cx_curve_domain_t *domain = cx_ecfp_get_domain(curve);
+  int y_bit;
+  EC_GROUP *group;
+  EC_POINT *sig_pt, *pubkey;
+  BN_CTX *ctx;
+  uint8_t recovered_pubkey[80];
+  size_t rec_pubkey_size;
 
   if (md == CX_SHA256) {
     hash_len = 32;
@@ -83,6 +96,83 @@ void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector* tv, size_
     assert_int_equal(cx_ecdsa_verify(&publicKey, CX_LAST, md, hash_to_sign,
                                      hash_len, signature, sig_len),
                      1);
+
+    /* Recover the public key from the hash and the signature
+     * (used in Ethereum ECDSA recoverable signatures)
+     */
+    q = BN_new();
+    pt_x = BN_new();
+    sig_s = BN_new();
+    inv_r = BN_new();
+    z = BN_new();
+    ctx = BN_CTX_new();
+    assert_non_null(q);
+    assert_non_null(pt_x);
+    assert_non_null(sig_s);
+    assert_non_null(inv_r);
+    assert_non_null(z);
+    assert_non_null(ctx);
+
+    BN_bin2bn(domain->n, domain->length, q);
+
+    assert_int_equal(signature[0], 0x30);
+    assert_int_equal(signature[1], sig_len - 2);
+    assert_int_equal(signature[2], 0x02);
+    r_len = signature[3];
+    assert_int_equal(signature[4 + r_len], 0x02);
+    s_len = signature[5 + r_len];
+
+    BN_bin2bn(signature + 4, r_len, pt_x);
+    BN_bin2bn(signature + 6 + r_len, s_len, sig_s);
+
+    BN_mod_inverse(inv_r, pt_x, q, ctx);
+
+    if (info & CX_ECCINFO_xGTn) {
+      BN_add(pt_x, pt_x, q);
+    }
+
+    y_bit = (info & CX_ECCINFO_PARITY_ODD) ? 1 : 0;
+
+    switch (curve) {
+    case CX_CURVE_SECP256K1:
+      group = EC_GROUP_new_by_curve_name(NID_secp256k1);
+      break;
+    case CX_CURVE_SECP256R1:
+      group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
+      break;
+    default:
+      fail();
+    }
+    sig_pt = EC_POINT_new(group);
+    pubkey = EC_POINT_new(group);
+    EC_POINT_set_compressed_coordinates_GFp(group, sig_pt, pt_x, y_bit, ctx);
+
+    /* pubkey = sig_pt * ((s * inv_r) % q) - generator * ((hash * inv_r) % q)
+     * and EC_POINT_mul(group, result, n, pt, m, ctx) computes generator*n + pt*m.
+     * Computes z = (- hash * inv_r) % q, and ((s * inv_r) % q) into sig_s
+     */
+    BN_bin2bn(hash_to_sign, hash_len, z);
+    if (8 * hash_len > domain->bit_size) {
+      BN_rshift(z, z, 8 * hash_len - domain->bit_size);
+    }
+    BN_mod_mul(z, z, inv_r, q, ctx);
+    BN_mod_sub(z, q, z, q, ctx);
+    BN_mod_mul(sig_s, sig_s, inv_r, q, ctx);
+    EC_POINT_mul(group, pubkey, z, sig_pt, sig_s, ctx);
+    rec_pubkey_size =
+        EC_POINT_point2oct(group, pubkey, POINT_CONVERSION_UNCOMPRESSED,
+                           recovered_pubkey, sizeof(recovered_pubkey), ctx);
+    assert_int_equal(rec_pubkey_size, 65);
+    assert_memory_equal(recovered_pubkey, public_key, sizeof(public_key));
+
+    EC_POINT_free(sig_pt);
+    EC_GROUP_free(group);
+    BN_free(q);
+    BN_free(pt_x);
+    BN_free(sig_s);
+    BN_free(inv_r);
+    BN_free(z);
+    BN_CTX_free(ctx);
   }
 };
 

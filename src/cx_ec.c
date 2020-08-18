@@ -697,76 +697,13 @@ int cx_ecfp_encode_sig_der(unsigned char* sig, unsigned int sig_len,
   return 2+sig[1];
 }
 
-static ECDSA_SIG *rfc6979_ecdsa_sign(const cx_ecfp_private_key_t *key,
-                                     cx_md_t hashID, const uint8_t *hash,
-                                     unsigned int hash_len)
-{
-  cx_rnd_rfc6979_ctx_t rfc_ctx = {};
-  uint8_t rnd[CX_RFC6979_MAX_RLEN];
-  ECDSA_SIG *sig = NULL;
-
-  const cx_curve_domain_t *domain = cx_ecfp_get_domain(key->curve);
-  int nid = nid_from_curve(key->curve);
-  if (nid < 0) {
-    return NULL;
-  }
-  if (domain->length >= CX_RFC6979_MAX_RLEN) {
-    errx(1, "rfc6979_ecdsa_sign: curve too large");
-  }
-
-  BN_CTX *bn_ctx = BN_CTX_new();
-  BIGNUM *q = BN_new();
-  BIGNUM *x = BN_new();
-  BIGNUM *k = BN_new();
-  BIGNUM *kinv = BN_new();
-  BIGNUM *rp = BN_new();
-
-  BN_bin2bn(domain->n, domain->length, q);
-  BN_bin2bn(key->d, key->d_len, x);
-  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
-  EC_KEY_set_private_key(ec_key, x);
-
-  const EC_GROUP *group = EC_KEY_get0_group(ec_key);
-  EC_POINT *kg = EC_POINT_new(group);
-
-  cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash, hash_len,
-                      domain->n, domain->length);
-  for (;;) {
-    cx_rng_rfc6979_next(&rfc_ctx, rnd, domain->length);
-
-    BN_bin2bn(rnd, domain->length, k);
-    if (!EC_POINT_mul(group, kg, k, NULL, NULL, bn_ctx)) {
-      errx(1, "ssl: EC_POINT_mul");
-    }
-    if (!EC_POINT_get_affine_coordinates(group, kg, rp, NULL, bn_ctx)) {
-      errx(1, "ssl: EC_POINT_get_affine_coordinates");
-    }
-    if (!BN_nnmod(rp, rp, q, bn_ctx)) {
-      errx(1, "ssl: BN_nnmod");
-    }
-    if (BN_is_zero(rp))
-      continue;
-
-    BN_mod_inverse(kinv, k, q, bn_ctx);
-    sig = ECDSA_do_sign_ex(hash, hash_len, kinv, rp, ec_key);
-    if (sig != NULL)
-      break;
-  }
-  BN_CTX_free(bn_ctx);
-  BN_free(q);
-  BN_free(k);
-  BN_free(kinv);
-  BN_free(rp);
-  EC_POINT_free(kg);
-  return sig;
-}
-
-int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, uint8_t *sig, unsigned int sig_len, unsigned int *UNUSED(info))
+int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID, const uint8_t *hash, unsigned int hash_len, uint8_t *sig, unsigned int sig_len, unsigned int *info)
 {
   int nid = 0;
   uint8_t *buf_r, *buf_s;
   const BIGNUM *r, *s;
   const cx_hash_info_t *hash_info;
+  bool do_rfc6979_signature;
 
   const cx_curve_domain_t *domain = cx_ecfp_get_domain(key->curve);
   nid = nid_from_curve(key->curve);
@@ -774,8 +711,6 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID
     return 0;
   }
 
-  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
-  ECDSA_SIG *ecdsa_sig;
 
   switch (mode & CX_MASK_RND) {
   case CX_RND_TRNG:
@@ -785,26 +720,84 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID
     // Otherwise, fall back to OpenSSL signature.
     hash_info = cx_hash_get_info(hashID);
     if (hash_info == NULL || hash_info->output_size == 0) {
-      BIGNUM *x = BN_new();
-      BN_bin2bn(key->d, key->d_len, x);
-      EC_KEY_set_private_key(ec_key, x);
-      ecdsa_sig = ECDSA_do_sign(hash, hash_len, ec_key);
+      do_rfc6979_signature = false;
       break;
     }
     __attribute__((fallthrough));
   case CX_RND_RFC6979:
-    ecdsa_sig = rfc6979_ecdsa_sign(key, hashID, hash, hash_len);
+    do_rfc6979_signature = true;
     break;
   default:
     THROW(INVALID_PARAMETER);
   }
-  if (ecdsa_sig == NULL) {
-    return 0;
+
+  cx_rnd_rfc6979_ctx_t rfc_ctx = {};
+  uint8_t rnd[CX_RFC6979_MAX_RLEN];
+  BN_CTX *bn_ctx = BN_CTX_new();
+  BIGNUM *q = BN_new();
+  BIGNUM *x = BN_new();
+  BIGNUM *k = BN_new();
+  BIGNUM *kinv = BN_new();
+  BIGNUM *rp = BN_new();
+  BIGNUM *kg_y = BN_new();
+
+  BN_bin2bn(domain->n, domain->length, q);
+  BN_bin2bn(key->d, key->d_len, x);
+  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
+  EC_KEY_set_private_key(ec_key, x);
+
+  const EC_GROUP *group = EC_KEY_get0_group(ec_key);
+  EC_POINT *kg = EC_POINT_new(group);
+  ECDSA_SIG *ecdsa_sig;
+
+  if (do_rfc6979_signature) {
+    if (domain->length >= CX_RFC6979_MAX_RLEN) {
+      errx(1, "rfc6979_ecdsa_sign: curve too large");
+    }
+    cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash, hash_len,
+                        domain->n, domain->length);
   }
+  do {
+    if (do_rfc6979_signature) {
+      cx_rng_rfc6979_next(&rfc_ctx, rnd, domain->length);
+      BN_bin2bn(rnd, domain->length, k);
+    } else {
+      BN_rand(k, domain->length, 0, 0);
+    }
+    if (!EC_POINT_mul(group, kg, k, NULL, NULL, bn_ctx)) {
+      errx(1, "ssl: EC_POINT_mul");
+    }
+    if (!EC_POINT_get_affine_coordinates(group, kg, rp, kg_y, bn_ctx)) {
+      errx(1, "ssl: EC_POINT_get_affine_coordinates");
+    }
+    if (BN_cmp(rp, q) >= 0) {
+      if (!BN_nnmod(rp, rp, q, bn_ctx)) {
+        errx(1, "ssl: BN_nnmod");
+      }
+      if (info != NULL) {
+        *info |= CX_ECCINFO_xGTn;
+      }
+    }
+    if (BN_is_zero(rp)) {
+      continue;
+    }
+    if (info != NULL && BN_is_odd(kg_y)) {
+      *info |= CX_ECCINFO_PARITY_ODD;
+    }
+
+    BN_mod_inverse(kinv, k, q, bn_ctx);
+    ecdsa_sig = ECDSA_do_sign_ex(hash, hash_len, kinv, rp, ec_key);
+  } while (ecdsa_sig == NULL);
+  BN_CTX_free(bn_ctx);
+  BN_free(q);
+  BN_free(k);
+  BN_free(kinv);
+  BN_free(rp);
+  BN_free(kg_y);
+  EC_POINT_free(kg);
 
   // normalize signature (s < n/2) if needed
   BIGNUM *halfn = BN_new();
-  const EC_GROUP *group = EC_KEY_get0_group(ec_key);
   const BIGNUM *n = EC_GROUP_get0_order(group);
   BN_rshift1(halfn, n);
 
@@ -813,6 +806,9 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode, cx_md_t hashID
   if ((mode & CX_NO_CANONICAL) == 0 && BN_cmp(s, halfn) > 0) {
     fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
     BN_sub(normalized_s, n, s);
+    if (info != NULL) {
+      *info ^= CX_ECCINFO_PARITY_ODD; // Inverse the bit
+    }
   } else {
     normalized_s = BN_copy(normalized_s, s);
   }
