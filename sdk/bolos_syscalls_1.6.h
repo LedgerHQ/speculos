@@ -9,6 +9,8 @@
 #define SYSCALL_nvm_write_ID_OUT  0x900003bcUL
 #define SYSCALL_cx_rng_u8_ID_IN  0x600004c0UL
 #define SYSCALL_cx_rng_u8_ID_OUT  0x90000425UL
+#define SYSCALL_cx_rng_u32_ID_IN  0x600089ecUL
+#define SYSCALL_cx_rng_u32_ID_OUT  0x900089d4UL
 #define SYSCALL_cx_rng_ID_IN  0x6000052cUL
 #define SYSCALL_cx_rng_ID_OUT  0x90000567UL
 #define SYSCALL_cx_hash_ID_IN  0x6000073bUL

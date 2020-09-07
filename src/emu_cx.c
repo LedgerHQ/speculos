@@ -50,6 +50,15 @@ unsigned long sys_cx_rng_u8(void)
   return n;
 }
 
+unsigned long sys_cx_rng_u32(void)
+{
+  uint32_t n;
+
+  sys_cx_rng(&n, sizeof(n));
+
+  return n;
+}
+
 /* Link sys_cx_rng to OpenSSL random number generator */
 static int deterministic_random_bytes(unsigned char *buf, int num)
 {
