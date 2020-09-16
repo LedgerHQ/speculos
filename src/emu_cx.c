@@ -54,7 +54,7 @@ unsigned long sys_cx_rng_u32(void)
 {
   uint32_t n;
 
-  sys_cx_rng(&n, sizeof(n));
+  sys_cx_rng((uint8_t *)&n, sizeof(n));
 
   return n;
 }
