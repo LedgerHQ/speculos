@@ -203,6 +203,7 @@ static int load_seccomp(void)
         ALLOW_SYSCALL(getpeername),
         ALLOW_SYSCALL(getpid),
         ALLOW_SYSCALL(getrandom),
+        ALLOW_SYSCALL(gettimeofday),
         ALLOW_SYSCALL(listen),
         ALLOW_SYSCALL(mmap),
         ALLOW_SYSCALL(munmap),
