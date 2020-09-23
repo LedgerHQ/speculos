@@ -1017,6 +1017,54 @@ int sys_cx_ecdh(const cx_ecfp_private_key_t *key, int mode, const uint8_t *publi
   return secret_len;
 }
 
+static int cx_weierstrass_mult(cx_curve_t curve, BIGNUM *qx, BIGNUM *qy, BIGNUM *px, BIGNUM *py, BIGNUM *k) {
+  EC_POINT *p, *q;
+  EC_GROUP *group = NULL;
+  BN_CTX *ctx;
+  int ret = 0;
+
+  if (curve == CX_CURVE_SECP256K1) {
+    group = EC_GROUP_new_by_curve_name(NID_secp256k1);
+  } else if (curve == CX_CURVE_256R1) {
+    group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
+  } else {
+    return 0;
+  }
+  if (group == NULL) {
+    errx(1, "cx_weierstrass_mult: EC_GROUP_new_by_curve_name() failed");
+  }
+
+  p = EC_POINT_new(group);
+  q = EC_POINT_new(group);
+  if (p == NULL || q == NULL) {
+    errx(1, "cx_weierstrass_mult: EC_POINT_new() failed");
+  }
+
+  ctx = BN_CTX_new();
+  if (p == NULL || q == NULL) {
+    errx(1, "cx_weierstrass_mult: BN_CTX_new() failed");
+  }
+
+  if (EC_POINT_set_affine_coordinates(group, p, px, py, ctx) != 1) {
+    goto err;
+  }
+  if (EC_POINT_mul(group, q, NULL, p, k, ctx) != 1) {
+    goto err;
+  }
+  if (EC_POINT_get_affine_coordinates(group, q, qx, qy, ctx) != 1) {
+    goto err;
+  }
+
+  ret = 1;
+
+err:
+  BN_CTX_free(ctx);
+  EC_GROUP_free(group);
+  EC_POINT_free(p);
+  EC_POINT_free(q);
+  return ret;
+}
+
 int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_len, const unsigned char *k, unsigned int k_len)
 {
   BIGNUM *Px, *Py, *Qx, *Qy, *e;
@@ -1026,35 +1074,43 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
   if (P_len != 65) {
     errx(1, "cx_ecfp_scalar_mult: invalid P_len (%u)", P_len);
   }
+  if (P[0] != 0x04) {
+    errx(1, "cx_ecfp_scalar_mult: compressed points are not supported yet");
+  }
 
   Px = BN_new();
   Py = BN_new();
   Qx = BN_new();
   Qy = BN_new();
   e = BN_new();
+
   if (Px == NULL || Py == NULL || Qx == NULL || Qy == NULL || e == NULL) {
     errx(1, "cx_ecfp_scalar_mult: BN_new() failed");
   }
-
   BN_bin2bn(P + 1, 32, Px);
   BN_bin2bn(P + 33, 32, Py);
   BN_bin2bn(k, k_len, e);
 
   switch (curve) {
-  case CX_CURVE_Ed25519:
-    if (scalarmult_ed25519(Qx, Qy, Px, Py, e) != 0) {
-      errx(1, "cx_ecfp_scalar_mult: scalarmult_ed25519 failed");
+  case CX_CURVE_Ed25519: {
+      if (scalarmult_ed25519(Qx, Qy, Px, Py, e) != 0) {
+        errx(1, "cx_ecfp_scalar_mult: scalarmult_ed25519 failed");
+      }
     }
-
-    BN_bn2binpad(Qx, P + 1, 32);
-    BN_bn2binpad(Qy, P + 33, 32);
     break;
   case CX_CURVE_SECP256K1:
   case CX_CURVE_SECP256R1:
+    if (cx_weierstrass_mult(curve, Qx, Qy, Px, Py, e) != 1) {
+      errx(1, "cx_ecfp_scalar_mult: cx_weierstrass_mult failed");
+    }
+    break;
   default:
     errx(1, "cx_ecfp_scalar_mult: TODO: unsupported curve (0x%x)", curve);
     break;
   }
+
+  BN_bn2binpad(Qx, P + 1, 32);
+  BN_bn2binpad(Qy, P + 33, 32);
 
   BN_free(Qy);
   BN_free(Qx);
