@@ -49,23 +49,21 @@ supported (issue #34).
 
 ## Docker
 
-#### Build
-```console
-docker build ./ -t speculos
-```
-
-#### Debug
-```console
-docker run -it -v "$(pwd)"/apps:/speculos/apps -p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 --entrypoint /bin/bash speculos
-```
+A docker image is available on
+[Docker Hub](https://hub.docker.com/r/ledgerhq/speculos).
 
 #### Run
 From the root of the speculos project
 ```console
 docker run -it -v "$(pwd)"/apps:/speculos/apps \
 -p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 \
-speculos --model nanos ./apps/btc.elf --sdk 1.6 --seed "secret" --display headless \
+ledgerhq/speculos --model nanos ./apps/btc.elf --sdk 1.6 --seed "secret" --display headless \
 --apdu-port 40000 --vnc-port 41000 --button-port 42000
+```
+
+#### Debug
+```console
+docker run -it -v "$(pwd)"/apps:/speculos/apps -p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 --entrypoint /bin/bash ledgerhq/speculos
 ```
 
 #### docker-compose setup
@@ -83,6 +81,18 @@ Launch the Bitcoin Testnet app, which requires the Bitcoin app:
 ```console
 ./speculos.py ./apps/btc-test.elf -l Bitcoin:./apps/btc.elf
 ```
+
+#### Build
+
+The following command-line can be used to create a docker image based on a local
+[build](build.md):
+
+```console
+docker build ./ -t speculos
+```
+
+Replace `ledgerhq/speculos` with `speculos` in the sections above to use this
+image.
 
 
 ## Debug
