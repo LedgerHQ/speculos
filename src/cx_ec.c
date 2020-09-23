@@ -1074,9 +1074,6 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
   if (P_len != 65) {
     errx(1, "cx_ecfp_scalar_mult: invalid P_len (%u)", P_len);
   }
-  if (P[0] != 0x04) {
-    errx(1, "cx_ecfp_scalar_mult: compressed points are not supported yet");
-  }
 
   Px = BN_new();
   Py = BN_new();
@@ -1100,6 +1097,9 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
     break;
   case CX_CURVE_SECP256K1:
   case CX_CURVE_SECP256R1:
+    if (P[0] != 0x04) {
+      errx(1, "cx_ecfp_scalar_mult: compressed points for Weierstrass curves are not supported yet");
+    }
     if (cx_weierstrass_mult(curve, Qx, Qy, Px, Py, e) != 1) {
       errx(1, "cx_ecfp_scalar_mult: cx_weierstrass_mult failed");
     }
