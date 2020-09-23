@@ -74,14 +74,6 @@ docker-compose up [-d]
 
 Edit `docker-compose.yml` to configure port forwarding and environment variables that fit your needs.
 
-## Bitcoin Testnet app
-
-Launch the Bitcoin Testnet app, which requires the Bitcoin app:
-
-```console
-./speculos.py ./apps/btc-test.elf -l Bitcoin:./apps/btc.elf
-```
-
 #### Build
 
 The following command-line can be used to create a docker image based on a local
@@ -93,6 +85,15 @@ docker build ./ -t speculos
 
 Replace `ledgerhq/speculos` with `speculos` in the sections above to use this
 image.
+
+
+## Bitcoin Testnet app
+
+Launch the Bitcoin Testnet app, which requires the Bitcoin app:
+
+```console
+./speculos.py ./apps/btc-test.elf -l Bitcoin:./apps/btc.elf
+```
 
 
 ## Debug
