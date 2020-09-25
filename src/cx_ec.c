@@ -420,6 +420,7 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
       }
 
       BN_free(priv);
+      EC_POINT_free(pub);
     }
 
     bn = BN_new();
@@ -431,6 +432,7 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
     public_key->curve = curve;
     public_key->W_len = BN_bn2bin(bn, public_key->W);
 
+    BN_free(bn);
     EC_KEY_free(key);
     BN_CTX_free(ctx);
   }
