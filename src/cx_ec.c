@@ -1041,7 +1041,7 @@ static int cx_weierstrass_mult(cx_curve_t curve, BIGNUM *qx, BIGNUM *qy, BIGNUM 
   }
 
   ctx = BN_CTX_new();
-  if (p == NULL || q == NULL) {
+  if (ctx == NULL) {
     errx(1, "cx_weierstrass_mult: BN_CTX_new() failed");
   }
 
