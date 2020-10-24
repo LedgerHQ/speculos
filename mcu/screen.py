@@ -21,7 +21,7 @@ class PaintWidget(QWidget):
 
     def paintEvent(self, event):
         if self.fb.pixels:
-            pixmap = QPixmap(self.size())
+            pixmap = QPixmap(self.size() / self.pixel_size)
             pixmap.fill(Qt.white)
             painter = QPainter(pixmap)
             painter.drawPixmap(0, 0, self.mPixmap)
