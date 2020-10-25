@@ -172,6 +172,8 @@ if __name__ == '__main__':
     group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument('--gif', help='Record display and save into GIF file.',
+        type=str)
 
     args = parser.parse_args()
     args.model.lower()
@@ -201,6 +203,9 @@ if __name__ == '__main__':
     if args.zoom and args.display != 'qt':
         logger.error("-z (--zoom) can only be used with --display qt")
         sys.exit(1)
+
+    if args.gif and args.display != 'gif':
+        logger.error("--gif can only be used with --display qt")
 
     if args.keymap and args.display != 'text':
         logger.error("-y (--keymap) can only be used with --display text")
@@ -251,7 +256,7 @@ if __name__ == '__main__':
     if zoom is None:
         zoom = {'nanos':2, 'blue': 1}.get(args.model, 1)
 
-    screen = Screen(apdu, seph, button_tcp=button_tcp, finger_tcp=finger_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    screen = Screen(apdu, seph, button_tcp=button_tcp, finger_tcp=finger_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom, gif=args.gif)
     screen.run()
 
     s2.close()

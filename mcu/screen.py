@@ -8,8 +8,118 @@ from PyQt5.QtCore import Qt, QObject, QSocketNotifier, QSettings
 from . import bagl
 from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
 
+from PIL import Image
+from typing import Tuple
+import time
+
 BUTTON_LEFT  = 1
 BUTTON_RIGHT = 2
+
+
+class GIFRecorder:
+    """
+    Records drawed frames to generate an animated GIF file.
+
+    We save frames only when the screen has changed, and not at every refresh
+    tick. We also save the frame times so each GIF frame duration can be
+    accurate.
+
+    Unfortunately, all the frames are kept in memory until the program ends.
+    This is not very efficient, but it should still be small for not being a
+    problem.
+    """
+    def __init__(self, path: str, model: str, size: Tuple[int, int]):
+        """
+        :param path: GIF output path.
+        :param model: Device model name.
+        :param size: Screen size, in pixels.
+        """
+        self.path = path
+        self.model = model
+        self.size = size
+        self.images = []
+        self.times = []
+        self.image = None
+        self.__new_image()
+        self.__has_changed = False
+
+    def draw_point(self, x: int, y: int, color: int):
+        """
+        Draw a pixel.
+        :param x: Pixel abscissa
+        :param y: Pixel ordinate
+        :param color: Pixel color
+        """
+        # Color is not always the same with NanoS, but the screen is only able
+        # to display black and blue. Fix here.
+        if self.model == 'nanos' and color != 0:
+            color = 0xfbff00
+        self.pixels[x, y] = color
+        self.__has_changed = True
+
+    def refresh(self):
+        """ Called to show the new screen once every pixels have been drawn. """
+        if self.__has_changed:
+            self.__new_image()
+            self.__has_changed = False
+
+    def __new_image(self):
+        """ Create a new PIL image for the next GIF frame. """
+        if self.image is not None:
+            self.image = self.image.copy()
+        else:
+            self.image = Image.new('RGB', self.size)
+        self.pixels = self.image.load()
+        self.images.append(self.image)
+        # Append the current time of this new image
+        self.times.append(time.time())
+
+    def finish(self):
+        """ Save all recorded frame to a GIF file. """
+        self.times.append(time.time())  # Current time on exit
+        # Calculate the duration of all frames
+        durations = []
+        for i in range(2, len(self.times)):
+            a = self.times[i-1]
+            b = self.times[i]
+            durations.append(int((b - a) * 1000))
+        self.images[0].save(self.path, save_all=True,
+            append_images=self.images[1:-1], optimize=True, duration=durations,
+            loop=0)
+
+
+class PaintDispatcher:
+    """
+    Dispatch paint instructions to multiple instances.
+
+    This has been created to have multiple display output: the Qt widget and the
+    GIF recorder.
+    """
+    def __init__(self):
+        self.targets = []
+
+    def draw_point(self, x, y, color):
+        """
+        Draw a pixel.
+        :param x: Pixel abscissa
+        :param y: Pixel ordinate
+        :param color: Pixel color
+        """
+        for target in self.targets:
+            target.draw_point(x, y, color)
+
+    def refresh(self):
+        """ Called to show the new screen once every pixels have been drawn. """
+        for target in self.targets:
+            target.refresh()
+
+    def append(self, target):
+        """
+        Append a target in the dispatcher.
+        :param target: Target to be called during paint events.
+        """
+        self.targets.append(target)
+
 
 class PaintWidget(QWidget):
     def __init__(self, parent, model, pixel_size, vnc=None):
@@ -18,6 +128,7 @@ class PaintWidget(QWidget):
         self.pixel_size = pixel_size
         self.mPixmap = QPixmap()
         self.vnc = vnc
+        self.images = []
 
     def paintEvent(self, event):
         if self.fb.pixels:
@@ -49,8 +160,11 @@ class PaintWidget(QWidget):
     def draw_point(self, x, y, color):
         return self.fb.draw_point(x, y, color)
 
+    def refresh(self):
+        self.update()
+
 class Screen(Display):
-    def __init__(self, app, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc):
+    def __init__(self, app, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc, ):
         self.app = app
         super().__init__(apdu, seph, model, rendering)
         self._init_notifiers(apdu, seph, button_tcp, finger_tcp, vnc)
@@ -103,7 +217,11 @@ class Screen(Display):
         self.bagl.refresh()
 
 class App(QMainWindow):
-    def __init__(self, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size):
+    def __init__(self, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size, gif):
+        """
+        :param gif: Path to the output GIF file if screen is recorded. If None,
+            no output GIF is created.
+        """
         super().__init__()
 
         self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
@@ -134,10 +252,20 @@ class App(QMainWindow):
         p.setColor(self.backgroundRole(), QColor.fromRgb(COLORS[color]))
         self.setPalette(p)
 
-        # Add paint widget and paint
-        self.m = PaintWidget(self, model, pixel_size, vnc)
-        self.m.move(self.box_position_x * pixel_size, self.box_position_y * pixel_size)
-        self.m.resize(self.width * pixel_size, self.height * pixel_size)
+        self.m = PaintDispatcher()
+
+        # Add paint widget
+        self.paint_widget = w = PaintWidget(self, model, pixel_size, vnc)
+        w.move(self.box_position_x * pixel_size, self.box_position_y * pixel_size)
+        w.resize(self.width * pixel_size, self.height * pixel_size)
+        self.m.append(w)
+
+        # Create GIF recorder
+        if gif is not None:
+            self.gif_recorder = GIFRecorder(gif, model, (self.width, self.height))
+            self.m.append(self.gif_recorder)
+        else:
+            self.gif_recorder = None
 
         self.screen = Screen(self, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc)
 
@@ -192,11 +320,18 @@ class App(QMainWindow):
         settings = QSettings("ledger", "speculos")
         settings.setValue("window_x", self.pos().x())
         settings.setValue("window_y", self.pos().y())
+        if self.gif_recorder is not None:
+            self.gif_recorder.finish()
+
 
 class QtScreen:
-    def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
+    def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, gif=None, **_):
+        """
+        :param gif: Path to the output GIF file if screen is recorded. If None,
+            no output GIF is created.
+        """
         self.app = QApplication(sys.argv)
-        self.app_widget = App(apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
+        self.app_widget = App(apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size, gif)
 
     def run(self):
         self.app.exec_()
