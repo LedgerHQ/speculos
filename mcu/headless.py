@@ -8,7 +8,7 @@ class HeadlessPaintWidget(FrameBuffer):
         super().__init__(model)
         self.vnc = vnc
 
-    def update(self):
+    def refresh(self):
         if self.pixels:
             self._redraw()
             self.pixels = {}
