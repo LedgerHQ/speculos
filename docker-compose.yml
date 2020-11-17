@@ -3,7 +3,7 @@ version: "3.7"
 services:
   nanos:
     build: .
-    image: speculos
+    image: ledgerhq/speculos
     volumes:
       - ./apps:/speculos/apps
     ports:
