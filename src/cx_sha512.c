@@ -10,7 +10,7 @@ union cx_u {
   cx_sha512_t      sha512;
 };
 
-union cx_u  G_cx;
+static union cx_u  G_cx;
 
 #ifndef CX_SHA512_INIT_ALT_METHOD
 

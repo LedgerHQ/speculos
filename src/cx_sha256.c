@@ -12,7 +12,7 @@ union cx_u {
   cx_sha256_t      sha256;
 };
 
-union cx_u  G_cx;
+static union cx_u  G_cx;
 
 static const uint32_t primeSqrt[] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
