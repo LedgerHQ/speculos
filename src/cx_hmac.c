@@ -14,7 +14,7 @@ union cx_u {
   cx_hmac_ctx hmac;
 };
 
-union cx_u  G_cx;
+static union cx_u  G_cx;
 
 static size_t get_block_size(cx_md_t md) {
   const cx_hash_info_t *info = cx_hash_get_info(md);
