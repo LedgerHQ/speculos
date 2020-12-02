@@ -32,6 +32,8 @@ from mcu.vnc import VNC
 DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
                 'monster seven myth punch hobby comfort wild raise skin')
 
+logger = logging.getLogger("speculos")
+
 launcher_path = pkg_resources.resource_filename(__name__, "/build/src/launcher")
 
 
@@ -143,20 +145,18 @@ def setup_logging(args):
 
     for arg in args.log_level:
         if ":" not in arg:
-            logging.getLogger("speculos").error(f"invalid --log argument {arg}")
+            logger.error(f"invalid --log argument {arg}")
             sys.exit(1)
         name, level = arg.split(":", 1)
-        logger = logging.getLogger(name)
+        given_logger = logging.getLogger(name)
         try:
-            logger.setLevel(level)
+            given_logger.setLevel(level)
         except ValueError as e:
-            logging.getLogger("speculos").error(f"invalid --log argument: {e}")
+            logger.error(f"invalid --log argument: {e}")
             sys.exit(1)
 
-    return logging.getLogger("speculos")
 
-
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.model.lower()
 
-    logger = setup_logging(args)
+    setup_logging(args)
 
     rendering = seproxyhal.RENDER_METHOD.FLUSHED
     if args.progressive:
@@ -331,3 +331,7 @@ if __name__ == '__main__':
     screen.run()
 
     s2.close()
+
+
+if __name__ == '__main__':
+    main()
