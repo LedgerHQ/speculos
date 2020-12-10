@@ -1,6 +1,8 @@
 import sys
 import select
 import curses
+import logging
+import os
 from . import bagl
 from .display import Display, FrameBuffer, MODELS, RENDER_METHOD
 import time
@@ -42,6 +44,10 @@ class TextWidget(FrameBuffer):
         self.width = parent.width
         self.height = parent.height
         self.previous_screen = 0
+
+        # ncurses stops the process if in the background
+        if os.tcgetpgrp(sys.stdin.fileno()) != os.getpgrp():
+            logging.getLogger("display").warn("please run speculos in the foreground to allow the initialization of the display")
 
         self.stdscr = curses.initscr()
         curses.noecho()
