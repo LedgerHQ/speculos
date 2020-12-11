@@ -31,12 +31,13 @@ static int aes_cbc_encrypt(const cx_aes_key_t *key, const uint8_t *input,
                             uint8_t *output, uint8_t *iv, size_t len) {
   assert(len % CX_AES_BLOCK_SIZE == 0);
   size_t out_len = len;
+  uint8_t block[CX_AES_BLOCK_SIZE];
 
   while (len > 0) {
     for (int i = 0; i < CX_AES_BLOCK_SIZE; i++) {
-      output[i] = input[i] ^ iv[i];
+      block[i] = input[i] ^ iv[i];
     }
-    aes_encrypt_block(key, output, output);
+    aes_encrypt_block(key, block, output);
     memcpy(iv, output, CX_AES_BLOCK_SIZE);
 
     input += CX_AES_BLOCK_SIZE;
