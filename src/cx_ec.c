@@ -9,6 +9,7 @@
 
 #include "cx.h"
 #include "cx_ec.h"
+#include "cx_curve25519.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
@@ -1073,6 +1074,21 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
 
   /* TODO: ensure that the point is valid */
 
+  const uint8_t PTy = P[0];
+
+  if (curve == CX_CURVE_Curve25519) {
+    if (PTy != 0x02) {
+      errx(1, "cx_ecfp_scalar_mult: only compressed points for Curve25519 are supported.");
+    }
+    if (P_len != (32+1) || k_len != 32) {
+      errx(1, "cx_ecfp_scalar_mult: expected P_len == 33 and k_len == 32");
+    }
+    if (scalarmult_curve25519(&P[1], k, &P[1]) != 0) {
+      errx(1, "cx_ecfp_scalar_mult: scalarmult_x25519 failed");
+    }
+    return P_len;
+  }
+
   if (P_len != 65) {
     errx(1, "cx_ecfp_scalar_mult: invalid P_len (%u)", P_len);
   }
@@ -1086,6 +1102,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
   if (Px == NULL || Py == NULL || Qx == NULL || Qy == NULL || e == NULL) {
     errx(1, "cx_ecfp_scalar_mult: BN_new() failed");
   }
+
   BN_bin2bn(P + 1, 32, Px);
   BN_bin2bn(P + 33, 32, Py);
   BN_bin2bn(k, k_len, e);
@@ -1099,7 +1116,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P, unsigned int P_l
     break;
   case CX_CURVE_SECP256K1:
   case CX_CURVE_SECP256R1:
-    if (P[0] != 0x04) {
+    if (PTy != 0x04) {
       errx(1, "cx_ecfp_scalar_mult: compressed points for Weierstrass curves are not supported yet");
     }
     if (cx_weierstrass_mult(curve, Qx, Qy, Px, Py, e) != 1) {
