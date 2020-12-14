@@ -1,6 +1,7 @@
 add_library(emu
         cx_aes.c
         cx_blake2b.c
+        cx_curve25519.c
         cx_crc.c
         cx_ec.c
         cx_ed25519.c

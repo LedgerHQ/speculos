@@ -22,6 +22,14 @@ static uint8_t const C_ED25519_G[] = {
   0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x58
 };
 
+static uint8_t const C_Curve25519_G[] = {
+  //compressed
+  0x02,
+  //x
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09
+};
+
 typedef struct {
   const char *secret_key;
   const char *public_key;
@@ -176,6 +184,53 @@ void test_scalar_mult_ed25519(void **state __attribute__((unused))) {
   assert_memory_equal(Pxy, expected, sizeof(expected));
 }
 
+void test_scalar_mult_curve25519(void **state __attribute__((unused))) {
+  uint8_t Px[33];
+  uint8_t s[32];
+  uint8_t expected[33];
+
+  // The two next reference points have been computed thanks to Sage.
+  memcpy(Px, C_Curve25519_G, sizeof(Px));
+  memcpy(s,
+         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0A",
+         sizeof(s));
+  memcpy(expected,
+         "\x02"
+         "\x41\xED\xA6\x55\xB1\x59\x06\x04\x71\xFB\x4C\xE5\xD7\xCB\x3F\xE4"
+         "\x3E\xE5\x18\x43\xD2\x08\x0E\x03\x83\xCE\x42\x89\x2C\x3A\x9C\x7B",
+         33);
+
+  sys_cx_ecfp_scalar_mult(CX_CURVE_Curve25519, Px, sizeof(Px), s, sizeof(s));
+
+  assert_memory_equal(Px, expected, sizeof(expected));
+
+  memcpy(Px, C_Curve25519_G, sizeof(Px));
+  memcpy(s,
+         "\x45\x07\xA3\xD5\xC4\x34\xD8\x30\xCA\x32\xF6\x16\x1A\x23\x65\xF2"
+         "\x81\x1D\xF9\xE0\x46\x51\x97\x1B\xBF\x7F\xAB\xE1\x1C\x37\x49\x57",
+         sizeof(s));
+  memcpy(expected,
+         "\x02"
+         "\x33\x5C\x6B\x38\xA0\xD0\x1C\x6F\x8A\x61\xCC\x1D\x4C\x6D\x41\x94"
+         "\x8C\x7E\xC7\x73\x15\x86\x4B\x42\x26\xC6\xCE\xBA\x14\x1D\x4D\xBA",
+         33);
+
+  sys_cx_ecfp_scalar_mult(CX_CURVE_Curve25519, Px, sizeof(Px), s, sizeof(s));
+
+  assert_memory_equal(Px, expected, sizeof(expected));
+
+  // Verify that 1*G = G
+  memcpy(Px, C_Curve25519_G, sizeof(Px));
+  memcpy(s,
+         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+         "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01",
+         sizeof(s));
+  memcpy(expected, C_Curve25519_G, sizeof(expected));
+  sys_cx_ecfp_scalar_mult(CX_CURVE_Curve25519, Px, sizeof(Px), s, sizeof(s));
+  assert_memory_equal(Px, expected, sizeof(expected));
+}
+
 static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
                                       const eddsa_test_vector *tv, size_t tv_len)
 {
@@ -240,6 +295,7 @@ void test_eddsa_recover_x(void **state __attribute__((unused)))
 int main(void) {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_scalar_mult_ed25519),
+    cmocka_unit_test(test_scalar_mult_curve25519),
     cmocka_unit_test(test_ed25519_get_public_key),
     cmocka_unit_test(test_eddsa_recover_x),
   };
