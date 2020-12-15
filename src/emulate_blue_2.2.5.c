@@ -3,6 +3,7 @@
 
 #include "emulate.h"
 #include "bolos_syscalls_blue_2.2.5.h"
+#include "cx_aes.h"
 
 int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
 {
@@ -47,6 +48,17 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
   SYSCALL0i(os_global_pin_is_validated, os_global_pin_is_validated_1_5);
 
   SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_6);
+
+  SYSCALL8(cx_aes_iv, "(%p, 0x%x, %p, %u, %p, %u, %p, %u)",
+           const cx_aes_key_t *, key,
+           int,                  mode,
+           const uint8_t *,      iv,
+           unsigned int,         iv_len,
+           const uint8_t *,      in,
+           unsigned int,         len,
+           uint8_t *,            out,
+           unsigned int,         out_len);
+
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);
