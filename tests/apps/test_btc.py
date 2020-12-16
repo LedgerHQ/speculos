@@ -79,6 +79,8 @@ class TestBtc:
 
         if app.revision == '00000000' and app.model == 'nanos':
             pytest.skip("unsupported get pubkey ux for this app version")
+        if app.model == 'nanox':
+            pytest.skip("automation isn't supported on the Nano X")
 
         args = [ '--automation', TestBtc.get_automation_path(f'btc_getpubkey_{app.model}.json') ]
         app.run(args=args)

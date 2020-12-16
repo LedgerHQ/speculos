@@ -2,7 +2,7 @@
 
 ![screenshot btc nano s](doc/screenshot-btc-nanos.png)
 
-The goal of this project is to emulate Ledger Nano and Ledger Blue apps on
+The goal of this project is to emulate Ledger Nano S, Nano X and Blue apps on
 standard desktop computers, without any hardware device. More information can
 be found here:
 

@@ -4,6 +4,8 @@
 
 #include "emulate.h"
 
+#define OS_SETTING_PLANEMODE    5
+
 #define BOLOS_TAG_APPNAME       0x01
 #define BOLOS_TAG_APPVERSION    0x02
 
@@ -25,6 +27,24 @@ static unsigned int libcall_index;
 unsigned long sys_os_flags(void)
 {
   /* not in recovery and mcu unsigned */
+  return 0;
+}
+
+unsigned long sys_os_perso_isonboarded(void)
+{
+  return true;
+}
+
+unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *UNUSED(value), size_t UNUSED(maxlen))
+{
+  switch (setting_id) {
+  case OS_SETTING_PLANEMODE:
+    return 1;
+  default:
+    fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
+    break;
+  }
+
   return 0;
 }
 

@@ -1,6 +1,5 @@
 ## High priority
 
-- Nano X support
 - check api level
 - print call stack on app segfault
 

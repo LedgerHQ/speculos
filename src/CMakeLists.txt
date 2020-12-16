@@ -13,9 +13,11 @@ add_library(emu
         cx_sha512.c
         cx_utils.c
         emulate.c
+        emulate_1.2.c
         emulate_1.5.c
         emulate_1.6.c
         emulate_blue_2.2.5.c
+        emu_bagl.c
         emu_cx.c
         emu_cx_hash.c
         emu_cx_math.c

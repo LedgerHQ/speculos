@@ -6,24 +6,27 @@
 ./speculos.py apps/btc.elf
 ```
 
-The Ledger Nano S is the default model and the Ledger Blue can be specified on
-the command-line:
+The Nano S is the default model; the Nano X and Blue can be specified on the
+command-line:
 
 ```console
+./speculos.py --model nanox apps/nanox#btc#1.2#57272a0f.elf
 ./speculos.py --model blue apps/btc-blue.elf
 ```
 
-If the target app is not build against the version `1.6` of the SDK, use the
-`-k`/`--sdk` argument. For instance, to launch an app built against the SDK
-`1.5`:
+The last SDK version is automatically selected. However, a specific version
+be specified if the target app is not build against the last version of the SDK,
+thanks to the `-k`/`--sdk` argument. For instance, to launch an app built
+against the SDK `1.5` on the Nano S:
 
 ```console
-./speculos.py --sdk 1.5 apps/btc.elf
+./speculos.py --sdk 1.5 --model nanos apps/btc.elf
 ```
+
 Supported SDK values for the `-k`/`--sdk` argument are:
-|     | Nano S emulation | Blue emulation |
-|-----|------------------|----------------|
-| SDK |     1.5, 1.6     |   blue-2.2.5   |
+|     | Nano S   | Nano X  | Blue       |
+|-----|----------|---------|------------|
+| SDK | 1.5, 1.6 | 1.2     | blue-2.2.5 |
 
 For more options, pass the `-h` or `--help` flag.
 

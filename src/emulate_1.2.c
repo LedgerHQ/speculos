@@ -1,15 +1,43 @@
 #include <err.h>
 #include <stdio.h>
 
+#include "emu_bagl.h"
 #include "emulate.h"
-#include "bolos_syscalls_1.6.h"
+#include "bolos_syscalls_1.2.h"
 #include "cx_aes.h"
 
-int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
+unsigned long sys_os_perso_derive_node_bip32_seed_key(unsigned int mode,
+                                                      cx_curve_t curve,
+                                                      const unsigned int *path,
+                                                      unsigned int pathLength,
+                                                      unsigned char *privateKey,
+                                                      unsigned char *chain,
+                                                      unsigned char *seed_key,
+                                                      unsigned int seed_key_length);
+
+int emulate_1_2(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
 {
   int retid;
 
   switch(syscall) {
+  SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
+           int,                  x,
+           int,                  y,
+           unsigned int,         width,
+           unsigned int,         height,
+           unsigned int,         color_count,
+           const unsigned int *, colors,
+           unsigned int,         bit_per_pixel,
+           const uint8_t *,      bitmap,
+           unsigned int,         bitmap_length_bits);
+
+  SYSCALL5(bagl_hal_draw_rect, "(0x%08x, %d, %d, %u, %u)",
+           unsigned int, color,
+           int,          x,
+           int,          y,
+           unsigned int, width,
+           unsigned int, height);
+
   SYSCALL3(cx_crc16_update, "(%u, %p, %u)",
            unsigned short, crc, const void *, b, size_t, len);
 
@@ -61,7 +89,7 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
            uint8_t *, buffer,
            size_t,    length);
 
-  SYSCALL8(os_perso_derive_node_with_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
+  SYSCALL8(os_perso_derive_node_bip32_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
            unsigned int,         mode,
            cx_curve_t,           curve,
            const unsigned int *, path,
@@ -77,6 +105,8 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
            size_t,       maxlen);
 
   SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_6);
+
+  SYSCALL0(screen_update);
 
   SYSCALL8(cx_aes_iv, "(%p, 0x%x, %p, %u, %p, %u, %p, %u)",
            const cx_aes_key_t *, key,
