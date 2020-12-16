@@ -12,27 +12,26 @@ static bool status_sent = false;
 static uint8_t last_tag;
 static size_t next_length;
 
-static ssize_t read_helper(int fd, void *buf, size_t count)
+static ssize_t readall(int fd, void *buf, size_t count)
 {
   ssize_t n;
 
-  while (1) {
+  while (count > 0) {
     /* actually issue a syscall which is forwarded to the host */
     n = read(fd, buf, count);
-    if (n > 0) {
-      break;
-    } else if (n == 0) {
+    if (n == 0) {
       warnx("read from seph fd failed: fd closed");
       return -1;
-    } else {
+    } else if (n < 0) {
       if (errno == EINTR)
         continue;
       warn("read from seph fd failed");
       return -1;
     }
+    count -= n;
   }
 
-  return n;
+  return 0;
 }
 
 static ssize_t writeall(int fd, const void *buf, size_t count)
@@ -109,18 +108,28 @@ unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length) __attribu
 /* XXX: use flags */
 unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength, unsigned int UNUSED(flags))
 {
-  ssize_t size;
-
   //fprintf(stderr, "[*] sys_io_seproxyhal_spi_recv(%p, %d, %d);\n", buffer, maxlength, flags);
 
-  size = read_helper(SEPH_FILENO, buffer, maxlength);
+  if (maxlength < 3) {
+    errx(1, "invalid size given to sys_io_seproxyhal_spi_recv");
+  }
 
-  if (size <= 0)
+  if (readall(SEPH_FILENO, buffer, 3) < 0) {
     _exit(1);
+  }
+
+  uint16_t packet_size = (buffer[1] << 8) | buffer[2];
+  if (packet_size > maxlength - 3) {
+    packet_size = maxlength - 3;
+  }
+
+  if (readall(SEPH_FILENO, buffer + 3, packet_size) < 0) {
+    _exit(1);
+  }
 
   status_sent = false;
 
-  return size;
+  return 3 + packet_size;
 }
 
 unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength, unsigned int flags) __attribute__ ((weak, alias ("sys_io_seproxyhal_spi_recv")));
