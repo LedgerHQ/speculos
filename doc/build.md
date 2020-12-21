@@ -16,8 +16,8 @@ sudo apt install libvncserver-dev
 ### speculos
 
 ```console
-cmake -Bbuild -H.
-make -C build/
+cmake -Bbolos-emu-build -H.
+make -C bolos-emu-build/
 ```
 
 Please note that the first build can take some time because a tarball of OpenSSL
@@ -27,7 +27,7 @@ built. Further invocations of `make` skip this step.
 The following command line can be used for a debug build:
 
 ```console
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
+cmake -Bbolos-emu-build -DCMAKE_BUILD_TYPE=Debug -H.
 ```
 
 ### VNC support (optional)
@@ -35,5 +35,5 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
 Pass the `WITH_VNC` option to CMake:
 
 ```console
-cmake -Bbuild -H. -DWITH_VNC=1
+cmake -Bbolos-emu-build -H. -DWITH_VNC=1
 ```

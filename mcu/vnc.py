@@ -16,7 +16,7 @@ class VNC:
 
         width, height = screen_size
         path = os.path.dirname(os.path.realpath(__file__))
-        server = os.path.join(path, '../build/vnc/vnc_server')
+        server = os.path.join(path, '../bolos-emu-build/vnc/vnc_server')
         cmd = [ server ]
 
         # custom options

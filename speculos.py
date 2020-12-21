@@ -32,7 +32,7 @@ logger = logging.getLogger("speculos")
 
 DEFAULT_SEED = 'glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact monster seven myth punch hobby comfort wild raise skin'
 
-launcher_path = pkg_resources.resource_filename(__name__, "/build/src/launcher")
+launcher_path = pkg_resources.resource_filename(__name__, "/bolos-emu-build/src/launcher")
 
 def set_pdeath(sig):
     '''Set the parent death signal of the calling process.'''
