@@ -725,7 +725,7 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_BLUE:
-    if (sdk_version != SDK_BLUE_2_2_5) {
+    if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_BLUE_2_2_5) {
       errx(1, "invalid SDK version for the Ledger Blue");
     }
     break;
