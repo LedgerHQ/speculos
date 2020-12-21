@@ -447,6 +447,16 @@ static int hdw_slip21(const uint8_t *sk, size_t sk_length, const uint8_t *seed, 
   return 0;
 }
 
+unsigned long sys_os_perso_derive_node_bip32_seed_key(unsigned int mode,
+                                                      cx_curve_t curve,
+                                                      const unsigned int *path,
+                                                      unsigned int pathLength,
+                                                      unsigned char *privateKey,
+                                                      unsigned char *chain,
+                                                      unsigned char *seed_key,
+                                                      unsigned int seed_key_length)
+__attribute__ ((weak, alias ("sys_os_perso_derive_node_with_seed_key")));
+
 unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int mode, cx_curve_t curve, const unsigned int *path,
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,

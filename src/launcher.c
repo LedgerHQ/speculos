@@ -20,28 +20,15 @@
 
 #define HANDLER_STACK_SIZE     (SIGSTKSZ*4)
 
-// Idx Name          Size      VMA       LMA       File off  Algn
-//  0 .text         00011f00  c0d00000  c0d00000  00010000  2**2
-//                  CONTENTS, ALLOC, LOAD, READONLY, CODE
-//  1 .data         00000000  d0000000  d0000000  00021f00  2**0
-//                  CONTENTS, ALLOC, LOAD, DATA
-//  2 .bss          0000132c  20001800  20001800  00001800  2**2
-
-#define CODE_SIZE       0x10000
-#define LOAD_ADDR		((void *)0x40000000)
-
+#define LOAD_ADDR     ((void *)0x40000000)
 #define MAX_APP       16
 #define MAIN_APP_NAME "main"
 
-typedef enum
-{
-  ALL = 0,
-  NANOS,
-  BLUE,
-  NANOX
-} hw_platform_t;
-
-#define platform_string(platform)  (platform) == BLUE ? "Blue" : (platform) == NANOX ? "Nano X" : "Nano S"
+typedef enum {
+  MODEL_NANO_S,
+  MODEL_NANO_X,
+  MODEL_BLUE,
+} hw_model_t;
 
 struct elf_info_s {
   unsigned long load_offset;
@@ -64,6 +51,7 @@ struct memory_s {
 };
 
 static char *sdkmap[SDK_LAST] = {
+    "1.2",
     "1.5",
     "1.6",
     "blue-2.2.5",
@@ -183,17 +171,12 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 
   /* handle the os_lib_call syscall specially since it modifies the context
    * directly */
-  if (sdk_version == SDK_1_5) {
+  if (sdk_version == SDK_NANO_S_1_5) {
     if (syscall == 0x6000650b) {        /* SYSCALL_os_lib_call_ID_IN */
       return;
     }
-  }
-  else if (sdk_version == SDK_1_6) {
-    if (syscall == 0x6000670d) {        /* SYSCALL_os_lib_call_ID_IN */
-      return;
-    }
-  }
-  else if (sdk_version == SDK_BLUE_2_2_5) {
+  } else if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_S_1_6 ||
+             sdk_version == SDK_BLUE_2_2_5) {
     if (syscall == 0x6000670d) {        /* SYSCALL_os_lib_call_ID_IN */
       return;
     }
@@ -456,7 +439,7 @@ void unload_running_app(bool unload_data)
 }
 
 /* map the app to memory */
-static void *load_app(char *name, hw_platform_t plat)
+static void *load_app(char *name)
 {
   void *code, *data;
   struct app_s *app;
@@ -521,16 +504,13 @@ static void *load_app(char *name, hw_platform_t plat)
         warn("mmap extra RAM page");
         goto error;
       }
-      fprintf(stderr, "[*] platform = %s, using extra RAM page [@=%p, size=%u bytes]", platform_string(plat), extra_addr, extra_size);
+      fprintf(stderr, "[*] using extra RAM page [@=%p, size=%u bytes]", extra_addr, extra_size);
       if (extra_addr != extra_rampage_addr || extra_size != extra_rampage_size) {
         fprintf(stderr, ", realigned from [@=%p, size=%u bytes]\n", extra_rampage_addr, extra_rampage_size);
       }
       else {
         fprintf(stderr, "\n");
       }
-    }
-    else  {
-      fprintf(stderr, "[*] platform = %s, not using extra RAM\n", platform_string(plat));
     }
   }
 
@@ -559,14 +539,14 @@ static void *load_app(char *name, hw_platform_t plat)
   return NULL;
 }
 
-static int run_app(char *name, unsigned long *parameters, hw_platform_t plat)
+static int run_app(char *name, unsigned long *parameters)
 {
   unsigned long stack_end, stack_start;
   void (*f)(unsigned long *);
   struct app_s *app;
   void *p;
 
-  p = load_app(name, plat);
+  p = load_app(name);
   if (p == NULL)
     return -1;
 
@@ -601,7 +581,7 @@ int run_lib(char *name, unsigned long *parameters)
   unsigned long f;
   void *p;
 
-  p = load_app(name, ALL);
+  p = load_app(name);
   if (p == NULL)
     return -1;
 
@@ -663,7 +643,7 @@ static sdk_version_t str2sdkver(char *arg)
 {
   sdk_version_t version;
 
-  for (version = SDK_1_5; version < SDK_LAST; version++) {
+  for (version = SDK_NANO_X_1_2; version < SDK_LAST; version++) {
     if (strcmp(sdkmap[version], arg) == 0) {
       fprintf(stderr, "[*] using SDK version %s\n", sdkmap[version]);
       break;
@@ -679,18 +659,19 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
-                        ted. Currently supports \"nanos\" and \"blue\".\n\
+                        ted. Currently supports \"nanos\", \"nanox\" and \"blue\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n");
   exit(EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[])
 {
+  hw_model_t model = MODEL_NANO_S;
   int opt;
-  hw_platform_t plat = ALL;
 
   trace_syscalls = false;
-  sdk_version = SDK_1_5;
+  sdk_version = SDK_NANO_S_1_5;
+  model = MODEL_NANO_S;
 
   extra_rampage_addr = NULL;
   extra_rampage_size = 0;
@@ -708,12 +689,14 @@ int main(int argc, char *argv[])
         errx(1, "invalid extram ram page/size\n");
       break;
     case 'm':
-      if (!strcmp(optarg, "nanos")) {
-        plat = NANOS;
-      } else if (!strcmp(optarg, "blue")) {
-        plat = BLUE;
-      } else if (!strcmp(optarg, "nanox")) {
-        plat= NANOX;
+      if (strcmp(optarg, "nanos") == 0) {
+        model = MODEL_NANO_S;
+      } else if (strcmp(optarg, "nanox") == 0) {
+        model = MODEL_NANO_X;
+      } else if (strcmp(optarg, "blue") == 0) {
+        model = MODEL_BLUE;
+      } else {
+        errx(1, "invalid model \"%s\"", optarg);
       }
       break;
     default:
@@ -730,6 +713,24 @@ int main(int argc, char *argv[])
     errx(1, "invalid SDK version");
   }
 
+  switch (model) {
+  case MODEL_NANO_S:
+    if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_NANO_S_1_6) {
+      errx(1, "invalid SDK version for the Ledger Nano S");
+    }
+    break;
+  case MODEL_NANO_X:
+    if (sdk_version != SDK_NANO_X_1_2) {
+      errx(1, "invalid SDK version for the Ledger Nano X");
+    }
+    break;
+  case MODEL_BLUE:
+    if (sdk_version != SDK_BLUE_2_2_5) {
+      errx(1, "invalid SDK version for the Ledger Blue");
+    }
+    break;
+  }
+
   make_openssl_random_deterministic();
   reset_memory(true);
 
@@ -739,7 +740,7 @@ int main(int argc, char *argv[])
   if (setup_signals() != 0)
     return 1;
 
-  run_app(MAIN_APP_NAME, NULL, plat);
+  run_app(MAIN_APP_NAME, NULL);
 
   return 0;
 }

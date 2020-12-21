@@ -19,8 +19,9 @@
 #include "cx_crc.h"
 
 typedef enum {
-  SDK_1_5,
-  SDK_1_6,
+  SDK_NANO_X_1_2,
+  SDK_NANO_S_1_5,
+  SDK_NANO_S_1_6,
   SDK_BLUE_2_2_5,
   SDK_LAST
 } sdk_version_t;
@@ -50,6 +51,7 @@ struct app_s;
 int emulate(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose, unsigned int sdk_version);
 int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose);
 
+int emulate_1_2(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose);
 int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose);
 int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose);
 int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose);
@@ -68,6 +70,8 @@ int sys_nvm_write(void *dst_addr, void* src_addr, size_t src_len);
 unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain);
 unsigned long sys_os_perso_derive_node_with_seed_key(unsigned int mode, cx_curve_t curve, const unsigned int *path, unsigned int pathLength,
     unsigned char *privateKey, unsigned char *chain, unsigned char *seed_key, unsigned int seed_key_length);
+unsigned long sys_os_perso_isonboarded(void);
+unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *value, size_t maxlen);
 unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buffer, size_t length);
 unsigned long sys_os_ux_1_5(bolos_ux_params_t *params);
 unsigned long sys_os_ux_1_6(bolos_ux_params_t *params);

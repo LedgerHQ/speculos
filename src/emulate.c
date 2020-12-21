@@ -18,10 +18,13 @@ int emulate(unsigned long syscall, unsigned long *parameters, unsigned long *ret
 {
   int retid;
   switch (sdk_version) {
-    case SDK_1_5:
+    case SDK_NANO_X_1_2:
+      retid = emulate_1_2(syscall, parameters, ret, verbose);
+      break;
+    case SDK_NANO_S_1_5:
       retid = emulate_1_5(syscall, parameters, ret, verbose);
       break;
-    case SDK_1_6:
+    case SDK_NANO_S_1_6:
       retid = emulate_1_6(syscall, parameters, ret, verbose);
       break;
     case SDK_BLUE_2_2_5:
@@ -351,6 +354,8 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
            uint8_t*,         private_key,
            uint8_t *,        chain
            );
+
+  SYSCALL0(os_perso_isonboarded);
 
   SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
            unsigned int, tag,

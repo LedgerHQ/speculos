@@ -4,6 +4,7 @@ from collections import namedtuple
 Model = namedtuple('Model', 'name screen_size box_position box_size')
 MODELS = {
     'nanos': Model('Nano S', (128, 32), (20, 13), (100, 26)),
+    'nanox': Model('Nano X', (128, 64), (5, 5), (10, 10)),
     'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
 }
 
@@ -23,15 +24,20 @@ RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
 RENDER_METHOD = RenderMethods(0, 1)
 
 class FrameBuffer(ABC):
+    COLORS = {
+        "nanos": 0x00fffb,
+        "nanox": 0xdddddd,
+    }
+
     def __init__(self, model):
         self.pixels = {}
         self.model = model
 
     def draw_point(self, x, y, color):
-        # There are only 2 colors on Nano S but the one passed in argument isn't
-        # always valid. Fix it here.
-        if self.model == 'nanos' and color != 0x000000:
-            color = 0x00fffb
+        # There are only 2 colors on the Nano S and the Nano X but the one
+        # passed in argument isn't always valid. Fix it here.
+        if color != 0x000000:
+            color = FrameBuffer.COLORS.get(self.model, color)
         self.pixels[(x, y)] = color
 
 class Display(ABC):

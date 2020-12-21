@@ -60,7 +60,7 @@ def get_elf_infos(app_path):
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
-def run_qemu(s1, s2, app_path, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, deterministic_rng="", model=None, ram_arg=None, sdk_version="1.5"):
+def run_qemu(s1, s2, app_path, sdk_version, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, deterministic_rng="", model=None, ram_arg=None):
     args = [ 'qemu-arm-static' ]
 
     if debug:
@@ -150,7 +150,7 @@ if __name__ == '__main__':
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
     parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce deterministic randomness')
-    parser.add_argument('-k', '--sdk', default='1.6', help='SDK version')
+    parser.add_argument('-k', '--sdk', type=str, help='SDK version')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), can be specified multiple times')
     parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
@@ -217,19 +217,33 @@ if __name__ == '__main__':
     else:
         from mcu.screen import QtScreen as Screen
 
+    if args.sdk is None:
+        default_sdk = {
+            "nanos": "1.6",
+            "nanox": "1.2",
+            "blue": "2.2.5",
+        }
+        args.sdk = default_sdk.get(args.model)
+
     automation_path = None
     if args.automation:
+        if args.model == "nanox":
+            logger.error("automation isn't supported on the Nano X")
+            sys.exit(1)
         automation_path = automation.Automation(args.automation)
 
     automation_server = None
     if args.automation_port:
+        if args.model == "nanox":
+            logger.error("automation isn't supported on the Nano X")
+            sys.exit(1)
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
 
     s1, s2 = socket.socketpair()
 
-    run_qemu(s1, s2, getattr(args, 'app.elf'), args.library, args.seed, args.debug, args.trace, args.deterministic_rng, args.model, args.rampage, args.sdk)
+    run_qemu(s1, s2, getattr(args, 'app.elf'), args.sdk, args.library, args.seed, args.debug, args.trace, args.deterministic_rng, args.model, args.rampage)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
@@ -249,7 +263,12 @@ if __name__ == '__main__':
 
     zoom = args.zoom
     if zoom is None:
-        zoom = {'nanos':2, 'blue': 1}.get(args.model, 1)
+        default_zoom = {
+            "nanos": 2,
+            "nanox": 2,
+            "blue": 1,
+        }
+        zoom = default_zoom.get(args.model)
 
     screen = Screen(apdu, seph, button_tcp=button_tcp, finger_tcp=finger_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
     screen.run()
