@@ -221,7 +221,7 @@ if __name__ == '__main__':
         default_sdk = {
             "nanos": "1.6",
             "nanox": "1.2",
-            "blue": "2.2.5",
+            "blue": "blue-2.2.5",
         }
         args.sdk = default_sdk.get(args.model)
 
