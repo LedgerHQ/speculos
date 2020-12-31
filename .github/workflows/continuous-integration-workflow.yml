@@ -34,14 +34,14 @@ jobs:
 
     - name: Build
       run: |
-        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1
-        make -C build
+        cmake -Bbolos-emu-build -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DBUILD_TESTING=1
+        make -C bolos-emu-build
 
     - name: Test
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
-        make -C build/ test
+        make -C bolos-emu-build/ test
         pytest
 
     - name: Publish to DockerHub
@@ -60,10 +60,10 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE: 1
         RNG_SEED: 0
       run: |
-        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
-        make -C build clean
-        make -C build
-        make -C build test
+        cmake -Bbolos-emu-build -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DBUILD_TESTING=1 -DCODE_COVERAGE=ON
+        make -C bolos-emu-build clean
+        make -C bolos-emu-build
+        make -C bolos-emu-build test
         pytest
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
