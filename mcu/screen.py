@@ -10,6 +10,9 @@ from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
 
 BUTTON_LEFT  = 1
 BUTTON_RIGHT = 2
+DEFAULT_WINDOW_X = 10
+DEFAULT_WINDOW_Y = 10
+
 
 class PaintWidget(QWidget):
     def __init__(self, parent, model, pixel_size, vnc=None):
@@ -103,7 +106,7 @@ class Screen(Display):
         self.bagl.refresh()
 
 class App(QMainWindow):
-    def __init__(self, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size):
+    def __init__(self, qt_app, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size):
         super().__init__()
 
         self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
@@ -117,10 +120,33 @@ class App(QMainWindow):
         # If the position of the window has been saved in the settings, restore
         # it.
         settings = QSettings("ledger", "speculos")
-        window_x = settings.value("window_x", 10, int)
-        window_y = settings.value("window_y", 10, int)
+        # Take in account multiple screens and their geometry:
+        current_screen_x = qt_app.primaryScreen().geometry().x()
+        current_screen_y = qt_app.primaryScreen().geometry().y()
+        window_x = settings.value("window_x", current_screen_x + DEFAULT_WINDOW_X, int)
+        window_y = settings.value("window_y", current_screen_y + DEFAULT_WINDOW_Y, int)
         window_width = (self.width + box_size_x) * pixel_size
         window_height = (self.height + box_size_y) * pixel_size
+
+        # Be sure Window is FULLY visible in one of the available screens:
+        window_is_visible = False
+        for screen in qt_app.screens():
+            x1 = screen.geometry().x()
+            y1 = screen.geometry().y()
+            x2 = x1 + screen.geometry().width() - 1
+            y2 = y1 + screen.geometry().height() - 1
+
+            if window_x >= x1 and window_y >= y1 and (window_x + window_width - 1) <= x2 and \
+                (window_y + window_height - 1) <= y2:
+                window_is_visible = True
+                break   # No need to check other screens
+
+        # If the window is not FULLY visible, force default coordinates on current screen:
+        if not window_is_visible:
+            print(f"Window is NOT FULLY visible => using default coordinates in current screen.")
+            window_x = current_screen_x + DEFAULT_WINDOW_X
+            window_y = current_screen_y + DEFAULT_WINDOW_Y
+
         self.setGeometry(window_x, window_y, window_width, window_height)
         self.setFixedSize(window_width, window_height)
 
@@ -196,7 +222,7 @@ class App(QMainWindow):
 class QtScreen:
     def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
         self.app = QApplication(sys.argv)
-        self.app_widget = App(apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
+        self.app_widget = App(self.app, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
 
     def run(self):
         self.app.exec_()
