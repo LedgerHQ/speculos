@@ -60,9 +60,17 @@ class Screen(Display):
         self.bagl = bagl.Bagl(app.m, MODELS[model].screen_size)
         self.seph = seph
 
+    def klass_can_read(self, klass, s):
+        try:
+            klass.can_read(s, self)
+
+        # This exception occur when can_read have no more data available
+        except RuntimeError:
+            self.app.close()
+
     def add_notifier(self, klass):
         n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self.app)
-        n.activated.connect(lambda s: klass.can_read(s, self))
+        n.activated.connect(lambda s: self.klass_can_read(klass, s))
 
         assert klass.s.fileno() not in self.notifiers
         self.notifiers[klass.s.fileno()] = n
