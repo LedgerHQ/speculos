@@ -149,7 +149,7 @@ class SeProxyHal:
             tmp = self.s.recv(size)
             if len(tmp) == 0:
                 self.logger.debug("fd closed")
-                sys.exit(1)
+                return None
             data += tmp
             size -= len(tmp)
         return data
@@ -221,6 +221,10 @@ class SeProxyHal:
                 else:
                     assert False
 
+    def _close(self, s, screen):
+        screen.remove_notifier(self.s.fileno())
+        self.s.close()
+
     def can_read(self, s, screen):
         '''
         Handle packet sent by the app.
@@ -231,10 +235,17 @@ class SeProxyHal:
         assert s == self.s.fileno()
 
         data = self._recvall(3)
+        if data is None:
+            self._close(s, screen)
+            raise RuntimeError
+
         tag = data[0]
         size = int.from_bytes(data[1:3], 'big')
 
         data = self._recvall(size)
+        if data is None:
+            self._close(s, screen)
+            raise RuntimeError
         assert len(data) == size
 
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")

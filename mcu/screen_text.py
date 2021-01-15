@@ -65,7 +65,7 @@ class TextWidget(FrameBuffer):
             return
         else:
             self.previous_screen = p.copy()
-            
+
         f = lambda x,y:p.get((x,y),0)
 
         self.stdscr.clear()
@@ -100,7 +100,7 @@ class TextScreen(Display):
         else:
             self.ARROW_KEYS = [curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_DOWN]
 
-        self.key2btn = { 
+        self.key2btn = {
                             self.ARROW_KEYS[0]:BUTTON_LEFT,
                             self.ARROW_KEYS[1]:BUTTON_RIGHT,
                             self.ARROW_KEYS[2]:BUTTON_LEFT | BUTTON_RIGHT,
@@ -134,15 +134,20 @@ class TextScreen(Display):
             rlist = list(self.notifiers.keys())
             if not rlist:
                 break
-            
+
             rlist += [ sys.stdin ]
             rlist, _, _ = select.select(rlist, [], [])
             if sys.stdin in rlist:
                 rlist.remove(sys.stdin)
                 if not self.get_keypress():
                     break
-            for fd in rlist:
-                self.notifiers[fd].can_read(fd, self)
+            try:
+                for fd in rlist:
+                    self.notifiers[fd].can_read(fd, self)
+
+            # This exception occur when can_read have no more data available
+            except RuntimeError:
+                break
 
         curses.nocbreak()
         curses.echo()

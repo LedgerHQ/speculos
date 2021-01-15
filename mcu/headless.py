@@ -46,5 +46,10 @@ class Headless(Display):
                 break
 
             rlist, _, _ = select.select(rlist, [], [])
-            for fd in rlist:
-                self.notifiers[fd].can_read(fd, self)
+            try:
+                for fd in rlist:
+                    self.notifiers[fd].can_read(fd, self)
+
+            # This exception occur when can_read have no more data available
+            except RuntimeError:
+                break
