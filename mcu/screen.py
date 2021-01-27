@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QObject, QSocketNotifier, QSettings
 
 from . import bagl
 from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
+from .readerror import ReadError
 
 BUTTON_LEFT  = 1
 BUTTON_RIGHT = 2
@@ -65,7 +66,7 @@ class Screen(Display):
             klass.can_read(s, self)
 
         # This exception occur when can_read have no more data available
-        except RuntimeError:
+        except ReadError:
             self.app.close()
 
     def add_notifier(self, klass):

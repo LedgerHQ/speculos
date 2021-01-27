@@ -5,6 +5,7 @@ import logging
 import os
 from . import bagl
 from .display import Display, FrameBuffer, MODELS, RENDER_METHOD
+from .readerror import ReadError
 import time
 wait_time = 0.01
 
@@ -146,7 +147,7 @@ class TextScreen(Display):
                     self.notifiers[fd].can_read(fd, self)
 
             # This exception occur when can_read have no more data available
-            except RuntimeError:
+            except ReadError:
                 break
 
         curses.nocbreak()

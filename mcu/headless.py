@@ -2,6 +2,7 @@ import select
 
 from . import bagl
 from .display import Display, FrameBuffer, MODELS, RENDER_METHOD
+from .readerror import ReadError
 
 class HeadlessPaintWidget(FrameBuffer):
     def __init__(self, parent, model, vnc=None):
@@ -51,5 +52,5 @@ class Headless(Display):
                     self.notifiers[fd].can_read(fd, self)
 
             # This exception occur when can_read have no more data available
-            except RuntimeError:
+            except ReadError:
                 break
