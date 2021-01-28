@@ -11,12 +11,12 @@
 #include <stdint.h>
 
 /* for cx_curve_t */
-#include "cx_ec.h"
+#include "bolos/cx_ec.h"
 
 /* for cx_hash_t */
-#include "cx_hash.h"
+#include "bolos/cx_hash.h"
 
-#include "cx_crc.h"
+#include "bolos/cx_crc.h"
 
 #include "sdk.h"
 

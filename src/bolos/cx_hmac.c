@@ -5,7 +5,7 @@
 #include "cx.h"
 #include "cx_hash.h"
 //#include "cx_utils.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 #define IPAD 0x36u
 #define OPAD 0x5cu

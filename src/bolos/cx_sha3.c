@@ -4,7 +4,7 @@
 
 #include "cx_utils.h"
 #include "cx.h"
-#include "exception.h"
+#include "bolos/exception.h"
 #include <string.h>
 
 #ifdef OS_BIG_ENDIAN

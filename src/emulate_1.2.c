@@ -1,10 +1,10 @@
 #include <err.h>
 #include <stdio.h>
 
-#include "emu_bagl.h"
+#include "bolos/cx_aes.h"
+#include "bolos/emu_bagl.h"
 #include "emulate.h"
 #include "bolos_syscalls_1.2.h"
-#include "cx_aes.h"
 
 unsigned long sys_os_perso_derive_node_bip32_seed_key(unsigned int mode,
                                                       cx_curve_t curve,

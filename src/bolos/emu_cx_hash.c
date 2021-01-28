@@ -2,7 +2,7 @@
 
 #include "cx.h"
 #include "emulate.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 static const cx_hash_info_t cx_sha256_info = {
     CX_SHA256,

@@ -1,6 +1,8 @@
 #ifndef _CX_AES_H
 #define _CX_AES_H
 
+#include <stdint.h>
+
 #define CX_AES_BLOCK_SIZE 16
 #define CX_MASK_SIGCRYPT  (3u<<1u)
 #define CX_ENCRYPT        (2u<<1u)

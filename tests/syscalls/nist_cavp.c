@@ -1,12 +1,12 @@
-#include "nist_cavp.h"
-#include "cx_hash.h"
-
 #include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <setjmp.h>
 #include <cmocka.h>
+
+#include "bolos/cx_hash.h"
+#include "nist_cavp.h"
 #include "utils.h"
 
 
