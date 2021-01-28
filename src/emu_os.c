@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "emulate.h"
+#include "svc.h"
 
 #define OS_SETTING_PLANEMODE    5
 
