@@ -576,8 +576,8 @@ class Bagl:
 
     def display_raw_status(self, data):
         if data[0] == SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START:
-            x = int.from_bytes(data[1:3], byteorder='big')
-            y = int.from_bytes(data[3:5], byteorder='big')
+            x = int.from_bytes(data[1:3], byteorder='big', signed=True)
+            y = int.from_bytes(data[3:5], byteorder='big', signed=True)
             w = int.from_bytes(data[5:7], byteorder='big')
             h = int.from_bytes(data[7:9], byteorder='big')
             bpp = int.from_bytes(data[9:10], byteorder='big')
