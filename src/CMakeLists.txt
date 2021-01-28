@@ -28,7 +28,8 @@ add_library(emu
         emu_os_1.5.c
         emu_os_1.6.c
         emu_os_bip32.c
-        emu_seproxyhal.c)
+        emu_seproxyhal.c
+        svc.c)
 
 add_dependencies(emu openssl)
 
