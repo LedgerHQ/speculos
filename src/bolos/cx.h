@@ -1,5 +1,4 @@
-#ifndef _CX_H
-#define _CX_H
+#pragma once
 
 #include "cx_hash.h"
 
@@ -43,5 +42,3 @@ int cx_hmac_sha256(const unsigned char *key , unsigned int key_len,
 int cx_hmac_sha512(const unsigned char *key , unsigned int key_len,
                    const unsigned char *in, unsigned int len,
                    unsigned char *out, unsigned int out_len);
-
-#endif

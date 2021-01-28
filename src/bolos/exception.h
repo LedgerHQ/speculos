@@ -1,5 +1,4 @@
-#ifndef _EXCEPTION_H
-#define _EXCEPTION_H
+#pragma once
 
 #include <stdio.h>
 #include <unistd.h>
@@ -35,5 +34,3 @@ typedef struct try_context_s try_context_t;
 
 unsigned long sys_try_context_set(try_context_t *context);
 unsigned long sys_try_context_get(void);
-
-#endif

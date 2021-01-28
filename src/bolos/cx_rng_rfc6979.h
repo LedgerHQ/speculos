@@ -1,5 +1,4 @@
-#ifndef _CX_RNG_RFC6979_H
-#define _CX_RNG_RFC6979_H
+#pragma once
 
 #include "cx_hmac.h"
 #include <stddef.h>
@@ -27,5 +26,3 @@ void cx_rng_rfc6979_init(
 
 void cx_rng_rfc6979_next(cx_rnd_rfc6979_ctx_t *rfc_ctx, uint8_t *out,
                          size_t out_len);
-
-#endif

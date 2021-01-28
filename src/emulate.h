@@ -1,5 +1,4 @@
-#ifndef _EMULATE_H
-#define _EMULATE_H
+#pragma once
 
 /* for ucontext_t */
 #include <signal.h>
@@ -288,4 +287,3 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     retid = SYSCALL_ ## _name ## _ID_OUT;                               \
     break;                                                              \
   }
-#endif

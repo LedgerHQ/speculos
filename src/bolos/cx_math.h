@@ -1,5 +1,4 @@
-#ifndef _CX_MATH_H
-#define _CX_MATH_H
+#pragma once
 
 int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int len);
 int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8_t *m, unsigned int len);
@@ -22,5 +21,3 @@ int sys_cx_math_subm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8
 #define cx_math_mod        sys_cx_math_modm
 #define cx_math_mult       sys_cx_math_mult
 #define cx_math_multm      sys_cx_math_multm
-
-#endif

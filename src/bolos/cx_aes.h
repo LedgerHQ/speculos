@@ -1,5 +1,4 @@
-#ifndef _CX_AES_H
-#define _CX_AES_H
+#pragma once
 
 #include <stdint.h>
 
@@ -29,5 +28,3 @@ int sys_cx_aes_iv(const cx_aes_key_t *key, int mode,
                const unsigned char  *IV, unsigned int iv_len,
                const unsigned char *in, unsigned int len,
                unsigned char *out, unsigned int out_len);
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef _EMU_OS_BIP32_H
-#define _EMU_OS_BIP32_H
+#pragma once
 
 #include <stdint.h>
 
@@ -17,5 +16,3 @@ typedef struct {
 
 void expand_seed_bip32(const cx_curve_domain_t *domain, uint8_t *seed, unsigned int seed_length, extended_private_key *key);
 int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size);
-
-#endif // _EMU_OS_BIP32_H

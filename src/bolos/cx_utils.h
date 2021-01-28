@@ -1,5 +1,4 @@
-#ifndef CX_UTILS_H
-#define CX_UTILS_H
+#pragma once
 
 #include <stdint.h>
 #include <unistd.h>
@@ -97,5 +96,3 @@ void be2le(uint8_t *v, size_t len);
 void le2be(uint8_t *v, size_t len);
 
 int sys_cx_math_next_prime(uint8_t *buf, unsigned int len);
-
-#endif
