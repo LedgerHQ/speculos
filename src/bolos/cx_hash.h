@@ -1,5 +1,4 @@
-#ifndef _CX_HASH_H
-#define _CX_HASH_H
+#pragma once
 
 #include <stdint.h>
 #include <string.h>
@@ -255,5 +254,3 @@ int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
 #define sys_cx_sha3_init      cx_sha3_init
 #define sys_cx_sha3_xof_init  cx_sha3_xof_init
 #define sys_cx_hash_sha512    cx_hash_sha512
-
-#endif

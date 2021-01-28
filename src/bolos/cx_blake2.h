@@ -12,8 +12,7 @@
    More information about the BLAKE2 hash function can be found at
    https://blake2.net.
 */
-#ifndef CX_BLAKE2_H
-#define CX_BLAKE2_H
+#pragma once
 
 #include "cx_hash.h"
 
@@ -196,6 +195,4 @@ extern "C" {
 
 #if defined(__cplusplus)
 }
-#endif
-
 #endif
