@@ -2,8 +2,9 @@
 #include <stdarg.h>
 #include <stddef.h>
 
-#include "cx_crc.h"
 #include <cmocka.h>
+
+#include "bolos/cx_crc.h"
 
 void test_crc16(void **state __attribute__((unused))) {
   assert_int_equal(sys_cx_crc16_update(0xffff, "123456789", 9), 0x29b1);

@@ -14,7 +14,7 @@
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
-#include "exception.h"
+#include "bolos/exception.h"
 #include "emulate.h"
 
 #define CX_CURVE_RANGE(i,dom) ( ((i)>(CX_CURVE_##dom##_START)) && ((i)<(CX_CURVE_##dom##_END)) )

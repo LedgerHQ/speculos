@@ -10,7 +10,7 @@
 #include "cx_math.h"
 #include "cx_utils.h"
 #include "emulate.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 #define BIP32_HARDEN_MASK      0x80000000
 #define BIP32_SECP_SEED_LENGTH 12

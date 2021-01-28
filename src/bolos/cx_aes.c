@@ -7,7 +7,7 @@
 
 #include "cx.h"
 #include "cx_aes.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 static void aes_encrypt_block(const cx_aes_key_t *key, const uint8_t *inblock,
                               uint8_t *outblock) {

@@ -4,7 +4,7 @@
 
 #include "cx_hash.h"
 #include "cx_utils.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 union cx_u {
   cx_sha512_t      sha512;

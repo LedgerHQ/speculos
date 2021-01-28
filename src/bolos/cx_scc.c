@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
 #include "cx.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 /* ======================================================================== */
 /* ===  MISC  === MISC === MISC === MISC ===  MISC  === MISC ===  MISC  === */

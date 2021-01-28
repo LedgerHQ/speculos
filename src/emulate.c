@@ -1,15 +1,15 @@
 #include <err.h>
 #include <stdio.h>
 
-#include "cx.h"
-#include "cx_aes.h"
-#include "cx_ec.h"
-#include "cx_hash.h"
-#include "cx_hmac.h"
-#include "cx_math.h"
-#include "cx_utils.h"
+#include "bolos/cx.h"
+#include "bolos/cx_aes.h"
+#include "bolos/cx_ec.h"
+#include "bolos/cx_hash.h"
+#include "bolos/cx_hmac.h"
+#include "bolos/cx_math.h"
+#include "bolos/cx_utils.h"
+#include "bolos/emu_endorsement.h"
 #include "emulate.h"
-#include "emu_endorsement.h"
 
 // This header needs to point to the oldest available SDK
 #include "bolos_syscalls_1.5.h"

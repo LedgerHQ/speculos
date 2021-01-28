@@ -7,9 +7,9 @@
 
 #include <cmocka.h>
 
+#include "bolos/cx_ec.h"
+#include "bolos/emu_os_bip32.h"
 #include "utils.h"
-#include "cx_ec.h"
-#include "emu_os_bip32.h"
 #include "emulate.h"
 
 #define MAX_CHAIN_LEN  5

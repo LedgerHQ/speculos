@@ -6,10 +6,10 @@
 #include <stdarg.h>
 #include <cmocka.h>
 
-#include "cx.h"
-#include "cx_ec.h"
-#include "cx_hash.h"
-#include "cx_rng_rfc6979.h"
+#include "bolos/cx.h"
+#include "bolos/cx_ec.h"
+#include "bolos/cx_hash.h"
+#include "bolos/cx_rng_rfc6979.h"
 #include "emulate.h"
 #include "utils.h"
 

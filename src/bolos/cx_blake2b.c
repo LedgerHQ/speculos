@@ -5,7 +5,7 @@
 #include "cx.h"
 #include "cx_blake2.h"
 #include "cx_utils.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 union cx_u {
   struct {

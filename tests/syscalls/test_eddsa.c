@@ -5,9 +5,10 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
+#include "bolos/cx_ec.h"
+#include "bolos/cx_hash.h"
+
 #include "utils.h"
-#include "cx_ec.h"
-#include "cx_hash.h"
 
 #define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
 #define cx_ecfp_generate_pair sys_cx_ecfp_generate_pair

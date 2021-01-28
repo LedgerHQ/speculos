@@ -8,8 +8,8 @@
 
 #include "utils.h"
 
-#include "cx.h"
-#include "cx_hmac.h"
+#include "bolos/cx.h"
+#include "bolos/cx_hmac.h"
 #include "emulate.h"
 
 void  cx_scc_struct_check_hashmac(const cx_hmac_t *UNUSED(hmac)) {}

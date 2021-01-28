@@ -6,10 +6,10 @@
 
 #include <cmocka.h>
 
+#include "bolos/cx_ec.h"
+#include "bolos/cx.h"
+#include "bolos/emu_endorsement.h"
 #include "utils.h"
-#include "cx_ec.h"
-#include "cx.h"
-#include "emu_endorsement.h"
 #include "emulate.h"
 
 #define cx_ecfp_init_public_key sys_cx_ecfp_init_public_key

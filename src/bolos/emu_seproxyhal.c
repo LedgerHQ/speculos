@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "emulate.h"
-#include "exception.h"
+#include "bolos/exception.h"
 
 #define SEPROXYHAL_TAG_STATUS_MASK  0x60
 
