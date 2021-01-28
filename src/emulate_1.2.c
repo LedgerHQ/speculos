@@ -19,6 +19,7 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters, unsigned long 
 {
   int retid;
 
+  /* clang-format off */
   switch(syscall) {
   SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
            int,                  x,
@@ -117,6 +118,7 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters, unsigned long 
            unsigned int,         len,
            uint8_t *,            out,
            unsigned int,         out_len);
+  /* clang-format on */
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

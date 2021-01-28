@@ -11,6 +11,7 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
   int retid;
 
   switch(syscall) {
+  /* clang-format off */
   SYSCALL1(os_lib_call, "(%p)", unsigned long *, call_parameters);
 
   case SYSCALL_os_lib_end_ID_IN: {
@@ -63,6 +64,7 @@ int emulate_1_5(unsigned long syscall, unsigned long *parameters, unsigned long 
            unsigned int,         out_len);
 
   SYSCALL0(reset);
+  /* clang-format on */
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

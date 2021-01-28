@@ -6,9 +6,7 @@
 #include "cx_utils.h"
 #include "bolos/exception.h"
 
-/* ----------------------------------------------------------------------- */
-/*                                                                         */
-/* ----------------------------------------------------------------------- */
+/* clang-format off */
 // Message Selection L: left, R: right
 static const unsigned char zL[] = {
   /*zL[16..31]*/   0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 
@@ -42,7 +40,7 @@ static const unsigned char sR[] = {
   /*sR[48..63]*/  15,  5,  8, 11, 14, 14,  6, 14,  6,  9, 12,  9, 12,  5, 15,  8, 
   /*sR[64..79]*/   8,  5, 12,  9, 12,  5, 14,  6,  8, 13,  6,  5, 15, 13, 11, 11, 
 };
-
+/* clang-format on */
 
 static const uint32_t hzero[] = {
   0x67452301UL, 0xEFCDAB89UL, 0x98BADCFEUL, 0x10325476UL, 0xC3D2E1F0UL

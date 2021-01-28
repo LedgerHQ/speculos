@@ -110,7 +110,7 @@ int cx_blake2b(cx_hash_t  *hash, int mode,
     return sz;
 }
 
-
+/* clang-format off */
 
 /*
    BLAKE2 reference source code package - reference C implementations
@@ -592,3 +592,5 @@ fail:
 #endif
 
 #endif //BLAKE2_UNUSED
+
+/* clang-format on */

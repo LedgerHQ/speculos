@@ -43,6 +43,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
   int retid;
 
   switch(syscall) {
+  /* clang-format off */
   SYSCALL0(check_api_level);
 
   SYSCALL6(cx_aes, "(%p, 0x%x, %p, %u, %p, %u)",
@@ -160,15 +161,15 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
             unsigned int *,                info);
 
   SYSCALL9(cx_eddsa_verify, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u)",
-    const cx_ecfp_public_key_t *, pu_key,
-    int,                          mode,
-    cx_md_t,                      hashID,
-    const unsigned char *,        hash,
-    unsigned int,                 hash_len,
-    const unsigned char *,        ctx,
-    unsigned int,                 ctx_len,
-    const unsigned char *,        sig,
-    unsigned int,                 sig_len);
+           const cx_ecfp_public_key_t *, pu_key,
+           int,                          mode,
+           cx_md_t,                      hashID,
+           const unsigned char *,        hash,
+           unsigned int,                 hash_len,
+           const unsigned char *,        ctx,
+           unsigned int,                 ctx_len,
+           const unsigned char *,        sig,
+           unsigned int,                 sig_len);
 
   SYSCALL3(cx_edward_compress_point, "(0x%x, %p, %u)",
            cx_curve_t, curve,
@@ -370,8 +371,9 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
   SYSCALL1(os_endorsement_get_code_hash, "(%p)", uint8_t *, buffer);
 
   SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
-    unsigned char, index,
-    unsigned char *, buffer);
+           unsigned char,   index,
+           unsigned char *, buffer);
+  /* clang-format off */
 
   default:
 

@@ -15,6 +15,8 @@
  *
  * The field functions are shared by Ed25519 and X25519 where possible. */
 
+/* clang-format off */
+
 #include <string.h>
 #include "cx_curve25519.h"
 

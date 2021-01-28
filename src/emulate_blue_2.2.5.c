@@ -10,6 +10,7 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
   int retid;
 
   switch(syscall) {
+  /* clang-format off */
   SYSCALL3(cx_crc16_update, "(%u, %p, %u)",
            unsigned short, crc, const void *, b, size_t, len);
 
@@ -58,7 +59,7 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigne
            unsigned int,         len,
            uint8_t *,            out,
            unsigned int,         out_len);
-
+  /* clang-format on */
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

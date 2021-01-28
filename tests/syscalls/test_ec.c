@@ -36,6 +36,7 @@ typedef struct {
   const char *signature;
 } eddsa_test_vector;
 
+/* clang-format off */
 static const eddsa_test_vector rfc8032_test_vectors[] = {
   {"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
    "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", "",
@@ -82,6 +83,7 @@ static const eddsa_test_vector rfc8032_test_vectors[] = {
    "a9ac94fa54ca49f",
    "dc2a4459e7369633a52b1bf277839a00201009a3efbf3ecb69bea2186c26b58909351fc9ac90b3ecfdfbc7c66431e0303dca179c138ac17ad"
    "9bef1177331a704"}};
+/* clang-format on */
 
 void test_scalar_mult_ed25519(void **state __attribute__((unused))) {
   uint8_t Pxy[65];

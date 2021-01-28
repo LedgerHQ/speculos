@@ -37,6 +37,7 @@ static const char *default_seed = \
   "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc1" \
   "9a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4";
 
+/* clang-format off */
 static const bip32_test_vector test_vectors[] = {
   // Test vector 1 for secp256k1
   {
@@ -120,6 +121,7 @@ static const bip32_test_vector test_vectors[] = {
     .chain = {}
   },
 };
+/* clang-format on */
 
 struct bolos_vector {
   int mode;
@@ -130,6 +132,7 @@ struct bolos_vector {
   const char *key;
 };
 
+/* clang-format off */
 static const struct bolos_vector bolos_vectors[] = {
   {
     .mode = 2,
@@ -508,8 +511,10 @@ static const struct bolos_vector bolos_vectors[] = {
     .key = "4b3b4286aa8a4d330dbea15d0894a5194b87058ac8f58512307581b101e3be1c0000000000000000000000000000000000000000000000000000000000000000"
   }
 };
+/* clang-format on */
 
 /* https://github.com/satoshilabs/slips/blob/master/slip-0010.md#test-vector-1-for-ed25519 */
+/* clang-format off */
 static const struct bolos_vector slip10_vectors[] = {
   {
     .mode = 1,
@@ -560,6 +565,7 @@ static const struct bolos_vector slip10_vectors[] = {
     .key = "8f94d394a8e8fd6b1bc2f3f49f5c47e385281d5c17e65324b0f62483e37e87930000000000000000000000000000000000000000000000000000000000000000"
   }
 };
+/* clang-format on */
 
 static void test_bip32_vector(const bip32_test_vector *v)
 {

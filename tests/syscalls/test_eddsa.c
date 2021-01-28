@@ -23,6 +23,7 @@ typedef struct {
   const char *signature;
 } eddsa_test_vector;
 
+/* clang-format off */
 const eddsa_test_vector rfc8032_test_vectors[] = {
     {"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
      "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", "",
@@ -187,6 +188,7 @@ const eddsa_test_vector rfc8032_ed448_test_vectors[] = {
      "cb49f6396afc8a70abe6d8aef0db478d4c6b2970076c6a0484fe76d76b3a97625d79f1ce2"
      "40e7c576750d295528286f719b413de9ada3e8eb78ed573603ce30d8bb761785dc30dbc32"
      "0869e1a00"}};
+/* clang-format on */
 
 enum wycheproof_result { kValid, kInvalid, kAcceptable };
 
