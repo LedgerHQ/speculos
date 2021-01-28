@@ -1,7 +1,7 @@
 #include <err.h>
 #include <string.h>
 
-#include "emu_bagl.h"
+#include "bagl.h"
 #include "emulate.h"
 
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS 0x65

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "emu_os_bip32.h"
+#include "os_bip32.h"
 
 #include "cx.h"
 #include "cx_ec.h"

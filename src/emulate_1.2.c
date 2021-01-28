@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "bolos/cx_aes.h"
-#include "bolos/emu_bagl.h"
+#include "bolos/bagl.h"
 #include "emulate.h"
 #include "bolos_syscalls_1.2.h"
 

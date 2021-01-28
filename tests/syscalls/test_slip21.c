@@ -6,7 +6,7 @@
 
 #include <cmocka.h>
 
-#include "bolos/emu_os_bip32.h"
+#include "bolos/os_bip32.h"
 #include "bolos/cx_ec.h"
 #include "emulate.h"
 

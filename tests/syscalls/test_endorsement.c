@@ -8,7 +8,7 @@
 
 #include "bolos/cx_ec.h"
 #include "bolos/cx.h"
-#include "bolos/emu_endorsement.h"
+#include "bolos/endorsement.h"
 #include "utils.h"
 #include "emulate.h"
 
