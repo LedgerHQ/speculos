@@ -13,17 +13,17 @@ add_library(emu
         bolos/cx_sha3.c
         bolos/cx_sha512.c
         bolos/cx_utils.c
-        bolos/emu_bagl.c
-        bolos/emu_endorsement.c
-        bolos/emu_seproxyhal.c
-        bolos/emu_os.c
-        bolos/emu_os_1.5.c
-        bolos/emu_os_1.6.c
-        bolos/emu_os_bip32.c
-        bolos/emu_cx.c
-        bolos/emu_cx_hash.c
-        bolos/emu_cx_math.c
-        bolos/emu_default.c
+        bolos/bagl.c
+        bolos/endorsement.c
+        bolos/seproxyhal.c
+        bolos/os.c
+        bolos/os_1.5.c
+        bolos/os_1.6.c
+        bolos/os_bip32.c
+        bolos/cx.c
+        bolos/cx_hash.c
+        bolos/cx_math.c
+        bolos/default.c
         emulate.c
         emulate_1.2.c
         emulate_1.5.c

@@ -8,7 +8,7 @@
 #include "bolos/cx_hmac.h"
 #include "bolos/cx_math.h"
 #include "bolos/cx_utils.h"
-#include "bolos/emu_endorsement.h"
+#include "bolos/endorsement.h"
 #include "emulate.h"
 
 // This header needs to point to the oldest available SDK
