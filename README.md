@@ -2,6 +2,9 @@
 
 ![screenshot btc nano s](doc/screenshot-btc-nanos.png)
 
+[![codecov](https://codecov.io/gh/LedgerHQ/speculos/branch/master/graph/badge.svg)](https://codecov.io/gh/LedgerHQ/speculos)
+[![lgtm](https://img.shields.io/lgtm/alerts/g/LedgerHQ/speculos.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/LedgerHQ/speculos/alerts/)
+
 The goal of this project is to emulate Ledger Nano S, Nano X and Blue apps on
 standard desktop computers, without any hardware device. More information can
 be found here:
