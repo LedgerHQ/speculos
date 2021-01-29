@@ -23,8 +23,9 @@ static ssize_t readall(int fd, void *buf, size_t count)
       warnx("read from seph fd failed: fd closed");
       return -1;
     } else if (n < 0) {
-      if (errno == EINTR)
+      if (errno == EINTR) {
         continue;
+      }
       warn("read from seph fd failed");
       return -1;
     }
@@ -39,8 +40,9 @@ static ssize_t writeall(int fd, const void *buf, size_t count)
   const char *p;
   ssize_t i;
 
-  if (count == 0)
+  if (count == 0) {
     return 0;
+  }
 
   p = buf;
   do {
@@ -49,8 +51,9 @@ static ssize_t writeall(int fd, const void *buf, size_t count)
       warnx("write to seph fd failed: fd closed");
       return -1;
     } else if (i == -1) {
-      if (errno == EINTR)
+      if (errno == EINTR) {
         continue;
+      }
       warn("write to seph fd failed");
       return -1;
     }

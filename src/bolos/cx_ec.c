@@ -555,8 +555,9 @@ static int asn1_read_len(const uint8_t **p, const uint8_t *end, size_t *len)
   unsigned int b1;
   *len = 0;
 
-  if (*p >= end)
+  if (*p >= end) {
     return 0;
+  }
 
   b1 = *((*p)++);
   if (b1 == 0xff) {
@@ -610,11 +611,13 @@ static int asn1_read_len(const uint8_t **p, const uint8_t *end, size_t *len)
 static int asn1_read_tag(const uint8_t **p, const uint8_t *end, size_t *len,
                          int tag)
 {
-  if ((end - *p) < 1)
+  if ((end - *p) < 1) {
     return 0;
+  }
 
-  if (**p != tag)
+  if (**p != tag) {
     return 0;
+  }
 
   (*p)++;
   return asn1_read_len(p, end, len);
@@ -626,8 +629,9 @@ static int asn1_parse_integer(const uint8_t **p, const uint8_t *end,
   size_t len;
   int ret = 0;
 
-  if (!asn1_read_tag(p, end, &len, 0x02)) /* INTEGER */
+  if (!asn1_read_tag(p, end, &len, 0x02)) { /* INTEGER */
     goto end;
+  }
 
   if (((*p)[0] & 0x80u) == 0x80u) {
     /* Truncated, missing leading 0 (negative number) */
@@ -664,18 +668,22 @@ int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
 
   const uint8_t *p = input;
 
-  if (!asn1_read_tag(&p, input_end, &len, 0x30)) /* SEQUENCE */
+  if (!asn1_read_tag(&p, input_end, &len, 0x30)) { /* SEQUENCE */
     goto end;
+  }
 
-  if (p + len != input_end)
+  if (p + len != input_end) {
     goto end;
+  }
 
   if (!asn1_parse_integer(&p, input_end, r, r_len) ||
-      !asn1_parse_integer(&p, input_end, s, s_len))
+      !asn1_parse_integer(&p, input_end, s, s_len)) {
     goto end;
+  }
 
-  if (p != input_end) /* Check if bytes have been appended to the sequence */
+  if (p != input_end) { /* Check if bytes have been appended to the sequence */
     goto end;
+  }
 
   if (*r_len > max_size || *s_len > max_size) {
     return 0;
@@ -765,10 +773,12 @@ int cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
 
   // check sig_len
   offset = 3 * 2 + r_len + s_len;
-  if (*r & 0x80)
+  if (*r & 0x80) {
     offset++;
-  if (*s & 0x80)
+  }
+  if (*s & 0x80) {
     offset++;
+  }
   if (sig_len < offset) {
     return 0;
   }
@@ -991,8 +1001,9 @@ static int ecdh_simple_compute_key_hack(unsigned char *pout, size_t *poutlen,
   int ret = 0;
   unsigned char *buf = NULL;
 
-  if ((ctx = BN_CTX_new()) == NULL)
+  if ((ctx = BN_CTX_new()) == NULL) {
     goto err;
+  }
   BN_CTX_start(ctx);
   x = BN_CTX_get(ctx);
   if (x == NULL) {

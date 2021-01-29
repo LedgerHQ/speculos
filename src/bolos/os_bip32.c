@@ -196,8 +196,9 @@ int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size)
     }
   }
 
-  if (i != src_size)
+  if (i != src_size) {
     return -1;
+  }
 
   return src_size / 2;
 }
@@ -413,8 +414,9 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve,
 
       if (cx_math_cmp(tmp, domain->n, 32) < 0) {
         cx_math_addm(tmp, tmp, key->private_key, domain->n, 32);
-        if (cx_math_is_zero(tmp, 32) == 0)
+        if (cx_math_is_zero(tmp, 32) == 0) {
           break;
+        }
       }
 
       tmp[0] = 1;

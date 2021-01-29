@@ -77,8 +77,9 @@ static struct app_s *search_app_by_name(char *name)
   unsigned int i;
 
   for (i = 0; i < napp; i++) {
-    if (strcmp(apps[i].name, name) == 0)
+    if (strcmp(apps[i].name, name) == 0) {
       return &apps[i];
+    }
   }
 
   return NULL;
@@ -167,12 +168,14 @@ int replace_current_code(struct app_s *app)
 
 void unload_running_app(bool unload_data)
 {
-  if (munmap(memory.code, memory.code_size) != 0)
+  if (munmap(memory.code, memory.code_size) != 0) {
     warn("munmap code");
+  }
 
   if (unload_data) {
-    if (munmap(memory.data, memory.data_size) != 0)
+    if (munmap(memory.data, memory.data_size) != 0) {
       warn("munmap data");
+    }
   }
 
   reset_memory(unload_data);
@@ -262,8 +265,9 @@ static void *load_app(char *name)
     }
   }
 
-  if (patch_svc(code, size) != 0)
+  if (patch_svc(code, size) != 0) {
     goto error;
+  }
 
   memory.code = code;
   memory.code_size = size;
@@ -278,11 +282,13 @@ static void *load_app(char *name)
   return code;
 
 error:
-  if (code != MAP_FAILED && munmap(code, size) != 0)
+  if (code != MAP_FAILED && munmap(code, size) != 0) {
     warn("munmap");
+  }
 
-  if (data != MAP_FAILED && munmap(data_addr, data_size) != 0)
+  if (data != MAP_FAILED && munmap(data_addr, data_size) != 0) {
     warn("munmap");
+  }
 
   return NULL;
 }
@@ -295,8 +301,9 @@ static int run_app(char *name, unsigned long *parameters)
   void *p;
 
   p = load_app(name);
-  if (p == NULL)
+  if (p == NULL) {
     return -1;
+  }
 
   app = get_current_app();
 
@@ -329,8 +336,9 @@ int run_lib(char *name, unsigned long *parameters)
   void *p;
 
   p = load_app(name);
-  if (p == NULL)
+  if (p == NULL) {
     return -1;
+  }
 
   /* no thumb mode set when returning from signal handler */
   f = (unsigned long)p & 0xfffffffe;
@@ -376,11 +384,13 @@ static int load_apps(int argc, char *argv[])
 
   for (i = 0; i < argc; i++) {
     libname = parse_app_infos(argv[i], &filename, &elf);
-    if (libname == NULL)
+    if (libname == NULL) {
       return -1;
+    }
 
-    if (open_app(libname, filename, &elf) != 0)
+    if (open_app(libname, filename, &elf) != 0) {
       return -1;
+    }
   }
 
   return 0;
@@ -436,8 +446,9 @@ int main(int argc, char *argv[])
       break;
     case 'r':
       if (sscanf(optarg, "%p:%x", &extra_rampage_addr, &extra_rampage_size) !=
-          2)
+          2) {
         errx(1, "invalid extram ram page/size\n");
+      }
       break;
     case 'm':
       if (strcmp(optarg, "nanos") == 0) {
@@ -485,11 +496,13 @@ int main(int argc, char *argv[])
   make_openssl_random_deterministic();
   reset_memory(true);
 
-  if (load_apps(argc - optind, &argv[optind]) != 0)
+  if (load_apps(argc - optind, &argv[optind]) != 0) {
     return 1;
+  }
 
-  if (setup_signals() != 0)
+  if (setup_signals() != 0) {
     return 1;
+  }
 
   run_app(MAIN_APP_NAME, NULL);
 

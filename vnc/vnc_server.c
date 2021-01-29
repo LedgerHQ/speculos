@@ -66,8 +66,9 @@ static ssize_t readall(int fd, void *buf, size_t count)
     if (n == 0) {
       errx(1, "readall: connection closed");
     } else if (n == -1) {
-      if (errno == EINTR)
+      if (errno == EINTR) {
         continue;
+      }
       err(1, "readall");
     }
     i -= n;
@@ -87,15 +88,19 @@ static void reset_event(void)
 
 static void update_event(int x, int y)
 {
-  if (x < x_min)
+  if (x < x_min) {
     x_min = x;
-  if (y < y_min)
+  }
+  if (y < y_min) {
     y_min = y;
+  }
 
-  if (x > x_max)
+  if (x > x_max) {
     x_max = x;
-  if (y > y_max)
+  }
+  if (y > y_max) {
     y_max = y;
+  }
 }
 
 /* A mouse event was received by the VNC server, forward it to speculos. */
@@ -340,8 +345,9 @@ int main(int argc, char **argv)
     /* wait for event on stdin or on the libvncserver sockets */
     nfds = select(screen->maxFd + 1, &fds, NULL, NULL, &timeout);
     if (nfds == -1) {
-      if (errno != EINTR)
+      if (errno != EINTR) {
         continue;
+      }
     }
 
     if (FD_ISSET(STDIN_FILENO, &fds)) {

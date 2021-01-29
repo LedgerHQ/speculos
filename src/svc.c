@@ -55,8 +55,9 @@ static bool is_syscall_instruction(unsigned long addr)
   unsigned int i;
 
   for (i = 0; i < n_svc_call; i++) {
-    if (svc_addr[i] == addr)
+    if (svc_addr[i] == addr) {
       return true;
+    }
   }
 
   return false;
@@ -244,8 +245,9 @@ int patch_svc(void *p, size_t size)
 
   while (addr < end - 2) {
     next = memmem(addr, end - addr, "\x01\xdf", 2);
-    if (next == NULL)
+    if (next == NULL) {
       break;
+    }
 
     /* instructions are aligned on 2 bytes */
     if ((unsigned long)next & 1) {
@@ -254,8 +256,9 @@ int patch_svc(void *p, size_t size)
     }
 
     svc_addr = realloc(svc_addr, (n_svc_call + 1) * sizeof(unsigned long));
-    if (svc_addr == NULL)
+    if (svc_addr == NULL) {
       err(1, "realloc");
+    }
     svc_addr[n_svc_call] = (unsigned long)next;
 
     /* undefined instruction */
