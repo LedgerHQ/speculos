@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
-#include "cx.h"
 #include "bolos/exception.h"
+#include "cx.h"
 
 /* ======================================================================== */
 /* ===  MISC  === MISC === MISC === MISC ===  MISC  === MISC ===  MISC  === */
@@ -10,9 +10,10 @@
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-void cx_scc_assert_param(bool cond) {
+void cx_scc_assert_param(bool cond)
+{
   if (!cond) {
-     THROW(INVALID_PARAMETER);
+    THROW(INVALID_PARAMETER);
   }
 }
 
@@ -23,7 +24,8 @@ void cx_scc_assert_param(bool cond) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-void  cx_scc_struct_check_hash(const cx_hash_t  *hash) {
+void cx_scc_struct_check_hash(const cx_hash_t *hash)
+{
   unsigned int os;
 #if 0
   unsigned int bs;
@@ -35,11 +37,11 @@ void  cx_scc_struct_check_hash(const cx_hash_t  *hash) {
   case CX_SHA224:
 #endif
   case CX_SHA256:
-    cx_scc_assert_param(((cx_sha256_t*)hash)->blen < 64);
+    cx_scc_assert_param(((cx_sha256_t *)hash)->blen < 64);
     return;
 
   case CX_RIPEMD160:
-    cx_scc_assert_param(((cx_ripemd160_t*)hash)->blen < 64);
+    cx_scc_assert_param(((cx_ripemd160_t *)hash)->blen < 64);
     return;
 
 #if 0
@@ -77,9 +79,9 @@ void  cx_scc_struct_check_hash(const cx_hash_t  *hash) {
 #endif
 
   case CX_BLAKE2B: {
-    os = ((cx_blake2b_t*)hash)->output_size;
-    cx_scc_assert_param((os >= 8/8) && (os <= 512/8));
-    struct blake2b_state__ *ctx = &((cx_blake2b_t*)hash)->ctx;
+    os = ((cx_blake2b_t *)hash)->output_size;
+    cx_scc_assert_param((os >= 8 / 8) && (os <= 512 / 8));
+    struct blake2b_state__ *ctx = &((cx_blake2b_t *)hash)->ctx;
     cx_scc_assert_param((ctx->buflen <= BLAKE2B_BLOCKBYTES) &&
                         (ctx->outlen <= BLAKE2B_BLOCKBYTES));
   }
@@ -94,7 +96,8 @@ void  cx_scc_struct_check_hash(const cx_hash_t  *hash) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-void  cx_scc_struct_check_hashmac(const cx_hmac_t  *hmac) {
+void cx_scc_struct_check_hashmac(const cx_hmac_t *hmac)
+{
   cx_md_t hash_algorithm = hmac->hash_ctx.header.algo;
 
   if (hash_algorithm != CX_SHA256
@@ -103,11 +106,10 @@ void  cx_scc_struct_check_hashmac(const cx_hmac_t  *hmac) {
       && hash_algorithm != CX_SHA384
       && hash_algorithm != CX_SHA512
 #endif
-      &&hash_algorithm != CX_RIPEMD160
-  ) {
+      && hash_algorithm != CX_RIPEMD160) {
     THROW(INVALID_PARAMETER);
   }
-   cx_scc_struct_check_hash((cx_hash_t *)&hmac->hash_ctx);
+  cx_scc_struct_check_hash((cx_hash_t *)&hmac->hash_ctx);
 }
 
 #if 0
@@ -209,7 +211,8 @@ int cx_scc_derive_key_size(cx_curve_t curve) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_scc_struct_size_hash(const cx_hash_t *hash) {
+int cx_scc_struct_size_hash(const cx_hash_t *hash)
+{
   switch (hash->algo) {
 
 #if 0
@@ -233,22 +236,23 @@ int cx_scc_struct_size_hash(const cx_hash_t *hash) {
 
   case CX_GROESTL:
     return sizeof(cx_groestl_t);
-  #endif
+#endif
 
   case CX_BLAKE2B:
     return sizeof(cx_blake2b_t);
 
   default:
     break;
-   }
+  }
 
-   THROW(INVALID_PARAMETER);
+  THROW(INVALID_PARAMETER);
 }
 
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_scc_struct_size_hmac(const cx_hmac_t *hmac) {
+int cx_scc_struct_size_hmac(const cx_hmac_t *hmac)
+{
   switch (hmac->hash_ctx.header.algo) {
   case CX_SHA256:
 #if 0

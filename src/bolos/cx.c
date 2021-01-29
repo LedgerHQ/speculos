@@ -18,8 +18,7 @@ static unsigned int get_rng_seed_from_env(const char *name)
   p = getenv(name);
   if (p != NULL) {
     return atoi(p);
-  }
-  else {
+  } else {
     return time(NULL);
   }
 }
@@ -67,7 +66,7 @@ static int deterministic_random_bytes(unsigned char *buf, int num)
 }
 
 static const RAND_METHOD deterministic_random_methods = {
-    .bytes = deterministic_random_bytes,
+  .bytes = deterministic_random_bytes,
 };
 
 void make_openssl_random_deterministic(void)

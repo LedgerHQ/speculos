@@ -1,10 +1,10 @@
-#include <stdio.h>
 #include <malloc.h>
-#include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
+#include <setjmp.h>
 
 #include "nist_cavp.h"
 #include "utils.h"
@@ -13,12 +13,13 @@
 #include "bolos/cx_ec.h"
 #include "emulate.h"
 
-#define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
-#define cx_ecdh sys_cx_ecdh
+#define cx_ecfp_init_private_key sys_cx_ecfp_init_private_key
+#define cx_ecdh                  sys_cx_ecdh
 
 enum wycheproof_result { kValid, kInvalid, kAcceptable };
 
-static bool GetWycheproofCurve(const char *curve, cx_curve_t *out) {
+static bool GetWycheproofCurve(const char *curve, cx_curve_t *out)
+{
   if (strcmp(curve, "secp256k1") == 0) {
     *out = CX_CURVE_SECP256K1;
   } else if (strcmp(curve, "secp256r1") == 0) {
@@ -44,8 +45,8 @@ static bool GetWycheproofCurve(const char *curve, cx_curve_t *out) {
   return true;
 }
 
-static bool GetWycheproofResult(const char *result,
-                                enum wycheproof_result *out) {
+static bool GetWycheproofResult(const char *result, enum wycheproof_result *out)
+{
   if (strcmp(result, "valid") == 0) {
     *out = kValid;
   } else if (strcmp(result, "invalid") == 0) {
@@ -58,11 +59,12 @@ static bool GetWycheproofResult(const char *result,
   return true;
 }
 
-#define BUF_SIZE 1024
+#define BUF_SIZE        1024
 #define MAX_LINE_LENGTH 1024
 
-static void test_wycheproof_vectors(const char *filename) {
-  cx_ecfp_private_key_t priv = {0};
+static void test_wycheproof_vectors(const char *filename)
+{
+  cx_ecfp_private_key_t priv = { 0 };
   char *line = malloc(MAX_LINE_LENGTH);
   assert_non_null(line);
 
@@ -108,19 +110,26 @@ static void test_wycheproof_vectors(const char *filename) {
 
     assert_int_equal(hexstr2bin(pos1 + 1, public_key, public_key_len),
                      public_key_len);
-    assert_int_equal(hexstr2bin(pos2 + 1, private_key, private_key_len), private_key_len);
+    assert_int_equal(hexstr2bin(pos2 + 1, private_key, private_key_len),
+                     private_key_len);
     assert_int_equal(hexstr2bin(pos3 + 1, shared, shared_len), shared_len);
 
     assert_true(GetWycheproofCurve(line, &curve));
     assert_true(GetWycheproofResult(pos4 + 1, &res));
 
-    assert_int_equal(cx_ecfp_init_private_key(curve, private_key, private_key_len, &priv), private_key_len);
+    assert_int_equal(
+        cx_ecfp_init_private_key(curve, private_key, private_key_len, &priv),
+        private_key_len);
 
     if (res == kValid) {
-      assert_int_equal(cx_ecdh(&priv, CX_ECDH_X, public_key, public_key_len, computed_share, shared_len), shared_len);
+      assert_int_equal(cx_ecdh(&priv, CX_ECDH_X, public_key, public_key_len,
+                               computed_share, shared_len),
+                       shared_len);
       assert_memory_equal(computed_share, shared, shared_len);
     } else if (res == kInvalid) {
-      assert_int_equal(cx_ecdh(&priv, CX_ECDH_X, public_key, public_key_len, computed_share, shared_len), 0);
+      assert_int_equal(cx_ecdh(&priv, CX_ECDH_X, public_key, public_key_len,
+                               computed_share, shared_len),
+                       0);
     }
 
     free(computed_share);
@@ -132,15 +141,17 @@ static void test_wycheproof_vectors(const char *filename) {
   free(line);
 }
 
-void test_ecdh_overflow(void **state) {
+void test_ecdh_overflow(void **state)
+{
   cx_ecfp_640_private_key_t private_key;
   (void)state;
   uint8_t raw_private_key[66] = {
-      0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-      0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-      0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-      0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-      0x11, 0x11
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+    0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11
   };
 
   /* clang-format off */
@@ -162,43 +173,68 @@ void test_ecdh_overflow(void **state) {
   size_t key_len = sizeof(raw_private_key);
   uint8_t secret[1 + 66 + 66];
 
-  assert_int_equal(cx_ecfp_init_private_key(CX_CURVE_SECP521R1,
-                                            raw_private_key,
-                                            key_len,
-                                            (cx_ecfp_private_key_t *) &private_key), key_len);
-  cx_ecdh((cx_ecfp_private_key_t *) &private_key, CX_ECDH_POINT, p, sizeof(p), secret, sizeof(secret));
+  assert_int_equal(
+      cx_ecfp_init_private_key(CX_CURVE_SECP521R1, raw_private_key, key_len,
+                               (cx_ecfp_private_key_t *)&private_key),
+      key_len);
+  cx_ecdh((cx_ecfp_private_key_t *)&private_key, CX_ECDH_POINT, p, sizeof(p),
+          secret, sizeof(secret));
 }
 
-void test_wycheproof_ecdh_secp256k1(void **state) {
+void test_wycheproof_ecdh_secp256k1(void **state)
+{
   (void)state;
   test_wycheproof_vectors(TESTS_PATH "wycheproof/ecdh_secp256k1.data");
 }
 
-static void test_ecdh_secp256k1(void **state) {
+static void test_ecdh_secp256k1(void **state)
+{
   (void)state;
   uint8_t raw_public_key[65];
   uint8_t raw_private_key[32];
   uint8_t secret[32];
   cx_ecfp_private_key_t private_key;
 
-  assert_int_equal(hexstr2bin("04d8096af8a11e0b80037e1ee68246b5dcbb0aeb1cf1244fd767db80f3fa27da2b396812ea1686e7472e9692eaf3e958e50e9500d3b4c77243db1f2acd67ba9cc4", raw_public_key, 65), 65);
-  assert_int_equal(hexstr2bin("f4b7ff7cccc98813a69fae3df222bfe3f4e28f764bf91b4a10d8096ce446b254", raw_private_key, 32), 32);
-  assert_int_equal(cx_ecfp_init_private_key(CX_CURVE_SECP256K1, raw_private_key, 32, &private_key), 32);
-  assert_int_equal(cx_ecdh(&private_key, CX_ECDH_X, raw_public_key, sizeof(raw_public_key), secret, sizeof(secret)), 32);
+  assert_int_equal(
+      hexstr2bin(
+          "04d8096af8a11e0b80037e1ee68246b5dcbb0aeb1cf1244fd767db80f3fa27da2b39"
+          "6812ea1686e7472e9692eaf3e958e50e9500d3b4c77243db1f2acd67ba9cc4",
+          raw_public_key, 65),
+      65);
+  assert_int_equal(
+      hexstr2bin(
+          "f4b7ff7cccc98813a69fae3df222bfe3f4e28f764bf91b4a10d8096ce446b254",
+          raw_private_key, 32),
+      32);
+  assert_int_equal(cx_ecfp_init_private_key(CX_CURVE_SECP256K1, raw_private_key,
+                                            32, &private_key),
+                   32);
+  assert_int_equal(cx_ecdh(&private_key, CX_ECDH_X, raw_public_key,
+                           sizeof(raw_public_key), secret, sizeof(secret)),
+                   32);
 
-  hexstr2bin("0432BDD978EB62B1F369A56D0949AB8551A7AD527D9602E891CE457586C2A8569E981E67FAE053B03FC33E1A291F0A3BEB58FCEB2E85BB1205DACEE1232DFD316B", raw_public_key, 64 + 1);
-  hexstr2bin("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd03640c3", raw_private_key, 32);
-  assert_int_equal(cx_ecfp_init_private_key(CX_CURVE_SECP256K1, raw_private_key, 32, &private_key), 32);
-  assert_int_equal(cx_ecdh(&private_key, CX_ECDH_X, raw_public_key, 64 + 1, secret, sizeof(secret)), 32);
+  hexstr2bin(
+      "0432BDD978EB62B1F369A56D0949AB8551A7AD527D9602E891CE457586C2A8569E981E67"
+      "FAE053B03FC33E1A291F0A3BEB58FCEB2E85BB1205DACEE1232DFD316B",
+      raw_public_key, 64 + 1);
+  hexstr2bin("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd03640c3",
+             raw_private_key, 32);
+  assert_int_equal(cx_ecfp_init_private_key(CX_CURVE_SECP256K1, raw_private_key,
+                                            32, &private_key),
+                   32);
+  assert_int_equal(cx_ecdh(&private_key, CX_ECDH_X, raw_public_key, 64 + 1,
+                           secret, sizeof(secret)),
+                   32);
 }
 
-int main(void) {
-  //cx_init();
+int main(void)
+{
+  // cx_init();
 
   const struct CMUnitTest tests[] = {
-      // cmocka_unit_test(test_ecdh_overflow),
-      cmocka_unit_test(test_ecdh_secp256k1),
-      cmocka_unit_test(test_wycheproof_ecdh_secp256k1)
+    // cmocka_unit_test(test_ecdh_overflow),
+    cmocka_unit_test(test_ecdh_secp256k1),
+    cmocka_unit_test(test_wycheproof_ecdh_secp256k1)
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

@@ -14,36 +14,37 @@
 // This header needs to point to the oldest available SDK
 #include "bolos_syscalls_1.5.h"
 
-int emulate(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose, sdk_version_t sdk_version)
+int emulate(unsigned long syscall, unsigned long *parameters,
+            unsigned long *ret, bool verbose, sdk_version_t sdk_version)
 {
   int retid;
   switch (sdk_version) {
-    case SDK_NANO_X_1_2:
-      retid = emulate_1_2(syscall, parameters, ret, verbose);
-      break;
-    case SDK_NANO_S_1_5:
-      retid = emulate_1_5(syscall, parameters, ret, verbose);
-      break;
-    case SDK_NANO_S_1_6:
-      retid = emulate_1_6(syscall, parameters, ret, verbose);
-      break;
-    case SDK_BLUE_2_2_5:
-      retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
-      break;
-    default:
-      errx(1, "Unsupported SDK version %i", sdk_version);
-      break;
+  case SDK_NANO_X_1_2:
+    retid = emulate_1_2(syscall, parameters, ret, verbose);
+    break;
+  case SDK_NANO_S_1_5:
+    retid = emulate_1_5(syscall, parameters, ret, verbose);
+    break;
+  case SDK_NANO_S_1_6:
+    retid = emulate_1_6(syscall, parameters, ret, verbose);
+    break;
+  case SDK_BLUE_2_2_5:
+    retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
+    break;
+  default:
+    errx(1, "Unsupported SDK version %i", sdk_version);
+    break;
   }
   return retid;
 }
 
-
-int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
+int emulate_common(unsigned long syscall, unsigned long *parameters,
+                   unsigned long *ret, bool verbose)
 {
   int retid;
 
-  switch(syscall) {
-  /* clang-format off */
+  switch (syscall) {
+    /* clang-format off */
   SYSCALL0(check_api_level);
 
   SYSCALL6(cx_aes, "(%p, 0x%x, %p, %u, %p, %u)",

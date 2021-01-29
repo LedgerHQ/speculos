@@ -1,12 +1,12 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "bolos/exception.h"
 #include "cx.h"
 #include "cx_hash.h"
 #include "cx_hmac.h"
 #include "cx_math.h"
 #include "cx_rng_rfc6979.h"
-#include "bolos/exception.h"
 
 /* ----------------------------------------------------------------------- */
 /* Convert an arbitrary bits string to BE int of r_len bits                */
@@ -19,7 +19,8 @@
 /* ----------------------------------------------------------------------- */
 static size_t cx_rfc6979_bits2int(cx_rnd_rfc6979_ctx_t *rfc_ctx,
                                   const uint8_t *b, size_t b_len,
-                                  uint8_t *b_out) {
+                                  uint8_t *b_out)
+{
   if (b_len > rfc_ctx->q_len) {
     uint8_t right_shift = (b_len - rfc_ctx->q_len) & 7;
     // For example copy a SHA384 digest in a 256-bit buffer: 384 > 256
@@ -60,7 +61,8 @@ static size_t cx_rfc6979_bits2int(cx_rnd_rfc6979_ctx_t *rfc_ctx,
 /* ----------------------------------------------------------------------- */
 static void cx_rfc6979_bits2octets(cx_rnd_rfc6979_ctx_t *rfc_ctx,
                                    const uint8_t *b, size_t b_len,
-                                   uint8_t *b_out) {
+                                   uint8_t *b_out)
+{
   cx_rfc6979_bits2int(rfc_ctx, b, b_len, b_out);
   if (memcmp(b_out, rfc_ctx->q, rfc_ctx->r_len >> 3) > 0) {
     sys_cx_math_sub(b_out, b_out, rfc_ctx->q, rfc_ctx->r_len >> 3);
@@ -76,7 +78,8 @@ static void cx_rfc6979_bits2octets(cx_rnd_rfc6979_ctx_t *rfc_ctx,
 /* ----------------------------------------------------------------------- */
 static void cx_rfc6979_int2octets(cx_rnd_rfc6979_ctx_t *rfc_ctx,
                                   const uint8_t *i, size_t i_len,
-                                  uint8_t *b_out) {
+                                  uint8_t *b_out)
+{
   int32_t delta;
   delta = (i_len >> 3) - (rfc_ctx->r_len >> 3);
   if (delta < 0) {
@@ -98,7 +101,8 @@ static void cx_rfc6979_int2octets(cx_rnd_rfc6979_ctx_t *rfc_ctx,
 /*    b    : b                                                             */
 /*    b_len: bytes length b                                                */
 /* ----------------------------------------------------------------------- */
-static uint32_t cx_rfc6979_bitslength(const uint8_t *a, size_t a_len) {
+static uint32_t cx_rfc6979_bitslength(const uint8_t *a, size_t a_len)
+{
   uint8_t b;
 
   while (*a == 0) {
@@ -125,7 +129,8 @@ static void cx_rfc6979_hmacVK(
     cx_rnd_rfc6979_ctx_t *rfc_ctx, int8_t opt, const uint8_t *x, size_t x_len,
     const uint8_t *h1, size_t h1_len,
     /*const uint8_t *additional_input, size_t additional_input_len,*/
-    uint8_t *out) {
+    uint8_t *out)
+{
   size_t len;
 
   len = rfc_ctx->md_len;
@@ -159,7 +164,8 @@ void cx_rng_rfc6979_init(
     cx_rnd_rfc6979_ctx_t *rfc_ctx, cx_md_t hash_id, const uint8_t *x,
     size_t x_len, const uint8_t *h1, size_t h1_len, const uint8_t *q,
     size_t q_len
-    /*const uint8_t *additional_input, size_t additional_input_len*/) {
+    /*const uint8_t *additional_input, size_t additional_input_len*/)
+{
 
   const cx_hash_info_t *hash_info = cx_hash_get_info(hash_id);
   if (hash_info == NULL || hash_info->output_size == 0) {
@@ -182,13 +188,15 @@ void cx_rng_rfc6979_init(
   // Step C: K = 0x00...00  @digest_len
   memset(rfc_ctx->k, 0x00, rfc_ctx->md_len);
 
-  // Step D:  K = HMAC (K, V || 0x00 || int2octets(x) || bits2octetc(h1) [ || additional_input])
+  // Step D:  K = HMAC (K, V || 0x00 || int2octets(x) || bits2octetc(h1) [ ||
+  // additional_input])
   cx_rfc6979_hmacVK(rfc_ctx, 0, x, x_len, h1, h1_len, rfc_ctx->k);
 
   // Step E: V = HMAC (K, V).
   cx_rfc6979_hmacVK(rfc_ctx, -1, NULL, 0, NULL, 0, rfc_ctx->v);
 
-  // Step F:  K = HMAC (K, V || 0x01 || int2octets(x) || bits2octetc(h1) [ || additional_input])
+  // Step F:  K = HMAC (K, V || 0x01 || int2octets(x) || bits2octetc(h1) [ ||
+  // additional_input])
   cx_rfc6979_hmacVK(rfc_ctx, 0x01, x, x_len, h1, h1_len, rfc_ctx->k);
 
   // Step G:  V = HMAC (K, V).
@@ -199,7 +207,8 @@ void cx_rng_rfc6979_init(
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
 void cx_rng_rfc6979_next(cx_rnd_rfc6979_ctx_t *rfc_ctx, uint8_t *out,
-                         size_t out_len) {
+                         size_t out_len)
+{
   size_t t_Blen;
   size_t r_Blen;
   bool found;

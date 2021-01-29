@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "emulate.h"
 #include "bolos/exception.h"
+#include "emulate.h"
 
-#define SEPROXYHAL_TAG_STATUS_MASK  0x60
+#define SEPROXYHAL_TAG_STATUS_MASK 0x60
 
 static bool status_sent = false;
 static uint8_t last_tag;
@@ -66,7 +66,8 @@ unsigned long sys_io_seproxyhal_spi_is_status_sent(void)
   return (unsigned long)status_sent;
 }
 
-unsigned long sys_io_seph_is_status_sent(void) __attribute__ ((weak, alias ("sys_io_seproxyhal_spi_is_status_sent")));
+unsigned long sys_io_seph_is_status_sent(void)
+    __attribute__((weak, alias("sys_io_seproxyhal_spi_is_status_sent")));
 
 unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
 {
@@ -96,19 +97,23 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
   ret = writeall(SEPH_FILENO, buffer, length);
 
   next_length -= length;
-  if (next_length == 0 && (last_tag & SEPROXYHAL_TAG_STATUS_MASK) == SEPROXYHAL_TAG_STATUS_MASK) {
+  if (next_length == 0 &&
+      (last_tag & SEPROXYHAL_TAG_STATUS_MASK) == SEPROXYHAL_TAG_STATUS_MASK) {
     status_sent = true;
   }
 
   return ret;
 }
 
-unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length) __attribute__ ((weak, alias ("sys_io_seproxyhal_spi_send")));
+unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length)
+    __attribute__((weak, alias("sys_io_seproxyhal_spi_send")));
 
 /* XXX: use flags */
-unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength, unsigned int UNUSED(flags))
+unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength,
+                                         unsigned int UNUSED(flags))
 {
-  //fprintf(stderr, "[*] sys_io_seproxyhal_spi_recv(%p, %d, %d);\n", buffer, maxlength, flags);
+  // fprintf(stderr, "[*] sys_io_seproxyhal_spi_recv(%p, %d, %d);\n", buffer,
+  // maxlength, flags);
 
   if (maxlength < 3) {
     errx(1, "invalid size given to sys_io_seproxyhal_spi_recv");
@@ -132,4 +137,6 @@ unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength, un
   return 3 + packet_size;
 }
 
-unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength, unsigned int flags) __attribute__ ((weak, alias ("sys_io_seproxyhal_spi_recv")));
+unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength,
+                               unsigned int flags)
+    __attribute__((weak, alias("sys_io_seproxyhal_spi_recv")));

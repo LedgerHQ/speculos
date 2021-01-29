@@ -1,16 +1,16 @@
 #include <err.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 #include "os_bip32.h"
 
+#include "bolos/exception.h"
 #include "cx.h"
 #include "cx_ec.h"
 #include "cx_math.h"
 #include "cx_utils.h"
 #include "emulate.h"
-#include "bolos/exception.h"
 
 #define BIP32_HARDEN_MASK      0x80000000
 #define BIP32_SECP_SEED_LENGTH 12
@@ -20,24 +20,27 @@
 #define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
 #define cx_ecdsa_init_private_key cx_ecfp_init_private_key
 
-/* glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact monster seven myth punch hobby comfort wild raise skin */
-static uint8_t default_seed[MAX_SEED_SIZE] = "\xb1\x19\x97\xfa\xff\x42\x0a\x33\x1b\xb4\xa4\xff\xdc\x8b\xdc\x8b\xa7\xc0\x17\x32\xa9\x9a\x30\xd8\x3d\xbb\xeb\xd4\x69\x66\x6c\x84\xb4\x7d\x09\xd3\xf5\xf4\x72\xb3\xb9\x38\x4a\xc6\x34\xbe\xba\x2a\x44\x0b\xa3\x6e\xc7\x66\x11\x44\x13\x2f\x35\xe2\x06\x87\x35\x64";
+/* glory promote mansion idle axis finger extra february uncover one trip
+ * resource lawn turtle enact monster seven myth punch hobby comfort wild raise
+ * skin */
+static uint8_t default_seed[MAX_SEED_SIZE] =
+    "\xb1\x19\x97\xfa\xff\x42\x0a\x33\x1b\xb4\xa4\xff\xdc\x8b\xdc\x8b\xa7\xc0"
+    "\x17\x32\xa9\x9a\x30\xd8\x3d\xbb\xeb\xd4\x69\x66\x6c\x84\xb4\x7d\x09\xd3"
+    "\xf5\xf4\x72\xb3\xb9\x38\x4a\xc6\x34\xbe\xba\x2a\x44\x0b\xa3\x6e\xc7\x66"
+    "\x11\x44\x13\x2f\x35\xe2\x06\x87\x35\x64";
 
-static uint8_t const BIP32_SECP_SEED[] = {
-	'B', 'i', 't', 'c', 'o', 'i', 'n', ' ', 's', 'e', 'e', 'd'
-};
+static uint8_t const BIP32_SECP_SEED[] = { 'B', 'i', 't', 'c', 'o', 'i',
+                                           'n', ' ', 's', 'e', 'e', 'd' };
 
-static uint8_t const BIP32_NIST_SEED[] = {
-	'N', 'i', 's', 't', '2', '5', '6', 'p', '1', ' ', 's', 'e', 'e', 'd'
-};
+static uint8_t const BIP32_NIST_SEED[] = { 'N', 'i', 's', 't', '2', '5', '6',
+                                           'p', '1', ' ', 's', 'e', 'e', 'd' };
 
-static uint8_t const BIP32_ED_SEED[] = {
-	'e', 'd', '2', '5', '5', '1', '9', ' ', 's', 'e', 'e', 'd'
-};
+static uint8_t const BIP32_ED_SEED[] = { 'e', 'd', '2', '5', '5', '1',
+                                         '9', ' ', 's', 'e', 'e', 'd' };
 
-static uint8_t const SLIP21_SEED[] = {
-  'S', 'y', 'm', 'm', 'e', 't', 'r', 'i', 'c', ' ', 'k', 'e', 'y', ' ', 's', 'e', 'e', 'd'
-};
+static uint8_t const SLIP21_SEED[] = { 'S', 'y', 'm', 'm', 'e', 't',
+                                       'r', 'i', 'c', ' ', 'k', 'e',
+                                       'y', ' ', 's', 'e', 'e', 'd' };
 
 static bool is_hardened_child(uint32_t child)
 {
@@ -80,15 +83,16 @@ static ssize_t get_seed_key_slip21(const uint8_t **sk)
   return sk_length;
 }
 
-void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed, unsigned int seed_length, extended_private_key *key)
+void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed,
+                         unsigned int seed_length, extended_private_key *key)
 {
   uint8_t hash[CX_SHA512_SIZE];
-  uint8_t buf[1+MAX_SEED_SIZE];
+  uint8_t buf[1 + MAX_SEED_SIZE];
 
   buf[0] = 0x01;
   memcpy(buf + 1, seed, seed_length);
-  cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length,
-                 key->chain_code, CX_SHA256_SIZE);
+  cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length, key->chain_code,
+                 CX_SHA256_SIZE);
 
   cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
 
@@ -96,8 +100,7 @@ void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed, uns
   memcpy(key->chain_code, hash + 32, 32);
 
   while (key->private_key[31] & 0x20) {
-    cx_hmac_sha512(sk, sk_length,
-                   key->private_key, CX_SHA512_SIZE,
+    cx_hmac_sha512(sk, sk_length, key->private_key, CX_SHA512_SIZE,
                    key->private_key, CX_SHA512_SIZE);
   }
 
@@ -105,7 +108,8 @@ void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed, uns
   key->private_key[31] = (key->private_key[31] & 0x7F) | 0x40;
 }
 
-void expand_seed_slip10(const uint8_t *sk, size_t sk_length, uint8_t *seed, unsigned int seed_length, extended_private_key *key)
+void expand_seed_slip10(const uint8_t *sk, size_t sk_length, uint8_t *seed,
+                        unsigned int seed_length, extended_private_key *key)
 {
   uint8_t hash[CX_SHA512_SIZE];
 
@@ -115,21 +119,22 @@ void expand_seed_slip10(const uint8_t *sk, size_t sk_length, uint8_t *seed, unsi
   memcpy(key->chain_code, hash + 32, 32);
 }
 
-void expand_seed_ed25519_bip32(const uint8_t *sk, size_t sk_length, uint8_t *seed, unsigned int seed_length, extended_private_key *key)
+void expand_seed_ed25519_bip32(const uint8_t *sk, size_t sk_length,
+                               uint8_t *seed, unsigned int seed_length,
+                               extended_private_key *key)
 {
-  uint8_t buf[1+MAX_SEED_SIZE];
+  uint8_t buf[1 + MAX_SEED_SIZE];
 
   buf[0] = 0x01;
   memcpy(buf + 1, seed, seed_length);
-  cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length,
-                 key->chain_code, CX_SHA256_SIZE);
+  cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length, key->chain_code,
+                 CX_SHA256_SIZE);
 
-  cx_hmac_sha512(sk, sk_length, seed, seed_length,
-                 key->private_key, CX_SHA512_SIZE);
+  cx_hmac_sha512(sk, sk_length, seed, seed_length, key->private_key,
+                 CX_SHA512_SIZE);
 
   while (key->private_key[31] & 0x20) {
-    cx_hmac_sha512(sk, sk_length,
-                   key->private_key, CX_SHA512_SIZE,
+    cx_hmac_sha512(sk, sk_length, key->private_key, CX_SHA512_SIZE,
                    key->private_key, CX_SHA512_SIZE);
   }
 
@@ -137,7 +142,9 @@ void expand_seed_ed25519_bip32(const uint8_t *sk, size_t sk_length, uint8_t *see
   key->private_key[31] = (key->private_key[31] & 0x7F) | 0x40;
 }
 
-static void expand_seed(cx_curve_t curve, const uint8_t *sk, size_t sk_length, uint8_t *seed, unsigned int seed_length, extended_private_key *key)
+static void expand_seed(cx_curve_t curve, const uint8_t *sk, size_t sk_length,
+                        uint8_t *seed, unsigned int seed_length,
+                        extended_private_key *key)
 {
   const cx_curve_domain_t *domain;
   uint8_t hash[CX_SHA512_SIZE];
@@ -154,9 +161,7 @@ static void expand_seed(cx_curve_t curve, const uint8_t *sk, size_t sk_length, u
          cx_math_cmp(key->private_key, domain->n, 32) >= 0) {
     memcpy(hash, key->private_key, 32);
     memcpy(hash + 32, key->chain_code, 32);
-    cx_hmac_sha512(sk, sk_length,
-                   hash, CX_SHA512_SIZE,
-                   hash, CX_SHA512_SIZE);
+    cx_hmac_sha512(sk, sk_length, hash, CX_SHA512_SIZE, hash, CX_SHA512_SIZE);
     memcpy(key->private_key, hash, 32);
     memcpy(key->chain_code, hash + 32, 32);
   }
@@ -171,33 +176,34 @@ int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size)
   acc = 0;
   for (i = 0; i < src_size && (i >> 1) < dst_size; i++) {
     c = src[i];
-		switch (c) {
-			case '0' ... '9':
-				acc = (acc << 4) + c - '0';
-				break;
-			case 'a' ... 'f':
-				acc = (acc << 4) + c - 'a' + 10;
-				break;
-			case 'A' ... 'F':
-				acc = (acc << 4) + c - 'A' + 10;
-				break;
-			default:
-        return -1;
-		}
+    switch (c) {
+    case '0' ... '9':
+      acc = (acc << 4) + c - '0';
+      break;
+    case 'a' ... 'f':
+      acc = (acc << 4) + c - 'a' + 10;
+      break;
+    case 'A' ... 'F':
+      acc = (acc << 4) + c - 'A' + 10;
+      break;
+    default:
+      return -1;
+    }
 
-		if (i % 2 != 0) {
+    if (i % 2 != 0) {
       dst[i >> 1] = acc;
       acc = 0;
     }
-	}
+  }
 
   if (i != src_size)
     return -1;
 
-	return src_size / 2;
+  return src_size / 2;
 }
 
-static size_t get_seed_from_env(const char *name, uint8_t *seed, size_t max_size)
+static size_t get_seed_from_env(const char *name, uint8_t *seed,
+                                size_t max_size)
 {
   ssize_t seed_size;
   char *p;
@@ -220,13 +226,15 @@ static size_t get_seed_from_env(const char *name, uint8_t *seed, size_t max_size
   return seed_size;
 }
 
-static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain)
+static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path,
+                             size_t length, uint8_t *private_key,
+                             uint8_t *chain)
 {
   const cx_curve_domain_t *domain;
   cx_ecfp_256_public_key_t pub;
   uint8_t *kP, *kLP, *kRP;
   unsigned int i, j, len;
-  uint8_t tmp[1+64+4], x;
+  uint8_t tmp[1 + 64 + 4], x;
   uint8_t *ZR, *Z, *ZL;
 
   Z = tmp + 1;
@@ -252,7 +260,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
 
     sys_cx_edward_compress_point(CX_CURVE_Ed25519, pub.W, pub.W_len);
 
-    //Step 1: compute kL/Kr child
+    // Step 1: compute kL/Kr child
     //  if less than 0x80000000 => setup 02|A|i in tmp
     if (!is_hardened_child(path[i])) {
       tmp[0] = 0x02;
@@ -265,10 +273,10 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
       len = 1 + 32 * 2;
     }
 
-    tmp[len+0] = (path[i] >> 0) & 0xff;
-    tmp[len+1] = (path[i] >> 8) & 0xff;
-    tmp[len+2] = (path[i] >> 16) & 0xff;
-    tmp[len+3] = (path[i] >> 24) & 0xff;
+    tmp[len + 0] = (path[i] >> 0) & 0xff;
+    tmp[len + 1] = (path[i] >> 8) & 0xff;
+    tmp[len + 2] = (path[i] >> 16) & 0xff;
+    tmp[len + 3] = (path[i] >> 24) & 0xff;
     len += 4;
 
     // compute Z = Hmac(...)
@@ -296,27 +304,27 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
       Z[j] = x;
     }
 
-    //Step2: compute chain code
+    // Step2: compute chain code
     // if less than 0x80000000 => set up 03|A|i in tmp
     if (!is_hardened_child(path[i])) {
       tmp[0] = 0x03;
-      memcpy(tmp+1, &pub.W[1], 32);
+      memcpy(tmp + 1, &pub.W[1], 32);
       len = 1 + 32;
     }
     // else if greater-eq than 0x80000000 -->  01|k|i in tmp
     else {
       tmp[0] = 0x01;
-      //kP already set
+      // kP already set
       len = 1 + 32 * 2;
     }
-    tmp[len+0] = (path[i] >> 0) & 0xff;
-    tmp[len+1] = (path[i] >> 8) & 0xff;
-    tmp[len+2] = (path[i] >> 16) & 0xff;
-    tmp[len+3] = (path[i] >> 24) & 0xff;
+    tmp[len + 0] = (path[i] >> 0) & 0xff;
+    tmp[len + 1] = (path[i] >> 8) & 0xff;
+    tmp[len + 2] = (path[i] >> 16) & 0xff;
+    tmp[len + 3] = (path[i] >> 24) & 0xff;
     len += 4;
     cx_hmac_sha512(key->chain_code, 32, tmp, len, tmp, CX_SHA512_SIZE);
     // store new c
-    memcpy(key->chain_code, tmp+32, 32);
+    memcpy(key->chain_code, tmp + 32, 32);
   }
 
   if (private_key != NULL) {
@@ -330,9 +338,10 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path, si
   return 0;
 }
 
-static int hdw_slip10(extended_private_key *key, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain)
+static int hdw_slip10(extended_private_key *key, const uint32_t *path,
+                      size_t length, uint8_t *private_key, uint8_t *chain)
 {
-  uint8_t tmp[1+64+4];
+  uint8_t tmp[1 + 64 + 4];
   unsigned int i;
 
   for (i = 0; i < length; i++) {
@@ -366,12 +375,14 @@ static int hdw_slip10(extended_private_key *key, const uint32_t *path, size_t le
   return 0;
 }
 
-static int hdw_bip32(extended_private_key *key, cx_curve_t curve, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain)
+static int hdw_bip32(extended_private_key *key, cx_curve_t curve,
+                     const uint32_t *path, size_t length, uint8_t *private_key,
+                     uint8_t *chain)
 {
   const cx_curve_domain_t *domain;
   cx_ecfp_256_public_key_t pub;
   cx_ecfp_private_key_t priv;
-  uint8_t tmp[1+64+4];
+  uint8_t tmp[1 + 64 + 4];
   unsigned int i;
 
   if (curve != CX_CURVE_256K1 && curve != CX_CURVE_SECP256R1) {
@@ -393,21 +404,21 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve, const uint32_t
     }
 
     while (true) {
-        tmp[33] = (path[i] >> 24) & 0xff;
-        tmp[34] = (path[i] >> 16) & 0xff;
-        tmp[35] = (path[i] >> 8) & 0xff;
-        tmp[36] = path[i] & 0xff;
+      tmp[33] = (path[i] >> 24) & 0xff;
+      tmp[34] = (path[i] >> 16) & 0xff;
+      tmp[35] = (path[i] >> 8) & 0xff;
+      tmp[36] = path[i] & 0xff;
 
-        cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
+      cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
 
-        if (cx_math_cmp(tmp, domain->n, 32) < 0) {
-          cx_math_addm(tmp, tmp, key->private_key, domain->n, 32);
-          if (cx_math_is_zero(tmp, 32) == 0)
-            break;
-        }
+      if (cx_math_cmp(tmp, domain->n, 32) < 0) {
+        cx_math_addm(tmp, tmp, key->private_key, domain->n, 32);
+        if (cx_math_is_zero(tmp, 32) == 0)
+          break;
+      }
 
-        tmp[0] = 1;
-        memcpy(tmp + 1, tmp + 32, 32);
+      tmp[0] = 1;
+      memcpy(tmp + 1, tmp + 32, 32);
     }
 
     memcpy(key->private_key, tmp, 32);
@@ -425,7 +436,9 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve, const uint32_t
   return 0;
 }
 
-static int hdw_slip21(const uint8_t *sk, size_t sk_length, const uint8_t *seed, size_t seed_size, const uint8_t *path, size_t path_len, uint8_t *private_key)
+static int hdw_slip21(const uint8_t *sk, size_t sk_length, const uint8_t *seed,
+                      size_t seed_size, const uint8_t *path, size_t path_len,
+                      uint8_t *private_key)
 {
   uint8_t node[CX_SHA512_SIZE];
 
@@ -447,20 +460,17 @@ static int hdw_slip21(const uint8_t *sk, size_t sk_length, const uint8_t *seed, 
   return 0;
 }
 
-unsigned long sys_os_perso_derive_node_bip32_seed_key(unsigned int mode,
-                                                      cx_curve_t curve,
-                                                      const unsigned int *path,
-                                                      unsigned int pathLength,
-                                                      unsigned char *privateKey,
-                                                      unsigned char *chain,
-                                                      unsigned char *seed_key,
-                                                      unsigned int seed_key_length)
-__attribute__ ((weak, alias ("sys_os_perso_derive_node_with_seed_key")));
+unsigned long sys_os_perso_derive_node_bip32_seed_key(
+    unsigned int mode, cx_curve_t curve, const unsigned int *path,
+    unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
+    unsigned char *seed_key, unsigned int seed_key_length)
+    __attribute__((weak, alias("sys_os_perso_derive_node_with_seed_key")));
 
 unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int mode, cx_curve_t curve, const unsigned int *path,
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
-    unsigned char *seed_key, unsigned int seed_key_length) {
+    unsigned char *seed_key, unsigned int seed_key_length)
+{
   ssize_t seed_size, sk_length;
   uint8_t seed[MAX_SEED_SIZE];
   extended_private_key key;
@@ -487,7 +497,8 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
   }
 
   if (mode == HDW_SLIP21) {
-    ret = hdw_slip21(sk, sk_length, seed, seed_size, (const uint8_t *)path, pathLength, privateKey);
+    ret = hdw_slip21(sk, sk_length, seed, seed_size, (const uint8_t *)path,
+                     pathLength, privateKey);
   } else if (mode == HDW_ED25519_SLIP10) {
     /* https://github.com/satoshilabs/slips/tree/master/slip-0010 */
     /* https://github.com/satoshilabs/slips/blob/master/slip-0010.md */
@@ -515,7 +526,12 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
   return 0;
 }
 
-unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve, const uint32_t *path, size_t length, uint8_t *private_key, uint8_t* chain)
+unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve,
+                                             const uint32_t *path,
+                                             size_t length,
+                                             uint8_t *private_key,
+                                             uint8_t *chain)
 {
-  return sys_os_perso_derive_node_with_seed_key(HDW_NORMAL, curve, path, length, private_key, chain, NULL, 0);
+  return sys_os_perso_derive_node_with_seed_key(HDW_NORMAL, curve, path, length,
+                                                private_key, chain, NULL, 0);
 }

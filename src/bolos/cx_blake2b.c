@@ -1,17 +1,17 @@
-#include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
 
+#include "bolos/exception.h"
 #include "cx.h"
 #include "cx_blake2.h"
 #include "cx_utils.h"
-#include "bolos/exception.h"
 
 union cx_u {
   struct {
-    cx_blake2b_t   blake2b;
-    uint64_t       m[16];
-    uint64_t       v[16];
+    cx_blake2b_t blake2b;
+    uint64_t m[16];
+    uint64_t v[16];
     uint8_t buffer[BLAKE2B_OUTBYTES];
     uint8_t block1[BLAKE2B_BLOCKBYTES];
   } blake;
@@ -22,13 +22,15 @@ static union cx_u G_cx;
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_blake2b_init(cx_blake2b_t  *hash, unsigned int size)  {
+int cx_blake2b_init(cx_blake2b_t *hash, unsigned int size)
+{
   return cx_blake2b_init2(hash, size, NULL, 0, NULL, 0);
 }
 
-int cx_blake2b_init2(cx_blake2b_t  *hash, unsigned int size,
-                     unsigned char *salt, unsigned int salt_len,
-                     unsigned char *perso, unsigned int perso_len) {
+int cx_blake2b_init2(cx_blake2b_t *hash, unsigned int size, unsigned char *salt,
+                     unsigned int salt_len, unsigned char *perso,
+                     unsigned int perso_len)
+{
   if (salt == NULL && salt_len != 0) {
     goto err;
   }
@@ -47,7 +49,7 @@ int cx_blake2b_init2(cx_blake2b_t  *hash, unsigned int size,
   hash->output_size = size;
   hash->header.algo = CX_BLAKE2B;
 
-  if (blake2b_init(&hash->ctx, size, salt,salt_len, perso,perso_len)<0) {
+  if (blake2b_init(&hash->ctx, size, salt, salt_len, perso, perso_len) < 0) {
     goto err;
   }
   return CX_BLAKE2B;
@@ -56,7 +58,8 @@ err:
   THROW(INVALID_PARAMETER);
 }
 
-int cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len) {
+int cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len)
+{
   if (ctx == NULL) {
     return 0;
   }
@@ -66,48 +69,52 @@ int cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len) {
   return blake2b_update(&ctx->ctx, data, len) == 0;
 }
 
-int cx_blake2b_final(cx_blake2b_t *ctx, uint8_t *digest) {
+int cx_blake2b_final(cx_blake2b_t *ctx, uint8_t *digest)
+{
   return blake2b_final(&ctx->ctx, digest, ctx->output_size) == 0;
 }
 
-size_t cx_blake2b_get_output_size(const cx_blake2b_t *ctx) {
+size_t cx_blake2b_get_output_size(const cx_blake2b_t *ctx)
+{
   return ctx->output_size;
 }
 
-int cx_blake2b_validate_context(const cx_blake2b_t *ctx) {
+int cx_blake2b_validate_context(const cx_blake2b_t *ctx)
+{
   size_t output_size = ctx->output_size;
   if (output_size < 1 || output_size > 512 / 8) {
     return 0;
   }
 
   const struct blake2b_state__ *state = &ctx->ctx;
-  if (state->buflen > BLAKE2B_BLOCKBYTES || state->outlen > BLAKE2B_BLOCKBYTES) {
+  if (state->buflen > BLAKE2B_BLOCKBYTES ||
+      state->outlen > BLAKE2B_BLOCKBYTES) {
     return 0;
   }
   return 1;
-
 }
 
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_blake2b(cx_hash_t  *hash, int mode,
-               const unsigned char *in, unsigned int len, unsigned char *out, unsigned int out_len) {
+int cx_blake2b(cx_hash_t *hash, int mode, const unsigned char *in,
+               unsigned int len, unsigned char *out, unsigned int out_len)
+{
 
-    unsigned int sz = 0;
-    if (blake2b_update(&((cx_blake2b_t  *)hash)->ctx, in, len)<0) {
+  unsigned int sz = 0;
+  if (blake2b_update(&((cx_blake2b_t *)hash)->ctx, in, len) < 0) {
+    THROW(INVALID_PARAMETER);
+  }
+  if (mode & CX_LAST) {
+    sz = ((cx_blake2b_t *)hash)->output_size;
+    if (out && (out_len < sz)) {
       THROW(INVALID_PARAMETER);
     }
-    if (mode&CX_LAST) {
-      sz = ((cx_blake2b_t  *)hash)->output_size;
-       if (out && (out_len<sz)) {
-        THROW(INVALID_PARAMETER);
-      }
-      if (blake2b_final(&((cx_blake2b_t  *)hash)->ctx, out, out_len) <0) {
-       THROW(INVALID_PARAMETER);
-      }
+    if (blake2b_final(&((cx_blake2b_t *)hash)->ctx, out, out_len) < 0) {
+      THROW(INVALID_PARAMETER);
     }
-    return sz;
+  }
+  return sz;
 }
 
 /* clang-format off */

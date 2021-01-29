@@ -2,9 +2,9 @@
 
 #ifndef BOLOS_OS_UPGRADER
 
-#include "cx_utils.h"
-#include "cx.h"
 #include "bolos/exception.h"
+#include "cx.h"
+#include "cx_utils.h"
 #include <string.h>
 
 #ifdef OS_BIG_ENDIAN
@@ -56,13 +56,14 @@ void printstate(char* head, const uint64_t* state) {
 /* ----------------------------------------------------------------------- */
 
 // Assume state is a uint64_t array
-#define S64(x, y) state[x + 5 * y]
+#define S64(x, y)    state[x + 5 * y]
 #define ROTL64(x, n) cx_rotl64(x, n)
 
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-static void cx_sha3_theta(uint64_t state[]) {
+static void cx_sha3_theta(uint64_t state[])
+{
   uint64_t C[5];
   uint64_t D[5];
   int i, j;
@@ -88,15 +89,16 @@ static void cx_sha3_theta(uint64_t state[]) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-static const int C_cx_pi_table[] = {10, 7,  11, 17, 18, 3,  5,  16,
-                                    8,  21, 24, 4,  15, 23, 19, 13,
-                                    12, 2,  20, 14, 22, 9,  6,  1};
+static const int C_cx_pi_table[] = { 10, 7,  11, 17, 18, 3,  5,  16,
+                                     8,  21, 24, 4,  15, 23, 19, 13,
+                                     12, 2,  20, 14, 22, 9,  6,  1 };
 
-static const int C_cx_rho_table[] = {1,  3,  6,  10, 15, 21, 28, 36,
-                                     45, 55, 2,  14, 27, 41, 56, 8,
-                                     25, 43, 62, 18, 39, 61, 20, 44};
+static const int C_cx_rho_table[] = { 1,  3,  6,  10, 15, 21, 28, 36,
+                                      45, 55, 2,  14, 27, 41, 56, 8,
+                                      25, 43, 62, 18, 39, 61, 20, 44 };
 
-static void cx_sha3_rho_pi(uint64_t state[]) {
+static void cx_sha3_rho_pi(uint64_t state[])
+{
   int i, j;
   uint64_t A;
   uint64_t tmp;
@@ -118,7 +120,8 @@ static void cx_sha3_rho_pi(uint64_t state[]) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-static void cx_sha3_chi(uint64_t state[]) {
+static void cx_sha3_chi(uint64_t state[])
+{
   uint64_t C[5];
 
   PRINTF("\nEntering Chi\n");
@@ -144,20 +147,22 @@ static void cx_sha3_chi(uint64_t state[]) {
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
 static const uint64_t C_cx_iota_RC[24] = {
-    _64BITS(0x00000000, 0x00000001), _64BITS(0x00000000, 0x00008082),
-    _64BITS(0x80000000, 0x0000808A), _64BITS(0x80000000, 0x80008000),
-    _64BITS(0x00000000, 0x0000808B), _64BITS(0x00000000, 0x80000001),
-    _64BITS(0x80000000, 0x80008081), _64BITS(0x80000000, 0x00008009),
-    _64BITS(0x00000000, 0x0000008A), _64BITS(0x00000000, 0x00000088),
-    _64BITS(0x00000000, 0x80008009), _64BITS(0x00000000, 0x8000000A),
-    _64BITS(0x00000000, 0x8000808B), _64BITS(0x80000000, 0x0000008B),
-    _64BITS(0x80000000, 0x00008089), _64BITS(0x80000000, 0x00008003),
-    _64BITS(0x80000000, 0x00008002), _64BITS(0x80000000, 0x00000080),
-    _64BITS(0x00000000, 0x0000800A), _64BITS(0x80000000, 0x8000000A),
-    _64BITS(0x80000000, 0x80008081), _64BITS(0x80000000, 0x00008080),
-    _64BITS(0x00000000, 0x80000001), _64BITS(0x80000000, 0x80008008)};
+  _64BITS(0x00000000, 0x00000001), _64BITS(0x00000000, 0x00008082),
+  _64BITS(0x80000000, 0x0000808A), _64BITS(0x80000000, 0x80008000),
+  _64BITS(0x00000000, 0x0000808B), _64BITS(0x00000000, 0x80000001),
+  _64BITS(0x80000000, 0x80008081), _64BITS(0x80000000, 0x00008009),
+  _64BITS(0x00000000, 0x0000008A), _64BITS(0x00000000, 0x00000088),
+  _64BITS(0x00000000, 0x80008009), _64BITS(0x00000000, 0x8000000A),
+  _64BITS(0x00000000, 0x8000808B), _64BITS(0x80000000, 0x0000008B),
+  _64BITS(0x80000000, 0x00008089), _64BITS(0x80000000, 0x00008003),
+  _64BITS(0x80000000, 0x00008002), _64BITS(0x80000000, 0x00000080),
+  _64BITS(0x00000000, 0x0000800A), _64BITS(0x80000000, 0x8000000A),
+  _64BITS(0x80000000, 0x80008081), _64BITS(0x80000000, 0x00008080),
+  _64BITS(0x00000000, 0x80000001), _64BITS(0x80000000, 0x80008008)
+};
 
-static void cx_sha3_iota(uint64_t state[], int round) {
+static void cx_sha3_iota(uint64_t state[], int round)
+{
   PRINTF("\nEntering Iota\n");
   printstate("  Input", state);
 
@@ -170,7 +175,8 @@ static void cx_sha3_iota(uint64_t state[], int round) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-void check_hash_out_size(int size) {
+void check_hash_out_size(int size)
+{
   switch (size) {
   case 128:
   case 224:
@@ -187,8 +193,8 @@ void check_hash_out_size(int size) {
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_sha3_init(cx_sha3_t *hash,
-                 unsigned int size) {
+int cx_sha3_init(cx_sha3_t *hash, unsigned int size)
+{
   check_hash_out_size(size);
   memset(hash, 0, sizeof(cx_sha3_t));
   hash->header.algo = CX_SHA3;
@@ -200,15 +206,16 @@ int cx_sha3_init(cx_sha3_t *hash,
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_keccak_init(cx_sha3_t *hash,
-                   unsigned int size) {
+int cx_keccak_init(cx_sha3_t *hash, unsigned int size)
+{
   check_hash_out_size(size);
   cx_sha3_init(hash, size);
   hash->header.algo = CX_KECCAK;
   return CX_KECCAK;
 }
 
-int cx_shake128_init(cx_sha3_t *hash, unsigned int size) {
+int cx_shake128_init(cx_sha3_t *hash, unsigned int size)
+{
   memset(hash, 0, sizeof(cx_sha3_t));
   if (size % 8 != 0) {
     return 0;
@@ -219,7 +226,8 @@ int cx_shake128_init(cx_sha3_t *hash, unsigned int size) {
   return CX_SHAKE128;
 }
 
-int cx_shake256_init(cx_sha3_t *hash, unsigned int size) {
+int cx_shake256_init(cx_sha3_t *hash, unsigned int size)
+{
   memset(hash, 0, sizeof(cx_sha3_t));
   if (size % 8 != 0) {
     return 0;
@@ -230,8 +238,9 @@ int cx_shake256_init(cx_sha3_t *hash, unsigned int size) {
   return CX_SHAKE256;
 }
 
-int cx_sha3_xof_init(cx_sha3_t *hash,
-                     unsigned int size, unsigned int out_length) {
+int cx_sha3_xof_init(cx_sha3_t *hash, unsigned int size,
+                     unsigned int out_length)
+{
   if ((size != 128) && (size != 256)) {
     THROW(INVALID_PARAMETER);
   }
@@ -246,7 +255,8 @@ int cx_sha3_xof_init(cx_sha3_t *hash,
   return hash->header.algo;
 }
 
-void cx_sha3_block(cx_sha3_t *hash) {
+void cx_sha3_block(cx_sha3_t *hash)
+{
   uint64_t *block;
   uint64_t *acc;
   int r, i, n;
@@ -284,11 +294,12 @@ void cx_sha3_block(cx_sha3_t *hash) {
   }
 }
 
-int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len) {
-  unsigned int        r;
-  unsigned int        block_size;
-  unsigned char       *block;
-  unsigned int        blen;
+int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len)
+{
+  unsigned int r;
+  unsigned int block_size;
+  unsigned char *block;
+  unsigned int blen;
 
   if (ctx == NULL) {
     return 0;
@@ -298,7 +309,7 @@ int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len) {
   }
 
   block_size = ctx->block_size;
-  if (block_size>200) {
+  if (block_size > 200) {
     return 0;
   }
 
@@ -306,7 +317,7 @@ int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len) {
   blen = ctx->blen;
   ctx->blen = 0;
 
-  if (blen>=block_size) {
+  if (blen >= block_size) {
     return 0;
   }
 
@@ -317,26 +328,26 @@ int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len) {
       if (ctx->header.counter == CX_HASH_MAX_BLOCK_COUNT) {
         THROW(INVALID_PARAMETER);
       }
-      memcpy(block+blen, data, r);
+      memcpy(block + blen, data, r);
       cx_sha3_block(ctx);
 
       blen = 0;
       ctx->header.counter++;
-      data  += r;
+      data += r;
       len -= r;
-      r    = block_size;
-    }
-    while (len >= block_size);
+      r = block_size;
+    } while (len >= block_size);
   }
 
   // --- remind rest data---
-  memcpy(block+blen, data, len);
+  memcpy(block + blen, data, len);
   blen += len;
   ctx->blen = blen;
   return 1;
 }
 
-int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest) {
+int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest)
+{
   unsigned int block_size;
   unsigned char *block;
   unsigned int blen;
@@ -349,9 +360,9 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest) {
   block_size = hash->block_size;
   blen = hash->blen;
 
-  //one more block?
+  // one more block?
   if (hash->header.algo == CX_KECCAK || hash->header.algo == CX_SHA3) {
-    //last block!
+    // last block!
     memset(block + blen, 0, (200 - blen));
 
     if (hash->header.algo == CX_KECCAK) {
@@ -362,7 +373,7 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest) {
     block[block_size - 1] |= 0x80;
     cx_sha3_block(hash);
 
-    //provide result
+    // provide result
     len = (hash)->output_size;
     memcpy(digest, hash->acc, len);
   } else {
@@ -371,7 +382,7 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest) {
     block[blen] |= 0x1F;
     block[block_size - 1] |= 0x80;
     cx_sha3_block(hash);
-    //provide result
+    // provide result
     len = hash->output_size;
     blen = len;
 
@@ -388,14 +399,17 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest) {
   return 1;
 }
 
-size_t cx_sha3_get_output_size(const cx_sha3_t *ctx) {
+size_t cx_sha3_get_output_size(const cx_sha3_t *ctx)
+{
   return ctx->output_size;
 }
 
-int cx_sha3_validate_context(const cx_sha3_t *ctx) {
+int cx_sha3_validate_context(const cx_sha3_t *ctx)
+{
   size_t output_size = ctx->output_size;
   size_t block_size = ctx->block_size;
-  if ((output_size != 128 / 8) && (output_size != 224 / 8) && (output_size != 256 / 8) && (output_size != 384 / 8) &&
+  if ((output_size != 128 / 8) && (output_size != 224 / 8) &&
+      (output_size != 256 / 8) && (output_size != 384 / 8) &&
       (output_size != 512 / 8)) {
     return 0;
   }
@@ -410,10 +424,12 @@ int cx_sha3_validate_context(const cx_sha3_t *ctx) {
   return 1;
 }
 
-int cx_shake_validate_context(const cx_sha3_t *ctx) {
+int cx_shake_validate_context(const cx_sha3_t *ctx)
+{
   size_t block_size = ctx->block_size;
 
-  if ((block_size != (1600 - 2 * 256) >> 3) && (block_size != (1600 - 2 * 128) >> 3)) {
+  if ((block_size != (1600 - 2 * 256) >> 3) &&
+      (block_size != (1600 - 2 * 128) >> 3)) {
     return 0;
   }
   if (ctx->blen >= 200) {

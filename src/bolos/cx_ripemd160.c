@@ -1,10 +1,10 @@
-#include <sys/types.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
 
+#include "bolos/exception.h"
 #include "cx_hash.h"
 #include "cx_utils.h"
-#include "bolos/exception.h"
 
 /* clang-format off */
 // Message Selection L: left, R: right
@@ -42,22 +42,21 @@ static const unsigned char sR[] = {
 };
 /* clang-format on */
 
-static const uint32_t hzero[] = {
-  0x67452301UL, 0xEFCDAB89UL, 0x98BADCFEUL, 0x10325476UL, 0xC3D2E1F0UL
-};
+static const uint32_t hzero[] = { 0x67452301UL, 0xEFCDAB89UL, 0x98BADCFEUL,
+                                  0x10325476UL, 0xC3D2E1F0UL };
 
 // additive constante
-#define kL_0_15   0x00000000UL
-#define kL_16_31  0x5A827999UL
-#define kL_32_47  0x6ED9EBA1UL
-#define kL_48_63  0x8F1BBCDCUL
-#define kL_64_78  0xA953FD4EUL
+#define kL_0_15  0x00000000UL
+#define kL_16_31 0x5A827999UL
+#define kL_32_47 0x6ED9EBA1UL
+#define kL_48_63 0x8F1BBCDCUL
+#define kL_64_78 0xA953FD4EUL
 
-#define kR_0_15   0x50A28BE6UL
-#define kR_16_31  0x5C4DD124UL
-#define kR_32_47  0x6D703EF3UL
-#define kR_48_63  0x7A6D76E9UL
-#define kR_64_78  0x00000000UL
+#define kR_0_15  0x50A28BE6UL
+#define kR_16_31 0x5C4DD124UL
+#define kR_32_47 0x6D703EF3UL
+#define kR_48_63 0x7A6D76E9UL
+#define kR_64_78 0x00000000UL
 
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
@@ -65,32 +64,37 @@ static const uint32_t hzero[] = {
 #define x BCD[0]
 #define y BCD[1]
 #define z BCD[2]
-static unsigned long int f1(uint32_t *BCD) {
+static unsigned long int f1(uint32_t *BCD)
+{
   return ((x) ^ (y) ^ (z));
 }
-static unsigned long int f2(uint32_t *BCD) {
-  return  (((x)&(y)) | ((~x)&(z)));
+static unsigned long int f2(uint32_t *BCD)
+{
+  return (((x) & (y)) | ((~x) & (z)));
 }
-static unsigned long int f3(uint32_t *BCD) {
-  return  (((x) | (~(y))) ^ (z));
+static unsigned long int f3(uint32_t *BCD)
+{
+  return (((x) | (~(y))) ^ (z));
 }
-static unsigned long int f4(uint32_t *BCD) {
-  return (((x) & (z)) | ((y)&(~(z)))); 
+static unsigned long int f4(uint32_t *BCD)
+{
+  return (((x) & (z)) | ((y) & (~(z))));
 }
-static unsigned long int f5(uint32_t *BCD) {
-  return ((x) ^ ((y) |(~(z))));
+static unsigned long int f5(uint32_t *BCD)
+{
+  return ((x) ^ ((y) | (~(z))));
 }
 #undef x
 #undef y
 #undef z
 
-#define  rotL(x,n) cx_rotl(x,n)
-
+#define rotL(x, n) cx_rotl(x, n)
 
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_ripemd160_init(cx_ripemd160_t  *hash) {
+int cx_ripemd160_init(cx_ripemd160_t *hash)
+{
   memset(hash, 0, sizeof(cx_ripemd160_t));
   hash->header.algo = CX_RIPEMD160;
   memmove(hash->acc, hzero, sizeof(hzero));
@@ -101,9 +105,10 @@ int cx_ripemd160_init(cx_ripemd160_t  *hash) {
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
 
-static void cx_ripemd160_block(cx_ripemd160_t  *hash) {
-  
-  unsigned char  j;
+static void cx_ripemd160_block(cx_ripemd160_t *hash)
+{
+
+  unsigned char j;
   uint32_t Tl;
   uint32_t Tr;
 
@@ -111,7 +116,7 @@ static void cx_ripemd160_block(cx_ripemd160_t  *hash) {
   uint32_t ACCr[5];
   uint32_t *accumulator;
   uint32_t *X;
-  
+
 #define Al ACCl[0]
 #define Bl ACCl[1]
 #define Cl ACCl[2]
@@ -124,8 +129,7 @@ static void cx_ripemd160_block(cx_ripemd160_t  *hash) {
 #define Dr ACCr[3]
 #define Er ACCr[4]
 
-
-  //init
+  // init
   X = (uint32_t *)&hash->block[0];
   accumulator = (uint32_t *)&hash->acc[0];
   memmove(ACCl, accumulator, sizeof(ACCl));
@@ -135,62 +139,62 @@ static void cx_ripemd160_block(cx_ripemd160_t  *hash) {
   cx_swap_buffer32(X, 16);
 #endif
 
-  for (j = 0; j<80; j++) {
+  for (j = 0; j < 80; j++) {
     Tl = Al + X[zL[j]];
     Tr = Ar + X[zR[j]];
-    switch(j >> 4){
+    switch (j >> 4) {
     case 0:
-      Tl  +=  f1(&Bl) + kL_0_15;
-      Tr  +=  f5(&Br) + kR_0_15;
+      Tl += f1(&Bl) + kL_0_15;
+      Tr += f5(&Br) + kR_0_15;
       break;
     case 1:
-      Tl +=  f2(&Bl) + kL_16_31;
-      Tr +=  f4(&Br) + kR_16_31;
+      Tl += f2(&Bl) + kL_16_31;
+      Tr += f4(&Br) + kR_16_31;
       break;
     case 2:
-      Tl +=  f3(&Bl) + kL_32_47;
-      Tr +=  f3(&Br) + kR_32_47;
+      Tl += f3(&Bl) + kL_32_47;
+      Tr += f3(&Br) + kR_32_47;
       break;
     case 3:
-      Tl +=  f4(&Bl) + kL_48_63;
-      Tr +=  f2(&Br) + kR_48_63;
+      Tl += f4(&Bl) + kL_48_63;
+      Tr += f2(&Br) + kR_48_63;
       break;
     case 4:
-      Tl +=  f5(&Bl) + kL_64_78;
-      Tr +=  f1(&Br) + kR_64_78;
+      Tl += f5(&Bl) + kL_64_78;
+      Tr += f1(&Br) + kR_64_78;
       break;
     default:
       break;
-    }    
+    }
 
-    Tl  =  rotL(Tl,sL[j]); 
-    Tl += El;  
-    Al  = El; 
-    El  = Dl; 
-    Dl  = rotL(Cl, 10); 
-    Cl  = Bl; 
-    Bl  = Tl;
-   
-    Tr =  rotL(Tr,sR[j]) ;
-    Tr +=  Er;
-    Ar = Er; 
-    Er = Dr; 
-    Dr = rotL(Cr, 10); 
-    Cr = Br; 
-    Br = Tr;    
+    Tl = rotL(Tl, sL[j]);
+    Tl += El;
+    Al = El;
+    El = Dl;
+    Dl = rotL(Cl, 10);
+    Cl = Bl;
+    Bl = Tl;
+
+    Tr = rotL(Tr, sR[j]);
+    Tr += Er;
+    Ar = Er;
+    Er = Dr;
+    Dr = rotL(Cr, 10);
+    Cr = Br;
+    Br = Tr;
   }
 
-  //(update chaining values)    
-  Tl             =  accumulator[1] + Cl + Dr;
-  accumulator[1] =  accumulator[2] + Dl + Er;
-  accumulator[2] =  accumulator[3] + El + Ar;
-  accumulator[3] =  accumulator[4] + Al + Br;
-  accumulator[4] =  accumulator[0] + Bl + Cr;
-  accumulator[0] =  Tl;
-
+  //(update chaining values)
+  Tl = accumulator[1] + Cl + Dr;
+  accumulator[1] = accumulator[2] + Dl + Er;
+  accumulator[2] = accumulator[3] + El + Ar;
+  accumulator[3] = accumulator[4] + Al + Br;
+  accumulator[4] = accumulator[0] + Bl + Cr;
+  accumulator[0] = Tl;
 }
 
-int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len) {
+int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len)
+{
   if (ctx == NULL) {
     return 0;
   }
@@ -227,7 +231,6 @@ int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len) {
       len -= r;
       r = block_size;
     } while (len >= block_size);
-
   }
 
   // --- remind rest data---
@@ -237,10 +240,11 @@ int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len) {
   return 1;
 }
 
-int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest) {
-  unsigned char       *block;
-  unsigned int        blen;
-  unsigned long int   bitlen;
+int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest)
+{
+  unsigned char *block;
+  unsigned int blen;
+  unsigned long int bitlen;
 
   if (ctx == NULL || digest == NULL) {
     return 0;
@@ -248,33 +252,36 @@ int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest) {
   block = ctx->block;
   blen = ctx->blen;
 
-  //one more block?
+  // one more block?
   block[blen] = 0x80;
   blen++;
-  bitlen = (((unsigned long int)ctx->header.counter)*64UL+(unsigned long int)blen-1UL)*8UL;
+  bitlen = (((unsigned long int)ctx->header.counter) * 64UL +
+            (unsigned long int)blen - 1UL) *
+           8UL;
 
-  //one more block?
-  if (64-blen < 8) {
-    memset(block+blen, 0, (64-blen));
+  // one more block?
+  if (64 - blen < 8) {
+    memset(block + blen, 0, (64 - blen));
     cx_ripemd160_block(ctx);
-        blen = 0;
-      }
-      //last block!
-      memset(block+blen, 0, (64-blen));
+    blen = 0;
+  }
+  // last block!
+  memset(block + blen, 0, (64 - blen));
 #ifdef OS_BIG_ENDIAN
-      (*(unsigned long int *)(&block[64-8])) = cx_swap_uint32(bitlen);
+  (*(unsigned long int *)(&block[64 - 8])) = cx_swap_uint32(bitlen);
 #else
-      (*(uint64_t *)(&block[64-8])) = bitlen;
+  (*(uint64_t *)(&block[64 - 8])) = bitlen;
 #endif
-      cx_ripemd160_block(ctx);
-      //provide result
+  cx_ripemd160_block(ctx);
+  // provide result
 #ifdef OS_BIG_ENDIAN
-      cx_swap_buffer32((unsigned long int *)acc,5);
+  cx_swap_buffer32((unsigned long int *)acc, 5);
 #endif
-      memcpy(digest, ctx->acc, CX_RIPEMD160_SIZE);
-      return 1;
+  memcpy(digest, ctx->acc, CX_RIPEMD160_SIZE);
+  return 1;
 }
 
-int cx_ripemd160_validate_context(const cx_ripemd160_t *ctx) {
+int cx_ripemd160_validate_context(const cx_ripemd160_t *ctx)
+{
   return ctx->blen < 64;
 }

@@ -1,10 +1,10 @@
-#include <stdio.h>
 #include <malloc.h>
-#include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
+#include <setjmp.h>
 
 #include "utils.h"
 
@@ -12,15 +12,18 @@
 #include "bolos/cx_hmac.h"
 #include "emulate.h"
 
-void  cx_scc_struct_check_hashmac(const cx_hmac_t *UNUSED(hmac)) {}
+void cx_scc_struct_check_hashmac(const cx_hmac_t *UNUSED(hmac))
+{
+}
 
 #define MAX_CAVP_LINE_LENGTH 65536
-#define CX_MAX_DIGEST_SIZE CX_SHA512_SIZE
+#define CX_MAX_DIGEST_SIZE   CX_SHA512_SIZE
 
 #define cx_hmac             sys_cx_hmac
 #define cx_hmac_sha256_init sys_cx_hmac_sha256_init
 
-static cx_md_t hmac_get_hash_id_from_name(const char *name) {
+static cx_md_t hmac_get_hash_id_from_name(const char *name)
+{
   cx_md_t md_type = CX_NONE;
 
   if (strcmp(name, "hmac-sha224") == 0) {
@@ -36,7 +39,8 @@ static cx_md_t hmac_get_hash_id_from_name(const char *name) {
   return md_type;
 }
 
-void test_cavp_long_msg_with_size(const char *filename) {
+void test_cavp_long_msg_with_size(const char *filename)
+{
   cx_hmac_ctx ctx;
   char *line = malloc(MAX_CAVP_LINE_LENGTH);
   assert_non_null(line);
@@ -91,7 +95,8 @@ void test_cavp_long_msg_with_size(const char *filename) {
   free(line);
 }
 
-void test_cavp_long_msg_with_size_old_api(const char *filename) {
+void test_cavp_long_msg_with_size_old_api(const char *filename)
+{
   char *line = malloc(MAX_CAVP_LINE_LENGTH);
   assert_non_null(line);
 
@@ -135,22 +140,34 @@ void test_cavp_long_msg_with_size_old_api(const char *filename) {
     assert_int_not_equal(md, CX_NONE);
 
     if (md == CX_SHA256) {
-      assert_int_equal(cx_hmac_sha256_init(&hmac_sha256_ctx, key, key_len), CX_SHA256);
-      assert_int_equal(cx_hmac(&hmac_sha256_ctx, CX_LAST, data, data_len, mac, mac_len), mac_len);
+      assert_int_equal(cx_hmac_sha256_init(&hmac_sha256_ctx, key, key_len),
+                       CX_SHA256);
+      assert_int_equal(
+          cx_hmac(&hmac_sha256_ctx, CX_LAST, data, data_len, mac, mac_len),
+          mac_len);
       assert_memory_equal(mac, expected, mac_len);
 
-      assert_int_equal(cx_hmac_sha256_init(&hmac_sha256_ctx, key, key_len), CX_SHA256);
-      assert_int_equal(cx_hmac(&hmac_sha256_ctx, 0, data, data_len, NULL, 0), 0);
-      assert_int_equal(cx_hmac(&hmac_sha256_ctx, CX_LAST, NULL, 0, mac, mac_len), mac_len);
+      assert_int_equal(cx_hmac_sha256_init(&hmac_sha256_ctx, key, key_len),
+                       CX_SHA256);
+      assert_int_equal(cx_hmac(&hmac_sha256_ctx, 0, data, data_len, NULL, 0),
+                       0);
+      assert_int_equal(
+          cx_hmac(&hmac_sha256_ctx, CX_LAST, NULL, 0, mac, mac_len), mac_len);
       assert_memory_equal(mac, expected, mac_len);
     } else if (md == CX_SHA512) {
-      assert_int_equal(cx_hmac_sha512_init(&hmac_sha512_ctx, key, key_len), CX_SHA512);
-      assert_int_equal(cx_hmac(&hmac_sha512_ctx, CX_LAST, data, data_len, mac, mac_len), mac_len);
+      assert_int_equal(cx_hmac_sha512_init(&hmac_sha512_ctx, key, key_len),
+                       CX_SHA512);
+      assert_int_equal(
+          cx_hmac(&hmac_sha512_ctx, CX_LAST, data, data_len, mac, mac_len),
+          mac_len);
       assert_memory_equal(mac, expected, mac_len);
 
-      assert_int_equal(cx_hmac_sha512_init(&hmac_sha512_ctx, key, key_len), CX_SHA512);
-      assert_int_equal(cx_hmac(&hmac_sha512_ctx, 0, data, data_len, NULL, 0), 0);
-      assert_int_equal(cx_hmac(&hmac_sha512_ctx, CX_LAST, NULL, 0, mac, mac_len), mac_len);
+      assert_int_equal(cx_hmac_sha512_init(&hmac_sha512_ctx, key, key_len),
+                       CX_SHA512);
+      assert_int_equal(cx_hmac(&hmac_sha512_ctx, 0, data, data_len, NULL, 0),
+                       0);
+      assert_int_equal(
+          cx_hmac(&hmac_sha512_ctx, CX_LAST, NULL, 0, mac, mac_len), mac_len);
       assert_memory_equal(mac, expected, mac_len);
     }
 
@@ -160,18 +177,20 @@ void test_cavp_long_msg_with_size_old_api(const char *filename) {
   free(line);
 }
 
-void test_hmac_sha256_old_api(void **state __attribute__((unused))) {
+void test_hmac_sha256_old_api(void **state __attribute__((unused)))
+{
   test_cavp_long_msg_with_size_old_api(TESTS_PATH "cavp/hmac.data");
 }
 
-void test_hmac_sha2(void **state __attribute__((unused))) {
+void test_hmac_sha2(void **state __attribute__((unused)))
+{
   test_cavp_long_msg_with_size(TESTS_PATH "cavp/hmac.data");
 }
 
-int main(void) {
+int main(void)
+{
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_hmac_sha2),
-      cmocka_unit_test(test_hmac_sha256_old_api)
+    cmocka_unit_test(test_hmac_sha2), cmocka_unit_test(test_hmac_sha256_old_api)
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

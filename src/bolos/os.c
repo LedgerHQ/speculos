@@ -5,20 +5,20 @@
 #include "emulate.h"
 #include "svc.h"
 
-#define OS_SETTING_PLANEMODE    5
+#define OS_SETTING_PLANEMODE 5
 
-#define BOLOS_TAG_APPNAME       0x01
-#define BOLOS_TAG_APPVERSION    0x02
+#define BOLOS_TAG_APPNAME    0x01
+#define BOLOS_TAG_APPVERSION 0x02
 
-#define PATH_MAX                1024
+#define PATH_MAX 1024
 
-#define MAX_LIBCALL             3
+#define MAX_LIBCALL 3
 
-#define MIN(a,b)                ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 struct libcall_s {
-    struct app_s *app;
-    struct sigcontext sigcontext;
+  struct app_s *app;
+  struct sigcontext sigcontext;
 };
 
 static try_context_t *try_context;
@@ -36,7 +36,8 @@ unsigned long sys_os_perso_isonboarded(void)
   return true;
 }
 
-unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *UNUSED(value), size_t UNUSED(maxlen))
+unsigned long sys_os_setting_get(unsigned int setting_id,
+                                 uint8_t *UNUSED(value), size_t UNUSED(maxlen))
 {
   switch (setting_id) {
   case OS_SETTING_PLANEMODE:
@@ -49,7 +50,9 @@ unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *UNUSED(value)
   return 0;
 }
 
-unsigned long sys_os_registry_get_current_app_tag(unsigned int tag, uint8_t *buffer, size_t length)
+unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
+                                                  uint8_t *buffer,
+                                                  size_t length)
 {
   char *name, *p, *str, *version;
 
@@ -117,7 +120,6 @@ unsigned long sys_os_lib_call(unsigned long *call_parameters)
   return 0xdeadbeef;
 }
 
-
 unsigned long sys_os_version(uint8_t *buffer, unsigned int len)
 {
   const char *kFirmVersion = "Speculos";
@@ -127,13 +129,16 @@ unsigned long sys_os_version(uint8_t *buffer, unsigned int len)
     strncpy((char *)buffer, kFirmVersion, len);
     if (len < kLen)
       return len;
-    else return kLen; // This mimick the real behaviour that does return the data without the '\0'
+    else
+      return kLen; // This mimick the real behaviour that does return the data
+                   // without the '\0'
   }
 
   return 0;
 }
 
-unsigned long sys_os_seph_version(uint8_t *buffer, size_t len) {
+unsigned long sys_os_seph_version(uint8_t *buffer, size_t len)
+{
   const char *kMcuVersion = "SpeculosMCU";
   const size_t kLen = strlen(kMcuVersion);
 

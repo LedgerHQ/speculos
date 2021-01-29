@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define TESTS_PATH	"../../../tests/syscalls/"
+#define TESTS_PATH    "../../../tests/syscalls/"
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 int hex2num(char c);

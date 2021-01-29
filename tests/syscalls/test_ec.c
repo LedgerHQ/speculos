@@ -1,32 +1,35 @@
-#include <stdio.h>
 #include <malloc.h>
-#include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
+#include <setjmp.h>
 
 #include "bolos/cx.h"
 #include "bolos/cx_ec.h"
 #include "utils.h"
 
 static uint8_t const C_ED25519_G[] = {
-  //uncompressed
+  // uncompressed
   0x04,
-  //x
-  0x21, 0x69, 0x36, 0xd3, 0xcd, 0x6e, 0x53, 0xfe, 0xc0, 0xa4, 0xe2, 0x31, 0xfd, 0xd6, 0xdc, 0x5c,
-  0x69, 0x2c, 0xc7, 0x60, 0x95, 0x25, 0xa7, 0xb2, 0xc9, 0x56, 0x2d, 0x60, 0x8f, 0x25, 0xd5, 0x1a,
-  //y
-  0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
-  0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x58
+  // x
+  0x21, 0x69, 0x36, 0xd3, 0xcd, 0x6e, 0x53, 0xfe, 0xc0, 0xa4, 0xe2, 0x31, 0xfd,
+  0xd6, 0xdc, 0x5c, 0x69, 0x2c, 0xc7, 0x60, 0x95, 0x25, 0xa7, 0xb2, 0xc9, 0x56,
+  0x2d, 0x60, 0x8f, 0x25, 0xd5, 0x1a,
+  // y
+  0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+  0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
+  0x66, 0x66, 0x66, 0x66, 0x66, 0x58
 };
 
 static uint8_t const C_Curve25519_G[] = {
-  //compressed
+  // compressed
   0x02,
-  //x
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x09
+  // x
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x09
 };
 
 typedef struct {
@@ -85,7 +88,8 @@ static const eddsa_test_vector rfc8032_test_vectors[] = {
    "9bef1177331a704"}};
 /* clang-format on */
 
-void test_scalar_mult_ed25519(void **state __attribute__((unused))) {
+void test_scalar_mult_ed25519(void **state __attribute__((unused)))
+{
   uint8_t Pxy[65];
   uint8_t s[32];
   uint8_t expected[65];
@@ -185,7 +189,8 @@ void test_scalar_mult_ed25519(void **state __attribute__((unused))) {
   assert_memory_equal(Pxy, expected, sizeof(expected));
 }
 
-void test_scalar_mult_curve25519(void **state __attribute__((unused))) {
+void test_scalar_mult_curve25519(void **state __attribute__((unused)))
+{
   uint8_t Px[33];
   uint8_t s[32];
   uint8_t expected[33];
@@ -233,7 +238,8 @@ void test_scalar_mult_curve25519(void **state __attribute__((unused))) {
 }
 
 static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
-                                      const eddsa_test_vector *tv, size_t tv_len)
+                                      const eddsa_test_vector *tv,
+                                      size_t tv_len)
 {
   cx_ecfp_512_private_key_t private_key;
   cx_ecfp_512_public_key_t pub;
@@ -246,23 +252,29 @@ static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
   size_t i;
 
   for (i = 0; i < tv_len; i++) {
-    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size), mpi_size);
-    assert_int_equal(hexstr2bin(tv[i].public_key, expected_key, mpi_size), mpi_size);
+    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size),
+                     mpi_size);
+    assert_int_equal(hexstr2bin(tv[i].public_key, expected_key, mpi_size),
+                     mpi_size);
 
-    assert_int_equal(sys_cx_ecfp_init_private_key(curve, secret_key, mpi_size,
-                                              (cx_ecfp_private_key_t *)&private_key), mpi_size);
+    assert_int_equal(
+        sys_cx_ecfp_init_private_key(curve, secret_key, mpi_size,
+                                     (cx_ecfp_private_key_t *)&private_key),
+        mpi_size);
 
-    sys_cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md, (cx_ecfp_public_key_t *)&pub);
+    sys_cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md,
+                                (cx_ecfp_public_key_t *)&pub);
     assert_int_equal(pub.W_len, 1 + 2 * mpi_size);
     assert_int_equal(pub.W[0], 4);
-    sys_cx_edward_compress_point(curve, (uint8_t *) &pub.W, pub.W_len);
+    sys_cx_edward_compress_point(curve, (uint8_t *)&pub.W, pub.W_len);
 
     assert_int_equal(pub.W[0], 2);
     assert_memory_equal(expected_key, &pub.W[1], mpi_size);
   }
 }
 
-static void test_ed25519_get_public_key(void **state __attribute__((unused))) {
+static void test_ed25519_get_public_key(void **state __attribute__((unused)))
+{
   test_eddsa_get_public_key(CX_CURVE_Ed25519, CX_SHA512, rfc8032_test_vectors,
                             ARRAY_SIZE(rfc8032_test_vectors));
 }
@@ -283,8 +295,11 @@ void test_eddsa_recover_x(void **state __attribute__((unused)))
     assert_int_equal(hexstr2bin(tv->secret_key, secret_key, 32), 32);
     assert_int_equal(hexstr2bin(tv->public_key, &buf[1], 32), 32);
 
-    assert_int_equal(sys_cx_ecfp_init_private_key(CX_CURVE_Ed25519, secret_key, 32, &private_key), 32);
-    assert_int_equal(sys_cx_ecfp_generate_pair(CX_CURVE_Ed25519, &pub1, &private_key, 1), 0);
+    assert_int_equal(sys_cx_ecfp_init_private_key(CX_CURVE_Ed25519, secret_key,
+                                                  32, &private_key),
+                     32);
+    assert_int_equal(
+        sys_cx_ecfp_generate_pair(CX_CURVE_Ed25519, &pub1, &private_key, 1), 0);
     assert_int_equal(pub1.W_len, 1 + 32 + 32);
 
     buf[0] = 2;
@@ -293,7 +308,8 @@ void test_eddsa_recover_x(void **state __attribute__((unused)))
   }
 }
 
-int main(void) {
+int main(void)
+{
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_scalar_mult_ed25519),
     cmocka_unit_test(test_scalar_mult_curve25519),

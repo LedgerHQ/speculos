@@ -9,12 +9,13 @@
 
 #include "bolos/cx_ec.h"
 #include "bolos/os_bip32.h"
-#include "utils.h"
 #include "emulate.h"
+#include "utils.h"
 
-#define MAX_CHAIN_LEN  5
+#define MAX_CHAIN_LEN 5
 
-#define sys_os_perso_derive_node_bip32_seed_key sys_os_perso_derive_node_with_seed_key
+#define sys_os_perso_derive_node_bip32_seed_key                                \
+  sys_os_perso_derive_node_with_seed_key
 
 typedef struct {
   uint32_t index;
@@ -32,10 +33,11 @@ typedef struct {
   const bip32_chain_vector chain[MAX_CHAIN_LEN];
 } bip32_test_vector;
 
-/* abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about */
-static const char *default_seed = \
-  "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc1" \
-  "9a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4";
+/* abandon abandon abandon abandon abandon abandon abandon abandon abandon
+ * abandon abandon about */
+static const char *default_seed =
+    "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc1"
+    "9a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4";
 
 /* clang-format off */
 static const bip32_test_vector test_vectors[] = {
@@ -513,7 +515,8 @@ static const struct bolos_vector bolos_vectors[] = {
 };
 /* clang-format on */
 
-/* https://github.com/satoshilabs/slips/blob/master/slip-0010.md#test-vector-1-for-ed25519 */
+/* https://github.com/satoshilabs/slips/blob/master/slip-0010.md#test-vector-1-for-ed25519
+ */
 /* clang-format off */
 static const struct bolos_vector slip10_vectors[] = {
   {
@@ -584,8 +587,12 @@ static void test_bip32_vector(const bip32_test_vector *v)
 
     sys_os_perso_derive_node_bip32(v->curve, path, path_len, key, chain_code);
 
-    assert_int_equal(hexstr2bin(v->chain[i].private_key, expected_key, sizeof(expected_key)), sizeof(expected_key));
-    assert_int_equal(hexstr2bin(v->chain[i].chain_code, expected_chain_code, sizeof(expected_chain_code)), sizeof(expected_chain_code));
+    assert_int_equal(
+        hexstr2bin(v->chain[i].private_key, expected_key, sizeof(expected_key)),
+        sizeof(expected_key));
+    assert_int_equal(hexstr2bin(v->chain[i].chain_code, expected_chain_code,
+                                sizeof(expected_chain_code)),
+                     sizeof(expected_chain_code));
     assert_memory_equal(key, expected_key, sizeof(expected_key));
     assert_memory_equal(chain_code, expected_chain_code, sizeof(chain_code));
   }
@@ -595,12 +602,13 @@ static void test_bip32(void **state __attribute__((unused)))
 {
   size_t i;
 
-  for (i = 0; i < ARRAY_SIZE(test_vectors); i++){
+  for (i = 0; i < ARRAY_SIZE(test_vectors); i++) {
     test_bip32_vector(&test_vectors[i]);
   }
 }
 
-static int get_bip32_path(const char *str_, unsigned int *path, int max_path_len)
+static int get_bip32_path(const char *str_, unsigned int *path,
+                          int max_path_len)
 {
   char *token, *str;
   int path_len;
@@ -628,9 +636,8 @@ static int get_bip32_path(const char *str_, unsigned int *path, int max_path_len
       return -1;
     }
 
-
-    if (token[len-1] == '\'') {
-      token[len-1] = '\x00';
+    if (token[len - 1] == '\'') {
+      token[len - 1] = '\x00';
       path[path_len] = 0x80000000;
     } else {
       path[path_len] = 0;
@@ -657,17 +664,33 @@ static void test_bolos_vector(const struct bolos_vector *v)
   uint8_t *p;
 
   switch (v->mode) {
-  case 0: mode = HDW_NORMAL; break;
-  case 1: mode = HDW_ED25519_SLIP10; break;
-  case 2: mode = HDW_SLIP21; break;
-  default: fail(); break;
+  case 0:
+    mode = HDW_NORMAL;
+    break;
+  case 1:
+    mode = HDW_ED25519_SLIP10;
+    break;
+  case 2:
+    mode = HDW_SLIP21;
+    break;
+  default:
+    fail();
+    break;
   }
 
   switch (v->curve) {
-  case 0: curve = CX_CURVE_SECP256R1; break;
-  case 1: curve = CX_CURVE_SECP256K1; break;
-  case 2: curve = CX_CURVE_Ed25519; break;
-  default: fail(); break;
+  case 0:
+    curve = CX_CURVE_SECP256R1;
+    break;
+  case 1:
+    curve = CX_CURVE_SECP256K1;
+    break;
+  case 2:
+    curve = CX_CURVE_Ed25519;
+    break;
+  default:
+    fail();
+    break;
   }
 
   if (mode == HDW_SLIP21) {
@@ -686,13 +709,14 @@ static void test_bolos_vector(const struct bolos_vector *v)
   memset(chain, 0, sizeof(chain));
   memset(key, 0, sizeof(key));
 
-  sys_os_perso_derive_node_with_seed_key(mode, curve,
-                                         path, path_len,
-                                         key, chain,
-                                         (uint8_t *)v->seed_key, sk_length);
+  sys_os_perso_derive_node_with_seed_key(mode, curve, path, path_len, key,
+                                         chain, (uint8_t *)v->seed_key,
+                                         sk_length);
 
-  assert_int_equal(hexstr2bin(v->key, expected_key, sizeof(expected_key)), sizeof(expected_key));
-  assert_int_equal(hexstr2bin(v->chain, expected_chain, sizeof(expected_chain)), sizeof(expected_chain));
+  assert_int_equal(hexstr2bin(v->key, expected_key, sizeof(expected_key)),
+                   sizeof(expected_key));
+  assert_int_equal(hexstr2bin(v->chain, expected_chain, sizeof(expected_chain)),
+                   sizeof(expected_chain));
   assert_memory_equal(key, expected_key, sizeof(expected_key));
   assert_memory_equal(chain, expected_chain, sizeof(chain));
 }
@@ -703,18 +727,20 @@ static void test_derive(void **state __attribute__((unused)))
 
   assert_int_equal(setenv("SPECULOS_SEED", default_seed, 1), 0);
 
-  for (i = 0; i < ARRAY_SIZE(bolos_vectors); i++){
+  for (i = 0; i < ARRAY_SIZE(bolos_vectors); i++) {
     test_bolos_vector(&bolos_vectors[i]);
   }
 
-  assert_int_equal(setenv("SPECULOS_SEED", "000102030405060708090a0b0c0d0e0f", 1), 0);
+  assert_int_equal(
+      setenv("SPECULOS_SEED", "000102030405060708090a0b0c0d0e0f", 1), 0);
 
-  for (i = 0; i < ARRAY_SIZE(slip10_vectors); i++){
+  for (i = 0; i < ARRAY_SIZE(slip10_vectors); i++) {
     test_bolos_vector(&slip10_vectors[i]);
   }
 }
 
-int main(void) {
+int main(void)
+{
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_bip32),
     cmocka_unit_test(test_derive),

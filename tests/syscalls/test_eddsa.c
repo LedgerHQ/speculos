@@ -2,19 +2,19 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
+#include <setjmp.h>
 
 #include "bolos/cx_ec.h"
 #include "bolos/cx_hash.h"
 
 #include "utils.h"
 
-#define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
-#define cx_ecfp_generate_pair sys_cx_ecfp_generate_pair
-#define cx_ecfp_generate_pair2 sys_cx_ecfp_generate_pair2
-#define cx_eddsa_sign sys_cx_eddsa_sign
-#define cx_eddsa_verify sys_cx_eddsa_verify
+#define cx_ecfp_init_private_key sys_cx_ecfp_init_private_key
+#define cx_ecfp_generate_pair    sys_cx_ecfp_generate_pair
+#define cx_ecfp_generate_pair2   sys_cx_ecfp_generate_pair2
+#define cx_eddsa_sign            sys_cx_eddsa_sign
+#define cx_eddsa_verify          sys_cx_eddsa_verify
 
 typedef struct {
   const char *secret_key;
@@ -192,7 +192,8 @@ const eddsa_test_vector rfc8032_ed448_test_vectors[] = {
 
 enum wycheproof_result { kValid, kInvalid, kAcceptable };
 
-static bool GetWycheproofCurve(const char *curve, cx_curve_t *out) {
+static bool GetWycheproofCurve(const char *curve, cx_curve_t *out)
+{
   if (strcmp(curve, "secp256k1") == 0) {
     *out = CX_CURVE_SECP256K1;
   } else if (strcmp(curve, "secp521r1") == 0) {
@@ -210,7 +211,8 @@ static bool GetWycheproofCurve(const char *curve, cx_curve_t *out) {
   return true;
 }
 
-static bool GetWycheproofResult(const char *result, enum wycheproof_result *out) {
+static bool GetWycheproofResult(const char *result, enum wycheproof_result *out)
+{
   if (strcmp(result, "valid") == 0) {
     *out = kValid;
   } else if (strcmp(result, "invalid") == 0) {
@@ -223,15 +225,16 @@ static bool GetWycheproofResult(const char *result, enum wycheproof_result *out)
   return true;
 }
 
-#define BUF_SIZE 1024
+#define BUF_SIZE        1024
 #define MAX_LINE_LENGTH 4096
 
-static void test_eddsa_wycheproof(void **state) {
-  (void) state;
+static void test_eddsa_wycheproof(void **state)
+{
+  (void)state;
 
   uint8_t sk[32], pk[32];
-  cx_ecfp_256_public_key_t public_key = {0};
-  cx_ecfp_256_private_key_t private_key = {0};
+  cx_ecfp_256_public_key_t public_key = { 0 };
+  cx_ecfp_256_private_key_t private_key = { 0 };
   char *line = malloc(MAX_LINE_LENGTH);
   assert_non_null(line);
 
@@ -277,14 +280,14 @@ static void test_eddsa_wycheproof(void **state) {
     assert_non_null(signature);
 
     assert_int_equal(hexstr2bin(pos1 + 1, sk, sk_len), sk_len);
-    assert_int_equal(hexstr2bin(pos2 + 1, pk, pk_len),
-                     pk_len);
+    assert_int_equal(hexstr2bin(pos2 + 1, pk, pk_len), pk_len);
     assert_int_equal(hexstr2bin(pos3 + 1, msg, msg_len), msg_len);
     assert_int_equal(hexstr2bin(pos4 + 1, signature, signature_len),
                      signature_len);
 
     // cx_eddsa throws an exception if signatures have an invalid size.
-    // This prevents a case when the supplied signature is empty, has a missing r, etc.
+    // This prevents a case when the supplied signature is empty, has a missing
+    // r, etc.
     if (signature_len != 2 * 32) {
       continue;
     }
@@ -292,13 +295,18 @@ static void test_eddsa_wycheproof(void **state) {
     assert_true(GetWycheproofCurve(line, &curve));
     assert_true(GetWycheproofResult(pos5 + 1, &res));
     assert_int_equal(cx_ecfp_init_private_key(curve, sk, 32, &private_key), 32);
-    assert_int_equal(cx_ecfp_generate_pair(curve, &public_key, &private_key, 1), 0);
+    assert_int_equal(cx_ecfp_generate_pair(curve, &public_key, &private_key, 1),
+                     0);
     assert_int_equal(public_key.W_len, 65);
 
     if (res == kValid) {
-      assert_int_equal(cx_eddsa_verify(&public_key, 0, CX_SHA512, msg, msg_len, NULL, 0, signature, signature_len), 1);
+      assert_int_equal(cx_eddsa_verify(&public_key, 0, CX_SHA512, msg, msg_len,
+                                       NULL, 0, signature, signature_len),
+                       1);
     } else if (res == kInvalid) {
-      assert_int_equal(cx_eddsa_verify(&public_key, 0, CX_SHA512, msg, msg_len, NULL, 0, signature, signature_len), 0);
+      assert_int_equal(cx_eddsa_verify(&public_key, 0, CX_SHA512, msg, msg_len,
+                                       NULL, 0, signature, signature_len),
+                       0);
     }
 
     free(msg);
@@ -309,7 +317,8 @@ static void test_eddsa_wycheproof(void **state) {
 }
 
 static void test_eddsa_sign(cx_curve_t curve, cx_md_t md,
-                            const eddsa_test_vector *tv, size_t tv_len) {
+                            const eddsa_test_vector *tv, size_t tv_len)
+{
   cx_ecfp_512_private_key_t private_key;
   const cx_curve_domain_t *domain = cx_ecfp_get_domain(curve);
   assert_non_null(domain);
@@ -321,19 +330,29 @@ static void test_eddsa_sign(cx_curve_t curve, cx_md_t md,
   size_t msg_len;
 
   for (unsigned int i = 0; i < tv_len; i++) {
-    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size), mpi_size);
+    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size),
+                     mpi_size);
     msg_len = strlen(tv[i].msg) / 2;
     assert_int_equal(hexstr2bin(tv[i].msg, msg, BUF_SIZE), msg_len);
-    assert_int_equal(hexstr2bin(tv[i].signature, expected_signature, mpi_size * 2), mpi_size * 2);
+    assert_int_equal(
+        hexstr2bin(tv[i].signature, expected_signature, mpi_size * 2),
+        mpi_size * 2);
 
-    assert_int_equal(cx_ecfp_init_private_key(curve, secret_key, mpi_size, (cx_ecfp_private_key_t *)&private_key), mpi_size);
-    assert_int_equal(cx_eddsa_sign((cx_ecfp_private_key_t *)&private_key, 0, md, msg, msg_len, NULL, 0, signature, mpi_size * 2, NULL), mpi_size * 2);
+    assert_int_equal(
+        cx_ecfp_init_private_key(curve, secret_key, mpi_size,
+                                 (cx_ecfp_private_key_t *)&private_key),
+        mpi_size);
+    assert_int_equal(cx_eddsa_sign((cx_ecfp_private_key_t *)&private_key, 0, md,
+                                   msg, msg_len, NULL, 0, signature,
+                                   mpi_size * 2, NULL),
+                     mpi_size * 2);
     assert_memory_equal(signature, expected_signature, mpi_size * 2);
   }
 }
 
 static void test_eddsa_verify(cx_curve_t curve, cx_md_t md,
-                              const eddsa_test_vector *tv, size_t tv_len) {
+                              const eddsa_test_vector *tv, size_t tv_len)
+{
   cx_ecfp_512_private_key_t private_key;
   cx_ecfp_512_public_key_t public_key;
   const cx_curve_domain_t *domain = cx_ecfp_get_domain(curve);
@@ -346,18 +365,32 @@ static void test_eddsa_verify(cx_curve_t curve, cx_md_t md,
   size_t msg_len;
 
   for (unsigned int i = 0; i < tv_len; i++) {
-    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size), mpi_size);
+    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size),
+                     mpi_size);
     msg_len = strlen(tv[i].msg) / 2;
     assert_int_equal(hexstr2bin(tv[i].msg, msg, BUF_SIZE), msg_len);
-    assert_int_equal(hexstr2bin(tv[i].signature, expected_signature, mpi_size * 2), mpi_size * 2);
-    assert_int_equal(cx_ecfp_init_private_key(curve, secret_key, mpi_size, (cx_ecfp_private_key_t *)&private_key), mpi_size);
-    assert_int_equal(cx_ecfp_generate_pair2(curve, (cx_ecfp_public_key_t *)&public_key, (cx_ecfp_private_key_t *)&private_key, 1, md), 0);
-    assert_int_equal(cx_eddsa_verify((cx_ecfp_public_key_t *)&public_key, 0, md, msg, msg_len, NULL, 0, expected_signature, mpi_size * 2), 1);
+    assert_int_equal(
+        hexstr2bin(tv[i].signature, expected_signature, mpi_size * 2),
+        mpi_size * 2);
+    assert_int_equal(
+        cx_ecfp_init_private_key(curve, secret_key, mpi_size,
+                                 (cx_ecfp_private_key_t *)&private_key),
+        mpi_size);
+    assert_int_equal(
+        cx_ecfp_generate_pair2(curve, (cx_ecfp_public_key_t *)&public_key,
+                               (cx_ecfp_private_key_t *)&private_key, 1, md),
+        0);
+    assert_int_equal(cx_eddsa_verify((cx_ecfp_public_key_t *)&public_key, 0, md,
+                                     msg, msg_len, NULL, 0, expected_signature,
+                                     mpi_size * 2),
+                     1);
   }
 }
 
 static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
-                                      const eddsa_test_vector *tv, size_t tv_len) {
+                                      const eddsa_test_vector *tv,
+                                      size_t tv_len)
+{
   cx_ecfp_512_private_key_t private_key;
   cx_ecfp_512_public_key_t pub;
   const cx_curve_domain_t *domain = cx_ecfp_get_domain(curve);
@@ -368,23 +401,30 @@ static void test_eddsa_get_public_key(cx_curve_t curve, cx_md_t md,
   uint8_t expected_key[114];
 
   for (unsigned int i = 0; i < tv_len; i++) {
-    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size), mpi_size);
-    assert_int_equal(hexstr2bin(tv[i].public_key, expected_key, mpi_size), mpi_size);
+    assert_int_equal(hexstr2bin(tv[i].secret_key, secret_key, mpi_size),
+                     mpi_size);
+    assert_int_equal(hexstr2bin(tv[i].public_key, expected_key, mpi_size),
+                     mpi_size);
 
-    assert_int_equal(cx_ecfp_init_private_key(curve, secret_key, mpi_size,
-                                              (cx_ecfp_private_key_t *)&private_key), mpi_size);
+    assert_int_equal(
+        cx_ecfp_init_private_key(curve, secret_key, mpi_size,
+                                 (cx_ecfp_private_key_t *)&private_key),
+        mpi_size);
 
-    sys_cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md, (cx_ecfp_public_key_t *)&pub);
+    sys_cx_eddsa_get_public_key((cx_ecfp_private_key_t *)&private_key, md,
+                                (cx_ecfp_public_key_t *)&pub);
     assert_int_equal(pub.W_len, 1 + 2 * mpi_size);
     assert_int_equal(pub.W[0], 4);
-    assert_int_equal(sys_cx_edward_compress_point(curve, (uint8_t *) &pub.W, pub.W_len), 0);
+    assert_int_equal(
+        sys_cx_edward_compress_point(curve, (uint8_t *)&pub.W, pub.W_len), 0);
 
     assert_int_equal(pub.W[0], 2);
     assert_memory_equal(expected_key, &pub.W[1], mpi_size);
   }
 }
 
-static void test_ed25519_sign(void **state) {
+static void test_ed25519_sign(void **state)
+{
   (void)state;
 
   test_eddsa_sign(CX_CURVE_Ed25519, CX_SHA512, rfc8032_test_vectors,
@@ -392,7 +432,8 @@ static void test_ed25519_sign(void **state) {
                       sizeof(rfc8032_test_vectors[0]));
 }
 
-static void test_ed25519_verify(void **state) {
+static void test_ed25519_verify(void **state)
+{
   (void)state;
 
   test_eddsa_verify(CX_CURVE_Ed25519, CX_SHA512, rfc8032_test_vectors,
@@ -400,18 +441,20 @@ static void test_ed25519_verify(void **state) {
                         sizeof(rfc8032_test_vectors[0]));
 }
 
-static void test_ed25519_get_public_key(void **state) {
+static void test_ed25519_get_public_key(void **state)
+{
   (void)state;
   test_eddsa_get_public_key(CX_CURVE_Ed25519, CX_SHA512, rfc8032_test_vectors,
-                            sizeof(rfc8032_test_vectors) / sizeof(rfc8032_test_vectors[0]));
+                            sizeof(rfc8032_test_vectors) /
+                                sizeof(rfc8032_test_vectors[0]));
 }
 
-int main() {
+int main()
+{
   const struct CMUnitTest tests[] = {
-      cmocka_unit_test(test_ed25519_sign),
-      cmocka_unit_test(test_ed25519_verify),
-      cmocka_unit_test(test_ed25519_get_public_key),
-      cmocka_unit_test(test_eddsa_wycheproof)
+    cmocka_unit_test(test_ed25519_sign), cmocka_unit_test(test_ed25519_verify),
+    cmocka_unit_test(test_ed25519_get_public_key),
+    cmocka_unit_test(test_eddsa_wycheproof)
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }

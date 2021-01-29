@@ -23,12 +23,13 @@
 #define EXCEPTION_SYSTEM      18
 #define NOT_ENOUGH_SPACE      19
 
-#define THROW(exception)    do {                         \
-  fprintf(stderr, "\nUnhandled exception %d at %s:%d\n", \
-          exception, __FILE__, __LINE__);                \
-  fprintf(stderr, "Exiting.\n");                         \
-  _exit(1);                                              \
-} while (0)
+#define THROW(exception)                                                       \
+  do {                                                                         \
+    fprintf(stderr, "\nUnhandled exception %d at %s:%d\n", exception,          \
+            __FILE__, __LINE__);                                               \
+    fprintf(stderr, "Exiting.\n");                                             \
+    _exit(1);                                                                  \
+  } while (0)
 
 typedef struct try_context_s try_context_t;
 

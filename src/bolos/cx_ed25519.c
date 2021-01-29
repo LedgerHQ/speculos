@@ -1,23 +1,26 @@
 /* https://ed25519.cr.yp.to/python/ed25519.py */
 #include <err.h>
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 
 #include "cx_ec.h"
-#include "cx_utils.h"
 #include "cx_ed25519.h"
+#include "cx_utils.h"
 
-static const char *constant_q = "57896044618658097711785492504343953926634992332820282019728792003956564819949";
-static const char *constant_I = "19681161376707505956807079304988542015446066515923890162744021073123829784752";
+static const char *constant_q = "5789604461865809771178549250434395392663499233"
+                                "2820282019728792003956564819949";
+static const char *constant_I = "1968116137670750595680707930498854201544606651"
+                                "5923890162744021073123829784752";
 static bool initialized;
 static BIGNUM *d1, *d2, *I, *q, *two;
 static const BIGNUM *one;
 static BN_CTX *ctx;
 
-static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1, BIGNUM *y2, BIGNUM *d)
+static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1,
+                          BIGNUM *y2, BIGNUM *d)
 {
   BIGNUM *a, *b;
   int ret;
@@ -45,7 +48,7 @@ static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1, BIGNUM 
 
   BN_mul(r, a, b, ctx);
 
- free_bn:
+free_bn:
   BN_free(b);
   BN_free(a);
 
@@ -84,7 +87,7 @@ int edwards_add(POINT *R, POINT *P, POINT *Q)
   BN_mod(R->x, x3, q, ctx);
   BN_mod(R->y, y3, q, ctx);
 
- free_bn:
+free_bn:
   BN_free(y3);
   BN_free(x3);
 
@@ -132,7 +135,8 @@ static int initialize(void)
   q = BN_new();
   I = BN_new();
 
-  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL || q == NULL || I == NULL) {
+  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL ||
+      q == NULL || I == NULL) {
     BN_CTX_free(ctx);
     BN_free(a);
     BN_free(two);
@@ -172,7 +176,8 @@ static int scalarmult(POINT *Q, POINT *P, BIGNUM *e)
   return scalarmult_helper(Q, P, e);
 }
 
-int scalarmult_ed25519(BIGNUM *Qx, BIGNUM *Qy, BIGNUM *Px, BIGNUM *Py, BIGNUM *e)
+int scalarmult_ed25519(BIGNUM *Qx, BIGNUM *Qy, BIGNUM *Px, BIGNUM *Py,
+                       BIGNUM *e)
 {
   POINT P, Q;
 
@@ -193,7 +198,8 @@ static void cx_compress(uint8_t *x, uint8_t *y, size_t size)
   be2le(y, size);
 }
 
-int sys_cx_edward_compress_point(cx_curve_t curve, uint8_t *P, size_t P_len) {
+int sys_cx_edward_compress_point(cx_curve_t curve, uint8_t *P, size_t P_len)
+{
   cx_curve_twisted_edward_t *domain;
   uint8_t *x, *y;
   size_t size;
@@ -256,7 +262,7 @@ static int xrecover(BIGNUM *x, BIGNUM *y)
     BN_sub(x, q, x);
   }
 
- free_bn:
+free_bn:
   BN_free(a);
   BN_free(xx);
   return ret;
@@ -294,7 +300,7 @@ static int cx_decompress(uint8_t *x, uint8_t *y, size_t size)
 
   BN_bn2binpad(xx, x, size);
 
- free_bn:
+free_bn:
   BN_free(yy);
   BN_free(xx);
   return ret;
