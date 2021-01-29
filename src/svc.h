@@ -1,6 +1,8 @@
 #pragma once
 
 #include <signal.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 extern bool trace_syscalls;
 
