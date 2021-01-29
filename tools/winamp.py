@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 '''
 VNC client with skin support.
@@ -7,7 +7,7 @@ Speculos must be launched with the --vnc-port argument in order to expose the
 VNC server. Usage example:
 
   $ ./speculos.py ./apps/nanos#btc#1.5#00000000.elf --vnc-port 5902 --headless &
-  $ ./vnc/winamp.py --skin vnc/skins/nano-blue.png
+  $ ./tools/winamp.py --skin tools/skins/nano-blue.png
 
 This script is highly experimental. Skins are PNG files where the first black
 128x32 rectangle is replaced by the screen.

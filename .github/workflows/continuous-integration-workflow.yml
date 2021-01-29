@@ -27,7 +27,7 @@ jobs:
     - name: Lint
       uses: DoozyX/clang-format-lint-action@v0.11
       with:
-        source: 'src tests vnc'
+        source: 'src tests'
         extensions: 'c,h'
         clangFormatVersion: 11
         fail_ci_if_error: true

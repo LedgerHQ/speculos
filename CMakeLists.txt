@@ -79,7 +79,7 @@ add_subdirectory(tests/syscalls)
 
 if (WITH_VNC)
     externalproject_add(vnc_server
-        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vnc"
+        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/vnc"
         BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/vnc"
         INSTALL_COMMAND ""
     )
