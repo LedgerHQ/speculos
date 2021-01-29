@@ -2,8 +2,9 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <cmocka.h>
 #include <setjmp.h>
+// must come after setjmp.h
+#include <cmocka.h>
 
 #include "bolos/cx_ec.h"
 #include "bolos/cx_hash.h"

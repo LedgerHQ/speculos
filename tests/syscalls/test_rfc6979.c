@@ -1,10 +1,11 @@
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include <cmocka.h>
 #include <setjmp.h>
-#include <stdarg.h>
+// must come after setjmp.h
+#include <cmocka.h>
 
 #include "bolos/cx.h"
 #include "bolos/cx_ec.h"

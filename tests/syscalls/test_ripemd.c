@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cmocka.h>
 #include <setjmp.h>
+// must come after setjmp.h
+#include <cmocka.h>
 
 #include "utils.h"
 

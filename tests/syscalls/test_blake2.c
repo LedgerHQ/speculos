@@ -1,7 +1,8 @@
 #include <stdio.h>
 
-#include <cmocka.h>
 #include <setjmp.h>
+// must come after setjmp.h
+#include <cmocka.h>
 
 #include "bolos/cx_blake2.h"
 #include "nist_cavp.h"
