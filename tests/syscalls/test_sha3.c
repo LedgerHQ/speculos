@@ -1,13 +1,13 @@
-#include "cx_hash.h"
-#include "nist_cavp.h"
-
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "utils.h"
 #include <setjmp.h>
 #include <cmocka.h>
+
+#include "bolos/cx_hash.h"
+#include "utils.h"
+#include "nist_cavp.h"
 
 /*
 // Exception-related functions. Exceptions are not handled, functions are just

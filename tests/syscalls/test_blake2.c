@@ -3,7 +3,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include "cx_blake2.h"
+#include "bolos/cx_blake2.h"
 #include "nist_cavp.h"
 #include "utils.h"
 

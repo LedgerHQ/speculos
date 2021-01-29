@@ -33,11 +33,11 @@ print(binascii.hexlify(dt))
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include "utils.h"
-
-#include "cx.h"
-#include "cx_aes.h"
+#include "bolos/cx.h"
+#include "bolos/cx_aes.h"
 #include "emulate.h"
+
+#include "utils.h"
 
 void test_aes_cbc1(void **state __attribute__((unused))) {
   cx_aes_key_t key;

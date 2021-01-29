@@ -8,8 +8,8 @@
 
 #include "utils.h"
 
-#include "cx.h"
-#include "cx_hash.h"
+#include "bolos/cx.h"
+#include "bolos/cx_hash.h"
 #include "emulate.h"
 
 #define cx_hash	sys_cx_hash

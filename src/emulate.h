@@ -1,5 +1,4 @@
-#ifndef _EMULATE_H
-#define _EMULATE_H
+#pragma once
 
 /* for ucontext_t */
 #include <signal.h>
@@ -11,23 +10,14 @@
 #include <stdint.h>
 
 /* for cx_curve_t */
-#include "cx_ec.h"
+#include "bolos/cx_ec.h"
 
 /* for cx_hash_t */
-#include "cx_hash.h"
+#include "bolos/cx_hash.h"
 
-#include "cx_crc.h"
+#include "bolos/cx_crc.h"
 
-typedef enum {
-  SDK_NANO_X_1_2,
-  SDK_NANO_S_1_5,
-  SDK_NANO_S_1_6,
-  SDK_BLUE_2_2_5,
-  SDK_LAST
-} sdk_version_t;
-
-// Max number of characters allowed in version number
-#define MAX_SDK_VER_LEN  6
+#include "sdk.h"
 
 /* TODO */
 typedef void bolos_ux_params_t;
@@ -297,4 +287,3 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     retid = SYSCALL_ ## _name ## _ID_OUT;                               \
     break;                                                              \
   }
-#endif

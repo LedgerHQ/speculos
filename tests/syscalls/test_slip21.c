@@ -6,8 +6,8 @@
 
 #include <cmocka.h>
 
-#include "cx_ec.h"
-#include "emu_os_bip32.h"
+#include "bolos/os_bip32.h"
+#include "bolos/cx_ec.h"
 #include "emulate.h"
 
 void test_slip21(void **state __attribute__((unused))) {

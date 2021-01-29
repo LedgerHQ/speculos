@@ -1,9 +1,9 @@
 #include <err.h>
 #include <stdio.h>
 
+#include "bolos/cx_aes.h"
 #include "emulate.h"
 #include "bolos_syscalls_blue_2.2.5.h"
-#include "cx_aes.h"
 
 int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
 {

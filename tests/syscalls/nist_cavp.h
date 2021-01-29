@@ -1,7 +1,8 @@
 #pragma once
 
-#include "cx.h"
 #include <stddef.h>
+
+#include "bolos/cx.h"
 
 void test_cavp_short_msg(const char *filename, cx_md_t md_type);
 void test_cavp_long_msg(const char *filename, cx_md_t md_type);
