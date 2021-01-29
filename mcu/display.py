@@ -65,8 +65,7 @@ class Display(ABC):
         self.notifiers[klass.s.fileno()] = klass
 
     def remove_notifier(self, fd):
-        n = self.notifiers.pop(fd)
-        del n
+        self.notifiers.pop(fd)
 
     def _init_notifiers(self, *classes):
         for klass in classes:
