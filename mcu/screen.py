@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QObject, QSocketNotifier, QSettings
+from PyQt5.QtCore import Qt, QSocketNotifier, QSettings
 
 from . import bagl
 from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
@@ -86,7 +86,6 @@ class Screen(Display):
 
         n = self.notifiers.pop(fd)
         n.disconnect()
-        del n
 
     def _key_event(self, event, pressed):
         key = event.key()

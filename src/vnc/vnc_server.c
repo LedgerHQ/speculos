@@ -255,9 +255,10 @@ static int load_seccomp(void)
 static void preload_localtime(void)
 {
   time_t log_clock;
+  struct tm tm;
 
   time(&log_clock);
-  localtime(&log_clock);
+  localtime_r(&log_clock, &tm);
 }
 
 int main(int argc, char **argv)
