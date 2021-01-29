@@ -1,4 +1,4 @@
-#define _GNU_SOURCE
+#define _GNU_SOURCE /* for memmem() */
 #include <err.h>
 #include <errno.h>
 #include <stdio.h>
