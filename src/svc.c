@@ -1,19 +1,19 @@
 #define _GNU_SOURCE /* for memmem() */
 #include <err.h>
 #include <errno.h>
-#include <stdio.h>
+#include <execinfo.h>
 #include <signal.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <stdbool.h>
-#include <execinfo.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "emulate.h"
 #include "svc.h"
 
-#define HANDLER_STACK_SIZE     (SIGSTKSZ*4)
+#define HANDLER_STACK_SIZE (SIGSTKSZ * 4)
 
 static ucontext_t *context;
 static unsigned long *svc_addr;
@@ -55,8 +55,9 @@ static bool is_syscall_instruction(unsigned long addr)
   unsigned int i;
 
   for (i = 0; i < n_svc_call; i++) {
-    if (svc_addr[i] == addr)
+    if (svc_addr[i] == addr) {
       return true;
+    }
   }
 
   return false;
@@ -95,11 +96,9 @@ static void update_svc_stack(bool push)
     *--sp = context->uc_mcontext.arm_r5;
     *--sp = context->uc_mcontext.arm_r4;
     context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
-  }
-  else {
+  } else {
     context->uc_mcontext.arm_sp += 16 * sizeof(unsigned long);
   }
-
 }
 
 static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
@@ -120,7 +119,7 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
     _exit(1);
   }
 
-  //fprintf(stderr, "[*] syscall: 0x%08lx (pc: 0x%08lx)\n", syscall, pc);
+  // fprintf(stderr, "[*] syscall: 0x%08lx (pc: 0x%08lx)\n", syscall, pc);
 
   update_svc_stack(true);
 
@@ -130,12 +129,12 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
   /* handle the os_lib_call syscall specially since it modifies the context
    * directly */
   if (sdk_version == SDK_NANO_S_1_5) {
-    if (syscall == 0x6000650b) {        /* SYSCALL_os_lib_call_ID_IN */
+    if (syscall == 0x6000650b) { /* SYSCALL_os_lib_call_ID_IN */
       return;
     }
   } else if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_S_1_6 ||
              sdk_version == SDK_BLUE_2_2_5) {
-    if (syscall == 0x6000670d) {        /* SYSCALL_os_lib_call_ID_IN */
+    if (syscall == 0x6000670d) { /* SYSCALL_os_lib_call_ID_IN */
       return;
     }
   }
@@ -174,7 +173,8 @@ static int setup_alternate_stack(void)
   }
 
   if (mprotect(mem, page_size, PROT_NONE) != 0 ||
-      mprotect(mem + page_size + HANDLER_STACK_SIZE, page_size, PROT_NONE) != 0) {
+      mprotect(mem + page_size + HANDLER_STACK_SIZE, page_size, PROT_NONE) !=
+          0) {
     warn("mprotect guard pages");
     munmap(mem, size);
     return -1;
@@ -191,7 +191,6 @@ static int setup_alternate_stack(void)
   }
 
   return 0;
-
 }
 
 int setup_signals(void)
@@ -246,8 +245,9 @@ int patch_svc(void *p, size_t size)
 
   while (addr < end - 2) {
     next = memmem(addr, end - addr, "\x01\xdf", 2);
-    if (next == NULL)
+    if (next == NULL) {
       break;
+    }
 
     /* instructions are aligned on 2 bytes */
     if ((unsigned long)next & 1) {
@@ -256,8 +256,9 @@ int patch_svc(void *p, size_t size)
     }
 
     svc_addr = realloc(svc_addr, (n_svc_call + 1) * sizeof(unsigned long));
-    if (svc_addr == NULL)
+    if (svc_addr == NULL) {
       err(1, "realloc");
+    }
     svc_addr[n_svc_call] = (unsigned long)next;
 
     /* undefined instruction */

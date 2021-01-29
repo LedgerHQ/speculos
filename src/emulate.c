@@ -14,35 +14,37 @@
 // This header needs to point to the oldest available SDK
 #include "bolos_syscalls_1.5.h"
 
-int emulate(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose, sdk_version_t sdk_version)
+int emulate(unsigned long syscall, unsigned long *parameters,
+            unsigned long *ret, bool verbose, sdk_version_t sdk_version)
 {
   int retid;
   switch (sdk_version) {
-    case SDK_NANO_X_1_2:
-      retid = emulate_1_2(syscall, parameters, ret, verbose);
-      break;
-    case SDK_NANO_S_1_5:
-      retid = emulate_1_5(syscall, parameters, ret, verbose);
-      break;
-    case SDK_NANO_S_1_6:
-      retid = emulate_1_6(syscall, parameters, ret, verbose);
-      break;
-    case SDK_BLUE_2_2_5:
-      retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
-      break;
-    default:
-      errx(1, "Unsupported SDK version %i", sdk_version);
-      break;
+  case SDK_NANO_X_1_2:
+    retid = emulate_1_2(syscall, parameters, ret, verbose);
+    break;
+  case SDK_NANO_S_1_5:
+    retid = emulate_1_5(syscall, parameters, ret, verbose);
+    break;
+  case SDK_NANO_S_1_6:
+    retid = emulate_1_6(syscall, parameters, ret, verbose);
+    break;
+  case SDK_BLUE_2_2_5:
+    retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
+    break;
+  default:
+    errx(1, "Unsupported SDK version %i", sdk_version);
+    break;
   }
   return retid;
 }
 
-
-int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
+int emulate_common(unsigned long syscall, unsigned long *parameters,
+                   unsigned long *ret, bool verbose)
 {
   int retid;
 
-  switch(syscall) {
+  switch (syscall) {
+    /* clang-format off */
   SYSCALL0(check_api_level);
 
   SYSCALL6(cx_aes, "(%p, 0x%x, %p, %u, %p, %u)",
@@ -160,15 +162,15 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
             unsigned int *,                info);
 
   SYSCALL9(cx_eddsa_verify, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u)",
-    const cx_ecfp_public_key_t *, pu_key,
-    int,                          mode,
-    cx_md_t,                      hashID,
-    const unsigned char *,        hash,
-    unsigned int,                 hash_len,
-    const unsigned char *,        ctx,
-    unsigned int,                 ctx_len,
-    const unsigned char *,        sig,
-    unsigned int,                 sig_len);
+           const cx_ecfp_public_key_t *, pu_key,
+           int,                          mode,
+           cx_md_t,                      hashID,
+           const unsigned char *,        hash,
+           unsigned int,                 hash_len,
+           const unsigned char *,        ctx,
+           unsigned int,                 ctx_len,
+           const unsigned char *,        sig,
+           unsigned int,                 sig_len);
 
   SYSCALL3(cx_edward_compress_point, "(0x%x, %p, %u)",
            cx_curve_t, curve,
@@ -370,8 +372,9 @@ int emulate_common(unsigned long syscall, unsigned long *parameters, unsigned lo
   SYSCALL1(os_endorsement_get_code_hash, "(%p)", uint8_t *, buffer);
 
   SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
-    unsigned char, index,
-    unsigned char *, buffer);
+           unsigned char,   index,
+           unsigned char *, buffer);
+  /* clang-format off */
 
   default:
 

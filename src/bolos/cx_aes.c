@@ -5,12 +5,13 @@
 #include <openssl/aes.h>
 #include <openssl/crypto.h>
 
+#include "bolos/exception.h"
 #include "cx.h"
 #include "cx_aes.h"
-#include "bolos/exception.h"
 
 static void aes_encrypt_block(const cx_aes_key_t *key, const uint8_t *inblock,
-                              uint8_t *outblock) {
+                              uint8_t *outblock)
+{
   AES_KEY aes_key;
 
   AES_set_encrypt_key(key->keys, (int)key->size * 8, &aes_key);
@@ -19,7 +20,8 @@ static void aes_encrypt_block(const cx_aes_key_t *key, const uint8_t *inblock,
 }
 
 static void aes_decrypt_block(const cx_aes_key_t *key, const uint8_t *inblock,
-                              uint8_t *outblock) {
+                              uint8_t *outblock)
+{
   AES_KEY aes_key;
 
   AES_set_decrypt_key(key->keys, (int)key->size * 8, &aes_key);
@@ -28,7 +30,8 @@ static void aes_decrypt_block(const cx_aes_key_t *key, const uint8_t *inblock,
 }
 
 static int aes_cbc_encrypt(const cx_aes_key_t *key, const uint8_t *input,
-                            uint8_t *output, uint8_t *iv, size_t len) {
+                           uint8_t *output, uint8_t *iv, size_t len)
+{
   assert(len % CX_AES_BLOCK_SIZE == 0);
   size_t out_len = len;
   uint8_t block[CX_AES_BLOCK_SIZE];
@@ -48,7 +51,8 @@ static int aes_cbc_encrypt(const cx_aes_key_t *key, const uint8_t *input,
 }
 
 static int aes_cbc_decrypt(const cx_aes_key_t *key, const uint8_t *input,
-                            uint8_t *output, uint8_t *iv, size_t len) {
+                           uint8_t *output, uint8_t *iv, size_t len)
+{
   assert(len % CX_AES_BLOCK_SIZE == 0);
   size_t out_len = len;
 
@@ -70,7 +74,8 @@ static int aes_cbc_decrypt(const cx_aes_key_t *key, const uint8_t *input,
 }
 
 int sys_cx_aes_init_key(const unsigned char *raw_key, unsigned int key_len,
-                        cx_aes_key_t *key) {
+                        cx_aes_key_t *key)
+{
   memset(key, 0, sizeof(cx_aes_key_t));
   if (key_len != 16 && key_len != 24 && key_len != 32) {
     THROW(INVALID_PARAMETER);
@@ -81,13 +86,15 @@ int sys_cx_aes_init_key(const unsigned char *raw_key, unsigned int key_len,
 }
 
 int sys_cx_aes(const cx_aes_key_t *key, int mode, const unsigned char *in,
-               unsigned int len, unsigned char *out, unsigned int out_len) {
+               unsigned int len, unsigned char *out, unsigned int out_len)
+{
   return sys_cx_aes_iv(key, mode, NULL, 0, in, len, out, out_len);
 }
 
 int sys_cx_aes_iv(const cx_aes_key_t *key, int mode, const unsigned char *IV,
                   unsigned int iv_len, const unsigned char *in,
-                  unsigned int len, unsigned char *out, unsigned int out_len) {
+                  unsigned int len, unsigned char *out, unsigned int out_len)
+{
   size_t len_out;
   uint32_t umode = mode;
   uint8_t running_iv[CX_AES_BLOCK_SIZE];

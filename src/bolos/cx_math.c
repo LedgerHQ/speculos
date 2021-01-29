@@ -1,8 +1,8 @@
 #include <err.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdbool.h>
 
 #include <openssl/bn.h>
 
@@ -16,7 +16,7 @@
  */
 static bool BN_bn2binpad_truncate(const BIGNUM *a, uint8_t *to, int tolen)
 {
-  uint8_t buf[MAX_SIZE+1];
+  uint8_t buf[MAX_SIZE + 1];
 
   if (BN_bn2binpad(a, to, tolen) != -1) {
     return false;
@@ -36,9 +36,9 @@ int sys_cx_math_cmp(const uint8_t *a, const uint8_t *b, unsigned int len)
 {
   unsigned int i;
 
-  for (i=0; i<len; i++) {
+  for (i = 0; i < len; i++) {
     if (a[i] != b[i]) {
-      return a[i]<b[i]?-1:1;
+      return a[i] < b[i] ? -1 : 1;
     }
   }
   return 0;
@@ -68,7 +68,8 @@ int sys_cx_math_invintm(uint8_t *r, uint32_t a, const uint8_t *m, size_t len)
   return 0;
 }
 
-int sys_cx_math_invprimem(uint8_t *r, const uint8_t *a, const uint8_t *m, unsigned int len)
+int sys_cx_math_invprimem(uint8_t *r, const uint8_t *a, const uint8_t *m,
+                          unsigned int len)
 {
   BIGNUM *aa, *rr, *mm;
   BN_CTX *ctx;
@@ -92,10 +93,11 @@ int sys_cx_math_invprimem(uint8_t *r, const uint8_t *a, const uint8_t *m, unsign
   return 0;
 }
 
-int sys_cx_math_is_zero(const uint8_t *a, unsigned int len) {
+int sys_cx_math_is_zero(const uint8_t *a, unsigned int len)
+{
   unsigned int i;
 
-  for (i=0; i<len; i++) {
+  for (i = 0; i < len; i++) {
     if (a[i] != 0) {
       return 0;
     }
@@ -103,7 +105,8 @@ int sys_cx_math_is_zero(const uint8_t *a, unsigned int len) {
   return 1;
 }
 
-int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int len)
+int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b,
+                    unsigned int len)
 {
   BIGNUM *aa, *bb, *rr;
   int carry;
@@ -129,7 +132,8 @@ int sys_cx_math_add(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int
   return carry;
 }
 
-int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8_t *m, unsigned int len)
+int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b,
+                     const uint8_t *m, unsigned int len)
 {
   BIGNUM *aa, *bb, *rr, *mm;
   BN_CTX *ctx = BN_CTX_new();
@@ -155,7 +159,8 @@ int sys_cx_math_addm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8
   return 0xdeadbeef;
 }
 
-int sys_cx_math_powm(uint8_t *r, const uint8_t *a, const uint8_t *e, size_t len_e, const uint8_t *m, size_t len)
+int sys_cx_math_powm(uint8_t *r, const uint8_t *a, const uint8_t *e,
+                     size_t len_e, const uint8_t *m, size_t len)
 {
   BIGNUM *aa, *ee, *rr, *mm;
   BN_CTX *ctx;
@@ -182,7 +187,8 @@ int sys_cx_math_powm(uint8_t *r, const uint8_t *a, const uint8_t *e, size_t len_
   return 0;
 }
 
-int sys_cx_math_sub(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int len)
+int sys_cx_math_sub(uint8_t *r, const uint8_t *a, const uint8_t *b,
+                    unsigned int len)
 {
   BIGNUM *aa, *bb, *rr;
 
@@ -203,7 +209,8 @@ int sys_cx_math_sub(uint8_t *r, const uint8_t *a, const uint8_t *b, unsigned int
   return 0;
 }
 
-int sys_cx_math_subm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8_t *m, unsigned int len)
+int sys_cx_math_subm(uint8_t *r, const uint8_t *a, const uint8_t *b,
+                     const uint8_t *m, unsigned int len)
 {
   BIGNUM *aa, *bb, *rr, *mm;
   BN_CTX *ctx;
@@ -230,7 +237,8 @@ int sys_cx_math_subm(uint8_t *r, const uint8_t *a, const uint8_t *b, const uint8
   return 0;
 }
 
-int sys_cx_math_modm(uint8_t *v, unsigned int len_v, const uint8_t *m, unsigned int len_m)
+int sys_cx_math_modm(uint8_t *v, unsigned int len_v, const uint8_t *m,
+                     unsigned int len_m)
 {
   BIGNUM *aa, *rr, *mm;
   BN_CTX *ctx = BN_CTX_new();
@@ -252,9 +260,7 @@ int sys_cx_math_modm(uint8_t *v, unsigned int len_v, const uint8_t *m, unsigned 
   return 0xdeadbeef;
 }
 
-int sys_cx_math_mult(uint8_t *r,
-                     const uint8_t *a,
-                     const uint8_t *b,
+int sys_cx_math_mult(uint8_t *r, const uint8_t *a, const uint8_t *b,
                      unsigned int len)
 {
   BIGNUM *aa, *bb, *rr;
@@ -267,7 +273,7 @@ int sys_cx_math_mult(uint8_t *r,
   BN_bin2bn(b, len, bb);
 
   BN_mul(rr, aa, bb, ctx);
-  BN_bn2binpad(rr, r, 2*len);
+  BN_bn2binpad(rr, r, 2 * len);
 
   BN_free(rr);
   BN_free(bb);
@@ -278,11 +284,8 @@ int sys_cx_math_mult(uint8_t *r,
   return 0xdeadbeef;
 }
 
-int sys_cx_math_multm(uint8_t *r,
-                      const uint8_t *a,
-                      const uint8_t *b,
-                      const uint8_t *m,
-                      unsigned int len)
+int sys_cx_math_multm(uint8_t *r, const uint8_t *a, const uint8_t *b,
+                      const uint8_t *m, unsigned int len)
 {
   BIGNUM *aa, *bb, *rr, *mm;
   BN_CTX *ctx = BN_CTX_new();

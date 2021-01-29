@@ -1,6 +1,6 @@
 #include "emulate.h"
 
-#define BOLOS_UX_OK     0xAA
+#define BOLOS_UX_OK 0xAA
 
 /* TODO */
 unsigned long sys_os_ux_1_6(bolos_ux_params_t *UNUSED(params))

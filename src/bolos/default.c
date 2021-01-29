@@ -4,7 +4,7 @@
 
 #include "emulate.h"
 
-#define PAGE_SIZE	4096
+#define PAGE_SIZE 4096
 
 unsigned long sys_os_global_pin_invalidate(void)
 {
@@ -16,13 +16,13 @@ unsigned long sys_os_global_pin_invalidate(void)
  * TODO: ensure that source and destination address are valid.
  * TODO: map these data to the host filesystem.
  */
-int sys_nvm_write(void *dst_addr, void* src_addr, size_t src_len)
+int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len)
 {
   ptrdiff_t diff;
   size_t size;
   void *p;
 
-  p = (void *)((unsigned long)dst_addr & (~(PAGE_SIZE-1)));
+  p = (void *)((unsigned long)dst_addr & (~(PAGE_SIZE - 1)));
   diff = (ptrdiff_t)dst_addr - (ptrdiff_t)p;
   size = src_len + diff;
 

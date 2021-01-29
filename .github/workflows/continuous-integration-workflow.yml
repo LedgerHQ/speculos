@@ -24,6 +24,14 @@ jobs:
     - name: Clone
       uses: actions/checkout@v2
 
+    - name: Lint
+      uses: DoozyX/clang-format-lint-action@v0.11
+      with:
+        source: 'src tests vnc'
+        extensions: 'c,h'
+        clangFormatVersion: 11
+        fail_ci_if_error: true
+
     - name: Build
       run: |
         cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1

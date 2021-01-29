@@ -8,10 +8,10 @@
 #ifdef CUSTOM_CURSOR
 
 #include <err.h>
-#include <signal.h>
 #include <rfb/rfb.h>
-#include <stdbool.h>
 #include <rfb/rfbclient.h>
+#include <signal.h>
+#include <stdbool.h>
 
 #include "cursor.h"
 
@@ -47,8 +47,8 @@
 #include "cursors/frame_20.h"
 #include "cursors/frame_21.h"
 
-#define CURSOR_WIDTH    32
-#define CURSOR_HEIGHT   32
+#define CURSOR_WIDTH  32
+#define CURSOR_HEIGHT 32
 
 #define ANIMATED_CURSOR_INTERVAL 150
 
@@ -60,102 +60,58 @@ static bool konami_code_enabled = false;
 
 static unsigned int konami_index;
 static rfbKeySym konami_code[] = {
-    XK_Up,
-    XK_Up,
-    XK_Down,
-    XK_Down,
-    XK_Left,
-    XK_Right,
-    XK_Left,
-    XK_Right,
-    //XK_B,
-    //XK_A,
+  XK_Up, XK_Up, XK_Down, XK_Down, XK_Left, XK_Right, XK_Left, XK_Right,
+  // XK_B,
+  // XK_A,
 };
 
-static char *cursor_list[] = {
-    "approved",
-    "bitcoin",
-    "blue",
-    "fabrice",
-    "pizza",
-    "star",
-    "sword",
-    "verynice",
-    "flower"
-};
+static char *cursor_list[] = { "approved", "bitcoin",  "blue",
+                               "fabrice",  "pizza",    "star",
+                               "sword",    "verynice", "flower" };
 
 static char *flower_bitmaps[] = {
-    cursor_frame_00,
-    cursor_frame_01,
-    cursor_frame_02,
-    cursor_frame_03,
-    cursor_frame_04,
-    cursor_frame_05,
-    cursor_frame_06,
-    cursor_frame_07,
-    cursor_frame_08,
-    cursor_frame_09,
-    cursor_frame_10,
-    cursor_frame_11,
-    cursor_frame_12,
-    cursor_frame_13,
-    cursor_frame_14,
-    cursor_frame_15,
-    cursor_frame_16,
-    cursor_frame_17,
-    cursor_frame_18,
-    cursor_frame_19,
-    cursor_frame_20,
-    cursor_frame_21,
+  cursor_frame_00, cursor_frame_01, cursor_frame_02, cursor_frame_03,
+  cursor_frame_04, cursor_frame_05, cursor_frame_06, cursor_frame_07,
+  cursor_frame_08, cursor_frame_09, cursor_frame_10, cursor_frame_11,
+  cursor_frame_12, cursor_frame_13, cursor_frame_14, cursor_frame_15,
+  cursor_frame_16, cursor_frame_17, cursor_frame_18, cursor_frame_19,
+  cursor_frame_20, cursor_frame_21,
 };
 
 static char *flower_colors[] = {
-    color_frame_00,
-    color_frame_01,
-    color_frame_02,
-    color_frame_03,
-    color_frame_04,
-    color_frame_05,
-    color_frame_06,
-    color_frame_07,
-    color_frame_08,
-    color_frame_09,
-    color_frame_10,
-    color_frame_11,
-    color_frame_12,
-    color_frame_13,
-    color_frame_14,
-    color_frame_15,
-    color_frame_16,
-    color_frame_17,
-    color_frame_18,
-    color_frame_19,
-    color_frame_20,
-    color_frame_21,
+  color_frame_00, color_frame_01, color_frame_02, color_frame_03,
+  color_frame_04, color_frame_05, color_frame_06, color_frame_07,
+  color_frame_08, color_frame_09, color_frame_10, color_frame_11,
+  color_frame_12, color_frame_13, color_frame_14, color_frame_15,
+  color_frame_16, color_frame_17, color_frame_18, color_frame_19,
+  color_frame_20, color_frame_21,
 };
 
-static rfbCursorPtr MakeRichCursor(rfbScreenInfoPtr rfbScreen, char *cursor_bitmap, char *cursor_color)
+static rfbCursorPtr MakeRichCursor(rfbScreenInfoPtr rfbScreen,
+                                   char *cursor_bitmap, char *cursor_color)
 {
   rfbCursorPtr c;
 
   if (rfbScreen->cursor->cleanupSource) {
-      //rfbFreeCursor(rfbScreen->cursor);
+    // rfbFreeCursor(rfbScreen->cursor);
   }
 
-  rfbScreen->cursor = rfbMakeXCursor(CURSOR_WIDTH, CURSOR_HEIGHT, cursor_bitmap, cursor_bitmap);
+  rfbScreen->cursor =
+      rfbMakeXCursor(CURSOR_WIDTH, CURSOR_HEIGHT, cursor_bitmap, cursor_bitmap);
   c = rfbScreen->cursor;
   c->xhot = 16;
   c->yhot = 24;
   c->cleanupSource = TRUE;
 
   if (c->richSource == NULL) {
-      c->richSource = malloc(CURSOR_WIDTH * CURSOR_HEIGHT * bytes_per_pixel);
-      if (c->richSource == NULL) {
-          err(1, "malloc");
-      }
+    c->richSource = malloc(CURSOR_WIDTH * CURSOR_HEIGHT * bytes_per_pixel);
+    if (c->richSource == NULL) {
+      err(1, "malloc");
+    }
   }
   c->cleanupRichSource = TRUE;
-  memcpy(c->richSource, cursor_color, CURSOR_WIDTH * CURSOR_HEIGHT * bytes_per_pixel);
+  memcpy(c->richSource, cursor_color,
+         CURSOR_WIDTH * CURSOR_HEIGHT * bytes_per_pixel);
 
   current_cursor = c;
 
@@ -164,110 +120,109 @@ static rfbCursorPtr MakeRichCursor(rfbScreenInfoPtr rfbScreen, char *cursor_bitm
 
 static rfbCursorPtr getCursorPtr(rfbClientPtr cl)
 {
-    return current_cursor;
+  return current_cursor;
 }
 
 static void animate_cursor(int dummy)
 {
-    animate_step = (animate_step + 2) % 22;
+  animate_step = (animate_step + 2) % 22;
 
-    MakeRichCursor(screen,
-                   flower_bitmaps[animate_step],
-                   flower_colors[animate_step]);
+  MakeRichCursor(screen, flower_bitmaps[animate_step],
+                 flower_colors[animate_step]);
 
-    rfbSetCursor(screen, current_cursor);
+  rfbSetCursor(screen, current_cursor);
 }
 
 static void setup_animated_cursor(rfbScreenInfoPtr screen)
 {
-    struct itimerval it_val;
+  struct itimerval it_val;
 
-    if (signal(SIGALRM, animate_cursor) == SIG_ERR) {
-        warn("signal(SIGALRM)");
-        return;
-    }
+  if (signal(SIGALRM, animate_cursor) == SIG_ERR) {
+    warn("signal(SIGALRM)");
+    return;
+  }
 
-    it_val.it_value.tv_sec = ANIMATED_CURSOR_INTERVAL / 1000;
-    it_val.it_value.tv_usec = (ANIMATED_CURSOR_INTERVAL * 1000) % 1000000;
-    it_val.it_interval = it_val.it_value;
-    if (setitimer(ITIMER_REAL, &it_val, NULL) == -1) {
-        warn("setitimer()");
-        return;
-    }
+  it_val.it_value.tv_sec = ANIMATED_CURSOR_INTERVAL / 1000;
+  it_val.it_value.tv_usec = (ANIMATED_CURSOR_INTERVAL * 1000) % 1000000;
+  it_val.it_interval = it_val.it_value;
+  if (setitimer(ITIMER_REAL, &it_val, NULL) == -1) {
+    warn("setitimer()");
+    return;
+  }
 
-    screen->getCursorPtr = getCursorPtr;
+  screen->getCursorPtr = getCursorPtr;
 }
 
 static void disable_animated_cursor(rfbScreenInfoPtr screen)
 {
-    if (signal(SIGALRM, SIG_DFL) == SIG_ERR) {
-        warn("signal(SIGALRM)");
-        return;
-    }
+  if (signal(SIGALRM, SIG_DFL) == SIG_ERR) {
+    warn("signal(SIGALRM)");
+    return;
+  }
 
-    if (setitimer(ITIMER_REAL, NULL, NULL) == -1) {
-        warn("setitimer()");
-        return;
-    }
+  if (setitimer(ITIMER_REAL, NULL, NULL) == -1) {
+    warn("setitimer()");
+    return;
+  }
 }
 
-#define set_cursor_helper(x) do {                          \
-    if (strcmp(p, # x) == 0) {                             \
-        MakeRichCursor(screen, cursor_ ## x, color_ ## x); \
-        rfbSetCursor(screen, current_cursor);              \
-        screen->getCursorPtr = getCursorPtr;               \
-        return;                                            \
-    }                                                      \
-    } while (0)
+#define set_cursor_helper(x)                                                   \
+  do {                                                                         \
+    if (strcmp(p, #x) == 0) {                                                  \
+      MakeRichCursor(screen, cursor_##x, color_##x);                           \
+      rfbSetCursor(screen, current_cursor);                                    \
+      screen->getCursorPtr = getCursorPtr;                                     \
+      return;                                                                  \
+    }                                                                          \
+  } while (0)
 
 void set_cursor(rfbScreenInfoPtr screen, char *p)
 {
-    set_cursor_helper(approved);
-    set_cursor_helper(bitcoin);
-    set_cursor_helper(blue);
-    set_cursor_helper(fabrice);
-    set_cursor_helper(pizza);
-    set_cursor_helper(star);
-    set_cursor_helper(sword);
-    set_cursor_helper(verynice);
+  set_cursor_helper(approved);
+  set_cursor_helper(bitcoin);
+  set_cursor_helper(blue);
+  set_cursor_helper(fabrice);
+  set_cursor_helper(pizza);
+  set_cursor_helper(star);
+  set_cursor_helper(sword);
+  set_cursor_helper(verynice);
 
-    if (strcmp(p, "flower") == 0) {
-        setup_animated_cursor(screen);
-    }
+  if (strcmp(p, "flower") == 0) {
+    setup_animated_cursor(screen);
+  }
 }
 
 void set_cursor_from_keysym(rfbScreenInfoPtr screen, unsigned int index)
 {
-    if (index >= ARRAY_SIZE(cursor_list)) {
-        return;
-    }
+  if (index >= ARRAY_SIZE(cursor_list)) {
+    return;
+  }
 
-    set_cursor(screen, cursor_list[index]);
+  set_cursor(screen, cursor_list[index]);
 }
 
 void handle_konami_code(rfbBool down, rfbKeySym keySym)
 {
-    if (!konami_code_enabled) {
-        if (keySym == konami_code[konami_index] && down) {
-            konami_index++;
-            //fprintf(stderr, "konami = %d\n", konami_index);
-            if (konami_index == sizeof(konami_code) / sizeof(konami_code[0])) {
-                konami_code_enabled = true;
-                setup_animated_cursor(screen);
-            }
-        } else if (down) {
-            konami_index = 0;
-            if (keySym == konami_code[0]) {
-                konami_index++;
-            }
-        }
+  if (!konami_code_enabled) {
+    if (keySym == konami_code[konami_index] && down) {
+      konami_index++;
+      // fprintf(stderr, "konami = %d\n", konami_index);
+      if (konami_index == sizeof(konami_code) / sizeof(konami_code[0])) {
+        konami_code_enabled = true;
+        setup_animated_cursor(screen);
+      }
+    } else if (down) {
+      konami_index = 0;
+      if (keySym == konami_code[0]) {
+        konami_index++;
+      }
     }
-    else {
-        if (keySym >= XK_0 && keySym <= XK_9 && down) {
-            disable_animated_cursor(screen);
-            set_cursor_from_keysym(screen, keySym - XK_0);
-        }
+  } else {
+    if (keySym >= XK_0 && keySym <= XK_9 && down) {
+      disable_animated_cursor(screen);
+      set_cursor_from_keysym(screen, keySym - XK_0);
     }
+  }
 }
 
 #endif

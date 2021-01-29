@@ -1,24 +1,22 @@
 #include <err.h>
 #include <stdio.h>
 
-#include "bolos/cx_aes.h"
 #include "bolos/bagl.h"
-#include "emulate.h"
+#include "bolos/cx_aes.h"
 #include "bolos_syscalls_1.2.h"
+#include "emulate.h"
 
-unsigned long sys_os_perso_derive_node_bip32_seed_key(unsigned int mode,
-                                                      cx_curve_t curve,
-                                                      const unsigned int *path,
-                                                      unsigned int pathLength,
-                                                      unsigned char *privateKey,
-                                                      unsigned char *chain,
-                                                      unsigned char *seed_key,
-                                                      unsigned int seed_key_length);
+unsigned long sys_os_perso_derive_node_bip32_seed_key(
+    unsigned int mode, cx_curve_t curve, const unsigned int *path,
+    unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
+    unsigned char *seed_key, unsigned int seed_key_length);
 
-int emulate_1_2(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
+int emulate_1_2(unsigned long syscall, unsigned long *parameters,
+                unsigned long *ret, bool verbose)
 {
   int retid;
 
+  /* clang-format off */
   switch(syscall) {
   SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
            int,                  x,
@@ -117,6 +115,7 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters, unsigned long 
            unsigned int,         len,
            uint8_t *,            out,
            unsigned int,         out_len);
+    /* clang-format on */
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

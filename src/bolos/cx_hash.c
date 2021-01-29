@@ -1,119 +1,128 @@
 #include <stdio.h>
 
+#include "bolos/exception.h"
 #include "cx.h"
 #include "emulate.h"
-#include "bolos/exception.h"
 
 static const cx_hash_info_t cx_sha256_info = {
-    CX_SHA256,
-    CX_SHA256_SIZE,
-    SHA256_BLOCK_SIZE,
-    (int (*)(void *ctx))cx_sha256_init,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha256_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha256_final,
-    NULL,
-    (int (*)(const void *ctx))cx_sha256_validate_context,
-    NULL};
+  CX_SHA256,
+  CX_SHA256_SIZE,
+  SHA256_BLOCK_SIZE,
+  (int (*)(void *ctx))cx_sha256_init,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha256_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha256_final,
+  NULL,
+  (int (*)(const void *ctx))cx_sha256_validate_context,
+  NULL
+};
 
 static const cx_hash_info_t cx_sha224_info = {
-    CX_SHA224,
-    CX_SHA224_SIZE,
-    SHA256_BLOCK_SIZE,
-    (int (*)(void *ctx))cx_sha224_init,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha256_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha256_final,
-    NULL,
-    (int (*)(const void *ctx))cx_sha256_validate_context,
-    NULL};
-
+  CX_SHA224,
+  CX_SHA224_SIZE,
+  SHA256_BLOCK_SIZE,
+  (int (*)(void *ctx))cx_sha224_init,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha256_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha256_final,
+  NULL,
+  (int (*)(const void *ctx))cx_sha256_validate_context,
+  NULL
+};
 
 static const cx_hash_info_t cx_sha384_info = {
-    CX_SHA384,
-    CX_SHA384_SIZE,
-    SHA512_BLOCK_SIZE,
-    (int (*)(void *ctx))cx_sha384_init,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha512_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha512_final,
-    NULL,
-    (int (*)(const void *ctx))cx_sha512_validate_context,
-    NULL};
+  CX_SHA384,
+  CX_SHA384_SIZE,
+  SHA512_BLOCK_SIZE,
+  (int (*)(void *ctx))cx_sha384_init,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha512_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha512_final,
+  NULL,
+  (int (*)(const void *ctx))cx_sha512_validate_context,
+  NULL
+};
 
 static const cx_hash_info_t cx_sha512_info = {
-    CX_SHA512,
-    CX_SHA512_SIZE,
-    SHA512_BLOCK_SIZE,
-    (int (*)(void *ctx))cx_sha512_init,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha512_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha512_final,
-    NULL,
-    (int (*)(const void *ctx))cx_sha512_validate_context,
-    NULL};
+  CX_SHA512,
+  CX_SHA512_SIZE,
+  SHA512_BLOCK_SIZE,
+  (int (*)(void *ctx))cx_sha512_init,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha512_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha512_final,
+  NULL,
+  (int (*)(const void *ctx))cx_sha512_validate_context,
+  NULL
+};
 
 static const cx_hash_info_t cx_sha3_info = {
-    CX_SHA3,
-    0,
-    0,
-    NULL,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
-    (int (*)(void *ctx, size_t output_size))cx_sha3_init,
-    (int (*)(const void *ctx))cx_sha3_validate_context,
-    (size_t(*)(const void *ctx))cx_sha3_get_output_size};
+  CX_SHA3,
+  0,
+  0,
+  NULL,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
+  (int (*)(void *ctx, size_t output_size))cx_sha3_init,
+  (int (*)(const void *ctx))cx_sha3_validate_context,
+  (size_t(*)(const void *ctx))cx_sha3_get_output_size
+};
 
 static const cx_hash_info_t cx_keccak_info = {
-    CX_KECCAK,
-    0,
-    0,
-    NULL,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
-    (int (*)(void *ctx, size_t output_size))cx_keccak_init,
-    (int (*)(const void *ctx))cx_sha3_validate_context,
-    (size_t(*)(const void *ctx))cx_sha3_get_output_size};
+  CX_KECCAK,
+  0,
+  0,
+  NULL,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
+  (int (*)(void *ctx, size_t output_size))cx_keccak_init,
+  (int (*)(const void *ctx))cx_sha3_validate_context,
+  (size_t(*)(const void *ctx))cx_sha3_get_output_size
+};
 
 static const cx_hash_info_t cx_shake128_info = {
-    CX_SHAKE128,
-    0,
-    0,
-    NULL,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
-    (int (*)(void *ctx, size_t output_size))cx_shake128_init,
-    (int (*)(const void *ctx))cx_shake_validate_context,
-    (size_t(*)(const void *ctx))cx_sha3_get_output_size};
+  CX_SHAKE128,
+  0,
+  0,
+  NULL,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
+  (int (*)(void *ctx, size_t output_size))cx_shake128_init,
+  (int (*)(const void *ctx))cx_shake_validate_context,
+  (size_t(*)(const void *ctx))cx_sha3_get_output_size
+};
 
 static const cx_hash_info_t cx_shake256_info = {
-    CX_SHAKE256,
-    0,
-    0,
-    NULL,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
-    (int (*)(void *ctx, size_t output_size))cx_shake256_init,
-    (int (*)(const void *ctx))cx_shake_validate_context,
-    (size_t(*)(const void *ctx))cx_sha3_get_output_size};
+  CX_SHAKE256,
+  0,
+  0,
+  NULL,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_sha3_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_sha3_final,
+  (int (*)(void *ctx, size_t output_size))cx_shake256_init,
+  (int (*)(const void *ctx))cx_shake_validate_context,
+  (size_t(*)(const void *ctx))cx_sha3_get_output_size
+};
 
 static const cx_hash_info_t cx_ripemd160_info = {
-    CX_RIPEMD160,
-    CX_RIPEMD160_SIZE,
-    RIPEMD_BLOCK_SIZE,
-    (int (*)(void *ctx))cx_ripemd160_init,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_ripemd160_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_ripemd160_final,
-    NULL,
-    (int (*)(const void *ctx))cx_ripemd160_validate_context,
-    NULL};
+  CX_RIPEMD160,
+  CX_RIPEMD160_SIZE,
+  RIPEMD_BLOCK_SIZE,
+  (int (*)(void *ctx))cx_ripemd160_init,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_ripemd160_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_ripemd160_final,
+  NULL,
+  (int (*)(const void *ctx))cx_ripemd160_validate_context,
+  NULL
+};
 
 static const cx_hash_info_t cx_blake2b_info = {
-    CX_BLAKE2B,
-    0,
-    BLAKE2B_BLOCKBYTES,
-    NULL,
-    (int (*)(void *ctx, const uint8_t *data, size_t len))cx_blake2b_update,
-    (int (*)(void *ctx, uint8_t *digest))cx_blake2b_final,
-    (int (*)(void *ctx, size_t output_size))cx_blake2b_init,
-    (int (*)(const void *ctx))cx_blake2b_validate_context,
-    (size_t(*)(const void *ctx))cx_blake2b_get_output_size};
+  CX_BLAKE2B,
+  0,
+  BLAKE2B_BLOCKBYTES,
+  NULL,
+  (int (*)(void *ctx, const uint8_t *data, size_t len))cx_blake2b_update,
+  (int (*)(void *ctx, uint8_t *digest))cx_blake2b_final,
+  (int (*)(void *ctx, size_t output_size))cx_blake2b_init,
+  (int (*)(const void *ctx))cx_blake2b_validate_context,
+  (size_t(*)(const void *ctx))cx_blake2b_get_output_size
+};
 
 #if 0
 static const cx_hash_info_t cx_groestl_info = {
@@ -128,7 +137,8 @@ static const cx_hash_info_t cx_groestl_info = {
     (size_t(*)(const void *ctx))cx_groestl_get_output_size};
 #endif
 
-const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type) {
+const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type)
+{
   switch (md_type) {
   case CX_SHA256:
     return &cx_sha256_info;
@@ -159,7 +169,8 @@ const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type) {
   }
 }
 
-size_t cx_hash_get_size(const cx_hash_ctx *ctx) {
+size_t cx_hash_get_size(const cx_hash_ctx *ctx)
+{
   const cx_hash_info_t *info = cx_hash_get_info(ctx->header.algo);
   if (info == NULL) {
     return 0;
@@ -170,7 +181,8 @@ size_t cx_hash_get_size(const cx_hash_ctx *ctx) {
   return info->output_size_func(ctx);
 }
 
-int cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type) {
+int cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type)
+{
   const cx_hash_info_t *info = cx_hash_get_info(md_type);
   if (info == NULL) {
     return 0;
@@ -184,7 +196,8 @@ int cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type) {
   return 1;
 }
 
-int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size) {
+int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size)
+{
   const cx_hash_info_t *info = cx_hash_get_info(md_type);
   if (info == NULL) {
     return 0;
@@ -200,7 +213,8 @@ int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size) {
   return 1;
 }
 
-int cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len) {
+int cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len)
+{
   if (ctx == NULL) {
     return 0;
   }
@@ -214,7 +228,8 @@ int cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len) {
   return info->update_func(ctx, data, len);
 }
 
-int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest) {
+int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest)
+{
   if (ctx == NULL || digest == NULL) {
     return 0;
   }
@@ -228,7 +243,8 @@ int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest) {
   return info->finish_func(ctx, digest);
 }
 
-static int cx_hash_validate_context(const cx_hash_t *ctx) {
+static int cx_hash_validate_context(const cx_hash_t *ctx)
+{
   if (ctx == NULL) {
     return 0;
   }
@@ -239,11 +255,12 @@ static int cx_hash_validate_context(const cx_hash_t *ctx) {
   return info->validate_context(ctx);
 }
 
-unsigned long sys_cx_hash(cx_hash_t *hash, int mode, const uint8_t *in, size_t len, uint8_t *out, size_t out_len)
+unsigned long sys_cx_hash(cx_hash_t *hash, int mode, const uint8_t *in,
+                          size_t len, uint8_t *out, size_t out_len)
 {
   unsigned int digest_len;
 
-    // --- init locals ---
+  // --- init locals ---
   if (!cx_hash_validate_context(hash)) {
     goto err;
   }

@@ -2,14 +2,16 @@
 #include <stdio.h>
 
 #include "bolos/cx_aes.h"
-#include "emulate.h"
 #include "bolos_syscalls_1.6.h"
+#include "emulate.h"
 
-int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long *ret, bool verbose)
+int emulate_1_6(unsigned long syscall, unsigned long *parameters,
+                unsigned long *ret, bool verbose)
 {
   int retid;
 
-  switch(syscall) {
+  switch (syscall) {
+    /* clang-format off */
   SYSCALL3(cx_crc16_update, "(%u, %p, %u)",
            unsigned short, crc, const void *, b, size_t, len);
 
@@ -87,6 +89,7 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters, unsigned long 
            unsigned int,         len,
            uint8_t *,            out,
            unsigned int,         out_len);
+    /* clang-format on */
 
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);

@@ -16,6 +16,8 @@
 
 #include "cx_hash.h"
 
+/* clang-format off */
+
 //#include <stddef.h>
 //#include <stdint.h>
 
@@ -196,3 +198,5 @@ extern "C" {
 #if defined(__cplusplus)
 }
 #endif
+
+/* clang-format on */

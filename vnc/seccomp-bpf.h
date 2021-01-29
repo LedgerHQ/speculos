@@ -12,6 +12,8 @@
 #ifndef _SECCOMP_BPF_H_
 #define _SECCOMP_BPF_H_
 
+/* clang-format off */
+
 #define _GNU_SOURCE 1
 #include <stdio.h>
 #include <stddef.h>
@@ -77,5 +79,7 @@ struct seccomp_data {
 
 #define KILL_PROCESS \
 	BPF_STMT(BPF_RET+BPF_K, SECCOMP_RET_KILL)
+
+/* clang-format on */
 
 #endif /* _SECCOMP_BPF_H_ */

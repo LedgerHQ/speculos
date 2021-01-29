@@ -4,8 +4,8 @@
 #include "bagl.h"
 #include "emulate.h"
 
-#define SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS 0x65
-#define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS 0x69
+#define SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS           0x65
+#define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS       0x69
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START 0x00
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_CONT  0x01
 
@@ -32,7 +32,8 @@ typedef struct __attribute__((__packed__)) {
   uint8_t padding2[1];
 } bagl_component_t;
 
-unsigned long sys_bagl_hal_draw_rect(unsigned int color, int x, int y, unsigned int width, unsigned int height)
+unsigned long sys_bagl_hal_draw_rect(unsigned int color, int x, int y,
+                                     unsigned int width, unsigned int height)
 {
   bagl_component_t c;
   uint8_t header[3];
@@ -60,12 +61,14 @@ unsigned long sys_bagl_hal_draw_rect(unsigned int color, int x, int y, unsigned 
   return 0;
 }
 
-#define HBE(value, dst, offset) do {                   \
-    dst[offset++] = (value >> 8) & 0xff;               \
-    dst[offset++] = value & 0xff;                      \
+#define HBE(value, dst, offset)                                                \
+  do {                                                                         \
+    dst[offset++] = (value >> 8) & 0xff;                                       \
+    dst[offset++] = value & 0xff;                                              \
   } while (0)
 
-size_t build_chunk(uint8_t *buf, size_t *offset, size_t size, const uint8_t *bitmap, const size_t bitmap_length)
+size_t build_chunk(uint8_t *buf, size_t *offset, size_t size,
+                   const uint8_t *bitmap, const size_t bitmap_length)
 {
   size_t len = MIN(size, bitmap_length - *offset);
 
@@ -75,10 +78,14 @@ size_t build_chunk(uint8_t *buf, size_t *offset, size_t size, const uint8_t *bit
   return len;
 }
 
-unsigned long sys_bagl_hal_draw_bitmap_within_rect(int x, int y, unsigned int width, unsigned int height, unsigned int color_count, const unsigned int *colors, unsigned int bit_per_pixel, const uint8_t *bitmap, unsigned int bitmap_length_bits)
+unsigned long sys_bagl_hal_draw_bitmap_within_rect(
+    int x, int y, unsigned int width, unsigned int height,
+    unsigned int color_count, const unsigned int *colors,
+    unsigned int bit_per_pixel, const uint8_t *bitmap,
+    unsigned int bitmap_length_bits)
 {
   size_t i, len, size;
-  uint8_t buf[300-4]; /* size limit in io_seph_send */
+  uint8_t buf[300 - 4]; /* size limit in io_seph_send */
   uint8_t header[4];
 
   size = 0;
@@ -101,7 +108,8 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(int x, int y, unsigned int wi
 
   size_t bitmap_length = bitmap_length_bits / 8;
   size_t offset = 0;
-  len = build_chunk(buf + size, &offset, sizeof(buf) - size, bitmap, bitmap_length);
+  len = build_chunk(buf + size, &offset, sizeof(buf) - size, bitmap,
+                    bitmap_length);
 
   header[0] = SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS;
   header[1] = ((size + len + 1) >> 8) & 0xff;

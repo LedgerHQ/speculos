@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#ifndef NATIVE_64BITS //NO 64BITS
+#ifndef NATIVE_64BITS // NO 64BITS
 /** 64bits types, native or by-hands, depending on target and/or compiler
  * support.
  * This type is defined here only because sha-3 struct used it INTENALLY.
@@ -20,7 +20,7 @@ struct uint64_s {
 };
 typedef struct uint64_s uint64bits_t;
 #else
-typedef  unsigned long long uint64bits_t;
+typedef unsigned long long uint64bits_t;
 #endif
 
 /* ======================================================================= */
@@ -35,39 +35,48 @@ unsigned long int cx_rotr(unsigned long int x, unsigned char n) ;
 unsigned long int cx_shr(unsigned long int x, unsigned char n) ;
 #else
 #define CX_INLINE_U32
-#define cx_rotl(x, n) ( ((x) << (n)) | ((x) >> (32 - (n))) )
-#define cx_rotr(x, n) ( ((x) >> (n)) | ((x) << (32 - (n))) )
-#define cx_shr(x, n)  (  (x) >> (n) )
+#define cx_rotl(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
+#define cx_rotr(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
+#define cx_shr(x, n)  ((x) >> (n))
 #endif
 
 /* ======================================================================= */
 /*                          64 BITS manipulation                           */
 /* ======================================================================= */
 
-#ifndef NATIVE_64BITS //NO 64BITS
-
+#ifndef NATIVE_64BITS // NO 64BITS
 
 #ifdef OS_LITTLE_ENDIAN
-#define _64BITS(h,l) {l,h}
-#else 
-#define _64BITS(h,l) {h,l}
-#endif 
+#define _64BITS(h, l)                                                          \
+  {                                                                            \
+    l, h                                                                       \
+  }
+#else
+#define _64BITS(h, l)                                                          \
+  {                                                                            \
+    h, l                                                                       \
+  }
+#endif
 
-#define CLR64(x)        (x).l=0; (x).h=0
-#define ADD64(x,y)      cx_add_64(&(x),&(y))
-#define ASSIGN64(r,x)   (r).l = (x).l; (r).h = (x).h
+#define CLR64(x)                                                               \
+  (x).l = 0;                                                                   \
+  (x).h = 0
+#define ADD64(x, y) cx_add_64(&(x), &(y))
+#define ASSIGN64(r, x)                                                         \
+  (r).l = (x).l;                                                               \
+  (r).h = (x).h
 
-void cx_rotr64(uint64bits_t *x, unsigned int n) ;
+void cx_rotr64(uint64bits_t *x, unsigned int n);
 
-void cx_shr64(uint64bits_t *x, unsigned char n) ;
+void cx_shr64(uint64bits_t *x, unsigned char n);
 
 void cx_add_64(uint64bits_t *a, uint64bits_t *b);
-void cx_swap_uint64(uint64bits_t  *v);
+void cx_swap_uint64(uint64bits_t *v);
 void cx_swap_buffer64(uint64bits_t *v, int len);
 
 #else
 
-#define _64BITS(h,l) (h##ULL<<32)|(l##ULL)
+#define _64BITS(h, l) (h##ULL << 32) | (l##ULL)
 
 #if 0
 uint64bits_t cx_rotr64(uint64bits_t x, unsigned int n);
@@ -76,18 +85,14 @@ uint64bits_t cx_shr64(uint64bits_t x, unsigned int n) ;
 #else
 #define CX_INLINE_U64
 
-#define   cx_rotr64(x, n)                       \
-  ( ((x) >> (n)) | ((x) << ((64) - (n))) )
+#define cx_rotr64(x, n) (((x) >> (n)) | ((x) << ((64) - (n))))
 
-#define   cx_rotl64(x, n)                       \
-  ( ((x) << (n)) | ((x) >> ((64) - (n))) )
+#define cx_rotl64(x, n) (((x) << (n)) | ((x) >> ((64) - (n))))
 
-#define  cx_shr64(x, n)                         \
-  ( (x) >> (n) )
+#define cx_shr64(x, n) ((x) >> (n))
 #endif
 
-
-uint64bits_t cx_swap_uint64(uint64bits_t  v);
+uint64bits_t cx_swap_uint64(uint64bits_t v);
 void cx_swap_buffer64(uint64bits_t *v, int len);
 
 #endif
