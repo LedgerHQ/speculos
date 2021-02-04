@@ -6,6 +6,7 @@ Emulate the target app along the SE Proxy Hal server.
 
 import argparse
 import binascii
+from collections import namedtuple
 import ctypes
 from elftools.elf.elffile import ELFFile
 import logging
@@ -249,13 +250,13 @@ if __name__ == '__main__':
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(s2, automation=automation_path, automation_server=automation_server)
 
-    button_tcp = None
+    button = None
     if args.button_port:
-        button_tcp = FakeButton(args.button_port)
+        button = FakeButton(args.button_port)
 
-    finger_tcp = None
+    finger = None
     if args.finger_port:
-        finger_tcp = FakeFinger(args.finger_port)
+        finger = FakeFinger(args.finger_port)
 
     vnc = None
     if args.vnc_port:
@@ -270,7 +271,12 @@ if __name__ == '__main__':
         }
         zoom = default_zoom.get(args.model)
 
-    screen = Screen(apdu, seph, button_tcp=button_tcp, finger_tcp=finger_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size")
+    ServerArgs = namedtuple("ServerArgs", "apdu button finger seph vnc")
+
+    display = DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom)
+    server = ServerArgs(apdu, button, finger, seph, vnc)
+    screen = Screen(display, server)
     screen.run()
 
     s2.close()

@@ -87,17 +87,17 @@ class TextWidget(FrameBuffer):
         self.pixels[(x, y)] = int(color!=0)
 
 class TextScreen(Display):
-    def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, model='nanos', rendering=RENDER_METHOD.FLUSHED, keymap=None, **_):
-        super().__init__(apdu, seph, model, rendering)
+    def __init__(self, display, server):
+        super().__init__(display, server)
 
-        self.width, self.height = MODELS[model].screen_size
-        self.m = TextWidget(self, model)
-        self.bagl = bagl.Bagl(self.m, MODELS[model].screen_size)
+        self.width, self.height = MODELS[display.model].screen_size
+        self.m = TextWidget(self, display.model)
+        self.bagl = bagl.Bagl(self.m, MODELS[display.model].screen_size)
 
-        self._init_notifiers(apdu, seph, button_tcp, finger_tcp)
+        self._init_notifiers(server)
 
-        if keymap is not None:
-            self.ARROW_KEYS = list(map(ord, keymap))
+        if display.keymap is not None:
+            self.ARROW_KEYS = list(map(ord, display.keymap))
         else:
             self.ARROW_KEYS = [curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_DOWN]
 
@@ -154,6 +154,6 @@ class TextScreen(Display):
         curses.echo()
         curses.endwin()
 
-def display(apdu, seph, button_tcp=None, finger_tcp=None, model='nanos', keymap=None, **_):
-    display = TextScreen(apdu, seph, button_tcp, finger_tcp, model, keymap)
+def display(display, server):
+    display = TextScreen(display, server)
     display.run()

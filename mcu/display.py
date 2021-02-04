@@ -41,12 +41,12 @@ class FrameBuffer(ABC):
         self.pixels[(x, y)] = color
 
 class Display(ABC):
-    def __init__(self, apdu, seph, model, rendering):
+    def __init__(self, display, server):
         self.notifiers = {}
-        self.apdu = apdu
-        self.seph = seph
-        self.model = model
-        self.rendering = rendering
+        self.apdu = server.apdu
+        self.seph = server.seph
+        self.model = display.model
+        self.rendering = display.rendering
 
     @abstractmethod
     def display_status(self, data):
@@ -67,8 +67,8 @@ class Display(ABC):
     def remove_notifier(self, fd):
         self.notifiers.pop(fd)
 
-    def _init_notifiers(self, *classes):
-        for klass in classes:
+    def _init_notifiers(self, args):
+        for klass in args._asdict().values():
             if klass:
                 self.add_notifier(klass)
 

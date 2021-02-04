@@ -54,12 +54,12 @@ class PaintWidget(QWidget):
         return self.fb.draw_point(x, y, color)
 
 class Screen(Display):
-    def __init__(self, app, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc):
+    def __init__(self, app, display, server):
         self.app = app
-        super().__init__(apdu, seph, model, rendering)
-        self._init_notifiers(apdu, seph, button_tcp, finger_tcp, vnc)
-        self.bagl = bagl.Bagl(app.m, MODELS[model].screen_size)
-        self.seph = seph
+        super().__init__(display, server)
+        self._init_notifiers(server)
+        self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
+        self.seph = server.seph
 
     def klass_can_read(self, klass, s):
         try:
@@ -114,16 +114,16 @@ class Screen(Display):
         self.bagl.refresh()
 
 class App(QMainWindow):
-    def __init__(self, qt_app, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size):
+    def __init__(self, qt_app, display, server):
         super().__init__()
 
-        self.setWindowTitle('Ledger %s Emulator' % MODELS[model].name)
+        self.setWindowTitle('Ledger %s Emulator' % MODELS[display.model].name)
 
-        self.seph = seph
-        self.width, self.height = MODELS[model].screen_size
-        self.pixel_size = pixel_size
-        self.box_position_x, self.box_position_y = MODELS[model].box_position
-        box_size_x, box_size_y = MODELS[model].box_size
+        self.seph = server.seph
+        self.width, self.height = MODELS[display.model].screen_size
+        self.pixel_size = display.pixel_size
+        self.box_position_x, self.box_position_y = MODELS[display.model].box_position
+        box_size_x, box_size_y = MODELS[display.model].box_size
 
         # If the position of the window has been saved in the settings, restore
         # it.
@@ -133,8 +133,8 @@ class App(QMainWindow):
         current_screen_y = qt_app.primaryScreen().geometry().y()
         window_x = settings.value("window_x", current_screen_x + DEFAULT_WINDOW_X, int)
         window_y = settings.value("window_y", current_screen_y + DEFAULT_WINDOW_Y, int)
-        window_width = (self.width + box_size_x) * pixel_size
-        window_height = (self.height + box_size_y) * pixel_size
+        window_width = (self.width + box_size_x) * display.pixel_size
+        window_height = (self.height + box_size_y) * display.pixel_size
 
         # Be sure Window is FULLY visible in one of the available screens:
         window_is_visible = False
@@ -159,21 +159,21 @@ class App(QMainWindow):
         self.setFixedSize(window_width, window_height)
 
         flags = Qt.FramelessWindowHint
-        if ontop:
+        if display.ontop:
             flags |= Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
 
         self.setAutoFillBackground(True)
         p = self.palette()
-        p.setColor(self.backgroundRole(), QColor.fromRgb(COLORS[color]))
+        p.setColor(self.backgroundRole(), QColor.fromRgb(COLORS[display.color]))
         self.setPalette(p)
 
         # Add paint widget and paint
-        self.m = PaintWidget(self, model, pixel_size, vnc)
-        self.m.move(self.box_position_x * pixel_size, self.box_position_y * pixel_size)
-        self.m.resize(self.width * pixel_size, self.height * pixel_size)
+        self.m = PaintWidget(self, display.model, display.pixel_size, server.vnc)
+        self.m.move(self.box_position_x * display.pixel_size, self.box_position_y * display.pixel_size)
+        self.m.resize(self.width * display.pixel_size, self.height * display.pixel_size)
 
-        self.screen = Screen(self, apdu, seph, button_tcp, finger_tcp, model, rendering, vnc)
+        self.screen = Screen(self, display, server)
 
         self.setWindowIcon(QIcon('mcu/icon.png'))
 
@@ -228,9 +228,9 @@ class App(QMainWindow):
         settings.setValue("window_y", self.pos().y())
 
 class QtScreen:
-    def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, color='MATTE_BLACK', model='nanos', ontop=False, rendering=RENDER_METHOD.FLUSHED, vnc=None, pixel_size=2, **_):
+    def __init__(self, display, server):
         self.app = QApplication(sys.argv)
-        self.app_widget = App(self.app, apdu, seph, button_tcp, finger_tcp, color, model, ontop, rendering, vnc, pixel_size)
+        self.app_widget = App(self.app, display, server)
 
     def run(self):
         self.app.exec_()

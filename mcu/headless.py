@@ -19,11 +19,11 @@ class HeadlessPaintWidget(FrameBuffer):
             self.vnc.redraw(self.pixels)
 
 class Headless(Display):
-    def __init__(self, apdu, seph, button_tcp=None, finger_tcp=None, model='nanos', rendering=RENDER_METHOD.FLUSHED, vnc=None, **_):
-        super().__init__(apdu, seph, model, rendering)
-        self._init_notifiers(apdu, seph, button_tcp, finger_tcp, vnc)
+    def __init__(self, display, server):
+        super().__init__(display, server)
+        self._init_notifiers(server)
 
-        m = HeadlessPaintWidget(self, self.model, vnc)
+        m = HeadlessPaintWidget(self, self.model, server.vnc)
         self.bagl = bagl.Bagl(m, MODELS[self.model].screen_size)
 
     def display_status(self, data):
