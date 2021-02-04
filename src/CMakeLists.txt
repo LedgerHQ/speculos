@@ -17,6 +17,7 @@ add_library(emu
         bolos/endorsement.c
         bolos/seproxyhal.c
         bolos/os.c
+        bolos/os_1.2.c
         bolos/os_1.5.c
         bolos/os_1.6.c
         bolos/os_bip32.c
