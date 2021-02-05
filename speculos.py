@@ -6,7 +6,6 @@ Emulate the target app along the SE Proxy Hal server.
 
 import argparse
 import binascii
-from collections import namedtuple
 import ctypes
 from elftools.elf.elffile import ELFFile
 import logging
@@ -61,7 +60,7 @@ def get_elf_infos(app_path):
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
-def run_qemu(s1, s2, args):
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> None:
     argv = [ 'qemu-arm-static' ]
 
     if args.debug:
@@ -180,9 +179,9 @@ if __name__ == '__main__':
 
     logger = setup_logging(args)
 
-    rendering = display.RENDER_METHOD.FLUSHED
+    rendering = seproxyhal.RENDER_METHOD.FLUSHED
     if args.progressive:
-        rendering = display.RENDER_METHOD.PROGRESSIVE
+        rendering = seproxyhal.RENDER_METHOD.PROGRESSIVE
 
     if args.rampage:
         if args.model != 'blue':
@@ -261,7 +260,8 @@ if __name__ == '__main__':
 
     vnc = None
     if args.vnc_port:
-        vnc = VNC(args.vnc_port, args.model, args.vnc_password)
+        screen_size = display.MODELS[args.model].screen_size
+        vnc = VNC(args.vnc_port, screen_size, args.vnc_password)
 
     zoom = args.zoom
     if zoom is None:
@@ -272,12 +272,9 @@ if __name__ == '__main__':
         }
         zoom = default_zoom.get(args.model)
 
-    DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size")
-    ServerArgs = namedtuple("ServerArgs", "apdu button finger seph vnc")
-
-    display = DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom)
-    server = ServerArgs(apdu, button, finger, seph, vnc)
-    screen = Screen(display, server)
+    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom)
+    server_args = display.ServerArgs(apdu, button, finger, seph, vnc)
+    screen = Screen(display_args, server_args)
     screen.run()
 
     s2.close()

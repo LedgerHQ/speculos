@@ -10,13 +10,11 @@ import logging
 import subprocess
 import sys
 
-from .display import MODELS
-
 class VNC:
-    def __init__(self, port, model, password=None, verbose=False):
+    def __init__(self, port, screen_size, password=None, verbose=False):
         self.logger = logging.getLogger("vnc")
 
-        width, height = MODELS[model].screen_size
+        width, height = screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../build/vnc/vnc_server')
         cmd = [ server ]

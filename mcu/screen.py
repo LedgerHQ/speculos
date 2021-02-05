@@ -6,7 +6,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSocketNotifier, QSettings
 
 from . import bagl
-from .display import Display, FrameBuffer, COLORS, MODELS, RENDER_METHOD
+from .display import Display, DisplayArgs, FrameBuffer, COLORS, MODELS, ServerArgs
 from .readerror import ReadError
 
 BUTTON_LEFT  = 1
@@ -53,68 +53,8 @@ class PaintWidget(QWidget):
     def draw_point(self, x, y, color):
         return self.fb.draw_point(x, y, color)
 
-class Screen(Display):
-    def __init__(self, app, display, server):
-        self.app = app
-        super().__init__(display, server)
-        self._init_notifiers(server)
-        self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
-        self.seph = server.seph
-
-    def klass_can_read(self, klass, s):
-        try:
-            klass.can_read(s, self)
-
-        # This exception occur when can_read have no more data available
-        except ReadError:
-            self.app.close()
-
-    def add_notifier(self, klass):
-        n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self.app)
-        n.activated.connect(lambda s: self.klass_can_read(klass, s))
-
-        assert klass.s.fileno() not in self.notifiers
-        self.notifiers[klass.s.fileno()] = n
-
-    def enable_notifier(self, fd, enabled=True):
-        n = self.notifiers[fd]
-        n.setEnabled(enabled)
-
-    def remove_notifier(self, fd):
-        # just in case
-        self.enable_notifier(fd, False)
-
-        n = self.notifiers.pop(fd)
-        n.disconnect()
-
-    def _key_event(self, event, pressed):
-        key = event.key()
-        if key in [ Qt.Key_Left, Qt.Key_Right ]:
-            buttons = { Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT }
-            # forward this event to seph
-            self.seph.handle_button(buttons[key], pressed)
-        elif key == Qt.Key_Down:
-            self.seph.handle_button(BUTTON_LEFT, pressed)
-            self.seph.handle_button(BUTTON_RIGHT, pressed)
-        elif key == Qt.Key_Q and not pressed:
-            self.app.close()
-
-    def display_status(self, data):
-        ret = self.bagl.display_status(data)
-        if MODELS[self.model].name == 'blue':
-            self.screen_update()    # Actually, this method doesn't work
-        return ret
-
-    def display_raw_status(self, data):
-        self.bagl.display_raw_status(data)
-        if MODELS[self.model].name == 'blue':
-            self.screen_update()    # Actually, this method doesn't work
-
-    def screen_update(self):
-        self.bagl.refresh()
-
 class App(QMainWindow):
-    def __init__(self, qt_app, display, server):
+    def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__()
 
         self.setWindowTitle('Ledger %s Emulator' % MODELS[display.model].name)
@@ -227,8 +167,68 @@ class App(QMainWindow):
         settings.setValue("window_x", self.pos().x())
         settings.setValue("window_y", self.pos().y())
 
+class Screen(Display):
+    def __init__(self, app: App, display: DisplayArgs, server: ServerArgs) -> None:
+        self.app = app
+        super().__init__(display, server)
+        self._init_notifiers(server)
+        self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
+        self.seph = server.seph
+
+    def klass_can_read(self, klass, s):
+        try:
+            klass.can_read(s, self)
+
+        # This exception occur when can_read have no more data available
+        except ReadError:
+            self.app.close()
+
+    def add_notifier(self, klass):
+        n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self.app)
+        n.activated.connect(lambda s: self.klass_can_read(klass, s))
+
+        assert klass.s.fileno() not in self.notifiers
+        self.notifiers[klass.s.fileno()] = n
+
+    def enable_notifier(self, fd, enabled=True):
+        n = self.notifiers[fd]
+        n.setEnabled(enabled)
+
+    def remove_notifier(self, fd):
+        # just in case
+        self.enable_notifier(fd, False)
+
+        n = self.notifiers.pop(fd)
+        n.disconnect()
+
+    def _key_event(self, event, pressed):
+        key = event.key()
+        if key in [ Qt.Key_Left, Qt.Key_Right ]:
+            buttons = { Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT }
+            # forward this event to seph
+            self.seph.handle_button(buttons[key], pressed)
+        elif key == Qt.Key_Down:
+            self.seph.handle_button(BUTTON_LEFT, pressed)
+            self.seph.handle_button(BUTTON_RIGHT, pressed)
+        elif key == Qt.Key_Q and not pressed:
+            self.app.close()
+
+    def display_status(self, data):
+        ret = self.bagl.display_status(data)
+        if MODELS[self.model].name == 'blue':
+            self.screen_update()    # Actually, this method doesn't work
+        return ret
+
+    def display_raw_status(self, data):
+        self.bagl.display_raw_status(data)
+        if MODELS[self.model].name == 'blue':
+            self.screen_update()    # Actually, this method doesn't work
+
+    def screen_update(self):
+        self.bagl.refresh()
+
 class QtScreen:
-    def __init__(self, display, server):
+    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         self.app = QApplication(sys.argv)
         self.app_widget = App(self.app, display, server)
 

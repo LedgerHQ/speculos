@@ -1,25 +1,13 @@
 import select
+from typing import Optional
 
 from . import bagl
-from .display import Display, FrameBuffer, MODELS, RENDER_METHOD
+from .display import Display, DisplayArgs, FrameBuffer, Model, MODELS, ServerArgs
 from .readerror import ReadError
-
-class HeadlessPaintWidget(FrameBuffer):
-    def __init__(self, parent, model, vnc=None):
-        super().__init__(model)
-        self.vnc = vnc
-
-    def update(self):
-        if self.pixels:
-            self._redraw()
-            self.pixels = {}
-
-    def _redraw(self):
-        if self.vnc:
-            self.vnc.redraw(self.pixels)
+from .vnc import VNC
 
 class Headless(Display):
-    def __init__(self, display, server):
+    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
         self._init_notifiers(server)
 
@@ -54,3 +42,17 @@ class Headless(Display):
             # This exception occur when can_read have no more data available
             except ReadError:
                 break
+
+class HeadlessPaintWidget(FrameBuffer):
+    def __init__(self, parent: Headless, model: Model, vnc: Optional[VNC] = None) -> None:
+        super().__init__(model)
+        self.vnc = vnc
+
+    def update(self):
+        if self.pixels:
+            self._redraw()
+            self.pixels = {}
+
+    def _redraw(self):
+        if self.vnc:
+            self.vnc.redraw(self.pixels)

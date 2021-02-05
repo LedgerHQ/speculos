@@ -1,5 +1,17 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
+from typing import Dict, Union
+
+from .apdu import ApduServer
+from .seproxyhal import SeProxyHal
+from .button_tcp import FakeButton
+from .finger_tcp import FakeFinger
+from .vnc import VNC
+
+Server = Union[ApduServer, FakeButton, FakeFinger, SeProxyHal, VNC]
+
+DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size")
+ServerArgs = namedtuple("ServerArgs", "apdu button finger seph vnc")
 
 Model = namedtuple('Model', 'name screen_size box_position box_size')
 MODELS = {
@@ -20,8 +32,6 @@ COLORS = {
     'SYLVE_CYAN': 0x29f3f3,
 }
 
-RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
-RENDER_METHOD = RenderMethods(0, 1)
 
 class FrameBuffer(ABC):
     COLORS = {
@@ -41,8 +51,8 @@ class FrameBuffer(ABC):
         self.pixels[(x, y)] = color
 
 class Display(ABC):
-    def __init__(self, display, server):
-        self.notifiers = {}
+    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
+        self.notifiers: Dict[int, Server] = {}
         self.apdu = server.apdu
         self.seph = server.seph
         self.model = display.model
@@ -67,7 +77,7 @@ class Display(ABC):
     def remove_notifier(self, fd):
         self.notifiers.pop(fd)
 
-    def _init_notifiers(self, args):
+    def _init_notifiers(self, args: ServerArgs) -> None:
         for klass in args._asdict().values():
             if klass:
                 self.add_notifier(klass)

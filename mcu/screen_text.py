@@ -3,10 +3,12 @@ import select
 import curses
 import logging
 import os
+
 from . import bagl
-from .display import Display, FrameBuffer, MODELS, RENDER_METHOD
+from .display import Display, DisplayArgs, FrameBuffer, MODELS, ServerArgs
 from .readerror import ReadError
 import time
+
 wait_time = 0.01
 
 BUTTON_LEFT  = 1
@@ -87,7 +89,7 @@ class TextWidget(FrameBuffer):
         self.pixels[(x, y)] = int(color!=0)
 
 class TextScreen(Display):
-    def __init__(self, display, server):
+    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
 
         self.width, self.height = MODELS[display.model].screen_size
@@ -154,6 +156,6 @@ class TextScreen(Display):
         curses.echo()
         curses.endwin()
 
-def display(display, server):
-    display = TextScreen(display, server)
-    display.run()
+def display(display: DisplayArgs, server: ServerArgs) -> None:
+    text_screen = TextScreen(display, server)
+    text_screen.run()

@@ -1,3 +1,4 @@
+from collections import namedtuple
 import logging
 import sys
 import time
@@ -5,7 +6,6 @@ import threading
 from enum import IntEnum
 
 from . import usb
-from .display import RENDER_METHOD
 from .readerror import ReadError
 
 class SephTag(IntEnum):
@@ -32,6 +32,8 @@ class SephTag(IntEnum):
 
 TICKER_DELAY = 0.1
 
+RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
+RENDER_METHOD = RenderMethods(0, 1)
 
 def ticker(add_tick):
     """
