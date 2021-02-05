@@ -56,9 +56,11 @@ unsigned long sys_os_version(uint8_t *buffer, unsigned int len);
 unsigned long sys_os_seph_version(uint8_t *buffer, size_t len);
 unsigned long sys_os_lib_call(unsigned long *parameters);
 unsigned long sys_os_lib_end(void);
+unsigned long sys_os_global_pin_is_validated_1_2(void);
 unsigned long sys_os_global_pin_is_validated_1_5(void);
 unsigned long sys_os_global_pin_is_validated_1_6(void);
 unsigned long sys_os_global_pin_invalidate(void);
+unsigned long sys_os_perso_isonboarded_1_2(void);
 unsigned long sys_os_perso_isonboarded_1_5(void);
 unsigned long sys_os_perso_isonboarded_1_6(void);
 unsigned long sys_os_flags(void);
@@ -78,6 +80,7 @@ unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *value,
 unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
                                                   uint8_t *buffer,
                                                   size_t length);
+unsigned long sys_os_ux_1_2(bolos_ux_params_t *params);
 unsigned long sys_os_ux_1_5(bolos_ux_params_t *params);
 unsigned long sys_os_ux_1_6(bolos_ux_params_t *params);
 
@@ -109,6 +112,7 @@ int run_lib(char *name, unsigned long *parameters);
 unsigned long sys_try_context_set(try_context_t *context);
 unsigned long sys_try_context_get(void);
 
+unsigned long sys_os_sched_last_status_1_2(unsigned int task_idx);
 unsigned long sys_os_sched_last_status_1_5(void);
 unsigned long sys_os_sched_last_status_1_6(unsigned int task_idx);
 

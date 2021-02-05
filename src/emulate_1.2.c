@@ -66,9 +66,9 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL0(os_flags);
 
-  SYSCALL0i(os_perso_isonboarded, os_perso_isonboarded_1_6);
+  SYSCALL0i(os_perso_isonboarded, os_perso_isonboarded_1_2);
 
-  SYSCALL0i(os_global_pin_is_validated, os_global_pin_is_validated_1_6);
+  SYSCALL0i(os_global_pin_is_validated, os_global_pin_is_validated_1_2);
 
   SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
            unsigned int, tag,
@@ -77,7 +77,7 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL1(os_sched_exit, "(%u)", unsigned int, code);
 
-  SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_6);
+  SYSCALL1i(os_sched_last_status, "(%u)", unsigned int, task_idx, os_sched_last_status_1_2);
 
   SYSCALL2(os_version, "(%p, %u)",
            uint8_t *,    buffer,
@@ -102,7 +102,7 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters,
            uint8_t *,    value,
            size_t,       maxlen);
 
-  SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_6);
+  SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_2);
 
   SYSCALL0(screen_update);
 
