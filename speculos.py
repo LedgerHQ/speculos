@@ -60,24 +60,25 @@ def get_elf_infos(app_path):
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
-def run_qemu(s1, s2, app_path, sdk_version, libraries=[], seed=DEFAULT_SEED, debug=False, trace_syscalls=False, deterministic_rng="", model=None, ram_arg=None):
-    args = [ 'qemu-arm-static' ]
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> None:
+    argv = [ 'qemu-arm-static' ]
 
-    if debug:
-        args += [ '-g', '1234', '-singlestep' ]
+    if args.debug:
+        argv += [ '-g', '1234', '-singlestep' ]
 
-    args += [ launcher_path ]
+    argv += [ launcher_path ]
 
-    if trace_syscalls:
-        args += [ '-t' ]
+    if args.trace:
+        argv += [ '-t' ]
 
-    if model is not None:
-        args += ['-m', model]
+    if args.model is not None:
+        argv += ['-m', args.model]
 
-    args += [ '-k', str(sdk_version) ]
+    argv += [ '-k', str(args.sdk) ]
 
     extra_ram = ''
-    for lib in [ f'main:{app_path}' ] + libraries:
+    app_path = getattr(args, 'app.elf')
+    for lib in [ f'main:{app_path}' ] + args.library:
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
@@ -87,13 +88,13 @@ def run_qemu(s1, s2, app_path, sdk_version, libraries=[], seed=DEFAULT_SEED, deb
                 logger.error("different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
             extra_ram = arg
-        args.append(f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}:{stack:#x}:{stack_size:#x}')
+        argv.append(f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}:{stack:#x}:{stack_size:#x}')
 
-    if model == 'blue':
-        if ram_arg:
-            extra_ram = ram_arg
+    if args.model == 'blue':
+        if args.rampage:
+            extra_ram = args.rampage
         if extra_ram:
-            args.extend([ '-r', extra_ram ])
+            argv.extend([ '-r', extra_ram ])
 
     pid = os.fork()
     if pid != 0:
@@ -108,21 +109,21 @@ def run_qemu(s1, s2, app_path, sdk_version, libraries=[], seed=DEFAULT_SEED, deb
     os.dup2(s1.fileno(), sys.stdin.fileno())
 
     # handle both BIP39 mnemonics and hex seeds
-    if seed.startswith("hex:"):
-        seed = bytes.fromhex(seed[4:])
+    if args.seed.startswith("hex:"):
+        seed = bytes.fromhex(args.seed[4:])
     else:
-        seed = mnemonic.Mnemonic.to_seed(seed)
+        seed = mnemonic.Mnemonic.to_seed(args.seed)
 
     os.environ['SPECULOS_SEED'] = binascii.hexlify(seed).decode('ascii')
 
-    if deterministic_rng:
-        os.environ['RNG_SEED'] = deterministic_rng
+    if args.deterministic_rng:
+        os.environ['RNG_SEED'] = args.deterministic_rng
 
-    logger.debug(f"executing qemu: {args}")
+    logger.debug(f"executing qemu: {argv}")
     try:
-        os.execvp(args[0], args)
+        os.execvp(argv[0], argv)
     except FileNotFoundError:
-        logger.error('failed to execute qemu: "%s" not found' % args[0])
+        logger.error('failed to execute qemu: "%s" not found' % argv[0])
         sys.exit(1)
     sys.exit(0)
 
@@ -178,9 +179,9 @@ if __name__ == '__main__':
 
     logger = setup_logging(args)
 
-    rendering = display.RENDER_METHOD.FLUSHED
+    rendering = seproxyhal.RENDER_METHOD.FLUSHED
     if args.progressive:
-        rendering = display.RENDER_METHOD.PROGRESSIVE
+        rendering = seproxyhal.RENDER_METHOD.PROGRESSIVE
 
     if args.rampage:
         if args.model != 'blue':
@@ -243,23 +244,24 @@ if __name__ == '__main__':
 
     s1, s2 = socket.socketpair()
 
-    run_qemu(s1, s2, getattr(args, 'app.elf'), args.sdk, args.library, args.seed, args.debug, args.trace, args.deterministic_rng, args.model, args.rampage)
+    run_qemu(s1, s2, args)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(s2, automation=automation_path, automation_server=automation_server)
 
-    button_tcp = None
+    button = None
     if args.button_port:
-        button_tcp = FakeButton(args.button_port)
+        button = FakeButton(args.button_port)
 
-    finger_tcp = None
+    finger = None
     if args.finger_port:
-        finger_tcp = FakeFinger(args.finger_port)
+        finger = FakeFinger(args.finger_port)
 
     vnc = None
     if args.vnc_port:
-        vnc = VNC(args.vnc_port, args.model, args.vnc_password)
+        screen_size = display.MODELS[args.model].screen_size
+        vnc = VNC(args.vnc_port, screen_size, args.vnc_password)
 
     zoom = args.zoom
     if zoom is None:
@@ -270,7 +272,9 @@ if __name__ == '__main__':
         }
         zoom = default_zoom.get(args.model)
 
-    screen = Screen(apdu, seph, button_tcp=button_tcp, finger_tcp=finger_tcp, color=args.color, model=args.model, ontop=args.ontop, rendering=rendering, vnc=vnc, keymap=args.keymap, pixel_size=zoom)
+    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom)
+    server_args = display.ServerArgs(apdu, button, finger, seph, vnc)
+    screen = Screen(display_args, server_args)
     screen.run()
 
     s2.close()
