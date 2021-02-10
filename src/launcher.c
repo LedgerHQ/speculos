@@ -19,6 +19,11 @@
 #define MAX_APP       16
 #define MAIN_APP_NAME "main"
 
+#ifndef GIT_REVISION
+#warning GIT_REVISION is not defined
+#define GIT_REVISION "00000000"
+#endif
+
 typedef enum {
   MODEL_NANO_S,
   MODEL_NANO_X,
@@ -435,6 +440,8 @@ int main(int argc, char *argv[])
 
   extra_rampage_addr = NULL;
   extra_rampage_size = 0;
+
+  fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
   while ((opt = getopt(argc, argv, "tr:s:m:k:")) != -1) {
     switch (opt) {
