@@ -11,8 +11,18 @@ enable_testing()
 
 option(WITH_VNC "Support for VNC" OFF)
 
+# Set GIT_REVISION to the last commit hash.
+# Please note that the variable is set at configuration time and might be
+# outdated.
+find_package(Git)
+execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --always HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_REVISION
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+
 add_compile_options(-mthumb -W -Wall -fPIC)
-add_definitions(-DOS_LITTLE_ENDIAN -DNATIVE_64BITS)
+add_definitions(-DOS_LITTLE_ENDIAN -DNATIVE_64BITS -DGIT_REVISION=\"${GIT_REVISION}\")
 
 option(
   CODE_COVERAGE
