@@ -68,12 +68,12 @@ static struct app_s *current_app;
 
 static void *get_lower_page_aligned_addr(uintptr_t vaddr)
 {
-  return (void *)((uintptr_t)vaddr & ~((uintptr_t)getpagesize() - 1u));
+  return (void *)((uintptr_t)vaddr & ~((uintptr_t)sysconf(_SC_PAGESIZE) - 1u));
 }
 
 static size_t get_upper_page_aligned_size(size_t vsize)
 {
-  size_t page_size = getpagesize();
+  size_t page_size = sysconf(_SC_PAGESIZE);
   return ((vsize + page_size - 1u) & ~(page_size - 1u));
 }
 
