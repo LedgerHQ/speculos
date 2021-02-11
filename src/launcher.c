@@ -68,12 +68,12 @@ static struct app_s *current_app;
 
 static void *get_lower_page_aligned_addr(uintptr_t vaddr)
 {
-  return (void *)((uintptr_t)vaddr & ~((uintptr_t)getpagesize() - 1u));
+  return (void *)((uintptr_t)vaddr & ~((uintptr_t)sysconf(_SC_PAGESIZE) - 1u));
 }
 
 static size_t get_upper_page_aligned_size(size_t vsize)
 {
-  size_t page_size = getpagesize();
+  size_t page_size = sysconf(_SC_PAGESIZE);
   return ((vsize + page_size - 1u) & ~(page_size - 1u));
 }
 
@@ -142,6 +142,7 @@ struct app_s *get_current_app(void)
 int replace_current_code(struct app_s *app)
 {
   int flags, prot;
+  size_t page_size = sysconf(_SC_PAGESIZE);
 
   if (memory.code != MAP_FAILED) {
     if (munmap(memory.code, memory.code_size) != 0) {
@@ -152,8 +153,11 @@ int replace_current_code(struct app_s *app)
 
   flags = MAP_PRIVATE | MAP_FIXED;
   prot = PROT_READ | PROT_EXEC;
-  memory.code = mmap(LOAD_ADDR, app->elf.load_size, prot, flags, app->fd,
-                     app->elf.load_offset);
+  /* map an extra page in case the _install_params are mapped in the beginning
+   * of a new page so that they can still be accessed */
+  memory.code = mmap(LOAD_ADDR, app->elf.load_size + page_size, prot, flags,
+                     app->fd, app->elf.load_offset);
+
   if (memory.code == MAP_FAILED) {
     warn("mmap code");
     return -1;
@@ -195,6 +199,7 @@ static void *load_app(char *name)
   size_t size;
   void *data_addr, *extra_addr = NULL;
   size_t data_size, extra_size = 0;
+  size_t page_size = sysconf(_SC_PAGESIZE);
 
   code = MAP_FAILED;
   data = MAP_FAILED;
@@ -227,9 +232,11 @@ static void *load_app(char *name)
   data_size = get_upper_page_aligned_size(
       app->elf.stack_size + app->elf.stack_addr - (unsigned long)data_addr);
 
-  /* load code */
-  code = mmap(LOAD_ADDR, size, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_FIXED,
-              app->fd, app->elf.load_offset);
+  /* load code
+   * map an extra page in case the _install_params are mapped in the beginning
+   * of a new page so that they can still be accessed */
+  code = mmap(LOAD_ADDR, size + page_size, PROT_READ | PROT_EXEC,
+              MAP_PRIVATE | MAP_FIXED, app->fd, app->elf.load_offset);
   if (code == MAP_FAILED) {
     warn("mmap code");
     goto error;

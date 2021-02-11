@@ -164,7 +164,7 @@ static int setup_alternate_stack(void)
   char *mem;
 
   /* HANDLER_STACK_SIZE + 2 guard pages before/after */
-  page_size = getpagesize();
+  page_size = sysconf(_SC_PAGESIZE);
   size = HANDLER_STACK_SIZE + 2 * page_size;
   mem = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
   if (mem == MAP_FAILED) {
