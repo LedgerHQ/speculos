@@ -5,3 +5,4 @@
 __pycache__/
 apps/*vault*
 build/
+core
