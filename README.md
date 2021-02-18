@@ -21,7 +21,13 @@ Usage example: `./speculos.py apps/btc.elf`.
 
 Feel free to open issues and create pull requests on this GitHub repository.
 
-Please ensure that tests still pass.
+The `master` branch is protected to disable force pushing. Contributions should
+be made through pull requests, which are reviewed by @LedgerHQ members before
+being merged to `master`:
+
+- @LedgerHQ members can create branches directly on the repository (if member of
+  a team with write access to the repository)
+- External contributors should fork the repository
 
 
 ## Limitations
