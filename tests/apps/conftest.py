@@ -52,13 +52,13 @@ def list_apps_to_test(app_dir) -> List[AppInfo]:
                 device=matching.group(1),
                 name=matching.group(2),
                 version=matching.group(3),
-                hash=matching.group(4)
+                hash=matching.group(4),
             )
         )
     return all_apps
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app(request):
     _app = APDUClient(request.param)
     yield _app
@@ -69,7 +69,9 @@ def pytest_generate_tests(metafunc):
     # retrieve the list of apps in the ../apps directory
     app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
     apps = list_apps_to_test(app_dir)
-    if not hasattr(metafunc.cls, 'app_names') or not isinstance(metafunc.cls.app_names, list):
+    if not hasattr(metafunc.cls, "app_names") or not isinstance(
+        metafunc.cls.app_names, list
+    ):
         pytest.fail(
             "The TestClass {metafunc.cls} does not have a correct 'app_names' attribute. \n"
             "The 'app_names' attribute must contain a list of app names that will be"
