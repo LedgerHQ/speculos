@@ -3,7 +3,7 @@
 #
 # Support Debian buster & Ubuntu Bionic
 
-FROM python:3.8-slim
+FROM python:3.9-slim
 ENV LANG C.UTF-8
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -22,7 +22,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
   rm -rf /var/lib/apt/lists/
 
 # There are issues with PYTHONHOME if using distro packages, use pip instead.
-RUN pip3 install construct jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest
+RUN pip3 install construct jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow
 
 # Create SHA256SUMS, download dependencies and verify their integrity
 RUN \
