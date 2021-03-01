@@ -5,18 +5,25 @@ import sys
 import time
 import os
 
+from collections import namedtuple
+
+
+AppInfo = namedtuple('AppInfo', ['filepath', 'device', 'name', 'version', 'hash'])
+
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+
 
 class APDUClient:
     # default APDU TCP server
     HOST, PORT = ('127.0.0.1', 9999)
 
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, app_info: AppInfo):
+        self.path = app_info.filepath
         self.process = None
-        # name example: nanos#btc#1.5#5b6693b8.elf
-        root, ext = os.path.splitext(path)
-        self.model, self.name, self.sdk, self.revision = os.path.basename(root).split('#')
+        self.name = app_info.name
+        self.model = app_info.device
+        self.sdk = app_info.version
+        self.revision = app_info.hash
         self.touch_events = []
 
     def run(self, headless=True, finger_port=0, deterministic_rng='', seed="", rampage="", args=[]):
