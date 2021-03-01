@@ -1,16 +1,13 @@
 import pytest
 import os
-import pathlib
-from apdu_client import APDUClient
-from finger_client import FingerClient
+import re
+
+from typing import List
+
+from .apdu_client import APDUClient, AppInfo
+from .finger_client import FingerClient
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-
-@pytest.fixture(scope="function")
-def stop_app(request):
-    yield
-    app = request.getfixturevalue('app')
-    app.stop()
 
 
 @pytest.fixture()
@@ -26,42 +23,61 @@ def finger_client():
         finger.join()
 
 
-def listapps(app_dir):
-    '''List every available apps in the app/ directory.'''
+def list_apps_to_test(app_dir) -> List[AppInfo]:
+    """
+    List apps matching the pattern:
 
-    paths = [ filename for filename in os.listdir(app_dir) if pathlib.Path(filename).suffix == '.elf' ]
-    # ignore app whose name doesn't match the expected pattern
-    paths = [ path for path in paths if path.count('#') == 3 ]
-    return [ APDUClient(os.path.join(app_dir, path)) for path in paths ]
+        <device>#<app_name>#<sdk_version>#<commit_hash>.elf
 
-def filter_apps(cls, apps):
-    '''
-    Filter apps by the class name of the test.
+    in the apps/ directory and return a list of APDUClient
+    objects for these applications.
 
-    If no filter matches the class name, all available apps are returned.
-    '''
+    A typical application path looks like:
 
-    app_filter = {
-        'TestBtc': [ 'btc' ],
-        'TestBtcTestnet': [ 'btc-test' ],
-        'TestVault': [ 'vault' ],
-        'TestRamPage': ['ram-page']
-    }
+    'apps/nanos#btc#1.5#5b6693b8.elf'
+    """
+    # name example: nanos#btc#1.5#5b6693b8.elf
+    app_regexp = re.compile(
+        r"(nanos|nanox|blue)#(.+)#([^#][\d\w\-.]+)#([a-f0-9]{8}).elf"
+    )
+    all_apps = []
+    for filename in os.listdir(app_dir):
+        matching = re.match(app_regexp, filename)
+        if not matching or len(matching.groups()) != 4:
+            continue
 
-    class_name = cls.__name__.split('.')[-1]
-    if class_name in app_filter:
-        names = app_filter[class_name]
-        apps = [ app for app in apps if app.name in names ]
+        all_apps.append(
+            AppInfo(
+                filepath=os.path.join(app_dir, filename),
+                device=matching.group(1),
+                name=matching.group(2),
+                version=matching.group(3),
+                hash=matching.group(4)
+            )
+        )
+    return all_apps
 
-    return apps
+
+@pytest.fixture(scope='function')
+def app(request):
+    _app = APDUClient(request.param)
+    yield _app
+    _app.stop()
+
 
 def pytest_generate_tests(metafunc):
     # retrieve the list of apps in the ../apps directory
-    app_dir = os.path.join(SCRIPT_DIR, '..', '..', 'apps')
-    apps = listapps(app_dir)
-    apps = filter_apps(metafunc.cls, apps)
+    app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
+    apps = list_apps_to_test(app_dir)
+    if not hasattr(metafunc.cls, 'app_names') or not isinstance(metafunc.cls.app_names, list):
+        pytest.fail(
+            "The TestClass {metafunc.cls} does not have a correct 'app_names' attribute. \n"
+            "The 'app_names' attribute must contain a list of app names that will be"
+            "tested by this test."
+        )
+    apps = [app for app in apps if app.name in metafunc.cls.app_names]
 
     # if a test function has an app parameter, give the list of app
-    if 'app' in metafunc.fixturenames:
+    if "app" in metafunc.fixturenames:
         # test are run on each app
-        metafunc.parametrize('app', apps, scope='function')
+        metafunc.parametrize("app", apps, indirect=True, scope="function")
