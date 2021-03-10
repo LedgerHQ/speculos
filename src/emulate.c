@@ -296,6 +296,8 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL0(cx_rng_u8);
 
+  SYSCALL1(cx_sha224_init, "(%p)", cx_sha256_t *, hash);
+
   SYSCALL1(cx_sha256_init, "(%p)", cx_sha256_t *, hash);
 
   SYSCALL1(cx_sha512_init, "(%p)", cx_sha512_t *, hash);
