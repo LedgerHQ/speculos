@@ -3,7 +3,7 @@
 #include <sys/types.h>
 
 #include "cx.h"
-#include "cx_hash.h"
+#include "cx_hmac.h"
 //#include "cx_utils.h"
 #include "bolos/exception.h"
 

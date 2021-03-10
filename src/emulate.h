@@ -74,6 +74,10 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int mode, cx_curve_t curve, const unsigned int *path,
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
     unsigned char *seed_key, unsigned int seed_key_length);
+unsigned long sys_os_perso_derive_node_bip32_seed_key(
+    unsigned int mode, cx_curve_t curve, const unsigned int *path,
+    unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
+    unsigned char *seed_key, unsigned int seed_key_length);
 unsigned long sys_os_perso_isonboarded(void);
 unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *value,
                                  size_t maxlen);
