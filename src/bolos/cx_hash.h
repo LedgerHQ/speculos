@@ -247,6 +247,7 @@ int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
 
 #define sys_cx_blake2b_init   cx_blake2b_init
 #define sys_cx_blake2b_init2  cx_blake2b_init2
+#define sys_cx_sha224_init    cx_sha224_init
 #define sys_cx_sha256_init    cx_sha256_init
 #define sys_cx_sha512_init    cx_sha512_init
 #define sys_cx_ripemd160_init cx_ripemd160_init
