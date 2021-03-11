@@ -243,8 +243,6 @@ int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest);
 int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
                        unsigned char *out, unsigned int out_len);
 
-#define sys_cx_hmac_sha256 cx_hmac_sha256
-
 #define sys_cx_blake2b_init   cx_blake2b_init
 #define sys_cx_blake2b_init2  cx_blake2b_init2
 #define sys_cx_sha224_init    cx_sha224_init

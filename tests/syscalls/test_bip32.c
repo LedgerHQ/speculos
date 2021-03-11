@@ -14,9 +14,6 @@
 
 #define MAX_CHAIN_LEN 5
 
-#define sys_os_perso_derive_node_bip32_seed_key                                \
-  sys_os_perso_derive_node_with_seed_key
-
 typedef struct {
   uint32_t index;
   const char *chain_code;

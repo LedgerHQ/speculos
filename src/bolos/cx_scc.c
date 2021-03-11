@@ -2,6 +2,7 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
+#include "cx_hmac.h"
 
 /* ======================================================================== */
 /* ===  MISC  === MISC === MISC === MISC ===  MISC  === MISC ===  MISC  === */

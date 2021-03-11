@@ -376,6 +376,24 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
   SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
            unsigned char,   index,
            unsigned char *, buffer);
+
+  SYSCALL6(cx_hmac_sha512, "(%p, %u, %p, %u, %p, %u)",
+           const unsigned char *, key,
+           unsigned int,          key_len,
+           const unsigned char *, in,
+           unsigned int,          len,
+           unsigned char *,       out,
+           unsigned int,          out_len);
+
+  SYSCALL8(os_perso_derive_node_bip32_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
+           unsigned int,         mode,
+           cx_curve_t,           curve,
+           const unsigned int *, path,
+           unsigned int,         pathLength,
+           unsigned char *,      privateKey,
+           unsigned char *,      chain,
+           unsigned char *,      seed_key,
+           unsigned int,         seed_key_length);
   /* clang-format off */
 
   default:

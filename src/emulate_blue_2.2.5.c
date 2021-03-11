@@ -1,6 +1,7 @@
 #include <err.h>
 #include <stdio.h>
 
+#include "bolos/cx.h"
 #include "bolos/cx_aes.h"
 #include "bolos_syscalls_blue_2.2.5.h"
 #include "emulate.h"
