@@ -17,6 +17,7 @@ class SephTag(IntEnum):
 
     MCU                         = 0x31
     TAG_BLE_RADIO_POWER         = 0x44
+    SE_POWER_OFF                = 0x46
     USB_CONFIG                  = 0x4f
     USB_EP_PREPARE              = 0x50
 
@@ -319,6 +320,11 @@ class SeProxyHal:
 
         elif tag == SephTag.TAG_BLE_RADIO_POWER:
             self.logger.warn("ignoring BLE tag")
+
+        elif tag == SephTag.SE_POWER_OFF:
+            self.logger.warn("received tag SE_POWER_OFF, exiting")
+            self._close(s, screen)
+            raise ReadError("SE_POWER_OFF")
 
         else:
             self.logger.error(f"unknown tag: {tag:#x}")
