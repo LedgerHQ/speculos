@@ -9,7 +9,7 @@ Rough steps to do so below, detailed procedure available on [this blogpost](http
 - add the following to your `.bashrc` within WSL2:
 
 ```bash
-export DISPLAY="`grep nameserver /etc/resolv.conf | sed 's/nameserver //'`:0"
+export DISPLAY="`sed -n 's/nameserver //p' /etc/resolv.conf`:0"
 ```
 
 - Install an X server on your Windows host, like [VcXSrv](https://sourceforge.net/projects/vcxsrv/), and disable access control when prompted to do so.
