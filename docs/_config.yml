@@ -1,0 +1,7 @@
+title: Speculos documentation
+lang: en
+
+remote_theme: rundocs/jekyll-rtd-theme
+
+exclude:
+  - screenshot-btc-nanos.png

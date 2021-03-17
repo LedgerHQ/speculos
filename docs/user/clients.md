@@ -1,4 +1,8 @@
-# Clients
+---
+sort: 3
+---
+
+# Clients: how to send APDUs
 
 Clients can communicate with the emulated device using APDUs, as usual. Speculos
 embbeds a TCP server (listening on `127.0.0.1:9999`) to forward APDUs to the
@@ -8,7 +12,7 @@ target app.
 
 [ledgerwallet](https://github.com/LedgerHQ/ledgerctl) is a library to control
 Ledger devices, also available through the command `ledgerctl` (it can be
-installed thanks to [pip](https://pypi.org/project/ledgerwallet/):
+installed thanks to [pip](https://pypi.org/project/ledgerwallet/)):
 
 ```console
 pip3 install ledgerwallet

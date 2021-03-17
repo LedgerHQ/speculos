@@ -1,6 +1,10 @@
-# Debug
+---
+sort: 4
+---
 
-Debug an app thanks to gdb:
+# Debug: how to use GDB
+
+Debug an app thanks to GDB:
 
 ```console
 ./speculos.py -d apps/btc.elf &

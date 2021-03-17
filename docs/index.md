@@ -1,21 +1,29 @@
 # Speculos documentation
 
+[Source code](https://github.com/LedgerHQ/speculos).
+
 ## Users
 
-- [How to use the Docker image](docker)
-- [Usage](usage)
-- [Using speculos from WSL 2](wsl)
-- [How to send APDUs to an app (and more)](clients)
-- [How to build Speculos](build)
-- [How to use gdb to debug an app](debug)
+### Installation and basic usage
 
-For advanced users:
+- Linux users: [Requirements and build](installation/build.md)
+- Mac OS (and Linux) users: [How to use the Docker image](user/docker.md) with VNC
+- Windows users: [Using speculos from WSL 2](installation/wsl.md)
+- [Usage](user/usage.md)
 
-- [Automation: press buttons automatically](automation)
-- [Semihosting as an additional debug mechanism](semihosting)
+### Interaction with an app
+
+- [How to send APDUs to an app (and more)](user/clients.md)
+- [How to use gdb to debug an app](user/debug.md)
+
+### For advanced users
+
+- [Automation: press buttons automatically](user/automation.md)
+- [Semihosting as an additional debug mechanism](user/semihosting.md)
+
 
 ## Speculos developers
 
-- [CI (Continuous Integration)](ci)
-- [Internals](internals)
-- [How to run tests](tests)
+- [CI (Continuous Integration)](dev/ci.md)
+- [Internals](dev/internals.md)
+- [How to run tests](dev/tests.md)

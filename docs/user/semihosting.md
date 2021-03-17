@@ -1,9 +1,13 @@
-## Semihosting
+---
+sort: 5
+---
+
+# Semihosting as an additional debug mechanism
 
 QEMU implements some semihosted operations which can be triggered from the app.
 For instance, messages can be printed to stderr with the following code:
 
-### SYS_WRITE0
+## SYS_WRITE0
 
 ```C
 void debug_write(char *buf)

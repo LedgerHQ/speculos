@@ -1,10 +1,16 @@
+---
+sort: 1
+---
+
 # Usage
 
-## Basic usage
+After having [installed the requirements and built](../installation/build.md) speculos:
 
 ```console
 ./speculos.py apps/btc.elf
 ```
+
+The docker image can also be used directly, as detailed in the specific [docker documentation page](docker.md).
 
 The Nano S is the default model; the Nano X and Blue can be specified on the
 command-line:
@@ -24,19 +30,20 @@ against the SDK `1.5` on the Nano S:
 ```
 
 Supported SDK values for the `-k`/`--sdk` argument are:
+
 |     | Nano S   | Nano X  | Blue            |
 |-----|----------|---------|-----------------|
 | SDK | 1.5, 1.6 | 1.2     | 1.5, blue-2.2.5 |
 
 For more options, pass the `-h` or `--help` flag.
 
-#### Keyboard control
+### Keyboard control
 
 - The keyboard left and right arrow keys are used instead of the Nano buttons.
   The down arrow can also be used as a more convenient shortcut.
 - The `Q` key exits the application.
 
-#### Display
+### Display
 
 Several display options are available through the `--display` parameter:
 
@@ -50,47 +57,7 @@ the built-in VNC client because unauthenticated sessions doesn't seem to be
 supported (issue #34).
 
 
-## Docker
-
-A docker image is available on
-[Docker Hub](https://hub.docker.com/r/ledgerhq/speculos).
-
-#### Run
-From the root of the speculos project
-```console
-docker run -it -v "$(pwd)"/apps:/speculos/apps \
--p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 \
-ledgerhq/speculos --model nanos ./apps/btc.elf --sdk 1.6 --seed "secret" --display headless \
---apdu-port 40000 --vnc-port 41000 --button-port 42000
-```
-
-#### Debug
-```console
-docker run -it -v "$(pwd)"/apps:/speculos/apps -p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 --entrypoint /bin/bash ledgerhq/speculos
-```
-
-#### docker-compose setup
-```console
-docker-compose up [-d]
-```
-> Default configuration is nanos / 1.6 / btc.elf / seed "secret"
-
-Edit `docker-compose.yml` to configure port forwarding and environment variables that fit your needs.
-
-#### Build
-
-The following command-line can be used to create a docker image based on a local
-[build](build.md):
-
-```console
-docker build ./ -t speculos
-```
-
-Replace `ledgerhq/speculos` with `speculos` in the sections above to use this
-image.
-
-
-## Bitcoin Testnet app
+# Bitcoin Testnet app
 
 Launch the Bitcoin Testnet app, which requires the Bitcoin app:
 

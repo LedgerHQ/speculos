@@ -1,4 +1,8 @@
-## Automation
+---
+sort: 5
+---
+
+# Automation: press buttons automatically
 
 The `--automation` argument allows to apply a set of actions (eg. button press)
 when a condition is met (usually some text is displayed on the screen). It is
@@ -7,7 +11,7 @@ especially useful to automate app testing.
 A JSON file is expected (either a JSON document or a path prefixed by `file:`).
 
 
-### Rules
+## Rules
 
 Rules are a list of rules. Each rule is a dictionary with the following valid
 keys:
@@ -21,7 +25,7 @@ keys:
 
 Each key is optional.
 
-#### Actions
+### Actions
 
 4 actions are available:
 
@@ -40,7 +44,7 @@ list.
 The actions of the first rule matched are applied. Further matching rules are
 discarded (it allows to implement a *default* rule).
 
-#### Conditions
+### Conditions
 
 Conditions are a list of variables of tuple `(varname, value)` where `varname`
 is a variable name and `value` a boolean. These variables are set by the
@@ -50,7 +54,7 @@ If a non-empty `conditions` list is specified in the rule, each condition should
 be met (as well as the other options) to allow the actions to be applied.
 
 
-### Example
+## Example
 
 As an example, one can consider the following automation JSON file:
 

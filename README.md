@@ -7,12 +7,9 @@
 
 The goal of this project is to emulate Ledger Nano S, Nano X and Blue apps on
 standard desktop computers, without any hardware device. More information can
-be found here:
-
-- [build](docs/build.md)
-- [usage](docs/usage.md)
-- [internals](docs/internals.md)
-- [tests](docs/tests.md)
+be found here in the
+[documentation website](https://ledgerhq.github.io/speculos) (or in the
+[docs/ folder](docs/) directly).
 
 Usage example: `./speculos.py apps/btc.elf`.
 
@@ -48,7 +45,7 @@ hardware devices and Speculos:
 ## Security
 
 Apps can make arbitrary Linux system calls (and use QEMU
-[semihosting](docs/semihosting.md) features), thus don't run Speculos on
+[semihosting](docs/user/semihosting.md) features), thus don't run Speculos on
 untrusted apps.
 
 It's worth noting that the syscall implementation (`src/`) doesn't expect
