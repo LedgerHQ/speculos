@@ -205,5 +205,4 @@ unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
   }
 
   return 0;
-
 }
