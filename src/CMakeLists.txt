@@ -35,6 +35,8 @@ add_library(emu
         bolos/cx_hash.c
         bolos/cx_math.c
         bolos/default.c
+        bolos/cx_hkdf.c
+        bolos/os_eip2333.c
         emulate.c
         emulate_1.2.c
         emulate_1.5.c

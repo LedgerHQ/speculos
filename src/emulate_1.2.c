@@ -115,6 +115,12 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters,
            unsigned int,         len,
            uint8_t *,            out,
            unsigned int,         out_len);
+
+  SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)",
+            cx_curve_t,          curve,
+            const unsigned int *,path,
+            unsigned int,        pathLength,
+            unsigned char *,     privateKey);
     /* clang-format on */
 
   default:

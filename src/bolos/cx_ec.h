@@ -46,6 +46,10 @@ enum cx_curve_e {
   /* ANSSI P256 */
   CX_CURVE_FRP256V1,
 
+ /* BLS12-381 G1 curve */
+  CX_CURVE_BLS12_381_G1,
+
+
   /** High limit (not included) of Weierstrass curve ID */
   CX_CURVE_WEIERSTRASS_END,
 
