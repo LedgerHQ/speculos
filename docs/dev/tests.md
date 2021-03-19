@@ -1,3 +1,9 @@
+---
+sort: 1
+---
+
+# Tests
+
 ## How to run tests
 
 The application binaries launched by the tests should be placed in `apps/`.
@@ -20,7 +26,7 @@ specific test verbose:
 make -C build/ test ARGS='-V -R test_bip32'
 ```
 
-### Code coverage
+## Code coverage
 
 In order to build with code coverage instrumentation, the CMake configuration supports `CODE_COVERAGE` macro:
 ```console

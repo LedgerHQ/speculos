@@ -1,3 +1,9 @@
+---
+sort: 2
+---
+
+# Continuous Integration
+
 ## Speculos builder
 
 The Dockerfile `build.Dockerfile` builds a container with all required

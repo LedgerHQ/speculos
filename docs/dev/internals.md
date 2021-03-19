@@ -1,3 +1,7 @@
+---
+sort: 3
+---
+
 # Internals
 
 The emulator is actually a userland application cross-compiled for the ARM
