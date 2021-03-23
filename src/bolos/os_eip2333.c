@@ -63,7 +63,7 @@ static void cx_parent_sk_to_lamport_pk(const unsigned char *parent_sk, unsigned 
   cx_hmac_t        hmac_ctx;
 
   U4BE_ENCODE(salt, 0, index);
-  memmove(local_sk, parent_sk, KEY_LENGTH);
+  memcpy(local_sk, parent_sk, KEY_LENGTH);
   cx_sha256_init(&sha256);
   for (i = 0; i < 2 ; i++) {
     block = 1;
@@ -126,7 +126,7 @@ static void cx_hkdf_mod_r(const unsigned char *ikm, unsigned int ikm_len, unsign
     cx_hkdf_extract(CX_SHA256, ikm, ikm_len, salt, CX_SHA256_SIZE, prk);
     cx_hkdf_expand(CX_SHA256, prk, CX_SHA256_SIZE, key_info, key_info_len, okm, CX_HKDF_MOD_R_CEIL);
     cx_math_mod(okm, CX_HKDF_MOD_R_CEIL, domain->n, CX_HKDF_MOD_R_CEIL);
-    memmove(sk, okm + (CX_HKDF_MOD_R_CEIL - KEY_LENGTH), KEY_LENGTH);
+    memcpy(sk, okm + (CX_HKDF_MOD_R_CEIL - KEY_LENGTH), KEY_LENGTH);
     salt_len = sizeof(salt);
     memcpy(used_salt, salt, salt_len);
   }
@@ -141,7 +141,7 @@ static void cx_derive_master_sk(const unsigned char *seed, unsigned int seed_len
   unsigned char      key_info[2] = {0x00, 0x30};
   unsigned char      seed_intern[CX_EIP2333_SEED_LENGTH] = {0};
 
-  memmove(seed_intern, seed, seed_len);
+  memcpy(seed_intern, seed, seed_len);
   seed_intern[seed_len] = 0;
   cx_hkdf_mod_r(seed_intern, seed_len+1, key_info, 2, sk);
 
@@ -185,16 +185,14 @@ unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
   unsigned char sk[KEY_LENGTH];
   ssize_t       seed_size;
   uint8_t       seed[MAX_SEED_SIZE];
-  int           ret;
+  int           ret = -1;
   
   if (curve != CX_CURVE_BLS12_381_G1) {
     THROW(EXCEPTION);
   }
 
   seed_size = get_seed_from_env("SPECULOS_SEED", seed, sizeof(seed));
-  if (seed_size < 0) {
-    THROW(EXCEPTION);
-  }
+
   cx_derive_master_sk(seed, seed_size, sk);
   if (privateKey != NULL) {
     ret = cx_derive_child_sk(sk, path, pathLength, privateKey);

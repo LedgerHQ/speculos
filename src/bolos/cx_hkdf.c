@@ -47,7 +47,7 @@ void cx_hkdf_expand(const cx_md_t hash_id, const unsigned char *prk, unsigned in
     cx_hmac_update(&hmac_ctx, &i, sizeof(i));
     cx_hmac_final(&hmac_ctx, T, &md_len);
     offset = ( okm_len < md_len ) ? okm_len : md_len;
-    memmove(okm + (i-1) * md_len, T, offset);
+    memcpy(okm + (i-1) * md_len, T, offset);
     okm_len -= offset;
   }
 }
