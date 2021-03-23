@@ -474,7 +474,8 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
     unsigned char *seed_key, unsigned int seed_key_length)
 {
-  ssize_t seed_size, sk_length;
+  ssize_t sk_length;
+  size_t seed_size;
   uint8_t seed[MAX_SEED_SIZE];
   extended_private_key key;
   const uint8_t *sk;
@@ -495,9 +496,6 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
   }
 
   seed_size = get_seed_from_env("SPECULOS_SEED", seed, sizeof(seed));
-  if (seed_size < 0) {
-    THROW(EXCEPTION);
-  }
 
   if (mode == HDW_SLIP21) {
     ret = hdw_slip21(sk, sk_length, seed, seed_size, (const uint8_t *)path,
