@@ -604,52 +604,6 @@ static void test_bip32(void **state __attribute__((unused)))
   }
 }
 
-static int get_bip32_path(const char *str_, unsigned int *path,
-                          int max_path_len)
-{
-  char *token, *str;
-  int path_len;
-  size_t len;
-
-  str = strdup(str_);
-  if (str == NULL) {
-    warn("strdup");
-    return -1;
-  }
-
-  path_len = 0;
-  while (1) {
-    token = strtok((path_len == 0) ? str : NULL, "/");
-    if (token == NULL) {
-      break;
-    }
-
-    if (path_len >= max_path_len) {
-      return -1;
-    }
-
-    len = strlen(token);
-    if (len == 0) {
-      return -1;
-    }
-
-    if (token[len - 1] == '\'') {
-      token[len - 1] = '\x00';
-      path[path_len] = 0x80000000;
-    } else {
-      path[path_len] = 0;
-    }
-
-    path[path_len] |= strtoul(token, NULL, 10);
-
-    path_len += 1;
-  }
-
-  free(str);
-
-  return path_len;
-}
-
 static void test_bolos_vector(const struct bolos_vector *v)
 {
   uint8_t expected_key[64], key[64], expected_chain[32], chain[32];
@@ -699,7 +653,7 @@ static void test_bolos_vector(const struct bolos_vector *v)
     p[0] = '\x00';
     memcpy(p + 1, v->path, path_len - 1);
   } else {
-    path_len = get_bip32_path(v->path, path, MAX_CHAIN_LEN);
+    path_len = get_path(v->path, path, MAX_CHAIN_LEN);
     assert_true(path_len >= 0);
   }
 

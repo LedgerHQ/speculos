@@ -101,3 +101,5 @@ void be2le(uint8_t *v, size_t len);
 void le2be(uint8_t *v, size_t len);
 
 int sys_cx_math_next_prime(uint8_t *buf, unsigned int len);
+
+int get_path(const char *str_, unsigned int *path, int max_path_len);
