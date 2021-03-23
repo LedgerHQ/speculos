@@ -37,13 +37,13 @@ Supported SDK values for the `-k`/`--sdk` argument are:
 
 For more options, pass the `-h` or `--help` flag.
 
-### Keyboard control
+## Keyboard control
 
 - The keyboard left and right arrow keys are used instead of the Nano buttons.
   The down arrow can also be used as a more convenient shortcut.
 - The `Q` key exits the application.
 
-### Display
+## Display
 
 Several display options are available through the `--display` parameter:
 
@@ -56,6 +56,27 @@ specified port. macOS users should also add `--vnc-password <password>` if using
 the built-in VNC client because unauthenticated sessions doesn't seem to be
 supported (issue #34).
 
+## App name and version
+
+On a real device, some parameters specific to the app to be installed (name and
+version, icon, allowed derivation paths, etc.) are given during the
+installation. This information isn't embedded in the .elf file itself and thus
+cannot be retrieved by speculos.
+
+The default app name and version are respectively `app` `1.33.7`, but these
+values can be set through the `SPECULOS_APPNAME` environment variable. For
+instance:
+
+```shell
+$ SPECULOS_APPNAME=blah:1.2.3.4 ./speculos.py ./apps/btc.elf &
+$ echo 'b0 01 00 00 00' \
+  | LEDGER_PROXY_ADDRESS=127.0.0.1 LEDGER_PROXY_PORT=9999 ledgerctl send - \
+  | xxd -r -ps \
+  | hd
+00000000  01 04 62 6c 61 68 07 31  2e 32 2e 33 2e 34 01 00  |..blah.1.2.3.4..|
+00000010  90 00                                             |..|
+00000012
+```
 
 # Bitcoin Testnet app
 
