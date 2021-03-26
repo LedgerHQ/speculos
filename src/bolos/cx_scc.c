@@ -47,9 +47,11 @@ void cx_scc_struct_check_hash(const cx_hash_t *hash)
 
 #if 0
   case CX_SHA384:
+#endif
   case CX_SHA512:
-    cx_scc_assert_param(((cx_sha512_t*)hash)->blen < 128);
+    cx_scc_assert_param(((cx_sha512_t *)hash)->blen < 128);
     return;
+#if 0
 
   case CX_KECCAK:
   case CX_SHA3:
@@ -105,9 +107,8 @@ void cx_scc_struct_check_hashmac(const cx_hmac_t *hmac)
 #if 0
       && hash_algorithm != CX_SHA224
       && hash_algorithm != CX_SHA384
-      && hash_algorithm != CX_SHA512
 #endif
-      && hash_algorithm != CX_RIPEMD160) {
+      && hash_algorithm != CX_SHA512 && hash_algorithm != CX_RIPEMD160) {
     THROW(INVALID_PARAMETER);
   }
   cx_scc_struct_check_hash((cx_hash_t *)&hmac->hash_ctx);
