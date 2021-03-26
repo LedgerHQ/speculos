@@ -385,6 +385,11 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
            unsigned char *,       out,
            unsigned int,          out_len);
 
+  SYSCALL3(cx_hmac_sha512_init, "(%p, %p, %u)",
+           cx_hmac_sha256_t *, hmac,
+           const uint8_t *,    key,
+           unsigned int,       key_len);
+
   SYSCALL8(os_perso_derive_node_bip32_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
            unsigned int,         mode,
            cx_curve_t,           curve,

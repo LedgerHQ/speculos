@@ -144,8 +144,8 @@ int cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len)
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-int sys_cx_hmac_sha256_init(cx_hmac_sha256_t *hmac, const unsigned char *key,
-                            unsigned int key_len)
+int cx_hmac_sha256_init(cx_hmac_sha256_t *hmac, const unsigned char *key,
+                        unsigned int key_len)
 {
   if (!cx_hmac_init(hmac, CX_SHA256, key, key_len)) {
     THROW(INVALID_PARAMETER);
@@ -180,8 +180,8 @@ int cx_hmac_sha512_init(cx_hmac_sha512_t *hmac, const unsigned char *key,
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-int sys_cx_hmac(cx_hmac_t *hmac, int mode, const unsigned char *in,
-                unsigned int len, unsigned char *out, unsigned int out_len)
+int cx_hmac(cx_hmac_t *hmac, int mode, const unsigned char *in,
+            unsigned int len, unsigned char *out, unsigned int out_len)
 {
   int ret = 0;
   size_t output_size = 0;

@@ -20,9 +20,6 @@ void cx_scc_struct_check_hashmac(const cx_hmac_t *UNUSED(hmac))
 #define MAX_CAVP_LINE_LENGTH 65536
 #define CX_MAX_DIGEST_SIZE   CX_SHA512_SIZE
 
-#define cx_hmac             sys_cx_hmac
-#define cx_hmac_sha256_init sys_cx_hmac_sha256_init
-
 static cx_md_t hmac_get_hash_id_from_name(const char *name)
 {
   cx_md_t md_type = CX_NONE;
