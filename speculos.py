@@ -192,19 +192,19 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if args.display == 'text' and args.model != 'nanos':
-        logger.error(f"unsupported model '{args.model}' with argument -x")
+        logger.error(f"unsupported model '{args.model}' with argument --display text")
         sys.exit(1)
 
     if args.ontop and args.display != 'qt':
-        logger.error("-o (--ontop) can only be used with --display qt")
+        logger.error("--ontop can only be used with --display qt")
         sys.exit(1)
 
     if args.zoom and args.display != 'qt':
-        logger.error("-z (--zoom) can only be used with --display qt")
+        logger.error("--zoom can only be used with --display qt")
         sys.exit(1)
 
     if args.keymap and args.display != 'text':
-        logger.error("-y (--keymap) can only be used with --display text")
+        logger.error("--keymap can only be used with --display text")
         sys.exit(1)
 
     if args.vnc_password and not args.vnc_port:
