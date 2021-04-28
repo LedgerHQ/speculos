@@ -43,3 +43,14 @@ int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len)
   /* XXX: this function return void */
   return 0xdeadbeef;
 }
+
+int sys_nvm_erase(void *dst_addr, size_t src_len)
+{
+  return sys_nvm_write(dst_addr, NULL, src_len);
+}
+
+int sys_nvm_erase_page(unsigned int page_adr __attribute__((unused)))
+{
+  // TODO !
+  return 0;
+}

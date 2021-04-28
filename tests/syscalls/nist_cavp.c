@@ -17,12 +17,14 @@ void test_cavp_short_msg_with_size(const char *filename, cx_md_t md_type,
 {
   cx_hash_ctx ctx;
   char line[1024];
+  char *result;
 
   FILE *f = fopen(filename, "r");
   assert_non_null(f);
 
   while (!feof(f)) {
-    fgets(line, sizeof(line), f);
+    result = fgets(line, sizeof(line), f);
+    assert_non_null(result);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');
@@ -56,12 +58,14 @@ void test_cavp_short_msg_with_single(const char *filename, single_hash_t hash,
                                      size_t digest_size)
 {
   char line[1024];
+  char *result;
 
   FILE *f = fopen(filename, "r");
   assert_non_null(f);
 
   while (!feof(f)) {
-    fgets(line, sizeof(line), f);
+    result = fgets(line, sizeof(line), f);
+    assert_non_null(result);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');
@@ -95,6 +99,7 @@ void test_cavp_long_msg_with_size(const char *filename, cx_md_t md_type,
                                   size_t digest_size)
 {
   cx_hash_ctx ctx;
+  char *result;
   char *line = malloc(MAX_CAVP_LINE_LENGTH);
   assert_non_null(line);
 
@@ -102,7 +107,8 @@ void test_cavp_long_msg_with_size(const char *filename, cx_md_t md_type,
   assert_non_null(f);
 
   while (!feof(f)) {
-    fgets(line, MAX_CAVP_LINE_LENGTH, f);
+    result = fgets(line, MAX_CAVP_LINE_LENGTH, f);
+    assert_non_null(result);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');

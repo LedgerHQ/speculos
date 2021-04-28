@@ -72,7 +72,7 @@ static void test_wycheproof_vectors(const char *filename)
   FILE *f = fopen(filename, "r");
   assert_non_null(f);
 
-  enum wycheproof_result res;
+  enum wycheproof_result res = 0;
 
   // Format:
   // curve : public_key : private key : shared : result
@@ -98,7 +98,7 @@ static void test_wycheproof_vectors(const char *filename)
     size_t public_key_len = strlen(pos1 + 1) / 2;
     size_t private_key_len = strlen(pos2 + 1) / 2;
     size_t shared_len = strlen(pos3 + 1) / 2;
-    cx_curve_t curve;
+    cx_curve_t curve = 0;
 
     uint8_t *public_key = malloc(public_key_len);
     assert_non_null(public_key);

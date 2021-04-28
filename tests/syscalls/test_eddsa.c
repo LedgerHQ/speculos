@@ -242,7 +242,7 @@ static void test_eddsa_wycheproof(void **state)
   FILE *f = fopen(TESTS_PATH "wycheproof/eddsa.data", "r");
   assert_non_null(f);
 
-  enum wycheproof_result res;
+  enum wycheproof_result res = 0;
 
   // Format:
   // curve : secret_key : public_key : msg : signature : result
@@ -271,7 +271,7 @@ static void test_eddsa_wycheproof(void **state)
     size_t pk_len = strlen(pos2 + 1) / 2;
     size_t msg_len = strlen(pos3 + 1) / 2;
     size_t signature_len = strlen(pos4 + 1) / 2;
-    cx_curve_t curve;
+    cx_curve_t curve = 0;
 
     assert_int_equal(sk_len, 32);
     assert_int_equal(pk_len, 32);

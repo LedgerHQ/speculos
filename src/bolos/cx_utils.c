@@ -135,7 +135,7 @@ void cx_swap_uint64(uint64bits_t *v)
   v->h = l;
   v->l = h;
 }
-#else // HAVE_SYS_UINT64_SUPPORT
+#else  // HAVE_SYS_UINT64_SUPPORT
 uint64bits_t cx_swap_uint64(uint64bits_t v)
 {
   uint32_t h, l;
@@ -156,7 +156,7 @@ void cx_swap_buffer64(uint64bits_t *v, int len)
   while (len--) {
     cx_swap_uint64(&v[len]);
   }
-#else // HAVE_SYS_UINT64_SUPPORT
+#else  // HAVE_SYS_UINT64_SUPPORT
   uint64bits_t i;
   while (len--) {
     i = *v;

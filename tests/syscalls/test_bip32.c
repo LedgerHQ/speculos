@@ -671,6 +671,7 @@ static void test_bolos_vector(const struct bolos_vector *v)
     mode = HDW_SLIP21;
     break;
   default:
+    mode = 0;
     fail();
     break;
   }
@@ -686,6 +687,7 @@ static void test_bolos_vector(const struct bolos_vector *v)
     curve = CX_CURVE_Ed25519;
     break;
   default:
+    curve = 0;
     fail();
     break;
   }

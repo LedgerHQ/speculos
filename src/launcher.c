@@ -24,6 +24,10 @@
 #define GIT_REVISION "00000000"
 #endif
 
+#define CX_ADDR   ((void *)0x00120000)
+#define CX_SIZE   0x8000
+#define CX_OFFSET 0x10000
+
 typedef enum {
   MODEL_NANO_S,
   MODEL_NANO_X,
@@ -51,10 +55,7 @@ struct memory_s {
 };
 
 static char *sdkmap[SDK_COUNT] = {
-  "1.2",
-  "1.5",
-  "1.6",
-  "blue-2.2.5",
+  "1.2", "1.5", "1.6", "2.0", "blue-2.2.5",
 };
 
 static struct memory_s memory;
@@ -305,6 +306,49 @@ error:
   return NULL;
 }
 
+static int load_cxlib(char *cxlib_path)
+{
+  // First, try to open the cx.elf file specified (could be the one by default):
+  int fd = open(cxlib_path, O_RDONLY);
+  if (fd == -1) {
+    // Try to use environnement variable CXLIB_PATH:
+    char *path = getenv("CXLIB_PATH");
+    if (path == NULL) {
+      warnx("failed to open \"%s\" and no CXLIB_PATH environment found!",
+            cxlib_path);
+      return -1;
+    }
+    fprintf(stderr, "[*] failed to open \"%s\", trying CXLIB_PATH...\n",
+            cxlib_path);
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+      warn("failed to open \"%s\"!", path);
+      return -1;
+    }
+    cxlib_path = path;
+  }
+  fprintf(stderr, "[*] loading CXLIB from \"%s\"\n", cxlib_path);
+
+  int flags = MAP_PRIVATE | MAP_FIXED;
+  int prot = PROT_READ | PROT_EXEC;
+  void *p = mmap(CX_ADDR, CX_SIZE, prot, flags, fd, CX_OFFSET);
+  if (p == MAP_FAILED) {
+    warn("mmap cxlib");
+    close(fd);
+    return -1;
+  }
+
+  if (patch_svc(CX_ADDR, CX_SIZE) != 0) {
+    if (munmap(p, CX_SIZE) != 0) {
+      warn("munmap");
+    }
+    close(fd);
+    return -1;
+  }
+
+  return 0;
+}
+
 static int run_app(char *name, unsigned long *parameters)
 {
   unsigned long stack_end, stack_start;
@@ -438,6 +482,7 @@ static void usage(char *argv0)
 
 int main(int argc, char *argv[])
 {
+  char *cxlib_path = NULL;
   hw_model_t model = MODEL_NANO_S;
   int opt;
 
@@ -450,8 +495,11 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "tr:s:m:k:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:")) != -1) {
     switch (opt) {
+    case 'c':
+      cxlib_path = optarg;
+      break;
     case 'k':
       sdk_version = str2sdkver(optarg);
       break;
@@ -491,7 +539,8 @@ int main(int argc, char *argv[])
 
   switch (model) {
   case MODEL_NANO_S:
-    if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_NANO_S_1_6) {
+    if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_NANO_S_1_6 &&
+        sdk_version != SDK_NANO_S_2_0) {
       errx(1, "invalid SDK version for the Ledger Nano S");
     }
     break;
@@ -512,6 +561,12 @@ int main(int argc, char *argv[])
 
   if (load_apps(argc - optind, &argv[optind]) != 0) {
     return 1;
+  }
+
+  if (sdk_version == SDK_NANO_S_2_0) {
+    if (load_cxlib(cxlib_path) != 0) {
+      return 1;
+    }
   }
 
   if (setup_signals() != 0) {

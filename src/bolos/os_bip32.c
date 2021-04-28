@@ -421,7 +421,7 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve,
       }
 
       tmp[0] = 1;
-      memcpy(tmp + 1, tmp + 32, 32);
+      memmove(tmp + 1, tmp + 32, 32);
     }
 
     memcpy(key->private_key, tmp, 32);
@@ -480,6 +480,22 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
   extended_private_key key;
   const uint8_t *sk;
   int ret;
+
+  // In SDK2, some curves don't have the same value:
+  switch ((int)curve) {
+  case 0x71:
+    curve = CX_CURVE_Ed25519;
+    break;
+  case 0x72:
+    curve = CX_CURVE_Ed448;
+    break;
+  case 0x81:
+    curve = CX_CURVE_Curve25519;
+    break;
+  case 0x82:
+    curve = CX_CURVE_Curve448;
+    break;
+  }
 
   if (seed_key == NULL || seed_key_length == 0) {
     if (mode != HDW_SLIP21) {

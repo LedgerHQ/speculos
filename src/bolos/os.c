@@ -10,6 +10,7 @@
 #define BOLOS_TAG_APPNAME    0x01
 #define BOLOS_TAG_APPVERSION 0x02
 
+#undef PATH_MAX
 #define PATH_MAX 1024
 
 #define MAX_LIBCALL 3
@@ -95,7 +96,7 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
 
 unsigned long sys_os_lib_call(unsigned long *call_parameters)
 {
-  char libname[PATH_MAX];
+  char libname[PATH_MAX + 1];
 
   if (libcall_index >= MAX_LIBCALL) {
     fprintf(stderr, "too many os_lib_call calls\n");
@@ -108,7 +109,7 @@ unsigned long sys_os_lib_call(unsigned long *call_parameters)
   libcall_index += 1;
 
   /* libname must be on the stack */
-  strncpy(libname, (char *)call_parameters[0], sizeof(libname));
+  strncpy(libname, (char *)call_parameters[0], sizeof(libname) - 1);
 
   /* unmap current app */
   unload_running_app(false);

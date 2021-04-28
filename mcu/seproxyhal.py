@@ -152,7 +152,11 @@ class SeProxyHal:
     def _recvall(self, size):
         data = b''
         while size > 0:
-            tmp = self.s.recv(size)
+            try:
+                tmp = self.s.recv(size)
+            except ConnectionResetError:
+                tmp = b''
+
             if len(tmp) == 0:
                 self.logger.debug("fd closed")
                 return None
