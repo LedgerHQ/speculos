@@ -22,6 +22,8 @@ class SephTag(IntEnum):
     USB_EP_PREPARE              = 0x50
 
     RAPDU                       = 0x53
+    PRINTC_STATUS               = 0x5f
+
     GENERAL_STATUS              = 0x60
     GENERAL_STATUS_LAST_COMMAND = 0x0000
     SCREEN_DISPLAY_STATUS       = 0x65
@@ -254,7 +256,7 @@ class SeProxyHal:
 
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
-        if tag & 0xf0 == SephTag.GENERAL_STATUS:
+        if tag & 0xf0 == SephTag.GENERAL_STATUS or tag == SephTag.PRINTC_STATUS:
             ret = None
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
@@ -281,7 +283,7 @@ class SeProxyHal:
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
-            elif tag == SephTag.PRINTF_STATUS:
+            elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
                 for b in [ chr(b) for b in data ]:
                     if b == '\n':
                         self.logger.info(f"printf: {self.printf_queue}")
