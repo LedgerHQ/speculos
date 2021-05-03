@@ -16,7 +16,9 @@ DEFAULT_WINDOW_Y = 10
 
 
 class PaintWidget(QWidget):
-    def __init__(self, parent, model, pixel_size, vnc=None):
+    """High Level QT Widget for drawing screen content on your computer."""
+
+    def __init__(self, parent, model, pixel_size, vnc=None, record_frames=None):
         super().__init__(parent)
         self.fb = FrameBuffer(model)
         self.pixel_size = pixel_size
@@ -39,8 +41,9 @@ class PaintWidget(QWidget):
             # Only call scaled if needed.
             copied_pixmap = self.mPixmap.scaled(
                 self.mPixmap.width() * self.pixel_size,
-                self.mPixmap.height() * self.pixel_size)
-        qp.drawPixmap(0, 0, copied_pixmap )
+                self.mPixmap.height() * self.pixel_size,
+            )
+        qp.drawPixmap(0, 0, copied_pixmap)
 
     def _redraw(self, qp):
         for (x, y), color in self.fb.pixels.items():
@@ -172,7 +175,7 @@ class Screen(Display):
         self.app = app
         super().__init__(display, server)
         self._init_notifiers(server)
-        self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
+        self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size, record_frames=display.record_frames)
         self.seph = server.seph
 
     def klass_can_read(self, klass, s):

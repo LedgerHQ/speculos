@@ -5,6 +5,7 @@ import os
 import pkg_resources
 import re
 
+
 class Automation:
     def __init__(self, document):
         self.logger = logging.getLogger("automation")
@@ -12,8 +13,11 @@ class Automation:
 
         if document.startswith("file:"):
             path = document[5:]
-            with open(path) as fp:
-                self.json = json.load(fp)
+            try:
+                with open(path) as fp:
+                    self.json = json.load(fp)
+            except OSError:
+                logging.exception(f"could not open file {fp.name}")
         else:
             self.json = json.loads(document)
         self.validate()
@@ -49,7 +53,7 @@ class Automation:
                 if not condition:
                     continue
 
-            if not "actions" in rule:
+            if "actions" not in rule:
                 self.logger.warning(f'missing "actions" key for rule {action}')
                 continue
 

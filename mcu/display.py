@@ -10,7 +10,7 @@ from .vnc import VNC
 
 Server = Union[ApduServer, FakeButton, FakeFinger, SeProxyHal, VNC]
 
-DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size")
+DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size record_frames")
 ServerArgs = namedtuple("ServerArgs", "apdu button finger seph vnc")
 
 Model = namedtuple('Model', 'name screen_size box_position box_size')

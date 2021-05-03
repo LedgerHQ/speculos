@@ -127,13 +127,24 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         sys.exit(1)
     sys.exit(0)
 
+
 def setup_logging(args):
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(name)s: %(message)s', datefmt='%H:%M:%S')
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s.%(msecs)03d:%(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
 
     for arg in args.log_level:
         if ":" not in arg:
-            logging.getLogger("speculos").error(f"invalid --log argument {arg}")
-            sys.exit(1)
+            if arg not in ["DEBUG", "INFO", "WARNING", "ERROR"]:
+                logging.getLogger("speculos").error(f"invalid --log argument {arg}")
+                sys.exit(1)
+            else:
+                logging.getLogger("speculos").setLevel(arg)
+                logging.getLogger("root").setLevel(arg)
+                continue
+
         name, level = arg.split(":", 1)
         logger = logging.getLogger(name)
         try:
@@ -173,6 +184,11 @@ if __name__ == '__main__':
     group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument(
+        "--record-frames",
+        type=str,
+        help="Record frames under <filename>-\%d.txt for pixel wide precision",
+    )
 
     args = parser.parse_args()
     args.model.lower()
@@ -203,7 +219,15 @@ if __name__ == '__main__':
         logger.error("-z (--zoom) can only be used with --display qt")
         sys.exit(1)
 
-    if args.keymap and args.display != 'text':
+    if args.record_frames:
+        try:
+            with open(f"{args.record_frames}-00.txt", 'w') as f:
+                pass
+        except IOError:
+            logger.error("Cannot record frames with the passed filename")
+            sys.exit(1)
+
+    if args.keymap and args.display != "text":
         logger.error("-y (--keymap) can only be used with --display text")
         sys.exit(1)
 
@@ -228,16 +252,10 @@ if __name__ == '__main__':
 
     automation_path = None
     if args.automation:
-        if args.model == "nanox":
-            logger.error("automation isn't supported on the Nano X")
-            sys.exit(1)
         automation_path = automation.Automation(args.automation)
 
     automation_server = None
     if args.automation_port:
-        if args.model == "nanox":
-            logger.error("automation isn't supported on the Nano X")
-            sys.exit(1)
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
@@ -272,7 +290,9 @@ if __name__ == '__main__':
         }
         zoom = default_zoom.get(args.model)
 
-    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom)
+    display_args = display.DisplayArgs(
+        args.color, args.model, args.ontop, rendering, args.keymap, zoom, args.record_frames
+    )
     server_args = display.ServerArgs(apdu, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
     screen.run()

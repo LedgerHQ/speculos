@@ -1,10 +1,14 @@
-import binascii
 import logging
 from collections import namedtuple
 from construct import *
+from typing import Callable, Optional
+
+
+from .mcu_ocr import framebuffer_pixels_to_ascii, find_char_from_bitmap
 
 from . import bagl_font
 from . import bagl_glyph
+
 
 bagl_component_t = Aligned(4, Struct(
     "type"    / Int8ul,
@@ -62,17 +66,44 @@ SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START = 0x00
 
 DrawState = namedtuple('DrawState', 'x y width height colors bpp xx yy')
 
+
+def record_frame(function: Callable):
+    # use an internal mutable set for counting frames
+    frame_counter = {0}
+
+    def wrapper(self, *args, **kwargs):
+        result = function(self, *args, **kwargs)
+        ct = frame_counter.pop() + 1
+        if self.record_frames:
+            filename = f'{self.record_frames}-{ct:02d}.txt'
+            with open(filename, 'w') as fp:
+                fp.write(framebuffer_pixels_to_ascii(self.m.fb.pixels))
+                if 'bitmap' in kwargs:
+                    with open(f'{self.record_frames}-text.txt', 'a') as fp:
+                        char = find_char_from_bitmap(kwargs['bitmap'])
+                        if char:
+                            fp.write(char)
+        frame_counter.add(ct)
+        return result
+
+    return wrapper
+
+
 class Bagl:
-    def __init__(self, m, size):
+    def __init__(self, m, size, record_frames: Optional[str] = None):
         self.m = m
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
         self.draw_state = DrawState(0, 0, 0, 0, [], 0, 0, 0)
         self.logger = logging.getLogger("bagl")
+        self.record_frames = record_frames
 
     def refresh(self):
         self.m.update()
 
-    def hal_draw_bitmap_within_rect(self, x, y, width, height, colors, bpp, bitmap, restore=None):
+    @record_frame
+    def hal_draw_bitmap_within_rect(
+        self, x, y, width, height, colors, bpp, bitmap=b'', restore=None
+    ):
         if bpp == 3 or bpp > 4:
             return
 
@@ -150,7 +181,7 @@ class Bagl:
     def compute_line_width(font_id, width, text, text_encoding):
         font = bagl_font.get(font_id)
         if not font:
-            self.logger.error("font not found")
+            logging.getLogger("bagl").error("font not found")
             return 0
 
         xx = 0
@@ -330,7 +361,7 @@ class Bagl:
                         self.hal_draw_rect(colorint, x_center-y, y_center-x, y-(dradius-1), 1)
                     self.hal_draw_rect(color, x_center-y-(dradius-1), y_center-x, dradius, 1)
                 else:
-                  self.hal_draw_rect(color, x_center-y, y_center-x, y, 1)
+                    self.hal_draw_rect(color, x_center - y, y_center - x, y, 1)
 
             last_x = x
             y += 1
@@ -587,10 +618,8 @@ class Bagl:
             for i in range(10, 10 + color_size, 4):
                 color = int.from_bytes(data[i:i+4], byteorder='little')
                 colors.append(color)
-            bitmap = data[10+color_size:]
-
-            self.hal_draw_bitmap_within_rect(x, y, w, h, colors, bpp, bitmap)
-
+            bitmap = data[10 + color_size:]
+            self.hal_draw_bitmap_within_rect(x, y, w, h, colors, bpp, bitmap=bitmap)
         else:
             bitmap = data[1:]
 

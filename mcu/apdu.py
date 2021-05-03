@@ -9,6 +9,7 @@ import errno
 import logging
 import socket
 
+
 class ApduServer:
     def __init__(self, host='127.0.0.1', port=9999, hid=False):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

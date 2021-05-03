@@ -42,8 +42,20 @@ typedef struct {
 } bagl_font_character_t;
 '''
 
-Font = namedtuple("Font", "font_id bpp char_height baseline_height char_kerning first_char last_char characters bitmap")
-FontCharacter = namedtuple("FontCharacter", "char_width bitmap_byte_count bitmap_offset")
+Font = namedtuple(
+    "Font", [
+        'font_id',           # to allow for sparse font embedding with a linear enum
+        'bpp',               # for antialiased fonts
+        'char_height',
+        'baseline_height',
+        'char_kerning',      # specific to the font
+        'first_char',
+        'last_char',
+        'characters',
+        'bitmap',
+    ]
+)
+FontCharacter = namedtuple("FontCharacter", ['char_width', 'bitmap_byte_count', 'bitmap_offset'])
 
 bitmapLUCIDA_CONSOLE_6PT_8H = [
   0x00,  0x00,  0x00,  0x00,  0x00,

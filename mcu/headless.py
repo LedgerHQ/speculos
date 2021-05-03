@@ -6,6 +6,7 @@ from .display import Display, DisplayArgs, FrameBuffer, Model, MODELS, ServerArg
 from .readerror import ReadError
 from .vnc import VNC
 
+
 class Headless(Display):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)

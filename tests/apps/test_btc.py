@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Tests to ensure that speculos launches correctly the BTC apps.
-'''
+"""
 
 import binascii
 import os
@@ -26,7 +26,9 @@ class TestBtc:
 
     def test_btc_get_version(self, app):
         """Send a get_version APDU to the BTC app."""
+
         app.run()
+
         packet = binascii.unhexlify("E0C4000000")
         data, status = app.exchange(packet)
         assert status == 0x9000
@@ -57,7 +59,10 @@ class TestBtc:
         if app.model == 'nanox':
             pytest.skip("automation isn't supported on the Nano X")
 
-        args = [ '--automation', TestBtc.get_automation_path(f'btc_getpubkey_{app.model}.json') ]
+        args = [
+            "--automation",
+            TestBtc.get_automation_path(f"boilerplate_{app.model}.json"),
+        ]
         app.run(args=args)
 
         packet = binascii.unhexlify('e040010115058000003180000000800000000000000000000000')
@@ -66,7 +71,7 @@ class TestBtc:
 
     def test_vnc_no_password(self, app):
         port = 5900
-        args = [ "--vnc-port", f"{port}" ]
+        args = ["--vnc-port", f"{port}"]
         app.run(args=args)
 
         vnc = Vnc(port)
@@ -75,7 +80,7 @@ class TestBtc:
     def test_vnc_with_password(self, app):
         password = "secret"
         port = 5900
-        args = [ "--vnc-port", f"{port}", "--vnc-password", password ]
+        args = ["--vnc-port", f"{port}", "--vnc-password", password]
         app.run(args=args)
 
         vnc = Vnc(port)
@@ -95,6 +100,18 @@ class TestBtcTestnet:
         args = ["-l", "Bitcoin:%s" % btc_app]
         app.run(args=args)
 
-        packet = binascii.unhexlify('E0C4000000')
+        packet = binascii.unhexlify("E0C4000000")
         data, status = app.exchange(packet)
         assert status == 0x9000
+
+
+class TestNanoXAutomation(TestBtc):
+    """Tests for NanoX Automation."""
+
+    def test_nanox_automation(self, app):
+        args = [
+            "--automation",
+            TestBtc.get_automation_path(f"boilerplate_{app.model}.json"),
+        ]
+        app.run(args=args)
+        app.stop()
