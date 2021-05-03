@@ -26,9 +26,9 @@ RUN pip3 install construct jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest
 
 # Create SHA256SUMS, download dependencies and verify their integrity
 RUN \
-  echo 186c6bfe6ecfba7a5b48c47f8a1673d0f3b0e5ba2e25602dd23b629975da3f35 openssl-1.1.1f.tar.gz >> SHA256SUMS && \
+  echo 892a0875b9872acd04a9fde79b1f943075d5ea162415de3047c327df33fbaee5 openssl-1.1.1k.tar.gz >> SHA256SUMS && \
   echo f0ccd8242d55e2fd74b16ba518359151f6f8383ff8aef4976e48393f77bba8b6 cmocka-1.1.5.tar.xz >> SHA256SUMS && \
-  wget https://www.openssl.org/source/openssl-1.1.1f.tar.gz && \
+  wget https://www.openssl.org/source/openssl-1.1.1k.tar.gz && \
   wget https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz && \
   sha256sum --check SHA256SUMS && \
   rm SHA256SUMS
