@@ -35,13 +35,13 @@ RUN \
 
 # Build dependencies and install them in /install
 RUN mkdir install && \
-  tar xf openssl-1.1.1f.tar.gz && \
-  cd openssl-1.1.1f && \
+  tar xf openssl-1.1.1k.tar.gz && \
+  cd openssl-1.1.1k && \
   ./Configure --cross-compile-prefix=arm-linux-gnueabihf- no-asm no-threads no-shared no-sock linux-armv4 --prefix=/install && \
   make -j CFLAGS=-mthumb && \
   make install_sw && \
   cd .. && \
-  rm -r openssl-1.1.1f/ openssl-1.1.1f.tar.gz
+  rm -r openssl-1.1.1k/ openssl-1.1.1k.tar.gz
 
 RUN mkdir cmocka && \
   tar xf cmocka-1.1.5.tar.xz && \
