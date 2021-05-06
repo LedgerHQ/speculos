@@ -393,13 +393,12 @@ cx_err_t cx_mpi_export(const cx_mpi_t *src, uint8_t *dst_ptr, size_t dst_len)
 {
   // Instead of just using OpenSSL BN_bn2bin, let's do it like BOLOS do:
   cx_err_t error;
-  uint8_t *src_ptr;
+  uint8_t src_ptr[MAX_MPI_BYTE_SIZE];
   uint32_t src_len, offset;
 
   src_len = cx_mpi_nbytes(src);
-  src_ptr = malloc(src_len);
-  if (src_ptr == NULL) {
-    return CX_MEMORY_FULL;
+  if (src_len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
   }
 
   // Convert src cx_mpi_t into big-endian bytes form:
@@ -419,7 +418,6 @@ cx_err_t cx_mpi_export(const cx_mpi_t *src, uint8_t *dst_ptr, size_t dst_len)
   }
   error = CX_OK;
 end:
-  free(src_ptr);
 
   return error;
 }
@@ -428,16 +426,15 @@ cx_err_t cx_mpi_copy(cx_mpi_t *dst, cx_mpi_t *src)
 {
   // Instead of using OpenSSL BN_copy, let's do it like BOLOS do:
   cx_err_t error;
-  uint8_t *dst_ptr;
+  uint8_t dst_ptr[MAX_MPI_BYTE_SIZE];
   uint32_t dst_len;
 
   if (dst == src) {
     return CX_OK;
   }
   dst_len = cx_mpi_nbytes(src);
-  dst_ptr = malloc(dst_len);
-  if (dst_ptr == NULL) {
-    return CX_MEMORY_FULL;
+  if (dst_len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
   }
   // Copy src cx_mpi_t into dst big-endian bytes:
   CX_CHECK(cx_mpi_export(src, dst_ptr, dst_len));
@@ -447,7 +444,6 @@ cx_err_t cx_mpi_copy(cx_mpi_t *dst, cx_mpi_t *src)
     error = CX_INTERNAL_ERROR;
   }
 end:
-  free(dst_ptr);
 
   return error;
 }
@@ -467,7 +463,7 @@ void cx_mpi_set_u32(cx_mpi_t *x, uint32_t n)
 
 uint32_t cx_mpi_get_u32(const cx_mpi_t *x)
 {
-  uint8_t *bytes;
+  uint8_t bytes[MAX_MPI_BYTE_SIZE];
   int num_bytes, shift;
   uint32_t value;
 
@@ -475,15 +471,14 @@ uint32_t cx_mpi_get_u32(const cx_mpi_t *x)
   // Convert the bignum into big-endian form and store it in 'bytes':
   // (no need to expand mod 16 and fill with 0, just go as fast as possible)
   num_bytes = BN_num_bytes(x);
-  bytes = malloc(num_bytes);
-  if (bytes) {
-    num_bytes = BN_bn2bin(x, bytes);
-    // Now, convert those big-endian bytes into a 32-bit value:
-    shift = 0;
-    for (int i = 0; i < num_bytes && i < 4; i++, shift += 8) {
-      value |= (uint32_t)(bytes[num_bytes - i - 1]) << shift;
-    }
-    free(bytes);
+  if (num_bytes > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
+  }
+  num_bytes = BN_bn2bin(x, bytes);
+  // Now, convert those big-endian bytes into a 32-bit value:
+  shift = 0;
+  for (int i = 0; i < num_bytes && i < 4; i++, shift += 8) {
+    value |= (uint32_t)(bytes[num_bytes - i - 1]) << shift;
   }
 
   return value;
@@ -491,7 +486,7 @@ uint32_t cx_mpi_get_u32(const cx_mpi_t *x)
 
 int32_t cx_mpi_cmp_u32(const cx_mpi_t *a, uint32_t b)
 {
-  uint8_t *bytes;
+  uint8_t bytes[MAX_MPI_BYTE_SIZE];
   int num_bytes;
   int32_t diff, i;
   uint32_t value, shift;
@@ -501,66 +496,61 @@ int32_t cx_mpi_cmp_u32(const cx_mpi_t *a, uint32_t b)
   // Convert the bignum into big-endian form and store it in 'bytes':
   // (no need to expand mod 16 and fill with 0, just go as fast as possible)
   num_bytes = BN_num_bytes(a);
-  bytes = malloc(num_bytes);
-
-  if (bytes != NULL) {
-    num_bytes = BN_bn2bin(a, bytes);
-
-    // Only last 4 bytes should contain something:
-    for (i = 0; i < (num_bytes - 4); i++)
-      if (bytes[i])
-        break;
-
-    if (i >= (num_bytes - 4)) {
-      // Now, convert those big-endian bytes into a 32-bit value:
-      shift = 0;
-      value = 0;
-      if (num_bytes > 4)
-        num_bytes = 4;
-
-      for (i = 0; i < num_bytes; i++, shift += 8) {
-        value |= (uint32_t)(bytes[num_bytes - i - 1]) << shift;
-      }
-      // Compare this value to b:
-      if (value < b)
-        diff = -1;
-      else if (value == b)
-        diff = 0;
-      // No need to check if (value > b), as diff = 1 by default.
-    }
-    free(bytes);
+  if (num_bytes > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
   }
+
+  num_bytes = BN_bn2bin(a, bytes);
+
+  // Only last 4 bytes should contain something:
+  for (i = 0; i < (num_bytes - 4); i++)
+    if (bytes[i])
+      break;
+
+  if (i >= (num_bytes - 4)) {
+    // Now, convert those big-endian bytes into a 32-bit value:
+    shift = 0;
+    value = 0;
+    if (num_bytes > 4)
+      num_bytes = 4;
+
+    for (i = 0; i < num_bytes; i++, shift += 8) {
+      value |= (uint32_t)(bytes[num_bytes - i - 1]) << shift;
+    }
+    // Compare this value to b:
+    if (value < b)
+      diff = -1;
+    else if (value == b)
+      diff = 0;
+    // No need to check if (value > b), as diff = 1 by default.
+  }
+
   return diff;
 }
 
 int cx_mpi_cmp(cx_mpi_t *a, cx_mpi_t *b)
 {
   int diff;
-  uint8_t *a_ptr, *b_ptr;
+  uint8_t a_ptr[MAX_MPI_BYTE_SIZE], b_ptr[MAX_MPI_BYTE_SIZE];
   uint32_t a_len, b_len;
 
   diff = -1; // By default (a < b)
   // Instead of using OpenSSL BN_cmp, let's do it like BOLOS do:
   a_len = cx_mpi_nbytes(a);
   b_len = cx_mpi_nbytes(b);
+  if (a_len > MAX_MPI_BYTE_SIZE || b_len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
+  }
   // TODO be sure the next test is required (numbers may have different size
   // but still be 'comparables', for exemple if MSB of a number are at 0)
   if (a_len == b_len) {
-    a_ptr = malloc(a_len);
-    if (a_ptr != NULL) {
-      // Convert a cx_mpi_t into big-endian bytes form:
-      if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
-        b_ptr = malloc(b_len);
-        if (b_ptr != NULL) {
-          if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
-            diff = memcmp(a_ptr, b_ptr, a_len);
-          }
-          free(b_ptr);
-        }
-      }
-      free(a_ptr);
+    // Convert a cx_mpi_t into big-endian bytes form:
+    if (BN_bn2binpad(a, a_ptr, a_len) != -1 &&
+        BN_bn2binpad(b, b_ptr, b_len) != -1) {
+      diff = memcmp(a_ptr, b_ptr, a_len);
     }
   }
+
   // In fact, this function does not return -1, 0, or +1, but the diff
   // between first different bytes (and 0 if they are the same).
   return diff;
@@ -628,38 +618,41 @@ cx_err_t cx_mpi_clr_bit(cx_mpi_t *x, const uint32_t pos)
 
 uint32_t cx_mpi_cnt_bits(const cx_mpi_t *x)
 {
-  uint8_t *a;
+  uint8_t a[MAX_MPI_BYTE_SIZE];
   uint32_t len, nbits;
   uint8_t b;
+  uint8_t *p;
 
   nbits = 0;
 
   // Convert the bignum into big-endian form and store it in 'a':
   // (no need to expand mod 16 and fill with 0, just go as fast as possible)
   len = BN_num_bytes(x);
-  a = malloc(len);
-
-  if (a != NULL) {
-    // Convert a cx_mpi_t into big-endian bytes form:
-    len = BN_bn2bin(x, a);
-
-    while (*a == 0) {
-      a++;
-      len--;
-      if (len == 0)
-        break;
-    }
-    if (len != 0) {
-      len = len * 8;
-      b = *a;
-      while ((b & 0x80) == 0) {
-        b = b << 1;
-        len--;
-      }
-    }
-    free(a);
-    nbits = len;
+  if (len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
   }
+
+  // Convert a cx_mpi_t into big-endian bytes form:
+  len = BN_bn2bin(x, a);
+
+  p = a;
+  while (*p == 0) {
+    p++;
+    len--;
+    if (len == 0)
+      break;
+  }
+  if (len != 0) {
+    len = len * 8;
+    b = *p;
+    while ((b & 0x80) == 0) {
+      b = b << 1;
+      len--;
+    }
+  }
+
+  nbits = len;
+
   return nbits;
 }
 
@@ -684,7 +677,7 @@ cx_err_t cx_mpi_shl(cx_mpi_t *x, const uint32_t n)
 {
   cx_err_t error;
   uint32_t num_bytes, res_bytes;
-  uint8_t *bytes;
+  uint8_t bytes[MAX_MPI_BYTE_SIZE];
 
   num_bytes = cx_mpi_nbytes(x);
 
@@ -700,18 +693,14 @@ cx_err_t cx_mpi_shl(cx_mpi_t *x, const uint32_t n)
   // Currently, BOLOS does not 'extend' the number: lets do the same.
   // Be sure the result remain same size (mod 16) than original one:
   res_bytes = cx_mpi_nbytes(x);
+  if (res_bytes > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
+  }
   if (res_bytes > num_bytes) {
-
-    bytes = malloc(res_bytes);
-    if (bytes != NULL) {
-      res_bytes = BN_bn2bin(x, bytes);
-      if (res_bytes > num_bytes &&
-          BN_bin2bn(&bytes[res_bytes - num_bytes], num_bytes, x) == NULL) {
-        error = CX_INTERNAL_ERROR;
-      }
-      free(bytes);
-    } else {
-      error = CX_MEMORY_FULL;
+    res_bytes = BN_bn2bin(x, bytes);
+    if (res_bytes > num_bytes &&
+        BN_bin2bn(&bytes[res_bytes - num_bytes], num_bytes, x) == NULL) {
+      error = CX_INTERNAL_ERROR;
     }
   }
   return error;
@@ -720,55 +709,44 @@ cx_err_t cx_mpi_shl(cx_mpi_t *x, const uint32_t n)
 cx_err_t cx_mpi_xor(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
 {
   cx_err_t error;
-  uint8_t *a_ptr, *b_ptr, *r_ptr;
+  uint8_t a_ptr[MAX_MPI_BYTE_SIZE], b_ptr[MAX_MPI_BYTE_SIZE],
+      r_ptr[MAX_MPI_BYTE_SIZE];
   uint32_t i, j, a_len, b_len, r_len;
 
   error = CX_MEMORY_FULL; // By default for the moment.
   a_len = cx_mpi_nbytes(a);
-  a_ptr = malloc(a_len);
-  if (a_ptr != NULL) {
-    // Convert a cx_mpi_t into big-endian bytes form:
-    if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
-      b_len = cx_mpi_nbytes(b);
-      b_ptr = malloc(b_len);
-      if (b_ptr != NULL) {
-        // Convert b cx_mpi_t into big-endian bytes form:
-        if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
-          if (a_len >= b_len) {
-            r_len = a_len;
-            r_ptr = malloc(r_len);
-            if (r_ptr != NULL) {
-              j = a_len - b_len;
-              for (i = 0; i < j; i++)
-                r_ptr[i] = a_ptr[i]; // a XOR 0 = a
-              for (i = 0; i < b_len; i++)
-                r_ptr[i + j] = a_ptr[i + j] ^ b_ptr[i];
-            }
-          } else {
-            r_len = b_len;
-            r_ptr = malloc(r_len);
-            if (r_ptr != NULL) {
-              j = b_len - a_len;
-              for (i = 0; i < j; i++)
-                r_ptr[i] = b_ptr[i]; // b XOR 0 = b
-              for (i = 0; i < a_len; i++)
-                r_ptr[i + j] = b_ptr[i + j] ^ a_ptr[i];
-            }
-          }
-          if (r_ptr != NULL) {
-            if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
-              error = CX_OK;
-
-            } else {
-              error = CX_INTERNAL_ERROR;
-            }
-            free(r_ptr);
-          }
-        }
-        free(b_ptr);
+  if (a_len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
+  }
+  // Convert a cx_mpi_t into big-endian bytes form:
+  if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
+    b_len = cx_mpi_nbytes(b);
+    if (b_len > MAX_MPI_BYTE_SIZE) {
+      return CX_INVALID_PARAMETER;
+    }
+    // Convert b cx_mpi_t into big-endian bytes form:
+    if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
+      if (a_len >= b_len) {
+        r_len = a_len;
+        j = a_len - b_len;
+        for (i = 0; i < j; i++)
+          r_ptr[i] = a_ptr[i]; // a XOR 0 = a
+        for (i = 0; i < b_len; i++)
+          r_ptr[i + j] = a_ptr[i + j] ^ b_ptr[i];
+      } else {
+        r_len = b_len;
+        j = b_len - a_len;
+        for (i = 0; i < j; i++)
+          r_ptr[i] = b_ptr[i]; // b XOR 0 = b
+        for (i = 0; i < a_len; i++)
+          r_ptr[i + j] = b_ptr[i + j] ^ a_ptr[i];
+      }
+      if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
+        error = CX_OK;
+      } else {
+        error = CX_INTERNAL_ERROR;
       }
     }
-    free(a_ptr);
   }
   return error;
 }
@@ -776,55 +754,44 @@ cx_err_t cx_mpi_xor(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
 cx_err_t cx_mpi_or(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
 {
   cx_err_t error;
-  uint8_t *a_ptr, *b_ptr, *r_ptr;
+  uint8_t a_ptr[MAX_MPI_BYTE_SIZE], b_ptr[MAX_MPI_BYTE_SIZE],
+      r_ptr[MAX_MPI_BYTE_SIZE];
   uint32_t i, j, a_len, b_len, r_len;
 
   error = CX_MEMORY_FULL; // By default for the moment.
   a_len = cx_mpi_nbytes(a);
-  a_ptr = malloc(a_len);
-  if (a_ptr != NULL) {
-    // Convert a cx_mpi_t into big-endian bytes form:
-    if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
-      b_len = cx_mpi_nbytes(b);
-      b_ptr = malloc(b_len);
-      if (b_ptr != NULL) {
-        // Convert b cx_mpi_t into big-endian bytes form:
-        if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
-          if (a_len >= b_len) {
-            r_len = a_len;
-            r_ptr = malloc(r_len);
-            if (r_ptr != NULL) {
-              j = a_len - b_len;
-              for (i = 0; i < j; i++)
-                r_ptr[i] = a_ptr[i]; // a OR 0 = a
-              for (i = 0; i < b_len; i++)
-                r_ptr[i + j] = a_ptr[i + j] | b_ptr[i];
-            }
-          } else {
-            r_len = b_len;
-            r_ptr = malloc(r_len);
-            if (r_ptr != NULL) {
-              j = b_len - a_len;
-              for (i = 0; i < j; i++)
-                r_ptr[i] = b_ptr[i]; // b OR 0 = b
-              for (i = 0; i < a_len; i++)
-                r_ptr[i + j] = b_ptr[i + j] | a_ptr[i];
-            }
-          }
-          if (r_ptr != NULL) {
-            if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
-              error = CX_OK;
-
-            } else {
-              error = CX_INTERNAL_ERROR;
-            }
-            free(r_ptr);
-          }
-        }
-        free(b_ptr);
+  if (a_len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
+  }
+  // Convert a cx_mpi_t into big-endian bytes form:
+  if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
+    b_len = cx_mpi_nbytes(b);
+    if (b_len > MAX_MPI_BYTE_SIZE) {
+      return CX_INVALID_PARAMETER;
+    }
+    // Convert b cx_mpi_t into big-endian bytes form:
+    if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
+      if (a_len >= b_len) {
+        r_len = a_len;
+        j = a_len - b_len;
+        for (i = 0; i < j; i++)
+          r_ptr[i] = a_ptr[i]; // a OR 0 = a
+        for (i = 0; i < b_len; i++)
+          r_ptr[i + j] = a_ptr[i + j] | b_ptr[i];
+      } else {
+        r_len = b_len;
+        j = b_len - a_len;
+        for (i = 0; i < j; i++)
+          r_ptr[i] = b_ptr[i]; // b OR 0 = b
+        for (i = 0; i < a_len; i++)
+          r_ptr[i + j] = b_ptr[i + j] | a_ptr[i];
+      }
+      if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
+        error = CX_OK;
+      } else {
+        error = CX_INTERNAL_ERROR;
       }
     }
-    free(a_ptr);
   }
   return error;
 }
@@ -832,53 +799,37 @@ cx_err_t cx_mpi_or(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
 cx_err_t cx_mpi_and(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
 {
   cx_err_t error;
-  uint8_t *a_ptr, *b_ptr, *r_ptr;
+  uint8_t a_ptr[MAX_MPI_BYTE_SIZE], b_ptr[MAX_MPI_BYTE_SIZE],
+      r_ptr[MAX_MPI_BYTE_SIZE];
   uint32_t i, j, a_len, b_len, r_len;
 
   error = CX_MEMORY_FULL; // By default for the moment.
   a_len = cx_mpi_nbytes(a);
-  a_ptr = malloc(a_len);
-  if (a_ptr != NULL) {
-    // Convert a cx_mpi_t into big-endian bytes form:
-    if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
-      b_len = cx_mpi_nbytes(b);
-      b_ptr = malloc(b_len);
-      if (b_ptr != NULL) {
-        // Convert b cx_mpi_t into big-endian bytes form:
-        if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
-          if (a_len >= b_len) {
-            r_len = a_len;
-            r_ptr = malloc(r_len);
-            if (r_ptr != NULL) {
-              j = a_len - b_len;
-              memset(r_ptr, 0, j); // a AND 0 = 0
-              for (i = 0; i < b_len; i++)
-                r_ptr[i + j] = a_ptr[i + j] & b_ptr[i];
-            }
-          } else {
-            r_len = b_len;
-            r_ptr = malloc(r_len);
-            if (r_ptr != NULL) {
-              j = b_len - a_len;
-              memset(r_ptr, 0, j); // b AND 0 = 0
-              for (i = 0; i < a_len; i++)
-                r_ptr[i + j] = b_ptr[i + j] & a_ptr[i];
-            }
-          }
-          if (r_ptr != NULL) {
-            if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
-              error = CX_OK;
+  // Convert a cx_mpi_t into big-endian bytes form:
+  if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
+    b_len = cx_mpi_nbytes(b);
+    // Convert b cx_mpi_t into big-endian bytes form:
+    if (BN_bn2binpad(b, b_ptr, b_len) != -1) {
+      if (a_len >= b_len) {
+        r_len = a_len;
+        j = a_len - b_len;
+        memset(r_ptr, 0, j); // a AND 0 = 0
+        for (i = 0; i < b_len; i++)
+          r_ptr[i + j] = a_ptr[i + j] & b_ptr[i];
+      } else {
+        r_len = b_len;
+        j = b_len - a_len;
+        memset(r_ptr, 0, j); // b AND 0 = 0
+        for (i = 0; i < a_len; i++)
+          r_ptr[i + j] = b_ptr[i + j] & a_ptr[i];
+      }
+      if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
+        error = CX_OK;
 
-            } else {
-              error = CX_INTERNAL_ERROR;
-            }
-            free(r_ptr);
-          }
-        }
-        free(b_ptr);
+      } else {
+        error = CX_INTERNAL_ERROR;
       }
     }
-    free(a_ptr);
   }
   return error;
 }
@@ -972,30 +923,26 @@ cx_err_t cx_mpi_not(cx_mpi_t *a)
 {
   cx_err_t error;
   uint32_t a_len, i;
-  uint8_t *a_ptr;
+  uint8_t a_ptr[MAX_MPI_BYTE_SIZE];
 
   a_len = cx_mpi_nbytes(a);
-  a_ptr = malloc(a_len);
-  if (a_ptr != NULL) {
-    if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
-      for (i = 0; i < a_len; i++)
-        a_ptr[i] = ~a_ptr[i];
+  if (a_len > MAX_MPI_BYTE_SIZE) {
+    return CX_INVALID_PARAMETER;
+  }
+  if (BN_bn2binpad(a, a_ptr, a_len) != -1) {
+    for (i = 0; i < a_len; i++)
+      a_ptr[i] = ~a_ptr[i];
 
-      // Next function return the cx_mpi_t or NULL on error:
-      if (BN_bin2bn(a_ptr, a_len, a) == NULL) {
-        error = CX_INTERNAL_ERROR;
-
-      } else {
-        error = CX_OK;
-      }
+    // Next function return the cx_mpi_t or NULL on error:
+    if (BN_bin2bn(a_ptr, a_len, a) == NULL) {
+      error = CX_INTERNAL_ERROR;
 
     } else {
-      error = CX_INTERNAL_ERROR;
+      error = CX_OK;
     }
-    free(a_ptr);
 
   } else {
-    error = CX_MEMORY_FULL;
+    error = CX_INTERNAL_ERROR;
   }
   return error;
 }
