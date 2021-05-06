@@ -2,8 +2,8 @@
 
 name: Continuous Integration
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+# Controls when the action will run. Triggers the workflow on push or pull
+# request events but only for the master branch
 on:
   push:
     branches: [ master ]
@@ -14,11 +14,13 @@ jobs:
   build:
     name: Clone, build, test
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
 
-    # Use https://hub.docker.com/r/ledgerhq/speculos-builder which has all the
-    # required dependencies
+    # Use https://ghcr.io/ledgerhq/speculos-builder which has all the required
+    # dependencies
     container:
-      image: docker://ledgerhq/speculos-builder:latest
+      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
 
     steps:
     - name: Clone
@@ -52,6 +54,17 @@ jobs:
         dockerfile: Dockerfile
         username: ${{ secrets.dockerhub_username }}
         password: ${{ secrets.dockerhub_password }}
+        tag_with_sha: true
+        tags: latest
+
+    - name: Build and publish to GitHub Packages
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      uses: docker/build-push-action@v1
+      with:
+        repository: ledgerhq/speculos
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
         tag_with_sha: true
         tags: latest
 
