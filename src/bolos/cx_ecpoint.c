@@ -405,12 +405,8 @@ cx_err_t sys_cx_ecpoint_double_scalarmul_bn(cx_ecpoint_t *ec_R,
     error = CX_INTERNAL_ERROR;
   }
 end:
-  if (rbytes != NULL) {
-    free(rbytes);
-  }
-  if (kbytes != NULL) {
-    free(kbytes);
-  }
+  free(rbytes);
+  free(kbytes);
   return error;
 }
 
