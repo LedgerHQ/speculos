@@ -40,6 +40,7 @@ static cx_md_t hmac_get_hash_id_from_name(const char *name)
 void test_cavp_long_msg_with_size(const char *filename)
 {
   cx_hmac_ctx ctx;
+  char *result;
   char *line = malloc(MAX_CAVP_LINE_LENGTH);
   assert_non_null(line);
 
@@ -47,7 +48,8 @@ void test_cavp_long_msg_with_size(const char *filename)
   assert_non_null(f);
 
   while (!feof(f)) {
-    fgets(line, MAX_CAVP_LINE_LENGTH, f);
+    result = fgets(line, MAX_CAVP_LINE_LENGTH, f);
+    assert_non_null(result);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');
@@ -95,6 +97,7 @@ void test_cavp_long_msg_with_size(const char *filename)
 
 void test_cavp_long_msg_with_size_old_api(const char *filename)
 {
+  char *result;
   char *line = malloc(MAX_CAVP_LINE_LENGTH);
   assert_non_null(line);
 
@@ -105,7 +108,8 @@ void test_cavp_long_msg_with_size_old_api(const char *filename)
   assert_non_null(f);
 
   while (!feof(f)) {
-    fgets(line, MAX_CAVP_LINE_LENGTH, f);
+    result = fgets(line, MAX_CAVP_LINE_LENGTH, f);
+    assert_non_null(result);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');

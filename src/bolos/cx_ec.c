@@ -71,7 +71,7 @@ static unsigned char const C_cx_secp256k1_Hn[] = {
 
 #define C_cx_secp256k1_h 1
 
-cx_curve_weierstrass_t const C_cx_secp256k1 = {
+static cx_curve_weierstrass_t const C_cx_secp256k1 = {
   CX_CURVE_SECP256K1,
   256,
   32,
@@ -133,7 +133,7 @@ static unsigned char const C_cx_secp256r1_Hn[] = {
 
 #define C_cx_secp256r1_h 1
 
-cx_curve_weierstrass_t const C_cx_secp256r1 = {
+static cx_curve_weierstrass_t const C_cx_secp256r1 = {
   CX_CURVE_SECP256R1,
   256,
   32,
@@ -207,7 +207,7 @@ static uint8_t const C_cx_secp384r1_Hn[] = {
 
 #define C_cx_secp384r1_h 1
 
-cx_curve_weierstrass_t const C_cx_secp384r1 = {
+static cx_curve_weierstrass_t const C_cx_secp384r1 = {
   CX_CURVE_SECP384R1,
   384,
   48,
@@ -282,7 +282,7 @@ static unsigned char const C_cx_Ed25519_Qplus3div8[] = {
 
 #define C_cx_Ed25519_h 8
 
-cx_curve_twisted_edward_t const C_cx_Ed25519 = {
+static cx_curve_twisted_edward_t const C_cx_Ed25519 = {
   CX_CURVE_Ed25519,
   256,
   32,
@@ -299,7 +299,7 @@ cx_curve_twisted_edward_t const C_cx_Ed25519 = {
   (unsigned char *)C_cx_Ed25519_Qplus3div8,
 };
 
-cx_curve_domain_t const *const C_cx_allCurves[] = {
+static cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
   (const cx_curve_domain_t *)&C_cx_secp256r1,
   (const cx_curve_domain_t *)&C_cx_secp384r1,

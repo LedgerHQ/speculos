@@ -19,6 +19,50 @@ static BIGNUM *d1, *d2, *I, *q, *two;
 static const BIGNUM *one;
 static BN_CTX *ctx;
 
+static int initialize(void)
+{
+  BIGNUM *a;
+
+  ctx = BN_CTX_new();
+  a = BN_new();
+  two = BN_new();
+  d1 = BN_new();
+  d2 = BN_new();
+  q = BN_new();
+  I = BN_new();
+
+  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL ||
+      q == NULL || I == NULL) {
+    BN_CTX_free(ctx);
+    BN_free(a);
+    BN_free(two);
+    BN_free(d1);
+    BN_free(d2);
+    BN_free(q);
+    BN_free(I);
+    return -1;
+  }
+
+  one = BN_value_one();
+  BN_dec2bn(&two, "2");
+  BN_dec2bn(&q, constant_q);
+  BN_dec2bn(&I, constant_I);
+
+  BN_dec2bn(&a, "121666");
+  BN_mod_inverse(a, a, q, ctx);
+  BN_dec2bn(&d1, "-121665");
+  BN_mul(d1, d1, a, ctx);
+
+  BN_dec2bn(&a, "-1");
+  BN_mul(d2, d1, a, ctx);
+
+  BN_free(a);
+
+  initialized = true;
+
+  return 0;
+}
+
 static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1,
                           BIGNUM *y2, BIGNUM *d)
 {
@@ -60,6 +104,9 @@ int edwards_add(POINT *R, POINT *P, POINT *Q)
   BIGNUM *x1, *y1, *x2, *y2, *x3, *y3;
   int ret;
 
+  if (!initialized && initialize() != 0) {
+    return -1;
+  }
   ret = 0;
 
   x3 = BN_new();
@@ -119,50 +166,6 @@ static int scalarmult_helper(POINT *Q, POINT *P, BIGNUM *e)
   if (odd && edwards_add(Q, Q, P) != 0) {
     return -1;
   }
-
-  return 0;
-}
-
-static int initialize(void)
-{
-  BIGNUM *a;
-
-  ctx = BN_CTX_new();
-  a = BN_new();
-  two = BN_new();
-  d1 = BN_new();
-  d2 = BN_new();
-  q = BN_new();
-  I = BN_new();
-
-  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL ||
-      q == NULL || I == NULL) {
-    BN_CTX_free(ctx);
-    BN_free(a);
-    BN_free(two);
-    BN_free(d1);
-    BN_free(d2);
-    BN_free(q);
-    BN_free(I);
-    return -1;
-  }
-
-  one = BN_value_one();
-  BN_dec2bn(&two, "2");
-  BN_dec2bn(&q, constant_q);
-  BN_dec2bn(&I, constant_I);
-
-  BN_dec2bn(&a, "121666");
-  BN_mod_inverse(a, a, q, ctx);
-  BN_dec2bn(&d1, "-121665");
-  BN_mul(d1, d1, a, ctx);
-
-  BN_dec2bn(&a, "-1");
-  BN_mul(d2, d1, a, ctx);
-
-  BN_free(a);
-
-  initialized = true;
 
   return 0;
 }

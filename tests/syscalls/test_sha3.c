@@ -97,12 +97,14 @@ void test_cavp_sha3_xof(const char *filename, cx_md_t md_type)
 {
   cx_hash_ctx ctx;
   char line[1024];
+  char *result;
 
   FILE *f = fopen(filename, "r");
   assert_non_null(f);
 
   while (!feof(f)) {
-    fgets(line, sizeof(line), f);
+    result = fgets(line, sizeof(line), f);
+    assert_non_null(result);
     char *pos1 = strchr(line, ':');
     assert_non_null(pos1);
     char *pos2 = strchr(pos1 + 1, ':');

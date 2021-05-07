@@ -76,6 +76,11 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
     argv += [ '-k', str(args.sdk) ]
 
+    # load cxlib only if available for the specified sdk
+    cxlib = pkg_resources.resource_filename(__name__, f"/cxlib/cx-{args.sdk}.elf")
+    if os.path.exists(cxlib):
+        argv += ['-c', cxlib]
+
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
     for lib in [ f'main:{app_path}' ] + args.library:

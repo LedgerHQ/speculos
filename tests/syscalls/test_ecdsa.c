@@ -52,7 +52,6 @@ const ecdsa_test_vector secp256k1_blake2b512_test_vector[] = {
 void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector *tv,
                 size_t tv_len)
 {
-
   cx_ecfp_private_key_t privateKey;
   cx_ecfp_public_key_t publicKey;
   uint8_t secret_key[32];
@@ -77,6 +76,7 @@ void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector *tv,
   } else if (md == CX_BLAKE2B) {
     hash_len = 64;
   } else {
+    hash_len = 0;
     fail();
   }
 
@@ -150,6 +150,7 @@ void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector *tv,
       group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
       break;
     default:
+      group = NULL;
       fail();
     }
     sig_pt = EC_POINT_new(group);
