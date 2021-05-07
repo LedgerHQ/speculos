@@ -30,6 +30,7 @@ against the SDK `1.5` on the Nano S:
 ```
 
 Supported SDK values for the `-k`/`--sdk` argument are:
+
 |     | Nano S        | Nano X  | Blue            |
 |-----|---------------|---------|-----------------|
 | SDK | 1.5, 1.6, 2.0 | 1.2     | 1.5, blue-2.2.5 |
