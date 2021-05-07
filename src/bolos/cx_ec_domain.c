@@ -845,7 +845,6 @@ cx_err_t sys_cx_ecdomain_parameter(cx_curve_t curve, cx_curve_dom_param_t id,
 
   if (id == CX_CURVE_PARAM_Cofactor) {
     memmove(p, ptr, 4);
-
   } else {
     memmove(p, ptr, domain->length);
   }
@@ -873,7 +872,6 @@ cx_err_t sys_cx_ecdomain_parameter_bn(cx_curve_t curve, cx_curve_dom_param_t id,
   // Copy the content of ptr into BN:
   if (id == CX_CURVE_PARAM_Cofactor) {
     BN_bin2bn(ptr, 4, p);
-
   } else {
     BN_bin2bn(ptr, domain->length, p);
   }

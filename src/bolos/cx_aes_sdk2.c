@@ -35,7 +35,6 @@ cx_err_t sys_cx_aes_block_hw(const unsigned char *inblock,
     AES_set_decrypt_key(local_aes_key.keys, (int)local_aes_key.size * 8,
                         &aes_key);
     AES_decrypt(inblock, outblock, &aes_key);
-
   } else { // CX_SIGN, CX_VERIFY, CX_ENCRYPT:
     AES_set_encrypt_key(local_aes_key.keys, (int)local_aes_key.size * 8,
                         &aes_key);

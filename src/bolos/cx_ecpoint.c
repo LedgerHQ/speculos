@@ -333,7 +333,6 @@ cx_err_t sys_cx_ecpoint_scalarmul_bn(cx_ecpoint_t *ec_P, const cx_bn_t bn_k)
   }
   if (BN_bn2binpad(k, bytes, num_bytes) != -1) {
     error = sys_cx_ecpoint_scalarmul(ec_P, bytes, num_bytes);
-
   } else {
     error = CX_INTERNAL_ERROR;
   }
@@ -443,10 +442,8 @@ cx_err_t sys_cx_ecpoint_add(cx_ecpoint_t *ec_R, const cx_ecpoint_t *ec_P,
 
     if (p == NULL || q == NULL || r == NULL) {
       error = CX_MEMORY_FULL;
-
     } else if (EC_POINT_add(group, r, p, q, cx_get_bn_ctx()) == 0) {
       error = CX_INTERNAL_ERROR;
-
     } else {
       error = cx_ecpoint_from_EC_POINT(group, ec_R, r);
     }
@@ -529,11 +526,9 @@ cx_err_t sys_cx_ecpoint_compress(const cx_ecpoint_t *ec_P,
   if (CX_CURVE_RANGE(P.curve, WEIERSTRASS)) {
     CX_CHECK(cx_mpi_export(P.x, xy_compressed, xy_compressed_len));
     CX_CHECK(cx_mpi_tst_bit(P.y, 0, &set));
-
   } else if (CX_CURVE_RANGE(P.curve, TWISTED_EDWARDS)) {
     CX_CHECK(cx_mpi_export(P.y, xy_compressed, xy_compressed_len));
     CX_CHECK(cx_mpi_tst_bit(P.x, 0, &set));
-
   } else if (CX_CURVE_RANGE(P.curve, MONTGOMERY)) {
     CX_CHECK(cx_mpi_export(P.x, xy_compressed, xy_compressed_len));
     CX_CHECK(cx_mpi_tst_bit(P.y, 0, &set));
@@ -559,13 +554,11 @@ cx_err_t sys_cx_ecpoint_decompress(cx_ecpoint_t *ec_P,
     cx_mpi_set_u32(P.y, 0);
     cx_mpi_set_u32(P.z, 1);
     CX_CHECK(cx_weierstrass_recover_y(&P, sign));
-
   } else if (CX_CURVE_RANGE(P.curve, TWISTED_EDWARDS)) {
     cx_mpi_set_u32(P.x, 0);
     cx_mpi_init(P.y, xy_compressed, xy_compressed_len);
     cx_mpi_set_u32(P.z, 1);
     CX_CHECK(cx_twisted_edwards_recover_x(&P, sign));
-
   } else if (CX_CURVE_RANGE(P.curve, MONTGOMERY)) {
     cx_mpi_init(P.x, xy_compressed, xy_compressed_len);
     cx_mpi_set_u32(P.y, 0);

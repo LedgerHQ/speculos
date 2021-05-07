@@ -75,7 +75,6 @@ uint32_t size_to_mpi_word_bytes(uint32_t size)
   // Make sure size is a multiple of mpi_word_size:
   if (size == 0) {
     size = mpi_word_size;
-
   } else {
     size += mpi_word_size - 1;
     size /= mpi_word_size;
@@ -107,7 +106,6 @@ cx_err_t cx_mpi_bytes(const cx_bn_t bn_x, size_t *nbytes)
 
   if (nbytes == NULL) {
     error = CX_INVALID_PARAMETER;
-
   } else {
     *nbytes = cx_mpi_nbytes(x);
   }
@@ -129,15 +127,12 @@ cx_err_t cx_bn_to_mpi(const cx_bn_t bn_x, cx_mpi_t **x)
 
     if (*x != NULL) {
       error = CX_OK;
-
     } else {
       error = CX_MEMORY_FULL;
     }
-
   } else {
     if (bn_x == (cx_bn_t)-1) {
       error = CX_MEMORY_FULL;
-
     } else {
       error = CX_INVALID_PARAMETER;
     }
@@ -159,14 +154,12 @@ cx_err_t cx_bn_ab_to_mpi(const cx_bn_t bn_a, cx_mpi_t **a, const cx_bn_t bn_b,
 
     if (*a != NULL && *b != NULL) {
       error = CX_OK;
-
     } else {
       error = CX_MEMORY_FULL;
     }
   } else {
     if (bn_a == (cx_bn_t)-1 || bn_b == (cx_bn_t)-1) {
       error = CX_MEMORY_FULL;
-
     } else {
       error = CX_INVALID_PARAMETER;
     }
@@ -190,15 +183,12 @@ cx_err_t cx_bn_rab_to_mpi(const cx_bn_t bn_r, cx_mpi_t **r, const cx_bn_t bn_a,
 
     if (*a != NULL && *b != NULL && *r != NULL) {
       error = CX_OK;
-
     } else {
       error = CX_MEMORY_FULL;
     }
-
   } else {
     if (bn_a == (cx_bn_t)-1 || bn_b == (cx_bn_t)-1 || bn_r == (cx_bn_t)-1) {
       error = CX_MEMORY_FULL;
-
     } else {
       error = CX_INVALID_PARAMETER;
     }
@@ -224,16 +214,13 @@ cx_err_t cx_bn_rabm_to_mpi(const cx_bn_t bn_r, cx_mpi_t **r, const cx_bn_t bn_a,
 
     if (*a != NULL && *b != NULL && *r != NULL && *m != NULL) {
       error = CX_OK;
-
     } else {
       error = CX_MEMORY_FULL;
     }
-
   } else {
     if (bn_a == (cx_bn_t)-1 || bn_b == (cx_bn_t)-1 || bn_r == (cx_bn_t)-1 ||
         bn_m == (cx_bn_t)-1) {
       error = CX_MEMORY_FULL;
-
     } else {
       error = CX_INVALID_PARAMETER;
     }
@@ -267,7 +254,6 @@ cx_err_t cx_mpi_destroy(cx_bn_t *bn_x)
     // BUT if we update values, context MUST be locked!
     if (local_bn_ctx == NULL) {
       error = CX_NOT_LOCKED;
-
     } else {
       // No need to check for NULL, OpenSSL does it already.
       BN_clear_free(cx_mpi_array[index].mpi);
@@ -303,13 +289,11 @@ cx_err_t cx_mpi_lock(size_t word_size, uint32_t flags __attribute__((unused)))
 
   if (local_bn_ctx != NULL) {
     error = CX_NOT_UNLOCKED;
-
   } else {
     local_bn_ctx = BN_CTX_new();
 
     if (local_bn_ctx == NULL) {
       error = CX_INTERNAL_ERROR;
-
     } else {
       mpi_total_memory = 0;
       mpi_word_size = size_to_mpi_bytes(word_size);
@@ -360,7 +344,6 @@ cx_err_t cx_mpi_init(cx_mpi_t *x, const uint8_t *bytes, size_t nbytes)
   // Next function return the cx_mpi_t or NULL on error:
   if (BN_bin2bn(bytes, nbytes, x) == NULL) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -410,7 +393,6 @@ cx_err_t cx_mpi_export(const cx_mpi_t *src, uint8_t *dst_ptr, size_t dst_len)
   if (src_len >= dst_len) {
     offset = src_len - dst_len;
     memcpy(dst_ptr, src_ptr + offset, dst_len);
-
   } else {
     offset = dst_len - src_len;
     memset(dst_ptr, 0, offset);
@@ -596,7 +578,6 @@ cx_err_t cx_mpi_set_bit(cx_mpi_t *x, const uint32_t pos)
 
   if (!BN_set_bit(x, pos)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -609,7 +590,6 @@ cx_err_t cx_mpi_clr_bit(cx_mpi_t *x, const uint32_t pos)
 
   if (!BN_clear_bit(x, pos)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -666,7 +646,6 @@ cx_err_t cx_mpi_shr(cx_mpi_t *x, const uint32_t n)
   }
   if (!BN_rshift(x, x, n)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -825,7 +804,6 @@ cx_err_t cx_mpi_and(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
       }
       if (BN_bin2bn(r_ptr, r_len, r) != NULL) {
         error = CX_OK;
-
       } else {
         error = CX_INTERNAL_ERROR;
       }
@@ -853,7 +831,6 @@ cx_err_t cx_mpi_add(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
     // Only keep len bytes:
     if (!BN_mask_bits(r, 8 * len)) {
       error = CX_INTERNAL_ERROR;
-
     } else {
       error = CX_CARRY;
     }
@@ -883,7 +860,6 @@ cx_err_t cx_mpi_sub(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
     // Only keep len bytes:
     if ((uint32_t)BN_num_bytes(r) > len && !BN_mask_bits(r, 8 * len)) {
       error = CX_INTERNAL_ERROR;
-
     } else if ((error = cx_mpi_neg(r)) == CX_OK) {
       error = CX_CARRY;
     }
@@ -899,7 +875,6 @@ cx_err_t cx_mpi_inc(cx_mpi_t *a)
 
   if (!BN_add_word(a, 1)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -912,7 +887,6 @@ cx_err_t cx_mpi_dec(cx_mpi_t *a)
 
   if (!BN_sub_word(a, 1)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -936,11 +910,9 @@ cx_err_t cx_mpi_not(cx_mpi_t *a)
     // Next function return the cx_mpi_t or NULL on error:
     if (BN_bin2bn(a_ptr, a_len, a) == NULL) {
       error = CX_INTERNAL_ERROR;
-
     } else {
       error = CX_OK;
     }
-
   } else {
     error = CX_INTERNAL_ERROR;
   }
@@ -963,7 +935,6 @@ cx_err_t cx_mpi_mul(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *b)
 
   if (!BN_mul(r, a, b, local_bn_ctx)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -976,7 +947,6 @@ cx_err_t cx_mpi_div(cx_mpi_t *r, cx_mpi_t *d, const cx_mpi_t *n)
 
   if (!BN_div(r, NULL, d, n, local_bn_ctx)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -989,7 +959,6 @@ cx_err_t cx_mpi_rem(cx_mpi_t *r, cx_mpi_t *d, const cx_mpi_t *n)
 
   if (!BN_div(NULL, r, d, n, local_bn_ctx)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1006,7 +975,6 @@ cx_err_t cx_mpi_rand(cx_mpi_t *x)
 
   if (!BN_rand(x, bytes * 8, BN_RAND_TOP_ANY, BN_RAND_BOTTOM_ANY)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1019,7 +987,6 @@ cx_err_t cx_mpi_rng(cx_mpi_t *r, const cx_mpi_t *n)
 
   if (!BN_rand_range(r, n)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1044,7 +1011,6 @@ cx_err_t cx_mpi_mod_invert_nprime(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *n)
     if (BN_copy(p, n) == NULL || BN_sub_word(p, 2) == 0 ||
         BN_mod_exp(r, a, p, n, local_bn_ctx) == 0) {
       error = CX_INTERNAL_ERROR;
-
     } else {
       error = CX_OK;
     }
@@ -1060,7 +1026,6 @@ cx_err_t cx_mpi_mod_u32_invert(cx_mpi_t *r, uint32_t e, const cx_mpi_t *n)
 
   if (BN_mod_inverse(r, r, n, local_bn_ctx) == NULL) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1074,7 +1039,6 @@ cx_err_t cx_mpi_mod_add(cx_mpi_t *r, cx_mpi_t *a, cx_mpi_t *b,
 
   if (!BN_mod_add(r, a, b, n, local_bn_ctx)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1088,7 +1052,6 @@ cx_err_t cx_mpi_mod_sub(cx_mpi_t *r, cx_mpi_t *a, cx_mpi_t *b,
 
   if (!BN_mod_sub(r, a, b, n, local_bn_ctx)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1102,10 +1065,8 @@ cx_err_t cx_mpi_mod_mul(cx_mpi_t *r, cx_mpi_t *a, cx_mpi_t *b,
 
   if (!BN_is_odd(n)) {
     error = CX_INVALID_PARAMETER_VALUE;
-
   } else if (!BN_mod_mul(r, a, b, n, local_bn_ctx)) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1145,10 +1106,8 @@ cx_err_t cx_mpi_mod_pow(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *e,
   // N must be odd
   if ((cx_mpi_is_odd(n)) == 0 || cx_mpi_is_zero(e)) {
     error = CX_INVALID_PARAMETER;
-
   } else if (BN_mod_exp(r, a, e, n, local_bn_ctx) == 0) {
     error = CX_INTERNAL_ERROR;
-
   } else {
     error = CX_OK;
   }
@@ -1165,7 +1124,6 @@ cx_err_t cx_mpi_is_prime(cx_mpi_t *x, bool *prime)
 
   if ((is_prime = BN_is_prime_ex(x, 64, local_bn_ctx, NULL)) == 1) {
     *prime = true;
-
   } else if (is_prime < 0) {
     error = CX_INTERNAL_ERROR;
   }

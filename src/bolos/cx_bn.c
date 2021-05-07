@@ -64,7 +64,6 @@ cx_err_t sys_cx_bn_alloc(cx_bn_t *bn_x, size_t size)
 
   if (cx_mpi_alloc(bn_x, size) == NULL) {
     error = CX_MEMORY_FULL;
-
   } else {
     error = CX_OK;
   }
