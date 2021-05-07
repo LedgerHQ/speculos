@@ -139,23 +139,15 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
     }
   }
 
-  /* In some versions of the SDK, a few syscalls don't use SVC_Call to issue
-   * syscalls but call the svc instruction directly. I don't remember why it
-   * fixes the issue however... */
-  if (sdk_version == SDK_NANO_S_2_0) {
-    /* XXX: in SDK 2.0, there is not retid anymore and syscalls in speculos
-     * don't throw */
+  if (sdk_version == SDK_NANO_S_1_5) {
+    context->uc_mcontext.arm_r0 = retid;
+    context->uc_mcontext.arm_r1 = ret;
+  } else if (sdk_version == SDK_NANO_S_2_0) {
     context->uc_mcontext.arm_r0 = ret;
     context->uc_mcontext.arm_r1 = 0;
   } else {
-    if (n_svc_call > 1) {
-      parameters[0] = retid;
-      parameters[1] = ret;
-    } else {
-      /* Default SVC_Call behavior */
-      context->uc_mcontext.arm_r0 = retid;
-      context->uc_mcontext.arm_r1 = ret;
-    }
+    parameters[0] = retid;
+    parameters[1] = ret;
   }
 
   /* skip undefined (originally svc) instruction */
