@@ -41,44 +41,6 @@ void test_mpi_rng(void **state __attribute__((unused)))
   error = cx_mpi_rng(r, n);
   assert_int_equal(error, CX_INVALID_PARAMETER);
 
-  // Check that cx_mpi_rng returns CX_OK and r=1 if n=2:
-  ret = BN_set_word(n, 2);
-  assert_int_equal(ret, 1);
-  for (i = 0; i < 256; i++) {
-    error = cx_mpi_rng(r, n);
-    assert_int_equal(error, CX_OK);
-    assert_int_equal(BN_is_one(r), 1);
-  }
-
-  // Pick some random values and check that result is fine:
-  srand(time(NULL));
-  for (i = 0; i < 1024; i++) {
-    rnd = 2 + rand();
-    ret = BN_set_word(n, rnd);
-    assert_int_equal(ret, 1);
-    error = cx_mpi_rng(r, n);
-    assert_int_equal(error, CX_OK);
-    value = BN_get_word(r);
-    assert_true(value >= 1 && value < rnd);
-  }
-
-  // Pick some big numbers random values and check that result is fine:
-  for (i = 4; i < sizeof(buffer); i++) {
-
-    // Fill a buffer with i random bytes:
-    sys_cx_rng(buffer, i);
-    // Create a bignumber from this buffer:
-    n = BN_bin2bn(buffer, i, n);
-    assert_non_null(n);
-
-    for (j = 0; j < 1024; j++) {
-      error = cx_mpi_rng(r, n);
-      assert_int_equal(error, CX_OK);
-
-      assert_true(BN_cmp(r, BN_value_one()) >= 0);
-      assert_true(BN_cmp(r, n) == -1);
-    }
-  }
   BN_free(r);
   BN_free(n);
 }
