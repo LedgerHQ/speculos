@@ -17,7 +17,7 @@ unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length);
 void test_mpi_rng(void **state __attribute__((unused)))
 {
   cx_mpi_t *r, *n;
-  int ret, one, two;
+  int ret;
   cx_err_t error;
   uint32_t i, j, rnd, value;
   uint8_t buffer[64];
@@ -31,13 +31,12 @@ void test_mpi_rng(void **state __attribute__((unused)))
   assert_non_null(n);
 
   // Check that cx_mpi_rng returns CX_INVALID_PARAMETER if n=0:
-  ret = BN_set_word(n, 0);
-  assert_int_equal(ret, 1);
+  BN_zero(n);
   error = cx_mpi_rng(r, n);
   assert_int_equal(error, CX_INVALID_PARAMETER);
 
   // Check that cx_mpi_rng returns CX_INVALID_PARAMETER if n=1:
-  ret = BN_set_word(n, 1);
+  ret = BN_one(n);
   assert_int_equal(ret, 1);
   error = cx_mpi_rng(r, n);
   assert_int_equal(error, CX_INVALID_PARAMETER);
@@ -48,26 +47,8 @@ void test_mpi_rng(void **state __attribute__((unused)))
   for (i = 0; i < 256; i++) {
     error = cx_mpi_rng(r, n);
     assert_int_equal(error, CX_OK);
-    value = BN_get_word(r);
-    assert_int_equal(value, 1);
+    assert_int_equal(BN_is_one(r), 1);
   }
-
-  // Loop several times and check that if n=3 r value was 1 & 2:
-  one = two = 0;
-  ret = BN_set_word(n, 3);
-  assert_int_equal(ret, 1);
-  for (i = 0; i < 256; i++) {
-    error = cx_mpi_rng(r, n);
-    assert_int_equal(error, CX_OK);
-    value = BN_get_word(r);
-    assert_true(value >= 1 && value <= 2);
-    if (value == 1)
-      ++one;
-    if (value == 2)
-      ++two;
-  }
-  assert_true(one != 0);
-  assert_true(two != 0);
 
   // Pick some random values and check that result is fine:
   srand(time(NULL));
