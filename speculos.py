@@ -175,6 +175,7 @@ if __name__ == '__main__':
     group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display method.')
     group.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
     group.add_argument('--ontop', action='store_true', help='The window stays on top of all other windows')
+    group.add_argument('--xy', action='store', help='Window position in "XxY" format (eg. "--xy 30x100").')
     group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
@@ -202,6 +203,10 @@ if __name__ == '__main__':
 
     if args.ontop and args.display != 'qt':
         logger.error("-o (--ontop) can only be used with --display qt")
+        sys.exit(1)
+
+    if args.xy and args.display != 'qt':
+        logger.error("--xy can only be used with --display qt")
         sys.exit(1)
 
     if args.zoom and args.display != 'qt':
@@ -277,7 +282,11 @@ if __name__ == '__main__':
         }
         zoom = default_zoom.get(args.model)
 
-    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom)
+    x, y = None, None
+    if args.xy:
+        x, y = (int(i) for i in args.xy.split('x'))
+
+    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
     server_args = display.ServerArgs(apdu, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
     screen.run()
