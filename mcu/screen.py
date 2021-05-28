@@ -71,8 +71,14 @@ class App(QMainWindow):
         # Take in account multiple screens and their geometry:
         current_screen_x = qt_app.primaryScreen().geometry().x()
         current_screen_y = qt_app.primaryScreen().geometry().y()
-        window_x = settings.value("window_x", current_screen_x + DEFAULT_WINDOW_X, int)
-        window_y = settings.value("window_y", current_screen_y + DEFAULT_WINDOW_Y, int)
+        if display.x is None:
+            window_x = settings.value("window_x", current_screen_x + DEFAULT_WINDOW_X, int)
+        else:
+            window_x = display.x
+        if display.y is None:
+            window_y = settings.value("window_y", current_screen_y + DEFAULT_WINDOW_Y, int)
+        else:
+            window_y = display.y
         window_width = (self.width + box_size_x) * display.pixel_size
         window_height = (self.height + box_size_y) * display.pixel_size
 
