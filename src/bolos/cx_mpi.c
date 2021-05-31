@@ -983,14 +983,22 @@ cx_err_t cx_mpi_rand(cx_mpi_t *x)
 
 cx_err_t cx_mpi_rng(cx_mpi_t *r, const cx_mpi_t *n)
 {
-  cx_err_t error;
+  // Generate a random value r in the range 0 < r < n.
 
-  if (!BN_rand_range(r, n)) {
-    error = CX_INTERNAL_ERROR;
-  } else {
-    error = CX_OK;
+  // Be sure n is >= 2:
+  if (BN_is_one(n) || BN_is_zero(n)) {
+    return CX_INVALID_PARAMETER;
   }
-  return error;
+  // As BN_rand_range return a value r in the range 0 <= r < n
+  // we need to check r is not equal to 0
+  do {
+    if (!BN_rand_range(r, n)) {
+      return CX_INTERNAL_ERROR;
+    }
+    // Loop until r != 0
+  } while (BN_is_zero(r));
+
+  return CX_OK;
 }
 
 cx_err_t cx_mpi_mod_invert_nprime(cx_mpi_t *r, cx_mpi_t *a, const cx_mpi_t *n)
