@@ -274,9 +274,8 @@ int get_path(const char *str_, unsigned int *path, int max_path_len)
       return -1;
     }
 
-
-    if (token[len-1] == '\'') {
-      token[len-1] = '\x00';
+    if (token[len - 1] == '\'') {
+      token[len - 1] = '\x00';
       path[path_len] = 0x80000000;
     } else {
       path[path_len] = 0;

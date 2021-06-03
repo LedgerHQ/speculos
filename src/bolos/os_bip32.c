@@ -204,8 +204,7 @@ int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size)
   return src_size / 2;
 }
 
-size_t get_seed_from_env(const char *name, uint8_t *seed,
-                                size_t max_size)
+size_t get_seed_from_env(const char *name, uint8_t *seed, size_t max_size)
 {
   ssize_t seed_size;
   char *p;

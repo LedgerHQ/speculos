@@ -8,6 +8,7 @@
 #include <cmocka.h>
 
 #include "bolos/cx_ec.h"
+#include "bolos/cx_utils.h"
 #include "bolos/os_bip32.h"
 #include "emulate.h"
 #include "utils.h"
