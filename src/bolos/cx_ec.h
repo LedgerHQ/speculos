@@ -46,6 +46,9 @@ enum cx_curve_e {
   /* ANSSI P256 */
   CX_CURVE_FRP256V1,
 
+  /* STARK */
+  CX_CURVE_Stark256,
+
   /* BLS12-381 G1 curve */
   CX_CURVE_BLS12_381_G1,
 

@@ -202,7 +202,8 @@ unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
   uint8_t seed[MAX_SEED_SIZE];
   int ret = -1;
 
-  if (curve != CX_CURVE_BLS12_381_G1) {
+  // CX_CURVE_BLS12_381_G1 = 0x39 in SDK 2.0
+  if ((curve != CX_CURVE_BLS12_381_G1) && (curve != 0x39)) {
     THROW(EXCEPTION);
   }
 
