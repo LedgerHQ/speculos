@@ -10,6 +10,7 @@ add_library(emu
         bolos/cx_ecpoint.c
         bolos/cx_ed25519.c
         bolos/cx_hmac.c
+        bolos/cx_hkdf.c
         bolos/cx_montgomery.c
         bolos/cx_mpi.c
         bolos/cx_ripemd160.c
@@ -31,6 +32,7 @@ add_library(emu
         bolos/os_1.6.c
         bolos/os_2.0.c
         bolos/os_bip32.c
+        bolos/os_eip2333.c
         bolos/cx.c
         bolos/cx_hash.c
         bolos/cx_math.c

@@ -65,6 +65,8 @@ enum cx_curve_e {
 #define CX_CURVE_NISTP521 CX_CURVE_SECP521R1
 #endif
 
+  CX_CURVE_BLS12_381_G1 = 0x39,
+
   /** High limit (not included) of Weierstrass curve ID */
   CX_CURVE_WEIERSTRASS_END = 0x6F,
 

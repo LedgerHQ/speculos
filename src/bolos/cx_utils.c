@@ -1,6 +1,7 @@
 #include <err.h>
 
 #include <openssl/bn.h>
+#include <string.h>
 
 #include "cx_utils.h"
 /* ======================================================================= */
@@ -242,4 +243,50 @@ int sys_cx_math_next_prime(uint8_t *buf, unsigned int len)
   BN_CTX_free(ctx);
 
   return 0;
+}
+
+// Parsing bip32 and eip2333 derivations path
+int get_path(const char *str_, unsigned int *path, int max_path_len)
+{
+  char *token, *str;
+  int path_len;
+  size_t len;
+
+  str = strdup(str_);
+  if (str == NULL) {
+    warn("strdup");
+    return -1;
+  }
+
+  path_len = 0;
+  while (1) {
+    token = strtok((path_len == 0) ? str : NULL, "/");
+    if (token == NULL) {
+      break;
+    }
+
+    if (path_len >= max_path_len) {
+      return -1;
+    }
+
+    len = strlen(token);
+    if (len == 0) {
+      return -1;
+    }
+
+    if (token[len - 1] == '\'') {
+      token[len - 1] = '\x00';
+      path[path_len] = 0x80000000;
+    } else {
+      path[path_len] = 0;
+    }
+
+    path[path_len] |= strtoul(token, NULL, 10);
+
+    path_len += 1;
+  }
+
+  free(str);
+
+  return path_len;
 }

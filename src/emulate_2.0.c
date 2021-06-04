@@ -271,11 +271,12 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     /*
         SYSCALL2(os_perso_seed_cookie, "(%p, %u)", void *, seed, size_t,
        seed_len);
-
-        SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)", cx_curve_t,
-       curve, const unsigned int *, path, unsigned int, pathLength, unsigned
-       char *, privateKey);
     */
+
+    SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)", cx_curve_t, curve,
+             const unsigned int *, path, unsigned int, pathLength,
+             unsigned char *, privateKey);
+
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);
     break;

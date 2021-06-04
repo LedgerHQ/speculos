@@ -35,12 +35,3 @@ unsigned int sys_os_perso_seed_cookie(unsigned char *seed_cookie
 {
   return 0;
 }
-
-unsigned long
-sys_os_perso_derive_eip2333(cx_curve_t curve __attribute__((unused)),
-                            const unsigned int *path __attribute__((unused)),
-                            unsigned int pathLength __attribute__((unused)),
-                            unsigned char *privateKey __attribute__((unused)))
-{
-  return BOLOS_UX_OK;
-}
