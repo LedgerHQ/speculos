@@ -57,6 +57,10 @@ jobs:
         tag_with_sha: true
         tags: latest
 
+    - name: Apply DockerHub deprecation patch
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      run: patch < tools/deprecate-dockerhub.patch
+
     - name: Publish to DockerHub
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: docker/build-push-action@v1
@@ -68,6 +72,10 @@ jobs:
         password: ${{ secrets.dockerhub_password }}
         tag_with_sha: true
         tags: latest
+
+    - name: Reverse the DockerHub deprecation patch
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      run: patch --reverse < tools/deprecate-dockerhub.patch
 
     - name: Rebuild with code coverage instrumentation
       env:
