@@ -1,0 +1,14 @@
+diff --git a/speculos.py b/speculos.py
+index 11bdd0e..7eebd42 100755
+--- a/speculos.py
++++ b/speculos.py
+@@ -184,6 +184,9 @@ if __name__ == '__main__':
+     args.model.lower()
+ 
+     logger = setup_logging(args)
++    logger.error("The DockerHub image is deprecated, please use the GitHub Packages image")
++    logger.error("New docker image URL: docker://ghcr.io/ledgerhq/speculos")
++    logger.error("From the command line: docker pull ghcr.io/ledgerhq/speculos")
+ 
+     rendering = seproxyhal.RENDER_METHOD.FLUSHED
+     if args.progressive:
