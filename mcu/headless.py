@@ -11,8 +11,8 @@ class Headless(Display):
         super().__init__(display, server)
         self._init_notifiers(server)
 
-        m = HeadlessPaintWidget(self, self.model, server.vnc)
-        self.bagl = bagl.Bagl(m, MODELS[self.model].screen_size)
+        self.m = HeadlessPaintWidget(self, self.model, server.vnc)
+        self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size)
 
     def display_status(self, data):
         ret = self.bagl.display_status(data)
@@ -58,3 +58,5 @@ class HeadlessPaintWidget(FrameBuffer):
     def _redraw(self):
         if self.vnc:
             self.vnc.redraw(self.pixels)
+
+        self.screenshot_update_pixels()

@@ -54,8 +54,13 @@ class PaintWidget(QWidget):
         if self.vnc:
             self.vnc.redraw(self.fb.pixels)
 
+        self.fb.screenshot_update_pixels()
+
     def draw_point(self, x, y, color):
         return self.fb.draw_point(x, y, color)
+
+    def take_screenshot(self):
+        return self.fb.take_screenshot()
 
 class App(QMainWindow):
     def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
@@ -241,6 +246,7 @@ class QtScreen:
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         self.app = QApplication(sys.argv)
         self.app_widget = App(self.app, display, server)
+        self.m = self.app_widget.m
 
     def run(self):
         self.app.exec_()

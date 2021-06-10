@@ -32,6 +32,24 @@ COLORS = {
     'SYLVE_CYAN': 0x29f3f3,
 }
 
+class Screenshot:
+    def __init__(self, screen_size):
+        self.pixels = {}
+        self.width, self.height = screen_size
+        for y in range(0, self.height):
+            for x in range(0, self.width):
+                self.pixels[(x, y)] = 0x000000
+
+    def update(self, pixels):
+        self.pixels.update(pixels)
+
+    def get_image(self):
+        data = bytearray(self.width * self.height * 3)
+        for y in range(0, self.height):
+            for x in range(0, self.width):
+                pos = 3 * (y * self.width + x)
+                data[pos:pos + 3] = self.pixels[(x, y)].to_bytes(3, "big")
+        return (self.width, self.height), bytes(data)
 
 class FrameBuffer(ABC):
     COLORS = {
@@ -42,6 +60,7 @@ class FrameBuffer(ABC):
     def __init__(self, model):
         self.pixels = {}
         self.model = model
+        self.screenshot = Screenshot(MODELS[model].screen_size)
 
     def draw_point(self, x, y, color):
         # There are only 2 colors on the Nano S and the Nano X but the one
@@ -49,6 +68,12 @@ class FrameBuffer(ABC):
         if color != 0x000000:
             color = FrameBuffer.COLORS.get(self.model, color)
         self.pixels[(x, y)] = color
+
+    def screenshot_update_pixels(self):
+        self.screenshot.update(self.pixels)
+
+    def take_screenshot(self):
+        return self.screenshot.get_image()
 
 class Display(ABC):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
