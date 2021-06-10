@@ -157,7 +157,3 @@ class TextScreen(Display):
         curses.nocbreak()
         curses.echo()
         curses.endwin()
-
-def display(display: DisplayArgs, server: ServerArgs) -> None:
-    text_screen = TextScreen(display, server)
-    text_screen.run()
