@@ -25,8 +25,8 @@ class Headless(Display):
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
-    def screen_update(self):
-        self.bagl.refresh()
+    def screen_update(self) -> bool:
+        return self.bagl.refresh()
 
     def run(self):
         while True:
@@ -52,6 +52,8 @@ class HeadlessPaintWidget(FrameBuffer):
         if self.pixels:
             self._redraw()
             self.pixels = {}
+            return True
+        return False
 
     def _redraw(self):
         if self.vnc:

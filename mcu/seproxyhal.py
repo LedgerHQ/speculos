@@ -6,6 +6,7 @@ import threading
 from enum import IntEnum
 
 from . import usb
+from .nanox_ocr import NanoXOCR
 from .readerror import ReadError
 
 class SephTag(IntEnum):
@@ -149,6 +150,8 @@ class SeProxyHal:
         self.ticker_thread.start()
         self.usb = usb.USB(self.packet_thread.queue_packet)
 
+        self.nanox_ocr = NanoXOCR()
+
     def _recvall(self, size):
         data = b''
         while size > 0:
@@ -264,7 +267,9 @@ class SeProxyHal:
             ret = None
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
-                    screen.screen_update()
+                    if screen.screen_update():
+                        if screen.model == "nanox":
+                            ret = self.nanox_ocr.get_text()
 
             elif tag == SephTag.SCREEN_DISPLAY_STATUS:
                 self.logger.debug(f"DISPLAY_STATUS {data!r}")
@@ -274,6 +279,8 @@ class SeProxyHal:
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
+                if screen.model == "nanox":
+                    self.nanox_ocr.analyze_bitmap(data)
                 # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
                 #
                 # io_seproxyhal_spi_recv() accepts any packet from the MCU after
@@ -307,7 +314,7 @@ class SeProxyHal:
 
             # apply automation rules after having replied to the app
             if ret != None:
-                text, x, y = ret
+                text, (x, y) = ret
                 self.apply_automation(text, x, y)
 
         elif tag == SephTag.RAPDU:

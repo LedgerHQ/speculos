@@ -67,7 +67,7 @@ class Display(ABC):
         pass
 
     @abstractmethod
-    def screen_update(self):
+    def screen_update(self) -> bool:
         pass
 
     def add_notifier(self, klass):
