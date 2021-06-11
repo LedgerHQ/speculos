@@ -314,7 +314,7 @@ class SeProxyHal:
 
             # apply automation rules after having replied to the app
             if ret != None:
-                text, x, y = ret
+                text, (x, y) = ret
                 self.apply_automation(text, x, y)
 
         elif tag == SephTag.RAPDU:

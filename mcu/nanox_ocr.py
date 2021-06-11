@@ -1,4 +1,4 @@
-from typing import Any, List, Union, Mapping, Optional
+from typing import Any, List, Tuple, Union, Mapping, Optional
 from dataclasses import dataclass
 import functools
 import string
@@ -162,8 +162,8 @@ class NanoXOCR:
 
         self.last_x, self.last_y = x, y
 
-    def get_text(self, reset=True):
+    def get_text(self, reset=True) -> Tuple[bytes, Tuple[int, int]]:
         text, x, y = self.text, self.x, self.y
         if reset:
             self.reset()
-        return text, x, y
+        return text, (x, y)

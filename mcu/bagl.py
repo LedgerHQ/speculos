@@ -504,7 +504,7 @@ class Bagl:
                          text,
                          context_encoding)
 
-        return (text, component.x + halignment, y)
+        return (text, (component.x + halignment, y))
 
     def _display_get_alignment(self, component, context, context_encoding):
         halignment = 0
