@@ -42,6 +42,10 @@ class PaintWidget(QWidget):
                 self.mPixmap.height() * self.pixel_size)
         qp.drawPixmap(0, 0, copied_pixmap )
 
+    def update(self) -> bool:
+        super().update()
+        return self.fb.pixels != {}
+
     def _redraw(self, qp):
         for (x, y), color in self.fb.pixels.items():
             qp.setPen(QColor.fromRgb(color))
@@ -125,8 +129,8 @@ class App(QMainWindow):
 
         self.show()
 
-    def screen_update(self):
-        self.screen.screen_update()
+    def screen_update(self) -> bool:
+        return self.screen.screen_update()
 
     def keyPressEvent(self, event):
         self.screen._key_event(event, True)
@@ -230,8 +234,8 @@ class Screen(Display):
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
-    def screen_update(self):
-        self.bagl.refresh()
+    def screen_update(self) -> bool:
+        return self.bagl.refresh()
 
 class QtScreen:
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:

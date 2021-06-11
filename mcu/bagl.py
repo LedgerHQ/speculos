@@ -69,8 +69,8 @@ class Bagl:
         self.draw_state = DrawState(0, 0, 0, 0, [], 0, 0, 0)
         self.logger = logging.getLogger("bagl")
 
-    def refresh(self):
-        self.m.update()
+    def refresh(self) -> bool:
+        return self.m.update()
 
     def hal_draw_bitmap_within_rect(self, x, y, width, height, colors, bpp, bitmap, restore=None):
         if bpp == 3 or bpp > 4:

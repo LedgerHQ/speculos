@@ -65,7 +65,7 @@ class TextWidget(FrameBuffer):
     def _redraw(self):
         p = self.pixels
         if p == self.previous_screen:
-            return
+            return False
         else:
             self.previous_screen = p.copy()
 
@@ -84,6 +84,8 @@ class TextWidget(FrameBuffer):
         self.stdscr.addstr(0, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
         self.stdscr.addstr(self.height//2, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
         self.stdscr.refresh()
+
+        return True
 
     def draw_point(self, x, y, color):
         self.pixels[(x, y)] = int(color!=0)
@@ -115,8 +117,8 @@ class TextScreen(Display):
     def display_raw_status(self, data):
         self.bagl.display_raw_status(data)
 
-    def screen_update(self):
-        self.m._redraw()
+    def screen_update(self) -> bool:
+        return self.m._redraw()
 
     def get_keypress(self):
         key = self.m.stdscr.getch()
