@@ -107,6 +107,9 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
   }
 
   size_t bitmap_length = bitmap_length_bits / 8;
+  if (bitmap_length_bits % 8 != 0) {
+    bitmap_length += 1;
+  }
   size_t offset = 0;
   len = build_chunk(buf + size, &offset, sizeof(buf) - size, bitmap,
                     bitmap_length);
