@@ -197,7 +197,7 @@ if __name__ == '__main__':
             logger.error("invalid ram page argument")
             sys.exit(1)
 
-    if args.display == 'text' and args.model != 'nanos':
+    if args.display == 'text' and args.model not in ['nanos', 'nanox']:
         logger.error(f"unsupported model '{args.model}' with argument --display text")
         sys.exit(1)
 
@@ -238,16 +238,10 @@ if __name__ == '__main__':
 
     automation_path = None
     if args.automation:
-        if args.model == "nanox":
-            logger.error("automation isn't supported on the Nano X")
-            sys.exit(1)
         automation_path = automation.Automation(args.automation)
 
     automation_server = None
     if args.automation_port:
-        if args.model == "nanox":
-            logger.error("automation isn't supported on the Nano X")
-            sys.exit(1)
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
