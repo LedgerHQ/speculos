@@ -152,7 +152,7 @@ class NanoXOCR:
 
         char = find_char_from_bitmap(bitmap)
         if char:
-            if self.text is b"":
+            if self.text == b"":
                 self.x, self.y = (x, y)
             elif y > self.last_y:
                 self.text += b"\n"
