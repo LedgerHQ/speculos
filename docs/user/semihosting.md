@@ -1,5 +1,5 @@
 ---
-sort: 5
+sort: 7
 ---
 
 # Semihosting as an additional debug mechanism
