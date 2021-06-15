@@ -75,32 +75,22 @@ class Automation(Resource):
 class Button(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument("action", choices=["press", "release"])
+        self.parser.add_argument("action", choices=["press", "release", "press-and-release"], required=True)
         self.parser.add_argument("delay", type=float, default=0.1)
         super(Button, self).__init__()
 
     def post(self):
         args = self.parser.parse_args()
         button = request.base_url.split("/")[-1]
-        if button == "both":
-            seph.handle_button(1, True)
-            seph.handle_button(2, True)
-            time.sleep(args.delay)
-            seph.handle_button(1, False)
-            seph.handle_button(2, False)
-        else:
-            buttons = { "left": 1, "right": 2 }
-            actions = { "press": True, "release": False }
+        buttons = { "left": [1], "right": [2], "both": [1, 2] }
+        action = args.get("action")
+        actions = { "press": [True], "release": [False], "press-and-release": [True, False] }
 
-            assert button in buttons.keys()
-            action = args.get("action", None)
-
-            if action is None:
-                seph.handle_button(buttons[button], True)
+        for a in actions[action]:
+            for b in buttons[button]:
+                seph.handle_button(b, a)
+            if action == "press-and-release":
                 time.sleep(args.delay)
-                seph.handle_button(buttons[button], False)
-            else:
-                seph.handle_button(buttons[button], actions[action])
 
         return {}, 200
 
@@ -151,7 +141,7 @@ class Finger(Resource):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument("x", type=int, required=True)
         self.parser.add_argument("y", type=int, required=True)
-        self.parser.add_argument("action", choices=["press", "release"])
+        self.parser.add_argument("action", choices=["press", "release", "press-and-release"], required=True)
         self.parser.add_argument("delay", type=float, default=0.1)
         super(Finger, self).__init__()
 
@@ -160,14 +150,14 @@ class Finger(Resource):
         x = args.get("x")
         y = args.get("y")
         action = args.get("action", None)
+        actions = { "press": [True], "release": [False], "press-and-release": [True, False] }
 
-        if action is None:
-            seph.handle_finger(x, y, True)
-            time.sleep(args.delay)
-            seph.handle_finger(x, y, False)
-        else:
-            actions = { "press": True, "release": False }
-            seph.handle_finger(x, y, actions[action])
+        for a in actions[action]:
+            seph.handle_finger(x, y, a)
+            if action == "press-and-release":
+                time.sleep(args.delay)
+
+        return {}, 200
 
 class Screenshot(Resource):
     def get(self):

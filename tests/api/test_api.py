@@ -91,7 +91,7 @@ class TestApi:
 
     @staticmethod
     def press_button(button):
-        with requests.post(f"{API_URL}/button/{button}", data=b"") as response:
+        with requests.post(f"{API_URL}/button/{button}?action=press-and-release", data=b"") as response:
             assert response.status_code == 200
 
     def test_button(self, app):

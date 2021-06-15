@@ -43,13 +43,13 @@ paths:
           $ref: '#/components/schemas/Button'
       - name: "action"
         in: "query"
-        description: "Press or release the specified button. If unset, the button is pressed then released."
-        required: false
+        description: "Press, release or press and release the specified button(s)."
+        required: true
         schema:
           $ref: '#/components/schemas/Action'
       - name: "delay"
         in: "query"
-        description: "Delay in seconds between press and release, ignored if action is specified."
+        description: "Delay in seconds between press and release, ignored if action isn't 'press-and-release'."
         required: false
         schema:
           type: number
@@ -108,13 +108,13 @@ paths:
           type: integer
       - name: "action"
         in: "query"
-        description: "Press or release. If unset, press then release."
-        required: false
+        description: "Press, release or press and release."
+        required: true
         schema:
           $ref: '#/components/schemas/Action'
       - name: "delay"
         in: "query"
-        description: "Delay in seconds between press and release, ignored if action is specified."
+        description: "Delay in seconds between press and release, ignored if action isn't 'press-and-released'."
         required: false
         schema:
           type: number
@@ -141,7 +141,7 @@ components:
   schemas:
     Action:
       type: string
-      enum: [press, release]
+      enum: [press, release, press-and-release]
     Button:
       type: string
       enum: [left, right, both]
