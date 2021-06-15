@@ -176,10 +176,6 @@ static int cx_derive_child_sk(const unsigned char *parent_sk,
     return -1;
   }
   for (i = 0; i < path_len; i++) {
-    if (path[i] > 0xffffffff) {
-      warnx("eip2333 key generation: invalid path");
-      return -1;
-    }
     cx_parent_sk_to_lamport_pk((i == 0 ? parent_sk : child_sk), path[i],
                                lamport_pk);
     lamport_pk[KEY_LENGTH] = 0;
