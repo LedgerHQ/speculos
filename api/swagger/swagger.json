@@ -185,7 +185,7 @@
             "explode": true,
             "schema": {
               "type": "boolean",
-              "default": true
+              "default": false
             }
           }
         ],

@@ -130,7 +130,7 @@ class EventClient:
 class Events(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument("stream", type=inputs.boolean, default=True)
+        self.parser.add_argument("stream", type=inputs.boolean, default=False)
         super(Events, self).__init__()
 
     def get(self):

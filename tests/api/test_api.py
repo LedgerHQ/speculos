@@ -105,7 +105,7 @@ class TestApi:
         """
 
         with requests.session() as r:
-            with r.get(f"{API_URL}/events", stream=True) as stream:
+            with r.get(f"{API_URL}/events?stream=true", stream=True) as stream:
                 assert stream.status_code == 200
 
                 for i in range(0, 3):
@@ -118,13 +118,13 @@ class TestApi:
                     data = stream.raw.readline()
                     assert json.loads(data)
 
-            with r.get(f"{API_URL}/events?stream=false") as response:
+            with r.get(f"{API_URL}/events") as response:
                 assert json.loads(response.content)
 
             with r.delete(f"{API_URL}/events") as response:
                 assert response.status_code == 200
 
-            with r.get(f"{API_URL}/events?stream=false") as response:
+            with r.get(f"{API_URL}/events") as response:
                 assert json.loads(response.content) == {"events": []}
 
     def test_screenshot(self, app):
