@@ -524,7 +524,7 @@ int cx_mpi_cmp(cx_mpi_t *a, cx_mpi_t *b)
     return CX_INVALID_PARAMETER;
   }
   // TODO be sure the next test is required (numbers may have different size
-  // but still be 'comparables', for exemple if MSB of a number are at 0)
+  // but still be 'comparables', for example if MSB of a number are at 0)
   if (a_len == b_len) {
     // Convert a cx_mpi_t into big-endian bytes form:
     if (BN_bn2binpad(a, a_ptr, a_len) != -1 &&

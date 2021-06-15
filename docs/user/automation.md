@@ -38,7 +38,7 @@ Each key is optional.
 - `[ "exit" ]`: exit speculos
 
 The actions of a rule are executed if and only if each rule option matches.
-These actions are applied sucessively according to the ordering of the `actions`
+These actions are applied successively according to the ordering of the `actions`
 list.
 
 The actions of the first rule matched are applied. Further matching rules are

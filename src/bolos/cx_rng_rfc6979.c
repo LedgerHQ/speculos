@@ -70,7 +70,7 @@ static void cx_rfc6979_bits2octets(cx_rnd_rfc6979_ctx_t *rfc_ctx,
 }
 
 /* ----------------------------------------------------------------------- */
-/* Convert a interger bits string to BE int of r_len bits                  */
+/* Convert a integer bits string to BE int of r_len bits                   */
 /*                                                                         */
 /*  Params:                                                                */
 /*    i    : integer to convert                                            */

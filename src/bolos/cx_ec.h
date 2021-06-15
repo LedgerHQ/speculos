@@ -92,7 +92,7 @@ typedef enum cx_curve_e cx_curve_t;
   cx_curve_t curve;                                                            \
   /** Curve size in bits */                                                    \
   unsigned int bit_size;                                                       \
-  /** component lenth in bytes */                                              \
+  /** component length in bytes */                                             \
   unsigned int length;                                                         \
   /** Curve field */                                                           \
   unsigned char *p;                                                            \
