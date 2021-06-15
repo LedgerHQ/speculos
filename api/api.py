@@ -166,6 +166,7 @@ class Finger(Resource):
             time.sleep(args.delay)
             seph.handle_finger(x, y, False)
         else:
+            actions = { "press": True, "release": False }
             seph.handle_finger(x, y, actions[action])
 
 class Screenshot(Resource):
