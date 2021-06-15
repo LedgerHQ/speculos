@@ -238,9 +238,7 @@ if __name__ == '__main__':
         }
         args.sdk = default_sdk.get(args.model)
 
-    api_enabled = True
-    if args.api_port == 0:
-        api_enabled = False
+    api_enabled = (args.api_port != 0)
 
     automation_path = None
     if args.automation:
@@ -250,6 +248,9 @@ if __name__ == '__main__':
     automation_server = None
     if args.automation_port:
         logger.warn("--automation-port is deprecated, please use the REST API instead")
+        if api_enabled:
+            logger.warn("--automation-port is incompatible with the the API server, disabling it")
+            api_enabled = False
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
