@@ -131,7 +131,7 @@ unsigned long sys_os_version(uint8_t *buffer, unsigned int len)
     if (len < kLen)
       return len;
     else
-      return kLen; // This mimick the real behaviour that does return the data
+      return kLen; // This mimics the real behaviour that does return the data
                    // without the '\0'
   }
 

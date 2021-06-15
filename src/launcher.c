@@ -311,7 +311,7 @@ static int load_cxlib(char *cxlib_path)
   // First, try to open the cx.elf file specified (could be the one by default):
   int fd = open(cxlib_path, O_RDONLY);
   if (fd == -1) {
-    // Try to use environnement variable CXLIB_PATH:
+    // Try to use environment variable CXLIB_PATH:
     char *path = getenv("CXLIB_PATH");
     if (path == NULL) {
       warnx("failed to open \"%s\" and no CXLIB_PATH environment found!",
