@@ -3,7 +3,6 @@ from flask_restful import inputs, reqparse, Resource, Api
 import json
 import jsonschema
 import io
-import logging
 from PIL import Image
 import pkg_resources
 import threading
@@ -42,12 +41,15 @@ class Events:
         with self.condition:
             self.condition.notify_all()
 
+
 events = Events()
+
 
 def create_app(screen_, seph_):
     global screen, seph
     screen, seph = screen_, seph_
     return app
+
 
 class Automation(Resource):
     def post(self):
@@ -72,6 +74,7 @@ class Automation(Resource):
 
         return {}, 200
 
+
 class Button(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
@@ -82,9 +85,9 @@ class Button(Resource):
     def post(self):
         args = self.parser.parse_args()
         button = request.base_url.split("/")[-1]
-        buttons = { "left": [1], "right": [2], "both": [1, 2] }
+        buttons = {"left": [1], "right": [2], "both": [1, 2]}
         action = args.get("action")
-        actions = { "press": [True], "release": [False], "press-and-release": [True, False] }
+        actions = {"press": [True], "release": [False], "press-and-release": [True, False]}
 
         for a in actions[action]:
             for b in buttons[button]:
@@ -93,6 +96,7 @@ class Button(Resource):
                 time.sleep(args.delay)
 
         return {}, 200
+
 
 class EventClient:
     def __init__(self):
@@ -117,6 +121,7 @@ class EventClient:
     def send_screen_event(self, event):
         self.events.append(event)
 
+
 class Events(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
@@ -136,6 +141,7 @@ class Events(Resource):
         events.events.clear()
         return {}, 200
 
+
 class Finger(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
@@ -150,7 +156,7 @@ class Finger(Resource):
         x = args.get("x")
         y = args.get("y")
         action = args.get("action", None)
-        actions = { "press": [True], "release": [False], "press-and-release": [True, False] }
+        actions = {"press": [True], "release": [False], "press-and-release": [True, False]}
 
         for a in actions[action]:
             seph.handle_finger(x, y, a)
@@ -158,6 +164,7 @@ class Finger(Resource):
                 time.sleep(args.delay)
 
         return {}, 200
+
 
 class Screenshot(Resource):
     def get(self):
@@ -167,9 +174,11 @@ class Screenshot(Resource):
         image.save(iobytes, format="PNG")
         return Response(iobytes.getvalue(), mimetype="image/png")
 
+
 class Swagger(Resource):
     def get(self):
         return app.send_static_file("index.html")
+
 
 api.add_resource(Automation, "/automation")
 api.add_resource(Button, "/button/left", "/button/right", "/button/both")
