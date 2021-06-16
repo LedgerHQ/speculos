@@ -134,34 +134,28 @@
             "style": "simple",
             "explode": false,
             "schema": {
-              "$ref": "#/components/schemas/Button"
-            }
-          },
-          {
-            "name": "action",
-            "in": "query",
-            "description": "Press, release or press and release the specified button(s).",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/Action"
-            }
-          },
-          {
-            "name": "delay",
-            "in": "query",
-            "description": "Delay in seconds between press and release, ignored if action isn't 'press-and-release'.",
-            "required": false,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "number",
-              "format": "float",
-              "default": 0.1
+              "$ref": "#/components/schemas/ButtonName"
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Button"
+              },
+              "examples": {
+                "button-press-and-release": {
+                  "summary": "Press and release the specified button",
+                  "value": {
+                    "action": "press-and-release"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "successful operation"
@@ -239,54 +233,26 @@
     "/finger": {
       "post": {
         "summary": "Touch the screen (Blue)",
-        "parameters": [
-          {
-            "name": "x",
-            "in": "query",
-            "description": "Horizontal position",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "integer"
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Finger"
+              },
+              "examples": {
+                "finger-press-and-release": {
+                  "summary": "Press and release",
+                  "value": {
+                    "action": "press-and-release",
+                    "x": 10,
+                    "y": 25
+                  }
+                }
+              }
             }
           },
-          {
-            "name": "y",
-            "in": "query",
-            "description": "Vertical position",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "name": "action",
-            "in": "query",
-            "description": "Press, release or press and release.",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "$ref": "#/components/schemas/Action"
-            }
-          },
-          {
-            "name": "delay",
-            "in": "query",
-            "description": "Delay in seconds between press and release, ignored if action isn't 'press-and-released'.",
-            "required": false,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "number",
-              "format": "float",
-              "default": 0.1
-            }
-          }
-        ],
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "successful operation"
@@ -318,21 +284,39 @@
   },
   "components": {
     "schemas": {
-      "Action": {
-        "type": "string",
-        "enum": [
-          "press",
-          "release",
-          "press-and-release"
-        ]
-      },
       "Button": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Press, release or press and release the specified button(s).",
+            "enum": [
+              "press",
+              "release",
+              "press-and-release"
+            ]
+          },
+          "delay": {
+            "$ref": "#/components/schemas/Delay"
+          }
+        }
+      },
+      "ButtonName": {
         "type": "string",
         "enum": [
           "left",
           "right",
           "both"
         ]
+      },
+      "Delay": {
+        "type": "number",
+        "description": "Delay in seconds between press and release, ignored if action isn't `press-and-released`.",
+        "format": "float",
+        "default": 0.1
       },
       "EventList": {
         "type": "object",
@@ -342,6 +326,36 @@
             "items": {
               "type": "object"
             }
+          }
+        }
+      },
+      "Finger": {
+        "required": [
+          "action",
+          "x",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Press, release or press and release.",
+            "enum": [
+              "press",
+              "release",
+              "press-and-release"
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "description": "Vertical position"
+          },
+          "y": {
+            "type": "integer",
+            "description": "Horizontal position"
+          },
+          "delay": {
+            "$ref": "#/components/schemas/Delay"
           }
         }
       }

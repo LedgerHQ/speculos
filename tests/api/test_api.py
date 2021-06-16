@@ -91,12 +91,20 @@ class TestApi:
 
     @staticmethod
     def press_button(button):
-        with requests.post(f"{API_URL}/button/{button}?action=press-and-release", data=b"") as response:
+        data = json.dumps({"action": "press-and-release"}).encode()
+        headers = { "Content-Type": "application/json" }
+        with requests.post(f"{API_URL}/button/{button}", data=data, headers=headers) as response:
             assert response.status_code == 200
 
     def test_button(self, app):
         for button in ["right", "left", "both"]:
             TestApi.press_button(button)
+
+    def test_finger(self, app):
+        data = json.dumps({"x": 0, "y": 0, "action": "press-and-release"}).encode()
+        headers = { "Content-Type": "application/json" }
+        with requests.post(f"{API_URL}/finger", data=data, headers=headers) as response:
+            assert response.status_code == 200
 
     def test_events(self, app):
         """

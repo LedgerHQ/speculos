@@ -40,21 +40,17 @@ paths:
         in: path
         required: true
         schema:
-          $ref: '#/components/schemas/Button'
-      - name: "action"
-        in: "query"
-        description: "Press, release or press and release the specified button(s)."
+          $ref: '#/components/schemas/ButtonName'
+      requestBody:
         required: true
-        schema:
-          $ref: '#/components/schemas/Action'
-      - name: "delay"
-        in: "query"
-        description: "Delay in seconds between press and release, ignored if action isn't 'press-and-release'."
-        required: false
-        schema:
-          type: number
-          format: float
-          default: 0.1
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Button'
+            examples:
+              button-press-and-release:
+                summary: Press and release the specified button
+                value: {"action": "press-and-release"}
       responses:
         "200":
           description: "successful operation"
@@ -93,33 +89,16 @@ paths:
   /finger:
     post:
       summary: "Touch the screen (Blue)"
-      parameters:
-      - name: "x"
-        in: "query"
-        description: "Horizontal position"
+      requestBody:
         required: true
-        schema:
-          type: integer
-      - name: "y"
-        in: "query"
-        description: "Vertical position"
-        required: true
-        schema:
-          type: integer
-      - name: "action"
-        in: "query"
-        description: "Press, release or press and release."
-        required: true
-        schema:
-          $ref: '#/components/schemas/Action'
-      - name: "delay"
-        in: "query"
-        description: "Delay in seconds between press and release, ignored if action isn't 'press-and-released'."
-        required: false
-        schema:
-          type: number
-          format: float
-          default: 0.1
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Finger'
+            examples:
+              finger-press-and-release:
+                summary: Press and release
+                value: {"action": "press-and-release", "x": 10, "y": 25}
       responses:
         "200":
           description: "successful operation"
@@ -139,12 +118,25 @@ paths:
                 format: binary
 components:
   schemas:
-    Action:
-      type: string
-      enum: [press, release, press-and-release]
     Button:
+      type: object
+      properties:
+        action:
+          description: Press, release or press and release the specified button(s).
+          type: string
+          enum: [press, release, press-and-release]
+        delay:
+          $ref: '#/components/schemas/Delay'
+      required:
+      - action
+    ButtonName:
       type: string
       enum: [left, right, both]
+    Delay:
+      description: Delay in seconds between press and release, ignored if action isn't `press-and-released`.
+      type: number
+      format: float
+      default: 0.1
     EventList:
       type: object
       properties:
@@ -152,3 +144,22 @@ components:
           type: array
           items:
             type: object
+    Finger:
+      type: object
+      properties:
+        action:
+          description: Press, release or press and release.
+          type: string
+          enum: [press, release, press-and-release]
+        x:
+          description: "Vertical position"
+          type: integer
+        y:
+          description: "Horizontal position"
+          type: integer
+        delay:
+          $ref: '#/components/schemas/Delay'
+      required:
+      - action
+      - x
+      - y

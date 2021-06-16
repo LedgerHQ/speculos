@@ -1,0 +1,11 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+
+    "type": "object",
+    "properties": {
+        "action": { "enum": [ "press", "release", "press-and-release" ] },
+        "delay": { "type": "number" }
+    },
+    "required": [ "action" ],
+    "additionalProperties": false
+}
