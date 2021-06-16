@@ -69,7 +69,7 @@ class TextWidget(FrameBuffer):
         else:
             self.previous_screen = p.copy()
 
-        f = lambda x,y:p.get((x,y),0)
+        f = lambda x,y: int(p.get((x,y),0)!=0)
 
         self.stdscr.clear()
         for i in range(0,self.height-2, 2):
@@ -85,10 +85,9 @@ class TextWidget(FrameBuffer):
         self.stdscr.addstr(self.height//2, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
         self.stdscr.refresh()
 
-        return True
-
     def draw_point(self, x, y, color):
-        self.pixels[(x, y)] = int(color!=0)
+        self.pixels[(x, y)] = color
+        self.screenshot_update_pixels()
 
 class TextScreen(Display):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
@@ -157,7 +156,3 @@ class TextScreen(Display):
         curses.nocbreak()
         curses.echo()
         curses.endwin()
-
-def display(display: DisplayArgs, server: ServerArgs) -> None:
-    text_screen = TextScreen(display, server)
-    text_screen.run()

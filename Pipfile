@@ -10,6 +10,10 @@ jsonschema = "*"
 pyelftools = "*"
 mnemonic = "*"
 construct = "*"
+flask="*"
+flask-restful="*"
+pillow="*"
+requests = "*"
 
 [requires]
 python_version = "3.8"

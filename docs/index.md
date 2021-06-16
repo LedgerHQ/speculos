@@ -15,6 +15,7 @@
 
 - [How to send APDUs to an app (and more)](user/clients.md)
 - [How to use gdb to debug an app](user/debug.md)
+- [How to automate actions thanks to the REST API](user/api.md)
 
 ### For advanced users
 

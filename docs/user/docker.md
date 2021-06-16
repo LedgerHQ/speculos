@@ -30,7 +30,7 @@ All the arguments which are supported by `speculos.py` can be passed on the Dock
 
 ```console
 docker run -it -v "$(pwd)"/apps:/speculos/apps \
--p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 \
+-p 1234:1234 -p 40000:40000 -p 41000:41000 -p 42000:42000 -p5000:5000 \
 ledgerhq/speculos --model nanos ./apps/btc.elf --sdk 1.6 --seed "secret" --display headless \
 --apdu-port 40000 --vnc-port 41000 --button-port 42000
 ```

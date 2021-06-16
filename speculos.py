@@ -19,6 +19,7 @@ import threading
 
 import pkg_resources
 
+from api import api
 from mcu import apdu as apdu_server
 from mcu import automation
 from mcu import display
@@ -166,6 +167,7 @@ if __name__ == '__main__':
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
+    group.add_argument('--api-port', default=5000, type=int, help='Set the REST API TCP port (0 disables it)')
     group.add_argument('--automation-port', type=int, help='Forward text displayed on the screen to TCP clients'),
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
     group.add_argument('--vnc-password', type=str, help='VNC plain-text password (required for MacOS Screen Sharing)')
@@ -236,15 +238,25 @@ if __name__ == '__main__':
         }
         args.sdk = default_sdk.get(args.model)
 
+    api_enabled = (args.api_port != 0)
+
     automation_path = None
     if args.automation:
+        logger.warn("--automation is deprecated, please use the REST API instead")
         automation_path = automation.Automation(args.automation)
 
     automation_server = None
     if args.automation_port:
+        logger.warn("--automation-port is deprecated, please use the REST API instead")
+        if api_enabled:
+            logger.warn("--automation-port is incompatible with the the API server, disabling it")
+            api_enabled = False
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
+
+    if api_enabled:
+        automation_server = api.events
 
     s1, s2 = socket.socketpair()
 
@@ -256,10 +268,12 @@ if __name__ == '__main__':
 
     button = None
     if args.button_port:
+        logger.warn("--button-port is deprecated, please use the REST API instead")
         button = FakeButton(args.button_port)
 
     finger = None
     if args.finger_port:
+        logger.warn("--finger-port is deprecated, please use the REST API instead")
         finger = FakeFinger(args.finger_port)
 
     vnc = None
@@ -283,6 +297,14 @@ if __name__ == '__main__':
     display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
     server_args = display.ServerArgs(apdu, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
+
+    if api_enabled:
+        app = api.create_app(screen, seph)
+        # threaded must be set to allow serving requests along events streaming
+        run = lambda : app.run(host="0.0.0.0", port=args.api_port, threaded=True)
+        api_thread = threading.Thread(target=run, daemon=True)
+        api_thread.start()
+
     screen.run()
 
     s2.close()
