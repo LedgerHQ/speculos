@@ -116,55 +116,34 @@ free_bn:
   return ret;
 }
 
-static int scalarmult_helper(POINT *Q, POINT *P, BIGNUM *e)
-{
-  int odd;
-
-  if (BN_is_zero(e)) {
-    BN_zero(Q->x);
-    BN_copy(Q->y, one);
-    return 0;
-  }
-
-  odd = BN_is_odd(e);
-
-  BN_rshift1(e, e);
-
-  if (scalarmult_helper(Q, P, e) != 0) {
-    return -1;
-  }
-
-  if (edwards_add(Q, Q, Q) != 0) {
-    return -1;
-  }
-
-  if (odd && edwards_add(Q, Q, P) != 0) {
-    return -1;
-  }
-
-  return 0;
-}
-
-static int scalarmult(POINT *Q, POINT *P, BIGNUM *e)
-{
-  if (!initialized && initialize() != 0) {
-    return -1;
-  }
-
-  return scalarmult_helper(Q, P, e);
-}
-
 int scalarmult_ed25519(BIGNUM *Qx, BIGNUM *Qy, BIGNUM *Px, BIGNUM *Py,
                        BIGNUM *e)
 {
   POINT P, Q;
+  int bit;
 
+  if (!initialized && initialize() != 0) {
+    return -1;
+  }
+
+  BN_zero(Qx);
+  BN_one(Qy);
   P.x = Px;
   P.y = Py;
   Q.x = Qx;
   Q.y = Qy;
 
-  return scalarmult(&Q, &P, e);
+  for (bit = BN_num_bits(e) - 1; bit >= 0; bit--) {
+    if (edwards_add(&Q, &Q, &Q) != 0) {
+      return -1;
+    }
+    if (BN_is_bit_set(e, bit)) {
+      if (edwards_add(&Q, &Q, &P) != 0) {
+        return -1;
+      }
+    }
+  }
+  return 0;
 }
 
 static void cx_compress(uint8_t *x, uint8_t *y, size_t size)
