@@ -92,8 +92,7 @@ class TestApi:
     @staticmethod
     def press_button(button):
         data = json.dumps({"action": "press-and-release"}).encode()
-        headers = { "Content-Type": "application/json" }
-        with requests.post(f"{API_URL}/button/{button}", data=data, headers=headers) as response:
+        with requests.post(f"{API_URL}/button/{button}", data=data) as response:
             assert response.status_code == 200
 
     def test_button(self, app):
@@ -102,8 +101,7 @@ class TestApi:
 
     def test_finger(self, app):
         data = json.dumps({"x": 0, "y": 0, "action": "press-and-release"}).encode()
-        headers = { "Content-Type": "application/json" }
-        with requests.post(f"{API_URL}/finger", data=data, headers=headers) as response:
+        with requests.post(f"{API_URL}/finger", data=data) as response:
             assert response.status_code == 200
 
     def test_events(self, app):

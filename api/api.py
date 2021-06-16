@@ -87,7 +87,7 @@ class Button(Resource):
     schema = load_json_schema("button.schema")
 
     def post(self):
-        args = request.get_json()
+        args = request.get_json(force=True)
         try:
             jsonschema.validate(instance=args, schema=self.schema)
         except jsonschema.exceptions.ValidationError as e:
@@ -156,7 +156,7 @@ class Finger(Resource):
     schema = load_json_schema("finger.schema")
 
     def post(self):
-        args = request.get_json()
+        args = request.get_json(force=True)
         try:
             jsonschema.validate(instance=args, schema=self.schema)
         except jsonschema.exceptions.ValidationError as e:
