@@ -176,6 +176,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: '
                                                                    'to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
+    parser.add_argument('-u', '--usb', default='hid', help='Configure the USB transport protocol, either HID (default) or U2F')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
@@ -280,7 +281,7 @@ if __name__ == '__main__':
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
-    seph = seproxyhal.SeProxyHal(s2, automation=automation_path, automation_server=automation_server)
+    seph = seproxyhal.SeProxyHal(s2, automation=automation_path, automation_server=automation_server, transport=args.usb)
 
     button = None
     if args.button_port:
