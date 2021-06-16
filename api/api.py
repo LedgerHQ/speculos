@@ -3,6 +3,7 @@ from flask_restful import inputs, reqparse, Resource, Api
 import json
 import jsonschema
 import io
+import os.path
 from PIL import Image
 import pkg_resources
 import threading
@@ -51,6 +52,13 @@ def create_app(screen_, seph_):
     return app
 
 
+def load_json_schema(filename):
+    path = os.path.join("resources", filename)
+    with pkg_resources.resource_stream(__name__, path) as fp:
+        schema = json.load(fp)
+    return schema
+
+
 class Automation(Resource):
     def post(self):
         document = request.get_data()
@@ -76,24 +84,26 @@ class Automation(Resource):
 
 
 class Button(Resource):
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument("action", choices=["press", "release", "press-and-release"], required=True)
-        self.parser.add_argument("delay", type=float, default=0.1)
-        super(Button, self).__init__()
+    schema = load_json_schema("button.schema")
 
     def post(self):
-        args = self.parser.parse_args()
+        args = request.get_json(force=True)
+        try:
+            jsonschema.validate(instance=args, schema=self.schema)
+        except jsonschema.exceptions.ValidationError as e:
+            return {"error": f"{e}"}, 400
+
         button = request.base_url.split("/")[-1]
         buttons = {"left": [1], "right": [2], "both": [1, 2]}
-        action = args.get("action")
+        action = args["action"]
         actions = {"press": [True], "release": [False], "press-and-release": [True, False]}
+        delay = args.get("delay", 0.1)
 
         for a in actions[action]:
             for b in buttons[button]:
                 seph.handle_button(b, a)
             if action == "press-and-release":
-                time.sleep(args.delay)
+                time.sleep(delay)
 
         return {}, 200
 
@@ -143,25 +153,23 @@ class Events(Resource):
 
 
 class Finger(Resource):
-    def __init__(self):
-        self.parser = reqparse.RequestParser()
-        self.parser.add_argument("x", type=int, required=True)
-        self.parser.add_argument("y", type=int, required=True)
-        self.parser.add_argument("action", choices=["press", "release", "press-and-release"], required=True)
-        self.parser.add_argument("delay", type=float, default=0.1)
-        super(Finger, self).__init__()
+    schema = load_json_schema("finger.schema")
 
     def post(self):
-        args = self.parser.parse_args()
-        x = args.get("x")
-        y = args.get("y")
-        action = args.get("action", None)
+        args = request.get_json(force=True)
+        try:
+            jsonschema.validate(instance=args, schema=self.schema)
+        except jsonschema.exceptions.ValidationError as e:
+            return {"error": f"{e}"}, 400
+
+        action = args["action"]
         actions = {"press": [True], "release": [False], "press-and-release": [True, False]}
+        delay = args.get("delay", 0.1)
 
         for a in actions[action]:
-            seph.handle_finger(x, y, a)
+            seph.handle_finger(args["x"], args["y"], a)
             if action == "press-and-release":
-                time.sleep(args.delay)
+                time.sleep(delay)
 
         return {}, 200
 

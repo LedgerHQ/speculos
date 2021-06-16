@@ -15,10 +15,10 @@ This API is meant to be used in test environments to automate actions on the dev
 
 ## Usage
 
-For instance, pressing a button is as simple as:
+For instance, pressing the left button is as simple as:
 
 ```console
-curl -d '' 'http://127.0.0.1:5000/button/left?action=press-and-release'
+curl -d '{"action":"press-and-release"}' http://127.0.0.1:5000/button/left
 ```
 
 and taking a screenshot of the device:

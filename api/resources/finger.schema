@@ -1,0 +1,13 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+
+    "type": "object",
+    "properties": {
+        "x": { "type": "integer", "minimum": 0 },
+        "y": { "type": "integer", "minimum": 0 },
+        "action": { "enum": [ "press", "release", "press-and-release" ] },
+        "delay": { "type": "number" }
+    },
+    "required": [ "action", "x", "y" ],
+    "additionalProperties": false
+}
