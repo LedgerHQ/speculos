@@ -63,45 +63,9 @@ static int initialize(void)
   return 0;
 }
 
-static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1,
-                          BIGNUM *y2, BIGNUM *d)
-{
-  BIGNUM *a, *b;
-  int ret;
-
-  ret = 0;
-
-  a = BN_new();
-  b = BN_new();
-  if (a == NULL || b == NULL) {
-    ret = -1;
-    goto free_bn;
-  }
-
-  BN_mul(a, x1, y2, ctx);
-  BN_mul(b, x2, y1, ctx);
-  BN_add(a, a, b);
-
-  BN_mul(b, d, x1, ctx);
-  BN_mul(b, b, x2, ctx);
-  BN_mul(b, b, y1, ctx);
-  BN_mul(b, b, y2, ctx);
-  BN_add(b, one, b);
-
-  BN_mod_inverse(b, b, q, ctx);
-
-  BN_mul(r, a, b, ctx);
-
-free_bn:
-  BN_free(b);
-  BN_free(a);
-
-  return ret;
-}
-
 int edwards_add(POINT *R, POINT *P, POINT *Q)
 {
-  BIGNUM *x1, *y1, *x2, *y2, *x3, *y3;
+  BIGNUM *x1, *y1, *x2, *y2, *a, *b, *rx, *dx1x2y1y2;
   int ret;
 
   if (!initialized && initialize() != 0) {
@@ -109,9 +73,11 @@ int edwards_add(POINT *R, POINT *P, POINT *Q)
   }
   ret = 0;
 
-  x3 = BN_new();
-  y3 = BN_new();
-  if (x3 == NULL || y3 == NULL) {
+  a = BN_new();
+  b = BN_new();
+  rx = BN_new();
+  dx1x2y1y2 = BN_new();
+  if (rx == NULL || dx1x2y1y2 == NULL || a == NULL || b == NULL) {
     ret = -1;
     goto free_bn;
   }
@@ -121,22 +87,31 @@ int edwards_add(POINT *R, POINT *P, POINT *Q)
   x2 = Q->x;
   y2 = Q->y;
 
-  if (edwards_helper(x3, x1, x2, y1, y2, d1) != 0) {
-    ret = -1;
-    goto free_bn;
-  }
+  BN_mod_mul(a, x1, y2, q, ctx);
+  BN_mod_mul(b, x2, y1, q, ctx);
+  BN_mod_mul(dx1x2y1y2, a, b, q, ctx);
+  BN_mod_mul(dx1x2y1y2, d1, dx1x2y1y2, q, ctx);
 
-  if (edwards_helper(y3, y1, x1, x2, y2, d2) != 0) {
-    ret = -1;
-    goto free_bn;
-  }
+  BN_mod_add(a, a, b, q, ctx);
+  BN_add(b, one, dx1x2y1y2);
+  BN_mod_inverse(b, b, q, ctx);
+  BN_mod_mul(rx, a, b, q, ctx);
 
-  BN_mod(R->x, x3, q, ctx);
-  BN_mod(R->y, y3, q, ctx);
+  BN_mod_mul(a, y1, y2, q, ctx);
+  BN_mod_mul(b, x1, x2, q, ctx);
+  BN_mod_add(a, a, b, q, ctx);
+
+  BN_sub(b, one, dx1x2y1y2);
+  BN_mod_inverse(b, b, q, ctx);
+
+  BN_mod_mul(R->y, a, b, q, ctx);
+  BN_copy(R->x, rx);
 
 free_bn:
-  BN_free(y3);
-  BN_free(x3);
+  BN_free(b);
+  BN_free(a);
+  BN_free(dx1x2y1y2);
+  BN_free(rx);
 
   return ret;
 }
