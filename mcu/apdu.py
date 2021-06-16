@@ -26,7 +26,8 @@ class ApduServer:
         screen.add_notifier(self.client)
 
     def forward_to_client(self, packet):
-        self.client.forward_to_client(packet)
+        if self.client is not None:
+            self.client.forward_to_client(packet)
 
 class ApduClient:
     def __init__(self, s):

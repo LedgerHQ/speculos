@@ -10,6 +10,39 @@
     }
   ],
   "paths": {
+    "/apdu": {
+      "post": {
+        "summary": "Transmit APDU and return device response",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Apdu"
+              },
+              "example": {
+                "data": "e0c0000004"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Device response to the APDU command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Apdu"
+                },
+                "example": {
+                  "data": "105e441f9000"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/automation": {
       "post": {
         "summary": "Updates the automation rules",
@@ -284,6 +317,19 @@
   },
   "components": {
     "schemas": {
+      "Apdu": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "pattern": "^([0-9a-fA-F]{2})+$",
+            "type": "string",
+            "description": "APDU data, in hexadecimal."
+          }
+        }
+      },
       "Button": {
         "required": [
           "action"

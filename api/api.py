@@ -49,6 +49,7 @@ events = Events()
 def create_app(screen_, seph_):
     global screen, seph
     screen, seph = screen_, seph_
+    seph.apdu_callbacks.append(apdu.seph_apdu_callback)
     return app
 
 
@@ -174,6 +175,52 @@ class Finger(Resource):
         return {}, 200
 
 
+class APDU:
+    def __init__(self):
+        # We want to be notified when APDU response is transmitted from the SE
+        self.endpoint_lock = threading.Lock()
+        self.response_condition = threading.Condition()
+
+    def exchange(self, data: bytes) -> bytes:
+        with self.endpoint_lock:  # Lock for a command/response for one client
+            with self.response_condition:
+                self.response = None
+            seph.to_app(data)
+            with self.response_condition:
+                while self.response is None:
+                    self.response_condition.wait()
+            return self.response
+
+    def seph_apdu_callback(self, data: bytes):
+        """
+        Called by seph when data is transmitted by the SE. That data should
+        be the response to a prior APDU request
+        """
+        with self.response_condition:
+            if self.response_condition is not None:
+                # A response is received, but no corresponding APDU request has been sent!
+                app.logger.warning("apdu: unexpected response from device")
+            self.response = data
+            self.response_condition.notify()
+
+
+apdu = APDU()
+
+
+class APDU(Resource):
+    schema = load_json_schema("apdu.schema")
+
+    def post(self):
+        args = request.get_json(force=True)
+        try:
+            jsonschema.validate(instance=args, schema=self.schema)
+        except jsonschema.exceptions.ValidationError as e:
+            return {"error": f"{e}"}, 400
+
+        data = bytes.fromhex(args.get("data"))
+        return {"data": apdu.exchange(data).hex()}
+
+
 class Screenshot(Resource):
     def get(self):
         screen_size, data = screen.m.take_screenshot()
@@ -188,6 +235,7 @@ class Swagger(Resource):
         return app.send_static_file("index.html")
 
 
+api.add_resource(APDU, "/apdu")
 api.add_resource(Automation, "/automation")
 api.add_resource(Button, "/button/left", "/button/right", "/button/both")
 api.add_resource(Events, "/events")

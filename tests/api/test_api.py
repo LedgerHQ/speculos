@@ -138,3 +138,16 @@ class TestApi:
             assert response.status_code == 200
             assert response.headers["Content-Type"] == "image/png"
             assert response.content.startswith(b"\x89PNG")
+
+    def test_apdu(self, app):
+        # Send GET_RANDOM APDU to get 16 bytes of random
+        with requests.post(f"{API_URL}/apdu", json={"data": "e0c0000010"}) as response:
+            assert response.status_code == 200
+            data = bytes.fromhex(response.json()["data"])
+            assert len(data) == 18 and data[-2:] == b"\x90\x00"
+
+    def test_apdu_invalid_data(self, app):
+        with requests.post(f"{API_URL}/apdu", json={"data": "xyz"}) as response:
+            assert response.status_code == 400
+        with requests.post(f"{API_URL}/apdu") as response:  # Missing data field
+            assert response.status_code == 400

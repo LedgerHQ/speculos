@@ -152,6 +152,9 @@ class SeProxyHal:
 
         self.nanox_ocr = NanoXOCR()
 
+        # A list of callback methods when an APDU response is received
+        self.apdu_callbacks = []
+
     def _recvall(self, size):
         data = b''
         while size > 0:
@@ -319,6 +322,8 @@ class SeProxyHal:
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)
+            for c in self.apdu_callbacks:
+                c(data)
 
         elif tag == SephTag.USB_CONFIG:
             self.usb.config(data)
@@ -326,6 +331,8 @@ class SeProxyHal:
         elif tag == SephTag.USB_EP_PREPARE:
             data = self.usb.prepare(data)
             if data:
+                for c in self.apdu_callbacks:
+                    c(data)
                 screen.forward_to_apdu_client(data)
 
         elif tag == SephTag.MCU:
