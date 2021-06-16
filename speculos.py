@@ -160,7 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), can be specified multiple times')
     parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
-    parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. 0x123000:0x100). Supercedes the internal probing for such page.')
+    parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. 0x123000:0x100). Supersedes the internal probing for such page.')
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
 

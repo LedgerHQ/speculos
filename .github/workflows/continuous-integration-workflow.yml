@@ -34,6 +34,14 @@ jobs:
         clangFormatVersion: 11
         fail_ci_if_error: true
 
+    - name: Check misspellings
+      uses: codespell-project/actions-codespell@de089481bd65b71b4d02e34ffb3566b6d189333e
+      with:
+        builtin: clear,rare
+        check_filenames: true
+        ignore_words_file: .codespell-ignore
+        skip: api/swagger/swagger-ui.css,api/swagger/swagger-ui-bundle.js,api/swagger/swagger-ui-standalone-preset.js
+
     - name: Build
       run: |
         cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1

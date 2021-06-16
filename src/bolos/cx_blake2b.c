@@ -486,7 +486,7 @@ int blake2b_final( blake2b_state *S, void *out, size_t outlen )
 }
 
 
-/* =============================== UNSUED =============================== */
+/* =============================== UNUSED =============================== */
 //Following code is not used
 #if defined(BLAKE2_UNUSED)
 /* inlen, at least, should be uint64_t. Others can be size_t. */

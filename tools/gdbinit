@@ -2298,7 +2298,7 @@ end
 # FIXME64
 #### WARNING ! WARNING !!
 #### More more messy stuff starting !!!
-#### I was thinking about how to do this and then it ocurred me that it could be as simple as this ! :)
+#### I was thinking about how to do this and then it occurred me that it could be as simple as this ! :)
 define stepoframework
     if $ARM == 1
         # bl and bx opcodes
@@ -3206,12 +3206,12 @@ end
 # seems nasm shipping with Mac OS X has problems accepting input from stdin or heredoc
 # input is read into a variable and sent to a temporary file which nasm can read
 define assemble
-    # dont enter routine again if user hits enter
+    # don't enter routine again if user hits enter
     dont-repeat
     if ($argc)
         if (*$arg0 = *$arg0)
         # check if we have a valid address by dereferencing it,
-        # if we havnt, this will cause the routine to exit.
+        # if we haven't, this will cause the routine to exit.
         end
         printf "Instructions will be written to %#x.\n", $arg0
     else
@@ -3263,12 +3263,12 @@ Syntax: assemble <ADDR>
 end
 
 define assemble32
-    # dont enter routine again if user hits enter
+    # don't enter routine again if user hits enter
     dont-repeat
     if ($argc)
         if (*$arg0 = *$arg0)
         # check if we have a valid address by dereferencing it,
-        # if we havnt, this will cause the routine to exit.
+        # if we haven't, this will cause the routine to exit.
         end
         printf "Instructions will be written to %#x.\n", $arg0
     else
@@ -3304,12 +3304,12 @@ Syntax: assemble32 <ADDR>
 end
 
 define assemble64
-    # dont enter routine again if user hits enter
+    # don't enter routine again if user hits enter
     dont-repeat
     if ($argc)
         if (*$arg0 = *$arg0)
         # check if we have a valid address by dereferencing it,
-        # if we havnt, this will cause the routine to exit.
+        # if we haven't, this will cause the routine to exit.
         end
         printf "Instructions will be written to %#x.\n", $arg0
     else
@@ -3392,7 +3392,7 @@ define assemble_gas
           objdump -d -j .text $binfilename; \
           rm -f $binfilename; \
           rm -f $filename; \
-          echo -e "temporaly files deleted.\n"
+          echo -e "temporary files deleted.\n"
 end
 document assemble_gas
 Syntax: assemble_gas
@@ -3470,7 +3470,7 @@ define search
 end
 document search
 Syntax: search <START> <END> <PATTERN>
-| Search for the given pattern beetween $start and $end address.
+| Search for the given pattern between $start and $end address.
 end
 
 
@@ -3493,7 +3493,7 @@ define tip_patch
     printf "\n"
     printf "                   PATCHING MEMORY\n"
     printf "Any address can be patched using the 'set' command:\n"
-    printf "\t`set ADDR = VALUE` \te.g. `set *0x8049D6E = 0x90`\n"
+    printf "\t`set ADDR = VALUE`  e.g. `set *0x8049D6E = 0x90`\n"
     printf "\n"
     printf "                 PATCHING BINARY FILES\n"
     printf "Use `set write` in order to patch the target executable\n"
@@ -3858,7 +3858,7 @@ end
 #   Version 7.4.1 (21/06/2011) - fG!
 #    Added patch sent by sbz, more than 1 year ago, which I forgot to add :-/
 #     This will allow to search for a given pattern between start and end address.
-#     On sbz words: "It's usefull to find call, ret or everything like that." :-)
+#     On sbz words: "It's useful to find call, ret or everything like that." :-)
 #    New command is "search"
 #
 #   Version 7.4 (20/06/2011) - fG!
@@ -3902,7 +3902,7 @@ end
 #
 #   Version 7.1.5 (04/01/2009) - fG!
 #     Fixed crash on Leopard ! There was a If Else condition where the else had no code and that made gdb crash on Leopard (CRAZY!!!!)
-#     Better code indention
+#     Better code indentation
 #
 #   Version 7.1.4 (02/01/2009) - fG!
 #     Bug in show objective c messages with Leopard ???
@@ -3929,7 +3929,7 @@ end
 #   Version 7.0
 #     Added cls command.
 #     Improved documentation of many commands.
-#     Removed bp_alloc, was neither portable nor usefull.
+#     Removed bp_alloc, was neither portable nor useful.
 #     Checking of passed argument(s) in these commands:
 #       contextsize-stack, contextsize-data, contextsize-code
 #       bp, bpc, bpe, bpd, bpt, bpm, bhb,...

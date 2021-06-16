@@ -223,7 +223,7 @@ int setup_signals(void)
 /*
  * Replace the SVC instruction with an undefined instruction.
  *
- * It generates a SIGILL upon execution, which is catched to handle that
+ * It generates a SIGILL upon execution, which is caught to handle that
  * syscall.
  */
 int patch_svc(void *p, size_t size)
