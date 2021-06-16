@@ -78,7 +78,7 @@ class ApduClient:
 
         self.logger.info("< {}".format(packet.hex()))
 
-        size = len(packet) - 2
+        size = (len(packet) - 2) & 0xffffffff
         packet = size.to_bytes(4, 'big') + packet
         try:
             self.s.sendall(packet)
