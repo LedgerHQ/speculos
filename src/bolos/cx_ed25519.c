@@ -15,7 +15,7 @@ static const char *constant_q = "5789604461865809771178549250434395392663499233"
 static const char *constant_I = "1968116137670750595680707930498854201544606651"
                                 "5923890162744021073123829784752";
 static bool initialized;
-static BIGNUM *d1, *d2, *I, *q, *two;
+static BIGNUM *d1, *I, *q, *two;
 static const BIGNUM *one;
 static BN_CTX *ctx;
 
@@ -27,17 +27,15 @@ static int initialize(void)
   a = BN_new();
   two = BN_new();
   d1 = BN_new();
-  d2 = BN_new();
   q = BN_new();
   I = BN_new();
 
-  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL ||
-      q == NULL || I == NULL) {
+  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || q == NULL ||
+      I == NULL) {
     BN_CTX_free(ctx);
     BN_free(a);
     BN_free(two);
     BN_free(d1);
-    BN_free(d2);
     BN_free(q);
     BN_free(I);
     return -1;
@@ -52,9 +50,6 @@ static int initialize(void)
   BN_mod_inverse(a, a, q, ctx);
   BN_dec2bn(&d1, "-121665");
   BN_mul(d1, d1, a, ctx);
-
-  BN_dec2bn(&a, "-1");
-  BN_mul(d2, d1, a, ctx);
 
   BN_free(a);
 
