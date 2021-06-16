@@ -23,6 +23,7 @@ class SephTag(IntEnum):
     USB_CONFIG = 0x4f
     USB_EP_PREPARE = 0x50
 
+    REQUEST_STATUS = 0x52
     RAPDU = 0x53
     PRINTC_STATUS = 0x5f
 
@@ -307,6 +308,10 @@ class SeProxyHal:
             self.logger.warn("received tag SE_POWER_OFF, exiting")
             self._close(s, screen)
             raise ReadError("SE_POWER_OFF")
+
+        elif tag == SephTag.REQUEST_STATUS:
+            # Ignore calls to io_seproxyhal_request_mcu_status()
+            pass
 
         else:
             self.logger.error(f"unknown tag: {tag:#x}")
