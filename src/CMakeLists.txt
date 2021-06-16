@@ -49,5 +49,5 @@ add_dependencies(emu openssl)
 
 add_executable(launcher launcher.c)
 # ensure the loader .text section doesn't mess with cxlib
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Ttext-segment=0xff000000")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Ttext-segment=0xf0000000")
 target_link_libraries(launcher PRIVATE emu)
