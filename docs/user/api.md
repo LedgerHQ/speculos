@@ -18,7 +18,7 @@ This API is meant to be used in test environments to automate actions on the dev
 For instance, pressing a button is as simple as:
 
 ```console
-curl -X POST -d '' 'http://127.0.0.1:5000/button/left?delay=0.1'
+curl -d '' 'http://127.0.0.1:5000/button/left?action=press-and-release'
 ```
 
 and taking a screenshot of the device:
