@@ -15,7 +15,7 @@ static const char *constant_q = "5789604461865809771178549250434395392663499233"
 static const char *constant_I = "1968116137670750595680707930498854201544606651"
                                 "5923890162744021073123829784752";
 static bool initialized;
-static BIGNUM *d1, *d2, *I, *q, *two;
+static BIGNUM *d1, *I, *q, *two;
 static const BIGNUM *one;
 static BN_CTX *ctx;
 
@@ -27,17 +27,15 @@ static int initialize(void)
   a = BN_new();
   two = BN_new();
   d1 = BN_new();
-  d2 = BN_new();
   q = BN_new();
   I = BN_new();
 
-  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || d2 == NULL ||
-      q == NULL || I == NULL) {
+  if (ctx == NULL || a == NULL || two == NULL || d1 == NULL || q == NULL ||
+      I == NULL) {
     BN_CTX_free(ctx);
     BN_free(a);
     BN_free(two);
     BN_free(d1);
-    BN_free(d2);
     BN_free(q);
     BN_free(I);
     return -1;
@@ -53,9 +51,6 @@ static int initialize(void)
   BN_dec2bn(&d1, "-121665");
   BN_mul(d1, d1, a, ctx);
 
-  BN_dec2bn(&a, "-1");
-  BN_mul(d2, d1, a, ctx);
-
   BN_free(a);
 
   initialized = true;
@@ -63,45 +58,9 @@ static int initialize(void)
   return 0;
 }
 
-static int edwards_helper(BIGNUM *r, BIGNUM *x1, BIGNUM *x2, BIGNUM *y1,
-                          BIGNUM *y2, BIGNUM *d)
-{
-  BIGNUM *a, *b;
-  int ret;
-
-  ret = 0;
-
-  a = BN_new();
-  b = BN_new();
-  if (a == NULL || b == NULL) {
-    ret = -1;
-    goto free_bn;
-  }
-
-  BN_mul(a, x1, y2, ctx);
-  BN_mul(b, x2, y1, ctx);
-  BN_add(a, a, b);
-
-  BN_mul(b, d, x1, ctx);
-  BN_mul(b, b, x2, ctx);
-  BN_mul(b, b, y1, ctx);
-  BN_mul(b, b, y2, ctx);
-  BN_add(b, one, b);
-
-  BN_mod_inverse(b, b, q, ctx);
-
-  BN_mul(r, a, b, ctx);
-
-free_bn:
-  BN_free(b);
-  BN_free(a);
-
-  return ret;
-}
-
 int edwards_add(POINT *R, POINT *P, POINT *Q)
 {
-  BIGNUM *x1, *y1, *x2, *y2, *x3, *y3;
+  BIGNUM *x1, *y1, *x2, *y2, *a, *b, *rx, *dx1x2y1y2;
   int ret;
 
   if (!initialized && initialize() != 0) {
@@ -109,9 +68,11 @@ int edwards_add(POINT *R, POINT *P, POINT *Q)
   }
   ret = 0;
 
-  x3 = BN_new();
-  y3 = BN_new();
-  if (x3 == NULL || y3 == NULL) {
+  a = BN_new();
+  b = BN_new();
+  rx = BN_new();
+  dx1x2y1y2 = BN_new();
+  if (rx == NULL || dx1x2y1y2 == NULL || a == NULL || b == NULL) {
     ret = -1;
     goto free_bn;
   }
@@ -121,75 +82,63 @@ int edwards_add(POINT *R, POINT *P, POINT *Q)
   x2 = Q->x;
   y2 = Q->y;
 
-  if (edwards_helper(x3, x1, x2, y1, y2, d1) != 0) {
-    ret = -1;
-    goto free_bn;
-  }
+  BN_mod_mul(a, x1, y2, q, ctx);
+  BN_mod_mul(b, x2, y1, q, ctx);
+  BN_mod_mul(dx1x2y1y2, a, b, q, ctx);
+  BN_mod_mul(dx1x2y1y2, d1, dx1x2y1y2, q, ctx);
 
-  if (edwards_helper(y3, y1, x1, x2, y2, d2) != 0) {
-    ret = -1;
-    goto free_bn;
-  }
+  BN_mod_add(a, a, b, q, ctx);
+  BN_add(b, one, dx1x2y1y2);
+  BN_mod_inverse(b, b, q, ctx);
+  BN_mod_mul(rx, a, b, q, ctx);
 
-  BN_mod(R->x, x3, q, ctx);
-  BN_mod(R->y, y3, q, ctx);
+  BN_mod_mul(a, y1, y2, q, ctx);
+  BN_mod_mul(b, x1, x2, q, ctx);
+  BN_mod_add(a, a, b, q, ctx);
+
+  BN_sub(b, one, dx1x2y1y2);
+  BN_mod_inverse(b, b, q, ctx);
+
+  BN_mod_mul(R->y, a, b, q, ctx);
+  BN_copy(R->x, rx);
 
 free_bn:
-  BN_free(y3);
-  BN_free(x3);
+  BN_free(b);
+  BN_free(a);
+  BN_free(dx1x2y1y2);
+  BN_free(rx);
 
   return ret;
-}
-
-static int scalarmult_helper(POINT *Q, POINT *P, BIGNUM *e)
-{
-  int odd;
-
-  if (BN_is_zero(e)) {
-    BN_zero(Q->x);
-    BN_copy(Q->y, one);
-    return 0;
-  }
-
-  odd = BN_is_odd(e);
-
-  BN_rshift1(e, e);
-
-  if (scalarmult_helper(Q, P, e) != 0) {
-    return -1;
-  }
-
-  if (edwards_add(Q, Q, Q) != 0) {
-    return -1;
-  }
-
-  if (odd && edwards_add(Q, Q, P) != 0) {
-    return -1;
-  }
-
-  return 0;
-}
-
-static int scalarmult(POINT *Q, POINT *P, BIGNUM *e)
-{
-  if (!initialized && initialize() != 0) {
-    return -1;
-  }
-
-  return scalarmult_helper(Q, P, e);
 }
 
 int scalarmult_ed25519(BIGNUM *Qx, BIGNUM *Qy, BIGNUM *Px, BIGNUM *Py,
                        BIGNUM *e)
 {
   POINT P, Q;
+  int bit;
 
+  if (!initialized && initialize() != 0) {
+    return -1;
+  }
+
+  BN_zero(Qx);
+  BN_one(Qy);
   P.x = Px;
   P.y = Py;
   Q.x = Qx;
   Q.y = Qy;
 
-  return scalarmult(&Q, &P, e);
+  for (bit = BN_num_bits(e) - 1; bit >= 0; bit--) {
+    if (edwards_add(&Q, &Q, &Q) != 0) {
+      return -1;
+    }
+    if (BN_is_bit_set(e, bit)) {
+      if (edwards_add(&Q, &Q, &P) != 0) {
+        return -1;
+      }
+    }
+  }
+  return 0;
 }
 
 static void cx_compress(uint8_t *x, uint8_t *y, size_t size)
