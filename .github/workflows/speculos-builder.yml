@@ -7,6 +7,7 @@ on:
     branches:
       - master
     paths:
+      - .github/workflows/speculos-builder.yml
       - build.Dockerfile
 
 jobs:
@@ -23,7 +24,7 @@ jobs:
     - name: Build and push speculos-builder to GitHub Packages
       uses: docker/build-push-action@v1
       with:
-        file: build.Dockerfile
+        dockerfile: build.Dockerfile
         repository: ledgerhq/speculos-builder
         registry: ghcr.io
         username: ${{ github.actor }}
