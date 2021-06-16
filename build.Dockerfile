@@ -22,7 +22,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
   rm -rf /var/lib/apt/lists/
 
 # There are issues with PYTHONHOME if using distro packages, use pip instead.
-RUN pip3 install construct flask flask_restful jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow requests
+RUN pip3 install construct flake8 flask flask_restful jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow requests
 
 # Create SHA256SUMS, download dependencies and verify their integrity
 RUN \
