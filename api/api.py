@@ -27,11 +27,11 @@ class Events:
         self.condition = threading.Condition()
 
     def add_client(self, client):
-        app.logger.debug(f"events: new client")
+        app.logger.debug("events: new client")
         self.clients.append(client)
 
     def remove_client(self, client):
-        app.logger.debug(f"events: client exited")
+        app.logger.debug("events: client exited")
         self.clients.remove(client)
 
     def broadcast(self, event):

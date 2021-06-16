@@ -10,6 +10,7 @@ import logging
 import subprocess
 import sys
 
+
 class VNC:
     def __init__(self, port, screen_size, password=None, verbose=False):
         self.logger = logging.getLogger("vnc")
@@ -17,12 +18,12 @@ class VNC:
         width, height = screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../build/vnc/vnc_server')
-        cmd = [ server ]
+        cmd = [server]
 
         # custom options
-        cmd += [ '-s', f'{width}x{height}' ]
+        cmd += ['-s', f'{width}x{height}']
         if verbose:
-            cmd += [ '-v' ]
+            cmd += ['-v']
 
         # libvncserver options
         cmd += [
@@ -31,7 +32,7 @@ class VNC:
             '-rfbportv6', f'{port}',
         ]
         if password is not None:
-            cmd += [ '-passwd', password ]
+            cmd += ['-passwd', password]
 
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
@@ -73,13 +74,13 @@ class VNC:
                 sys.exit(0)
             data += tmp
 
-        if data[4] in [ 0x00, 0x01 ]:
+        if data[4] in [0x00, 0x01]:
             # mouse
             x = int.from_bytes(data[0:2], 'little')
             y = int.from_bytes(data[2:4], 'little')
             pressed = (data[4] != 0x00)
             screen.seph.handle_finger(x, y, pressed)
-        elif data[4] in [ 0x10, 0x11 ]:
+        elif data[4] in [0x10, 0x11]:
             # keyboard
             button = data[0]
             pressed = (data[4] == 0x11)

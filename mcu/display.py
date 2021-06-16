@@ -32,6 +32,7 @@ COLORS = {
     'SYLVE_CYAN': 0x29f3f3,
 }
 
+
 class Screenshot:
     def __init__(self, screen_size):
         self.pixels = {}
@@ -50,6 +51,7 @@ class Screenshot:
                 pos = 3 * (y * self.width + x)
                 data[pos:pos + 3] = self.pixels[(x, y)].to_bytes(3, "big")
         return (self.width, self.height), bytes(data)
+
 
 class FrameBuffer(ABC):
     COLORS = {
@@ -74,6 +76,7 @@ class FrameBuffer(ABC):
 
     def take_screenshot(self):
         return self.screenshot.get_image()
+
 
 class Display(ABC):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:

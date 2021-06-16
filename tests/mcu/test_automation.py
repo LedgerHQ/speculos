@@ -10,6 +10,7 @@ sys.path.append(os.path.join(module_dir, "../../mcu/"))
 
 import automation
 
+
 class TestAutomation:
     @staticmethod
     def get_json_path(name):
@@ -20,8 +21,8 @@ class TestAutomation:
     def test_valid_json(self):
         """Valid JSON complying with the schema."""
 
-        auto = automation.Automation('{"version": 1, "rules": []}')
-        auto = automation.Automation(TestAutomation.get_json_path("automation_valid.json"))
+        automation.Automation('{"version": 1, "rules": []}')
+        automation.Automation(TestAutomation.get_json_path("automation_valid.json"))
 
     def test_invalid_json(self):
         """Invalid JSON/schema testcases."""
@@ -43,16 +44,16 @@ class TestAutomation:
 
     def test_rules(self):
         expected_actions = [
-            [ "button", 2, True ],
-            [ "button", 2, False ],
-            [ "setbool", "seen", True ],
-            [ "exit" ]
+            ["button", 2, True],
+            ["button", 2, False],
+            ["setbool", "seen", True],
+            ["exit"]
         ]
         regexp_actions = [
-            [ "exit" ]
+            ["exit"]
         ]
         default_actions = [
-            [ "setbool", "default_match", True ]
+            ["setbool", "default_match", True]
         ]
 
         auto = automation.Automation(TestAutomation.get_json_path("automation_valid.json"))

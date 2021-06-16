@@ -12,6 +12,7 @@ Usage example:
 import logging
 import socket
 
+
 class FakeFingerClient:
     def __init__(self, s):
         self.s = s
@@ -37,11 +38,12 @@ class FakeFingerClient:
             self.logger.debug(f"touch event on ({x},{y}) coordinates, {'pressed' if pressed else 'release'}")
             screen.seph.handle_finger(x, y, pressed)
 
+
 class FakeFinger:
     def __init__(self, port):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.s.bind(('0.0.0.0', port)) # lgtm [py/bind-socket-all-network-interfaces]
+        self.s.bind(('0.0.0.0', port))  # lgtm [py/bind-socket-all-network-interfaces]
         self.s.listen(5)
         self.logger = logging.getLogger("finger")
 

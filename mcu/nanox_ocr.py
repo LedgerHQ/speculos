@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Union, Mapping, Optional
+from typing import List, Tuple, Mapping
 from dataclasses import dataclass
 import functools
 import string
@@ -26,7 +26,6 @@ def cache_font(f):
             __font_char_cache[byte_string] = f(byte_string)
         return __font_char_cache[byte_string]
     return wrapper
-
 
 
 @dataclass
@@ -130,6 +129,7 @@ def find_char_from_bitmap(bitmap: BitMap):
                     all_values.append(character_value)
         if all_values:
             return max([x for x in all_values])
+
 
 class NanoXOCR:
     def __init__(self):

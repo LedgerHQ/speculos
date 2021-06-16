@@ -9,35 +9,38 @@ from . import usb
 from .nanox_ocr import NanoXOCR
 from .readerror import ReadError
 
+
 class SephTag(IntEnum):
-    BUTTON_PUSH_EVENT           = 0x05
-    FINGER_EVENT                = 0x0c
-    DISPLAY_PROCESSED_EVENT     = 0x0d
-    TICKER_EVENT                = 0x0e
-    CAPDU_EVENT                 = 0x16
+    BUTTON_PUSH_EVENT = 0x05
+    FINGER_EVENT = 0x0c
+    DISPLAY_PROCESSED_EVENT = 0x0d
+    TICKER_EVENT = 0x0e
+    CAPDU_EVENT = 0x16
 
-    MCU                         = 0x31
-    TAG_BLE_RADIO_POWER         = 0x44
-    SE_POWER_OFF                = 0x46
-    USB_CONFIG                  = 0x4f
-    USB_EP_PREPARE              = 0x50
+    MCU = 0x31
+    TAG_BLE_RADIO_POWER = 0x44
+    SE_POWER_OFF = 0x46
+    USB_CONFIG = 0x4f
+    USB_EP_PREPARE = 0x50
 
-    RAPDU                       = 0x53
-    PRINTC_STATUS               = 0x5f
+    RAPDU = 0x53
+    PRINTC_STATUS = 0x5f
 
-    GENERAL_STATUS              = 0x60
+    GENERAL_STATUS = 0x60
     GENERAL_STATUS_LAST_COMMAND = 0x0000
-    SCREEN_DISPLAY_STATUS       = 0x65
-    PRINTF_STATUS               = 0x66
-    SCREEN_DISPLAY_RAW_STATUS   = 0x69
+    SCREEN_DISPLAY_STATUS = 0x65
+    PRINTF_STATUS = 0x66
+    SCREEN_DISPLAY_RAW_STATUS = 0x69
 
-    FINGER_EVENT_TOUCH          = 0x01
-    FINGER_EVENT_RELEASE        = 0x02
+    FINGER_EVENT_TOUCH = 0x01
+    FINGER_EVENT_RELEASE = 0x02
+
 
 TICKER_DELAY = 0.1
 
 RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
 RENDER_METHOD = RenderMethods(0, 1)
+
 
 def ticker(add_tick):
     """
@@ -57,6 +60,7 @@ def ticker(add_tick):
         else:
             flood = False
         time.sleep(TICKER_DELAY)
+
 
 class PacketThread(threading.Thread):
     TICKER_PACKET = (SephTag.TICKER_EVENT, b'')
@@ -130,6 +134,7 @@ class PacketThread(threading.Thread):
 
         self.logger.debug("exiting")
 
+
 class SeProxyHal:
     def __init__(self, s, automation=None, automation_server=None):
         self.s = s
@@ -172,7 +177,6 @@ class SeProxyHal:
 
         size = len(data).to_bytes(2, 'big')
         packet = tag.to_bytes(1, 'big') + size + data
-        #self.logger.debug("send {}" .format(packet.hex()))
         try:
             self.s.sendall(packet)
         except BrokenPipeError:
@@ -190,7 +194,7 @@ class SeProxyHal:
         if self.sending_ticker_event.acquire(False):
             self.sleep_time = TICKER_DELAY - (time.time() - self.last_ticker_sent_at)
             if self.sleep_time > 0:
-                DeferedTicketEventSender(self, name = "DeferedTicketEvent").start()
+                DeferedTicketEventSender(self, name="DeferedTicketEvent").start()
             else:
                 self._send_ticker_event()
                 self.status_received = False
@@ -214,7 +218,7 @@ class SeProxyHal:
 
     def apply_automation(self, text, x, y):
         if self.automation_server:
-            event = { "text": text.decode("ascii", "ignore"), "x": x, "y": y }
+            event = {"text": text.decode("ascii", "ignore"), "x": x, "y": y}
             self.automation_server.broadcast(event)
 
         if self.automation:
@@ -295,7 +299,7 @@ class SeProxyHal:
                     screen.screen_update()
 
             elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
-                for b in [ chr(b) for b in data ]:
+                for b in [chr(b) for b in data]:
                     if b == '\n':
                         self.logger.info(f"printf: {self.printf_queue}")
                         self.printf_queue = ''
@@ -313,7 +317,7 @@ class SeProxyHal:
             self.status_event.set()
 
             # apply automation rules after having replied to the app
-            if ret != None:
+            if ret is not None:
                 text, (x, y) = ret
                 self.apply_automation(text, x, y)
 

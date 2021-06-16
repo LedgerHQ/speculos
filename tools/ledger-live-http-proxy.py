@@ -20,6 +20,7 @@ import sys
 HOST = '127.0.0.1'
 PORT = 9998
 
+
 def _recvall(s, size):
     data = b''
     while size > 0:
@@ -30,6 +31,7 @@ def _recvall(s, size):
         data += tmp
         size -= len(tmp)
     return data
+
 
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
@@ -71,7 +73,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 print('>', binascii.hexlify(packet))
 
         # forward the APDU response to the client, embedded in response body
-        data = { 'data': str(binascii.hexlify(packet), 'ascii'), 'error': None }
+        data = {'data': str(binascii.hexlify(packet), 'ascii'), 'error': None}
         data = json.dumps(data)
         data = data.encode('ascii')
 
@@ -82,8 +84,11 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run one or more QEMU instances given the config files passed as arguments. The -c/--config argument can be passed several times (please note that the arguments order matters.)')
+    parser = argparse.ArgumentParser(description='Run one or more QEMU instances given the config files passed as '
+                                                 'arguments. The -c/--config argument can be passed several times '
+                                                 '(please note that the arguments order matters.)')
     parser.add_argument('-p', '--port', default=9999, help='APDU server port')
     parser.add_argument('-v', '--verbose', action='store_true')
     args = parser.parse_args()

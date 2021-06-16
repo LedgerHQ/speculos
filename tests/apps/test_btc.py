@@ -55,7 +55,7 @@ class TestBtc:
         if app.revision == "00000000" and app.model == "nanos":
             pytest.skip("unsupported get pubkey ux for this app version")
 
-        args = [ '--automation', TestBtc.get_automation_path(f'btc_getpubkey_{app.model}.json') ]
+        args = ['--automation', TestBtc.get_automation_path(f'btc_getpubkey_{app.model}.json')]
         app.run(args=args)
 
         packet = binascii.unhexlify('e040010115058000003180000000800000000000000000000000')
@@ -64,7 +64,7 @@ class TestBtc:
 
     def test_vnc_no_password(self, app):
         port = 5900
-        args = [ "--vnc-port", f"{port}" ]
+        args = ["--vnc-port", f"{port}"]
         app.run(args=args)
 
         vnc = Vnc(port)
@@ -73,7 +73,7 @@ class TestBtc:
     def test_vnc_with_password(self, app):
         password = "secret"
         port = 5900
-        args = [ "--vnc-port", f"{port}", "--vnc-password", password ]
+        args = ["--vnc-port", f"{port}", "--vnc-password", password]
         app.run(args=args)
 
         vnc = Vnc(port)

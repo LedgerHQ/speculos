@@ -7,6 +7,7 @@ import logging
 import socketserver
 import threading
 
+
 class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
     allow_reuse_address = True
@@ -29,6 +30,7 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.logger.debug(f"broadcast {event} to {self.clients}")
         for client in self.clients:
             client.send_screen_event(event)
+
 
 class AutomationClient(socketserver.BaseRequestHandler):
     def setup(self):
