@@ -222,8 +222,10 @@ class USB:
 
         if transport.lower() == 'hid':
             self.transport = Hid(self.send_xfer)
-        else:
+        elif transport.lower() == 'u2f':
             self.transport = U2f(self.send_xfer)
+        else:
+            raise ValueError(f"Unsupported USB transport {transport!r}")
 
         self.logger = logging.getLogger("usb")
 

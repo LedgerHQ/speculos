@@ -131,7 +131,7 @@ class PacketThread(threading.Thread):
         self.logger.debug("exiting")
 
 class SeProxyHal:
-    def __init__(self, s, automation=None, automation_server=None):
+    def __init__(self, s, automation=None, automation_server=None, transport='hid'):
         self.s = s
         self.last_ticker_sent_at = 0.0
         self.logger = logging.getLogger("seproxyhal")
@@ -148,7 +148,7 @@ class SeProxyHal:
                                               args=(self.packet_thread.add_tick,),
                                               daemon=True)
         self.ticker_thread.start()
-        self.usb = usb.USB(self.packet_thread.queue_packet)
+        self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
 
         self.nanox_ocr = NanoXOCR()
 
