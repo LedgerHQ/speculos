@@ -138,7 +138,6 @@ class PacketThread(threading.Thread):
 class SeProxyHal:
     def __init__(self, s, automation=None, automation_server=None):
         self.s = s
-        self.last_ticker_sent_at = 0.0
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
         self.automation = automation
@@ -182,39 +181,6 @@ class SeProxyHal:
         except BrokenPipeError:
             # the pipe is closed, which means the app exited
             raise ServiceExit
-
-    def _send_ticker_event(self):
-        self.sending_ticker_event.release()
-        self.last_ticker_sent_at = time.time()
-        # don't send an event if a command is being processed
-        if self.status_received:
-            self._send_packet(SephTag.TICKER_EVENT)
-
-    def send_ticker_event_defered(self):
-        if self.sending_ticker_event.acquire(False):
-            self.sleep_time = TICKER_DELAY - (time.time() - self.last_ticker_sent_at)
-            if self.sleep_time > 0:
-                DeferedTicketEventSender(self, name="DeferedTicketEvent").start()
-            else:
-                self._send_ticker_event()
-                self.status_received = False
-
-    def send_next_event(self):
-        # don't send an event if a command is being processed
-        if not self.status_received:
-            return
-
-        if len(self.queue) > 0:
-            # if we've received events from the outside world, send them
-            # whenever the SE is ready (i.e. now as we've received a
-            # GENERAL_STATUS)
-            tag, data = self.queue.pop(0)
-            self._send_packet(tag, data)
-            self.status_received = False
-        else:
-            # if no real event available in the queue, send a ticker event
-            # every 100ms
-            self.send_ticker_event_defered()
 
     def apply_automation(self, text, x, y):
         if self.automation_server:
