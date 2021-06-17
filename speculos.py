@@ -318,8 +318,12 @@ if __name__ == '__main__':
     if api_enabled:
         app = api.create_app(screen, seph)
         # threaded must be set to allow serving requests along events streaming
-        api_thread = threading.Thread(target=lambda: app.run(host="0.0.0.0", port=args.api_port, threaded=True),
-                                      daemon=True)
+        api_thread = threading.Thread(
+            target=lambda: app.run(
+                host="0.0.0.0", port=args.api_port, threaded=True, use_reloader=False
+            ),
+            daemon=True,
+        )
         api_thread.start()
 
     screen.run()
