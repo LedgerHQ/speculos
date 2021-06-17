@@ -9,7 +9,7 @@ from . import bagl
 from .display import Display, DisplayArgs, FrameBuffer, COLORS, MODELS, ServerArgs
 from .readerror import ReadError
 
-BUTTON_LEFT  = 1
+BUTTON_LEFT = 1
 BUTTON_RIGHT = 2
 DEFAULT_WINDOW_X = 10
 DEFAULT_WINDOW_Y = 10
@@ -40,7 +40,7 @@ class PaintWidget(QWidget):
             copied_pixmap = self.mPixmap.scaled(
                 self.mPixmap.width() * self.pixel_size,
                 self.mPixmap.height() * self.pixel_size)
-        qp.drawPixmap(0, 0, copied_pixmap )
+        qp.drawPixmap(0, 0, copied_pixmap)
 
     def update(self) -> bool:
         super().update()
@@ -61,6 +61,7 @@ class PaintWidget(QWidget):
 
     def take_screenshot(self):
         return self.fb.take_screenshot()
+
 
 class App(QMainWindow):
     def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
@@ -100,13 +101,13 @@ class App(QMainWindow):
             y2 = y1 + screen.geometry().height() - 1
 
             if window_x >= x1 and window_y >= y1 and (window_x + window_width - 1) <= x2 and \
-                (window_y + window_height - 1) <= y2:
+               (window_y + window_height - 1) <= y2:
                 window_is_visible = True
                 break   # No need to check other screens
 
         # If the window is not FULLY visible, force default coordinates on current screen:
         if not window_is_visible:
-            print(f"Window is NOT FULLY visible => using default coordinates in current screen.")
+            print("Window is NOT FULLY visible => using default coordinates in current screen.")
             window_x = current_screen_x + DEFAULT_WINDOW_X
             window_y = current_screen_y + DEFAULT_WINDOW_Y
 
@@ -182,6 +183,7 @@ class App(QMainWindow):
         settings.setValue("window_x", self.pos().x())
         settings.setValue("window_y", self.pos().y())
 
+
 class Screen(Display):
     def __init__(self, app: App, display: DisplayArgs, server: ServerArgs) -> None:
         self.app = app
@@ -218,8 +220,8 @@ class Screen(Display):
 
     def _key_event(self, event, pressed):
         key = event.key()
-        if key in [ Qt.Key_Left, Qt.Key_Right ]:
-            buttons = { Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT }
+        if key in [Qt.Key_Left, Qt.Key_Right]:
+            buttons = {Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT}
             # forward this event to seph
             self.seph.handle_button(buttons[key], pressed)
         elif key == Qt.Key_Down:
@@ -241,6 +243,7 @@ class Screen(Display):
 
     def screen_update(self) -> bool:
         return self.bagl.refresh()
+
 
 class QtScreen:
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:

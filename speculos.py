@@ -29,9 +29,11 @@ from mcu.button_tcp import FakeButton
 from mcu.finger_tcp import FakeFinger
 from mcu.vnc import VNC
 
-DEFAULT_SEED = 'glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact monster seven myth punch hobby comfort wild raise skin'
+DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
+                'monster seven myth punch hobby comfort wild raise skin')
 
 launcher_path = pkg_resources.resource_filename(__name__, "/build/src/launcher")
+
 
 def set_pdeath(sig):
     '''Set the parent death signal of the calling process.'''
@@ -40,11 +42,12 @@ def set_pdeath(sig):
     libc = ctypes.cdll.LoadLibrary('libc.so.6')
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
+
 def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
         text = elf.get_section_by_name('.text')
-        symtab =  elf.get_section_by_name('.symtab')
+        symtab = elf.get_section_by_name('.symtab')
         bss = elf.get_section_by_name('.bss')
         sh_offset = text['sh_offset']
         sh_size = text['sh_size']
@@ -61,21 +64,22 @@ def get_elf_infos(app_path):
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
+
 def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> None:
-    argv = [ 'qemu-arm-static' ]
+    argv = ['qemu-arm-static']
 
     if args.debug:
-        argv += [ '-g', '1234', '-singlestep' ]
+        argv += ['-g', '1234', '-singlestep']
 
-    argv += [ launcher_path ]
+    argv += [launcher_path]
 
     if args.trace:
-        argv += [ '-t' ]
+        argv += ['-t']
 
     if args.model is not None:
         argv += ['-m', args.model]
 
-    argv += [ '-k', str(args.sdk) ]
+    argv += ['-k', str(args.sdk)]
 
     # load cxlib only if available for the specified sdk
     cxlib = pkg_resources.resource_filename(__name__, f"/cxlib/cx-{args.sdk}.elf")
@@ -84,7 +88,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
-    for lib in [ f'main:{app_path}' ] + args.library:
+    for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
@@ -100,7 +104,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         if args.rampage:
             extra_ram = args.rampage
         if extra_ram:
-            argv.extend([ '-r', extra_ram ])
+            argv.extend(['-r', extra_ram])
 
     pid = os.fork()
     if pid != 0:
@@ -133,6 +137,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         sys.exit(1)
     sys.exit(0)
 
+
 def setup_logging(args):
     logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(name)s: %(message)s', datefmt='%H:%M:%S')
 
@@ -150,19 +155,26 @@ def setup_logging(args):
 
     return logging.getLogger("speculos")
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
-    parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" to specify a path'),
+    parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
+                                                       'to specify a path'),
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
-    parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce deterministic randomness')
+    parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce '
+                                                                'deterministic randomness')
     parser.add_argument('-k', '--sdk', type=str, help='SDK version')
-    parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. Bitcoin:app/btc.elf) which can be called through os_lib_call')
-    parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), can be specified multiple times')
+    parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
+                        'Bitcoin:app/btc.elf) which can be called through os_lib_call')
+    parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
+                                                                         'can be specified multiple times')
     parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
-    parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. 0x123000:0x100). Supersedes the internal probing for such page.')
-    parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"')
+    parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. '
+                                                '0x123000:0x100). Supersedes the internal probing for such page.')
+    parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: '
+                                                                   'to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
 
     group = parser.add_argument_group('network arguments')
@@ -171,14 +183,18 @@ if __name__ == '__main__':
     group.add_argument('--automation-port', type=int, help='Forward text displayed on the screen to TCP clients'),
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
     group.add_argument('--vnc-password', type=str, help='VNC plain-text password (required for MacOS Screen Sharing)')
-    group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button press (lLrR)')
-    group.add_argument('--finger-port', type=int, help='Spawn a TCP server on the specified port to receive finger touch (x,y,pressed)+')
+    group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button '
+                                                       'press (lLrR)')
+    group.add_argument('--finger-port', type=int, help='Spawn a TCP server on the specified port to receive finger '
+                                                       'touch (x,y,pressed)+')
 
-    group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display method.')
+    group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display '
+                                                           'method.')
     group.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
     group.add_argument('--ontop', action='store_true', help='The window stays on top of all other windows')
     group.add_argument('--xy', action='store', help='Window position in "XxY" format (eg. "--xy 30x100").')
-    group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for left button, 'a' right, 's' both). Default: arrow keys")
+    group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for "
+                                                        "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
 
@@ -301,8 +317,8 @@ if __name__ == '__main__':
     if api_enabled:
         app = api.create_app(screen, seph)
         # threaded must be set to allow serving requests along events streaming
-        run = lambda : app.run(host="0.0.0.0", port=args.api_port, threaded=True)
-        api_thread = threading.Thread(target=run, daemon=True)
+        api_thread = threading.Thread(target=lambda: app.run(host="0.0.0.0", port=args.api_port, threaded=True),
+                                      daemon=True)
         api_thread.start()
 
     screen.run()

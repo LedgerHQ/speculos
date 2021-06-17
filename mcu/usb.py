@@ -4,73 +4,82 @@ protocol.
 """
 
 from abc import ABC, abstractmethod
-from construct import *
+from construct import Int8ub, Int16ub, Int16ul, Struct
 import binascii
 import enum
 import logging
 
+
 class UsbReq(enum.IntEnum):
-    RECIPIENT_DEVICE  = 0x00
-    SET_ADDRESS       = 0x05
+    RECIPIENT_DEVICE = 0x00
+    SET_ADDRESS = 0x05
     SET_CONFIGURATION = 0x09
 
+
 class SephUsbTag(enum.IntEnum):
-    XFER_SETUP     = 0x01
-    XFER_IN        = 0x02
-    XFER_OUT       = 0x04
-    XFER_EVENT     = 0x10
+    XFER_SETUP = 0x01
+    XFER_IN = 0x02
+    XFER_OUT = 0x04
+    XFER_EVENT = 0x10
     PREPARE_DIR_IN = 0x20
 
+
 class SephUsbConfig(enum.IntEnum):
-    CONNECT    = 0x01
+    CONNECT = 0x01
     DISCONNECT = 0x02
-    ADDR       = 0x03
-    ENDPOINTS  = 0x04
+    ADDR = 0x03
+    ENDPOINTS = 0x04
+
 
 class SephUsbPrepare(enum.IntEnum):
-    SETUP   = 0x10
-    IN      = 0x20
-    OUT     = 0x30
-    STALL   = 0x40
+    SETUP = 0x10
+    IN = 0x20
+    OUT = 0x30
+    STALL = 0x40
     UNSTALL = 0x80
+
 
 class HidEndpoint(enum.IntEnum):
     OUT_ADDR = 0x00
-    IN_ADDR  = 0x80
+    IN_ADDR = 0x80
+
 
 class UsbDevState(enum.IntEnum):
     DISCONNECTED = 0
-    DEFAULT      = 1
-    ADDRESSED    = 2
-    CONFIGURED   = 3
+    DEFAULT = 1
+    ADDRESSED = 2
+    CONFIGURED = 3
+
 
 class UsbInterface(enum.IntEnum):
     GENERIC = 0
-    U2F     = 1
-    HID     = 2
+    U2F = 1
+    HID = 2
 
-USB_SIZE    = 0x40
+
+USB_SIZE = 0x40
 
 usb_header = Struct(
     "endpoint" / Int8ub,
-    "tag"      / Int8ub,
-    "length"   / Int8ub,
+    "tag" / Int8ub,
+    "length" / Int8ub,
 )
 
 usb_setup = Struct(
-    "bmreq"   / Int8ub,
-    "breq"    / Int8ub,
-    "wValue"  / Int16ul,
-    "wIndex"  / Int16ub,
+    "bmreq" / Int8ub,
+    "breq" / Int8ub,
+    "wValue" / Int16ul,
+    "wIndex" / Int16ub,
     "wLength" / Int16ub,
 )
 
 hid_header = Struct(
     "channel" / Int16ub,
     "command" / Int8ub,
-    "seq"     / Int16ub,
-    "length"  / Int16ub,
+    "seq" / Int16ub,
+    "length" / Int16ub,
 )
+
 
 class HidPacket:
     def __init__(self):
@@ -92,6 +101,7 @@ class HidPacket:
 
     def complete(self):
         return self.remaining_size == 0
+
 
 class Transport(ABC):
     def __init__(self, interface, send_xfer):
@@ -121,6 +131,7 @@ class Transport(ABC):
     def endpoint_out(self):
         return HidEndpoint.OUT_ADDR | self.interface
 
+
 class U2f(Transport):
     def __init__(self, send_xfer):
         super().__init__(UsbInterface.U2F, send_xfer)
@@ -140,6 +151,7 @@ class U2f(Transport):
         packet = self.build_xfer(SephUsbTag.XFER_IN, b'')
         self.send_xfer(packet)
         return data
+
 
 class Hid(Transport):
     USB_CHANNEL = 0x0101
@@ -213,6 +225,7 @@ class Hid(Transport):
             answer = None
 
         return answer
+
 
 class USB:
     def __init__(self, _queue_event_packet, transport='hid'):

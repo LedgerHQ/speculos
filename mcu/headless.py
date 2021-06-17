@@ -6,6 +6,7 @@ from .display import Display, DisplayArgs, FrameBuffer, Model, MODELS, ServerArg
 from .readerror import ReadError
 from .vnc import VNC
 
+
 class Headless(Display):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
@@ -42,6 +43,7 @@ class Headless(Display):
             # This exception occur when can_read have no more data available
             except ReadError:
                 break
+
 
 class HeadlessPaintWidget(FrameBuffer):
     def __init__(self, parent: Headless, model: Model, vnc: Optional[VNC] = None) -> None:

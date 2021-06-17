@@ -13,6 +13,7 @@ AppInfo = namedtuple("AppInfo", ["filepath", "device", "name", "version", "hash"
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 API_URL = "http://127.0.0.1:5000"
 
+
 class App:
     def __init__(self, app_info: AppInfo):
         self.path = app_info.filepath
@@ -52,19 +53,21 @@ class App:
             self.process.kill()
         self.process.wait()
 
+
 @pytest.fixture(scope="class")
 def app(request):
     """Run the API tests on the default btc.elf app."""
 
     app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
     filepath = os.path.realpath(os.path.join(app_dir, "btc.elf"))
-    info = [ filepath ] + os.path.basename(filepath).split("#")
+    info = [filepath] + os.path.basename(filepath).split("#")
     info = AppInfo(*info)
 
     _app = App(info)
     _app.run()
     yield _app
     _app.stop()
+
 
 class TestApi:
     @staticmethod
