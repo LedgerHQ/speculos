@@ -7,7 +7,7 @@ from enum import IntEnum
 
 from . import usb
 from .nanox_ocr import NanoXOCR
-from .readerror import ReadError
+from .readerror import ReadError, WriteError
 
 
 class SephTag(IntEnum):
@@ -179,8 +179,7 @@ class SeProxyHal:
         try:
             self.s.sendall(packet)
         except BrokenPipeError:
-            # the pipe is closed, which means the app exited
-            raise ServiceExit
+            raise WriteError("Broken pipe, failed to send data to the app")
 
     def apply_automation(self, text, x, y):
         if self.automation_server:
