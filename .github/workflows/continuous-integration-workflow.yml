@@ -52,7 +52,7 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
         make -C build/ test
-        pytest
+        python3 -m pytest
 
     - name: Build and publish to GitHub Packages
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -94,7 +94,7 @@ jobs:
         make -C build clean
         make -C build
         make -C build test
-        pytest
+        python3 -m pytest
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:

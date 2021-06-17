@@ -3,12 +3,8 @@ import jsonschema
 import os
 import pkg_resources
 import pytest
-import sys
 
-module_dir = os.path.dirname(__file__)
-sys.path.append(os.path.join(module_dir, "../../mcu/"))
-
-import automation
+from mcu import automation
 
 
 class TestAutomation:
