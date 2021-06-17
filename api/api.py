@@ -14,6 +14,7 @@ import mcu.automation
 static_folder = pkg_resources.resource_filename(__name__, "/swagger")
 
 app = Flask(__name__, static_url_path="", static_folder=static_folder)
+app.env = "development"
 api = Api(app)
 automation_events = []
 
