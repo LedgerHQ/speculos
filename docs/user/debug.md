@@ -6,7 +6,7 @@ sort: 4
 
 Debug an app thanks to GDB:
 
-```console
+```shell
 ./speculos.py -d apps/btc.elf &
 ./tools/debug.sh apps/btc.elf
 ```
