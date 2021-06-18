@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     if args.sdk is None:
         default_sdk = {
-            "nanos": "1.6",
+            "nanos": "2.0",
             "nanox": "1.2",
             "blue": "blue-2.2.5",
         }
