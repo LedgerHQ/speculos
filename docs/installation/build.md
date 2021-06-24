@@ -6,13 +6,13 @@ sort: 1
 
 ## Requirements
 
-```console
+```shell
 sudo apt install qemu-user-static python3-pyqt5 python3-construct python3-jsonschema python3-mnemonic python3-pyelftools gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch
 ```
 
 For optional VNC support, please also install `libvncserver-dev`:
 
-```console
+```shell
 sudo apt install libvncserver-dev
 ```
 
@@ -21,7 +21,7 @@ sudo apt install libvncserver-dev
 
 ### speculos
 
-```console
+```shell
 cmake -Bbuild -H.
 make -C build/
 ```
@@ -32,7 +32,7 @@ built. Further invocations of `make` skip this step.
 
 The following command line can be used for a debug build:
 
-```console
+```shell
 cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
 ```
 
@@ -40,6 +40,6 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
 
 Pass the `WITH_VNC` option to CMake:
 
-```console
+```shell
 cmake -Bbuild -H. -DWITH_VNC=1
 ```

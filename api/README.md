@@ -4,7 +4,7 @@ Convert the specification file from YAML to JSON:
 
 ```shell
 docker pull docker.io/swaggerapi/swagger-converter:v1.0.2
-docker run -it --rm -p 8080:8080 docker.io/swaggerapi/swagger-converter:v1.0.2
+docker run --rm -it -p 8080:8080 docker.io/swaggerapi/swagger-converter:v1.0.2
 wget --quiet -O- --header 'content-type: application/yaml' --post-file api/swagger.yaml \
     http://127.0.0.1:8080/api/convert | jq . > api/swagger/swagger.json
 ```

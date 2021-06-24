@@ -6,7 +6,7 @@ sort: 1
 
 After having [installed the requirements and built](../installation/build.md) speculos:
 
-```console
+```shell
 ./speculos.py apps/btc.elf
 ```
 
@@ -15,7 +15,7 @@ The docker image can also be used directly, as detailed in the specific [docker 
 The Nano S is the default model; the Nano X and Blue can be specified on the
 command-line:
 
-```console
+```shell
 ./speculos.py --model nanox apps/nanox#btc#1.2#57272a0f.elf
 ./speculos.py --model blue --sdk 1.5 apps/blue#btc#1.5#00000000.elf
 ```
@@ -25,7 +25,7 @@ be specified if the target app is not build against the last version of the SDK,
 thanks to the `-k`/`--sdk` argument. For instance, to launch an app built
 against the SDK `1.5` on the Nano S:
 
-```console
+```shell
 ./speculos.py --sdk 1.5 --model nanos apps/btc.elf
 ```
 
@@ -82,6 +82,6 @@ $ echo 'b0 01 00 00 00' \
 
 Launch the Bitcoin Testnet app, which requires the Bitcoin app:
 
-```console
+```shell
 ./speculos.py ./apps/btc-test.elf -l Bitcoin:./apps/btc.elf
 ```

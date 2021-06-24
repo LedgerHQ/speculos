@@ -7,9 +7,9 @@ services:
     volumes:
       - ./apps:/speculos/apps
     ports:
-      - "1234:1234"
+      - "1234:1234" # gdb
+      - "5000:5000" # api
       - "40000:40000" # apdu
       - "41000:41000" # vnc
-      - "42000:42000" # tcp buttons
-    command: "--model nanos ./apps/btc.elf --sdk 1.6 --seed secret --display headless --apdu-port 40000 --vnc-port 41000 --button-port 42000"
+    command: "--model nanos ./apps/btc.elf --sdk 2.0 --seed secret --display headless --apdu-port 40000 --vnc-port 41000"
     # Add `--vnc-password "<password>"` for macos users to use built-in vnc client.
