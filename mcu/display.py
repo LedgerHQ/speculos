@@ -42,14 +42,17 @@ class Screenshot:
                 self.pixels[(x, y)] = 0x000000
 
     def update(self, pixels):
-        self.pixels.update(pixels)
+        # Don't call update, replace the object instead
+        self.pixels = {**self.pixels, **pixels}
 
     def get_image(self):
+        # Get the pixels object once, as it may be replaced during the loop.
+        pixels = self.pixels
         data = bytearray(self.width * self.height * 3)
         for y in range(0, self.height):
             for x in range(0, self.width):
                 pos = 3 * (y * self.width + x)
-                data[pos:pos + 3] = self.pixels[(x, y)].to_bytes(3, "big")
+                data[pos:pos + 3] = pixels[(x, y)].to_bytes(3, "big")
         return (self.width, self.height), bytes(data)
 
 
