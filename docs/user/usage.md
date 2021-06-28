@@ -56,6 +56,9 @@ specified port. macOS users should also add `--vnc-password <password>` if using
 the built-in VNC client because unauthenticated sessions doesn't seem to be
 supported (issue #34).
 
+A recording of the screen can be saved as a GIF file thanks to the
+`tools/gif-recorder.py` script.
+
 ## App name and version
 
 On a real device, some parameters specific to the app to be installed (name and
