@@ -38,13 +38,18 @@ def list_apps_to_test(app_dir) -> List[AppInfo]:
     """
     # name example: nanos#btc#1.5#5b6693b8.elf
     app_regexp = re.compile(
-        r"(nanos|nanox|blue)#(.+)#([^#][\d\w\-.]+)#([a-f0-9]{8}).elf"
+        r"^(nanos|nanox|blue)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]{8})\.elf$"
     )
     all_apps = []
     for filename in os.listdir(app_dir):
-        matching = re.match(app_regexp, filename)
-        if not matching or len(matching.groups()) != 4:
+        if "#" not in filename:
             continue
+        matching = re.match(app_regexp, filename)
+        if not matching:
+            pytest.fail(
+                f"An unexpected file was found in apps/, with a # but not matching the pattern: {filename!r}"
+            )
+        assert len(matching.groups()) == 4
 
         all_apps.append(
             AppInfo(
@@ -73,7 +78,7 @@ def pytest_generate_tests(metafunc):
         metafunc.cls.app_names, list
     ):
         pytest.fail(
-            "The TestClass {metafunc.cls} does not have a correct 'app_names' attribute. \n"
+            f"The TestClass {metafunc.cls} does not have a correct 'app_names' attribute.\n"
             "The 'app_names' attribute must contain a list of app names that will be"
             "tested by this test."
         )
