@@ -160,7 +160,7 @@ def main():
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
-                                                       'to specify a path'),
+                                                       'to specify a path')
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
     parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce '
@@ -182,7 +182,7 @@ def main():
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
     group.add_argument('--api-port', default=5000, type=int, help='Set the REST API TCP port (0 disables it)')
-    group.add_argument('--automation-port', type=int, help='Forward text displayed on the screen to TCP clients'),
+    group.add_argument('--automation-port', type=int, help='Forward text displayed on the screen to TCP clients')
     group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
     group.add_argument('--vnc-password', type=str, help='VNC plain-text password (required for MacOS Screen Sharing)')
     group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button '
