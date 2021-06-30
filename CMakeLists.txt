@@ -51,11 +51,11 @@ endif()
 include_directories(sdk src)
 
 if (PRECOMPILED_DEPENDENCIES_DIR)
-  message(STATUS "Using OpenSSL and cmoka from ${PRECOMPILED_DEPENDENCIES_DIR}")
+  message(STATUS "Using OpenSSL and cmocka from ${PRECOMPILED_DEPENDENCIES_DIR}")
   set(INSTALL_DIR ${PRECOMPILED_DEPENDENCIES_DIR})
   add_library(openssl STATIC IMPORTED)
 else()
-  message(STATUS "Building OpenSSL and cmoka...")
+  message(STATUS "Building OpenSSL and cmocka...")
   set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install)
 
   ExternalProject_Add(
