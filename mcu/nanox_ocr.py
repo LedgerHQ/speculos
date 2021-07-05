@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import functools
 import string
 
+from .automation import TextEvent
 from . import bagl_font
 
 BitMap = bytes
@@ -136,9 +137,8 @@ class NanoXOCR:
         self.reset()
 
     def reset(self):
-        self.text = b""
-        self.x, self.y = (0, 0)
-        self.last_x, self.last_y = (0, 0)
+        self.last_y = 0
+        self.events = [TextEvent("", 0, 0)]
 
     def analyze_bitmap(self, data: bytes):
         if data[0] != 0:
@@ -151,19 +151,20 @@ class NanoXOCR:
         bitmap = data[10+color_size:]
 
         char = find_char_from_bitmap(bitmap)
+        event = self.events[-1]
         if char:
-            if self.text == b"":
-                self.x, self.y = (x, y)
+            if event.text == "":
+                event.x, event.y = (x, y)
             elif y > self.last_y:
-                self.text += b"\n"
+                event = TextEvent("", x, y)
+                self.events.append(event)
             if char == "\x80":
                 char = " "
-            self.text += char.encode()
+            event.text += char
 
-        self.last_x, self.last_y = x, y
+        self.last_y = y
 
-    def get_text(self, reset=True) -> Tuple[bytes, Tuple[int, int]]:
-        text, x, y = self.text, self.x, self.y
-        if reset:
-            self.reset()
-        return text, (x, y)
+    def get_events(self) -> Tuple[bytes, Tuple[int, int]]:
+        events = self.events.copy()
+        self.reset()
+        return events

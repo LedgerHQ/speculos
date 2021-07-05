@@ -1,9 +1,17 @@
+from dataclasses import dataclass
 import json
 import jsonschema
 import logging
 import os
 import pkg_resources
 import re
+
+
+@dataclass
+class TextEvent:
+    text: str
+    x: int
+    y: int
 
 
 class Automation:
@@ -29,7 +37,6 @@ class Automation:
         self.variables[key] = value
 
     def get_actions(self, text, x, y):
-        text = text.decode("utf-8")
         self.logger.debug(f'getting actions for "{text}" ({x}, {y})')
 
         for rule in self.json["rules"]:
