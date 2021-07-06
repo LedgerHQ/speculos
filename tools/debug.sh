@@ -17,7 +17,7 @@ function main()
     local launcher_text_addr
     local app="$1"
     script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-    local launcher_path="$script_dir/../build/src/launcher"
+    local launcher_path="$script_dir/../resources/launcher"
     launcher_text_addr=$(get_text_addr "$launcher_path")
     local gdbinit="$script_dir/gdbinit"
 

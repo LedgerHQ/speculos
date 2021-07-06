@@ -34,7 +34,7 @@ DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover o
 
 logger = logging.getLogger("speculos")
 
-launcher_path = pkg_resources.resource_filename(__name__, "/build/src/launcher")
+launcher_path = pkg_resources.resource_filename(__name__, "/resources/launcher")
 
 
 def set_pdeath(sig):

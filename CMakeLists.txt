@@ -87,6 +87,15 @@ link_libraries(ssl crypto dl)
 add_subdirectory(src)
 add_subdirectory(tests/syscalls)
 
+add_custom_target(
+  copy-launcher ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_BINARY_DIR}/src/launcher
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/launcher
+  DEPENDS src/launcher
+  COMMENT Copy the launcher in the Python part of Speculos
+  VERBATIM)
+
 if (WITH_VNC)
     externalproject_add(vnc_server
         SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/vnc"
