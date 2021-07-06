@@ -20,6 +20,7 @@
 struct libcall_s {
   struct app_s *app;
   struct sigcontext sigcontext;
+  try_context_t *trycontext;
 };
 
 static try_context_t *try_context;
@@ -103,6 +104,9 @@ unsigned long sys_os_lib_call(unsigned long *call_parameters)
     _exit(1);
   }
 
+  /* save current try_context of the caller */
+  libcalls[libcall_index].trycontext = try_context;
+
   /* save current app to restore it later */
   save_current_context(&libcalls[libcall_index].sigcontext);
   libcalls[libcall_index].app = get_current_app();
@@ -169,6 +173,9 @@ unsigned long sys_os_lib_end(void)
   }
 
   replace_current_context(&libcalls[libcall_index].sigcontext);
+
+  /* restore try_context of the caller */
+  try_context = libcalls[libcall_index].trycontext;
 
   return 0;
 }
