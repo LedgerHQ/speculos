@@ -5,6 +5,7 @@ from construct import Aligned, Struct, Int8ul, Int16ul, Int32ul, Padded
 
 from . import bagl_font
 from . import bagl_glyph
+from .automation import TextEvent
 
 bagl_component_t = Aligned(4, Struct(
     "type" / Int8ul,
@@ -504,7 +505,7 @@ class Bagl:
                          text,
                          context_encoding)
 
-        return (text, (component.x + halignment, y))
+        return [TextEvent(text.decode("utf-8", "ignore"), component.x + halignment, y)]
 
     def _display_get_alignment(self, component, context, context_encoding):
         halignment = 0

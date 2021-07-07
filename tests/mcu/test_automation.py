@@ -53,13 +53,13 @@ class TestAutomation:
         ]
 
         auto = automation.Automation(TestAutomation.get_json_path("automation_valid.json"))
-        assert auto.get_actions(b"Application", 0, 0) == default_actions
-        assert auto.get_actions(b"Application", 35, 3) == expected_actions
+        assert auto.get_actions("Application", 0, 0) == default_actions
+        assert auto.get_actions("Application", 35, 3) == expected_actions
 
         auto.set_bool("seen", True)
-        assert auto.get_actions(b"Application", 35, 3) == default_actions
+        assert auto.get_actions("Application", 35, 3) == default_actions
 
         auto.set_bool("seen", False)
-        assert auto.get_actions(b"Application", 35, 3) == expected_actions
+        assert auto.get_actions("Application", 35, 3) == expected_actions
 
-        assert auto.get_actions(b"1234", 35, 3) == regexp_actions
+        assert auto.get_actions("1234", 35, 3) == regexp_actions

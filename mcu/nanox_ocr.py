@@ -1,8 +1,9 @@
-from typing import List, Tuple, Mapping
+from typing import List, Mapping
 from dataclasses import dataclass
 import functools
 import string
 
+from .automation import TextEvent
 from . import bagl_font
 
 BitMap = bytes
@@ -128,17 +129,15 @@ def find_char_from_bitmap(bitmap: BitMap):
                 if all(b == 0 for b in residual_bytes):
                     all_values.append(character_value)
         if all_values:
-            return max([x for x in all_values])
+            char = max([x for x in all_values])
+            if char == "\x80":
+                char = " "
+            return char
 
 
 class NanoXOCR:
     def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.text = b""
-        self.x, self.y = (0, 0)
-        self.last_x, self.last_y = (0, 0)
+        self.events = []
 
     def analyze_bitmap(self, data: bytes):
         if data[0] != 0:
@@ -152,18 +151,13 @@ class NanoXOCR:
 
         char = find_char_from_bitmap(bitmap)
         if char:
-            if self.text == b"":
-                self.x, self.y = (x, y)
-            elif y > self.last_y:
-                self.text += b"\n"
-            if char == "\x80":
-                char = " "
-            self.text += char.encode()
+            if self.events and y <= self.events[-1].y:
+                self.events[-1].text += char
+            else:
+                # create a new TextEvent if there are no events yet or if there is a new line
+                self.events.append(TextEvent(char, x, y))
 
-        self.last_x, self.last_y = x, y
-
-    def get_text(self, reset=True) -> Tuple[bytes, Tuple[int, int]]:
-        text, x, y = self.text, self.x, self.y
-        if reset:
-            self.reset()
-        return text, (x, y)
+    def get_events(self) -> List[TextEvent]:
+        events = self.events.copy()
+        self.events = []
+        return events

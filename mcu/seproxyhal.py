@@ -1,4 +1,5 @@
 from collections import namedtuple
+from dataclasses import asdict
 import logging
 import sys
 import time
@@ -185,13 +186,12 @@ class SeProxyHal:
         except BrokenPipeError:
             raise WriteError("Broken pipe, failed to send data to the app")
 
-    def apply_automation(self, text, x, y):
+    def apply_automation_helper(self, event):
         if self.automation_server:
-            event = {"text": text.decode("ascii", "ignore"), "x": x, "y": y}
-            self.automation_server.broadcast(event)
+            self.automation_server.broadcast(asdict(event))
 
         if self.automation:
-            actions = self.automation.get_actions(text, x, y)
+            actions = self.automation.get_actions(event.text, event.x, event.y)
             for action in actions:
                 self.logger.debug(f"applying automation {action}")
                 key, args = action[0], action[1:]
@@ -206,6 +206,10 @@ class SeProxyHal:
                     sys.exit(0)
                 else:
                     assert False
+
+    def apply_automation(self, events):
+        for event in events:
+            self.apply_automation_helper(event)
 
     def _close(self, s, screen):
         screen.remove_notifier(self.s.fileno())
@@ -237,16 +241,16 @@ class SeProxyHal:
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
         if tag & 0xf0 == SephTag.GENERAL_STATUS or tag == SephTag.PRINTC_STATUS:
-            ret = None
+            events = []
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     if screen.screen_update():
                         if screen.model == "nanox":
-                            ret = self.nanox_ocr.get_text()
+                            events = self.nanox_ocr.get_events()
 
             elif tag == SephTag.SCREEN_DISPLAY_STATUS:
                 self.logger.debug(f"DISPLAY_STATUS {data!r}")
-                ret = screen.display_status(data)
+                events = screen.display_status(data)
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
 
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
@@ -286,9 +290,8 @@ class SeProxyHal:
             self.status_event.set()
 
             # apply automation rules after having replied to the app
-            if ret is not None:
-                text, (x, y) = ret
-                self.apply_automation(text, x, y)
+            if events:
+                self.apply_automation(events)
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)
