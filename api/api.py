@@ -8,6 +8,7 @@ from PIL import Image
 import pkg_resources
 import threading
 import time
+from typing import Generator
 
 import mcu.automation
 
@@ -182,7 +183,10 @@ class APDU:
         self.endpoint_lock = threading.Lock()
         self.response_condition = threading.Condition()
 
-    def exchange(self, data: bytes) -> bytes:
+    def exchange(self, data: bytes) -> Generator[bytes, None, None]:
+        # force headers to be sent
+        yield b""
+
         with self.endpoint_lock:  # Lock for a command/response for one client
             with self.response_condition:
                 self.response = None
@@ -190,7 +194,7 @@ class APDU:
             with self.response_condition:
                 while self.response is None:
                     self.response_condition.wait()
-            return self.response
+            yield json.dumps({"data": self.response.hex()}).encode()
 
     def seph_apdu_callback(self, data: bytes):
         """
@@ -219,7 +223,7 @@ class APDU(Resource):
             return {"error": f"{e}"}, 400
 
         data = bytes.fromhex(args.get("data"))
-        return {"data": apdu.exchange(data).hex()}
+        return Response(stream_with_context(apdu.exchange(data)), content_type="application/json")
 
 
 class Screenshot(Resource):
