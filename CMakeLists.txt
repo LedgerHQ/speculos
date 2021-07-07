@@ -91,7 +91,7 @@ add_custom_target(
   copy-launcher ALL
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_BINARY_DIR}/src/launcher
-    ${CMAKE_CURRENT_SOURCE_DIR}/resources/launcher
+    ${CMAKE_CURRENT_SOURCE_DIR}/speculos/resources/launcher
   DEPENDS src/launcher
   COMMENT Copy the launcher in the Python part of Speculos
   VERBATIM)
@@ -107,7 +107,7 @@ if (WITH_VNC)
     copy-vnc-server ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${CMAKE_CURRENT_BINARY_DIR}/vnc/vnc_server
-      ${CMAKE_CURRENT_SOURCE_DIR}/resources/vnc_server
+      ${CMAKE_CURRENT_SOURCE_DIR}/speculos/resources/vnc_server
     DEPENDS vnc_server
     COMMENT Copy the launcher in the Python part of Speculos
     VERBATIM)

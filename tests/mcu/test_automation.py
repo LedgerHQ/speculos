@@ -4,7 +4,7 @@ import os
 import pkg_resources
 import pytest
 
-from mcu import automation
+from speculos.mcu import automation
 
 
 class TestAutomation:

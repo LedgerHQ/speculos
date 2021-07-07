@@ -6,5 +6,5 @@ __pycache__/
 apps/*vault*
 build/
 core
-/resources/launcher
-/resources/vnc_server
+/speculos/resources/launcher
+/speculos/resources/vnc_server

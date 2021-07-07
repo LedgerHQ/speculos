@@ -10,7 +10,7 @@ import threading
 import time
 from typing import Generator
 
-import mcu.automation
+from ..mcu import automation as mcu_automation
 
 static_folder = pkg_resources.resource_filename(__name__, "/swagger")
 
@@ -75,7 +75,7 @@ class Automation(Resource):
             return "invalid document", 400
 
         try:
-            rules = mcu.automation.Automation(document)
+            rules = mcu_automation.Automation(document)
         except json.decoder.JSONDecodeError:
             return "invalid document", 400
         except jsonschema.exceptions.ValidationError:

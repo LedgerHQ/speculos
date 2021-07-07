@@ -43,7 +43,7 @@ jobs:
         builtin: clear,rare
         check_filenames: true
         ignore_words_file: .codespell-ignore
-        skip: ./api/swagger/swagger-ui.css,./api/swagger/swagger-ui-bundle.js,./api/swagger/swagger-ui-standalone-preset.js
+        skip: ./speculos/api/swagger/swagger-ui.css,./speculos/api/swagger/swagger-ui-bundle.js,./speculos/api/swagger/swagger-ui-standalone-preset.js
 
     - name: Build
       run: |
