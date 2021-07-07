@@ -97,9 +97,18 @@ add_custom_target(
   VERBATIM)
 
 if (WITH_VNC)
-    externalproject_add(vnc_server
-        SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/vnc"
-        BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/vnc"
-        INSTALL_COMMAND ""
-    )
+  externalproject_add(vnc_server
+    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/vnc"
+    BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/vnc"
+    INSTALL_COMMAND ""
+  )
+
+  add_custom_target(
+    copy-vnc-server ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      ${CMAKE_CURRENT_BINARY_DIR}/vnc/vnc_server
+      ${CMAKE_CURRENT_SOURCE_DIR}/resources/vnc_server
+    DEPENDS vnc_server
+    COMMENT Copy the launcher in the Python part of Speculos
+    VERBATIM)
 endif()

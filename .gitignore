@@ -7,3 +7,4 @@ apps/*vault*
 build/
 core
 /resources/launcher
+/resources/vnc_server
