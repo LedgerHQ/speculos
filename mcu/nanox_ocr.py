@@ -59,12 +59,6 @@ def split_bytes(bytes_elems: BitMap, n: CharWidth):
     return split(bits, n)
 
 
-def get_font_char(char: str, font: bagl_font.Font):
-    ord_char = ord(char)
-    if ord_char > font.last_char or ord_char > font.last_char:
-        raise ValueError(f"char {char} is not displayable with font_id {font.font_id}")
-
-
 def get_font(font_id: int) -> bagl_font.Font:
     font = bagl_font.get(font_id)
     if not font:
