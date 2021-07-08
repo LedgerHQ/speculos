@@ -1,5 +1,3 @@
-import sys
-
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon
@@ -247,7 +245,7 @@ class Screen(Display):
 
 class QtScreen:
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
-        self.app = QApplication(sys.argv)
+        self.app = QApplication([])
         self.app_widget = App(self.app, display, server)
         self.m = self.app_widget.m
 
