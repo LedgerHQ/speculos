@@ -6,11 +6,14 @@ import io
 import os.path
 from PIL import Image
 import pkg_resources
+import socket
 import threading
 import time
 from typing import Generator
 
 from ..mcu import automation as mcu_automation
+from ..mcu.readerror import ReadError
+
 
 static_folder = pkg_resources.resource_filename(__name__, "/swagger")
 
@@ -48,11 +51,32 @@ class Events:
 events = Events()
 
 
-def create_app(screen_, seph_):
-    global screen, seph
-    screen, seph = screen_, seph_
-    seph.apdu_callbacks.append(apdu.seph_apdu_callback)
-    return app
+class ApiRunner:
+    """Run the Speculos API server, with a notification when it stops"""
+    def __init__(self, api_port: int) -> None:
+        # self.s is used by Screen.add_notifier. Closing self._notify_exit
+        # signals it that the API is no longer running.
+        self.s, self._notify_exit = socket.socketpair()
+        self.api_port = api_port
+
+    def can_read(self, s: int, screen) -> None:
+        assert s == self.s.fileno()
+        # Being able to read from the socket only happens when the API server exited.
+        raise ReadError("API server exited")
+
+    def _run(self) -> None:
+        try:
+            # threaded must be set to allow serving requests along events streaming
+            app.run(host="0.0.0.0", port=self.api_port, threaded=True, use_reloader=False)
+        finally:
+            self._notify_exit.close()
+
+    def start_server_thread(self, screen_, seph_) -> None:
+        global screen, seph
+        screen, seph = screen_, seph_
+        seph.apdu_callbacks.append(apdu.seph_apdu_callback)
+        api_thread = threading.Thread(target=self._run, daemon=True)
+        api_thread.start()
 
 
 def load_json_schema(filename):
