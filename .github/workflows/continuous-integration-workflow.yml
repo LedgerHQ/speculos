@@ -57,6 +57,12 @@ jobs:
         make -C build/ test
         python3 -m pytest
 
+    - name: Use pip to install speculos in a virtual environment
+      run: |
+        python3 -m venv venv-test
+        ./venv-test/bin/pip install .
+        ./venv-test/bin/speculos --help
+
     - name: Build and publish to GitHub Packages
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: docker/build-push-action@v1
