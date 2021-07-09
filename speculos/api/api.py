@@ -202,9 +202,6 @@ class APDU:
         be the response to a prior APDU request
         """
         with self.response_condition:
-            if self.response_condition is not None:
-                # A response is received, but no corresponding APDU request has been sent!
-                app.logger.warning("apdu: unexpected response from device")
             self.response = data
             self.response_condition.notify()
 
