@@ -53,6 +53,7 @@ setup(
         "pyqt5>=5.15.2,<6.0.0",
         "requests>=2.25.1,<3.0.0",
     ],
+    setup_requires=["wheel"],
     entry_points={
         "console_scripts": [
             "speculos = speculos.main:main",
