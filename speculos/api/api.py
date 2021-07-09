@@ -68,6 +68,9 @@ class ApiRunner:
         try:
             # threaded must be set to allow serving requests along events streaming
             app.run(host="0.0.0.0", port=self.api_port, threaded=True, use_reloader=False)
+        except Exception as exc:
+            app.logger.error("an exception occurred in the Flask API server: %s", exc)
+            raise
         finally:
             self._notify_exit.close()
 
@@ -75,7 +78,7 @@ class ApiRunner:
         global screen, seph
         screen, seph = screen_, seph_
         seph.apdu_callbacks.append(apdu.seph_apdu_callback)
-        api_thread = threading.Thread(target=self._run, daemon=True)
+        api_thread = threading.Thread(target=self._run, name="API-server", daemon=True)
         api_thread.start()
 
 
