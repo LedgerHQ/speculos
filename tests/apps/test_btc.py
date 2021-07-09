@@ -4,11 +4,13 @@
 Tests to ensure that speculos launches correctly the BTC apps.
 '''
 
+import io
 import os
 import pkg_resources
 import pytest
 
 from enum import IntEnum
+from PIL import Image, ImageChops
 
 CLA = 0xE0
 
@@ -31,6 +33,13 @@ def read_automation_rules(name):
     return data
 
 
+def screenshots_equal(path, data):
+    with Image.open(path) as img1:
+        with Image.open(io.BytesIO(data)) as img2:
+                diff_img = ImageChops.difference(img1, img2)
+    return diff_img.getbbox() is None
+
+
 def test_btc_get_version(client):
     """Send a get_version APDU to the BTC app."""
     data, status = client.apdu_exchange(CLA, Ins.GET_VERSION, b"")
@@ -45,6 +54,15 @@ def test_btc_get_public_key_with_user_approval(client, app):
     payload = bytes([len(bip32_path) // 4]) + bip32_path
 
     with client.apdu_exchange_async(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01) as response:
+        client.wait_for_text_event("CONFIRM ACCOUNT")
+        import time
+        time.sleep(0.2)
+        screenshot = client.get_screenshot()
+        # open("/tmp/blah.png", "wb").write(screenshot)
+        # path = os.path.join("resources", "btc_getpubkey_blue.png")
+        # path = pkg_resources.resource_filename(__name__, path)
+        # assert screenshots_equal(path, screenshot)
+
         client.finger_touch(220, 440)
         data, status = response.receive()
     assert status == 0x9000
