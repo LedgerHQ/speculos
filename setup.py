@@ -4,6 +4,7 @@ import pathlib
 from distutils.spawn import find_executable
 from setuptools.command.build_py import build_py as _build_py
 from setuptools import find_packages, setup
+import sys
 import tempfile
 
 
@@ -37,7 +38,7 @@ setup(
     author_email="hello@ledger.fr",
     version="0.0.1",
     url="https://github.com/LedgerHQ/speculos",
-    python_requires=">=3.8.0",
+    python_requires=">=3.6.0",
     description="Ledger Blue and Nano S/X application emulator",
     long_description=pathlib.Path("README.md").read_text(),
     long_description_content_type="text/markdown",
@@ -52,7 +53,8 @@ setup(
         "pyelftools>=0.27,<1.0",
         "pyqt5>=5.15.2,<6.0.0",
         "requests>=2.25.1,<3.0.0",
-    ],
+    ]
+    + (["dataclasses>=0.8,<0.9"] if sys.version_info <= (3, 6) else []),
     setup_requires=["wheel"],
     entry_points={
         "console_scripts": [
