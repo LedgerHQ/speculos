@@ -49,5 +49,13 @@ add_dependencies(emu openssl)
 
 add_executable(launcher launcher.c)
 # ensure the loader .text section doesn't mess with cxlib
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Ttext-segment=0xf0000000")
+if (CMAKE_C_COMPILER_ID MATCHES "(Apple)?[Cc]lang")
+  # Option for clang
+  set_property(TARGET launcher APPEND PROPERTY LINK_OPTIONS "LINKER:--image-base=0xf0000000")
+elseif (CMAKE_C_COMPILER_ID MATCHES "GNU")
+  # Option for gcc
+  set_property(TARGET launcher APPEND PROPERTY LINK_OPTIONS "LINKER:-Ttext-segment=0xf0000000")
+else ()
+  message(FATAL_ERROR "Unable to identify the compiler!")
+endif ()
 target_link_libraries(launcher PRIVATE emu)
