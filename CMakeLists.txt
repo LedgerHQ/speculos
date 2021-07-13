@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(Speculos C)
 
+include(CTest)
 include(ExternalProject)
 
 set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
@@ -68,16 +69,20 @@ else()
     BUILD_IN_SOURCE 1
   )
 
-  ExternalProject_Add(cmocka
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cmocka
-    URL https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz
-    URL_HASH SHA256=f0ccd8242d55e2fd74b16ba518359151f6f8383ff8aef4976e48393f77bba8b6
-    CMAKE_ARGS += -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_C_FLAGS=-mthumb -DWITH_STATIC_LIB=true -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-  )
+  if (BUILD_TESTING)
+    ExternalProject_Add(cmocka
+      PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cmocka
+      URL https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz
+      URL_HASH SHA256=f0ccd8242d55e2fd74b16ba518359151f6f8383ff8aef4976e48393f77bba8b6
+      CMAKE_ARGS += -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_C_FLAGS=-mthumb -DWITH_STATIC_LIB=true -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+    )
+  endif()
 endif()
 
-add_library(cmocka-static STATIC SHARED IMPORTED)
-add_dependencies(cmocka-static cmocka)
+if (BUILD_TESTING)
+  add_library(cmocka-static STATIC SHARED IMPORTED)
+  add_dependencies(cmocka-static cmocka)
+endif()
 
 include_directories(${INSTALL_DIR}/include)
 link_directories(${INSTALL_DIR}/lib)
@@ -85,7 +90,10 @@ link_directories(${INSTALL_DIR}/lib)
 link_libraries(ssl crypto dl)
 
 add_subdirectory(src)
-add_subdirectory(tests/syscalls)
+
+if (BUILD_TESTING)
+  add_subdirectory(tests/syscalls)
+endif()
 
 add_custom_target(
   copy-launcher ALL
