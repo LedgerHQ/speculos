@@ -59,22 +59,45 @@ else()
   message(STATUS "Building OpenSSL and cmocka...")
   set(INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/install)
 
+  set(OPENSSL_CFLAGS "${CMAKE_C_FLAGS}")
+  get_directory_property(compile_options COMPILE_OPTIONS)
+  foreach (opt ${compile_options})
+    string(APPEND OPENSSL_CFLAGS " ${opt}")
+  endforeach ()
+  if (CMAKE_C_COMPILER_TARGET)
+    string(APPEND OPENSSL_CFLAGS " --target=${CMAKE_C_COMPILER_TARGET}")
+  endif ()
+  if (CMAKE_SYSROOT)
+    string(APPEND OPENSSL_CFLAGS " -isystem${CMAKE_SYSROOT}/include")
+  endif ()
+  string(APPEND OPENSSL_CFLAGS " -Wno-unused-parameter -Wno-missing-field-initializers")
+
   ExternalProject_Add(
     openssl
     URL https://www.openssl.org/source/openssl-1.1.1k.tar.gz
     URL_HASH SHA256=892a0875b9872acd04a9fde79b1f943075d5ea162415de3047c327df33fbaee5
-    CONFIGURE_COMMAND ./Configure --cross-compile-prefix=arm-linux-gnueabihf- no-afalgeng no-aria no-asan no-asm no-async no-autoalginit no-autoerrinit no-autoload-config no-bf no-buildtest-c++ no-camellia no-capieng no-cast no-chacha no-cmac no-cms no-comp no-crypto-mdebug no-crypto-mdebug-backtrace no-ct no-deprecated no-des no-devcryptoeng no-dgram no-dh no-dsa no-dso no-dtls no-ec2m no-ecdh no-egd no-engine no-err no-external-tests no-filenames no-fuzz-afl no-fuzz-libfuzzer no-gost no-heartbeats no-hw no-idea no-makedepend no-md2 no-md4 no-mdc2 no-msan no-multiblock no-nextprotoneg no-ocb no-ocsp no-pinshared no-poly1305 no-posix-io no-psk no-rc2 no-rc4 no-rc5 no-rdrand no-rfc3779 no-scrypt no-sctp no-seed no-shared no-siphash no-sm2 no-sm3 no-sm4 no-sock no-srp no-srtp no-sse2 no-ssl no-ssl3-method no-ssl-trace no-stdio no-tests no-threads no-tls no-ts no-ubsan no-ui-console no-unit-test no-whirlpool no-zlib no-zlib-dynamic linux-armv4 --prefix=${INSTALL_DIR}
-    BUILD_COMMAND make CFLAGS=-mthumb
+    CONFIGURE_COMMAND ./Configure "CC=${CMAKE_C_COMPILER}" "CFLAGS=${OPENSSL_CFLAGS}" no-afalgeng no-aria no-asan no-asm no-async no-autoalginit no-autoerrinit no-autoload-config no-bf no-buildtest-c++ no-camellia no-capieng no-cast no-chacha no-cmac no-cms no-comp no-crypto-mdebug no-crypto-mdebug-backtrace no-ct no-deprecated no-des no-devcryptoeng no-dgram no-dh no-dsa no-dso no-dtls no-ec2m no-ecdh no-egd no-engine no-err no-external-tests no-filenames no-fuzz-afl no-fuzz-libfuzzer no-gost no-heartbeats no-hw no-idea no-makedepend no-md2 no-md4 no-mdc2 no-msan no-multiblock no-nextprotoneg no-ocb no-ocsp no-pinshared no-poly1305 no-posix-io no-psk no-rc2 no-rc4 no-rc5 no-rdrand no-rfc3779 no-scrypt no-sctp no-seed no-shared no-siphash no-sm2 no-sm3 no-sm4 no-sock no-srp no-srtp no-sse2 no-ssl no-ssl3-method no-ssl-trace no-stdio no-tests no-threads no-tls no-ts no-ubsan no-ui-console no-unit-test no-whirlpool no-zlib no-zlib-dynamic linux-armv4 --prefix=${INSTALL_DIR}
+    BUILD_COMMAND make
     INSTALL_COMMAND make install_sw
     BUILD_IN_SOURCE 1
   )
 
   if (BUILD_TESTING)
+    set(CMOCKA_CMAKE_ARGS
+      -DWITH_STATIC_LIB=true
+      "-DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}"
+      "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
+      "-DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}"
+    )
+    if (CMAKE_TOOLCHAIN_FILE)
+      get_filename_component(abs_cmake_toolchain_file "${CMAKE_TOOLCHAIN_FILE}" ABSOLUTE)
+      list(APPEND CMOCKA_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE=${abs_cmake_toolchain_file}")
+    endif ()
     ExternalProject_Add(cmocka
       PREFIX ${CMAKE_CURRENT_BINARY_DIR}/cmocka
       URL https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz
       URL_HASH SHA256=f0ccd8242d55e2fd74b16ba518359151f6f8383ff8aef4976e48393f77bba8b6
-      CMAKE_ARGS += -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER} -DCMAKE_C_FLAGS=-mthumb -DWITH_STATIC_LIB=true -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+      CMAKE_ARGS ${CMOCKA_CMAKE_ARGS}
     )
   endif()
 endif()
