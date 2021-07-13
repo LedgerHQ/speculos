@@ -5,8 +5,15 @@ project(Speculos C)
 include(CTest)
 include(ExternalProject)
 
-set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
-set(CMAKE_EXE_LINKER_FLAGS -static)
+if (CMAKE_TOOLCHAIN_FILE)
+  message(STATUS "Using toolchain ${CMAKE_TOOLCHAIN_FILE}")
+else ()
+  # By default, use gcc cross-compiler for ARM-Thumb
+  set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
+  add_compile_options(-mthumb)
+  message(STATUS "Using default compiler ${CMAKE_C_COMPILER}")
+endif ()
+add_link_options(-static)
 
 enable_testing()
 
@@ -22,7 +29,7 @@ execute_process(
     OUTPUT_VARIABLE GIT_REVISION
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-add_compile_options(-mthumb -W -Wall -fPIC)
+add_compile_options(-W -Wall -fPIC)
 add_definitions(-DOS_LITTLE_ENDIAN -DNATIVE_64BITS -DGIT_REVISION=\"${GIT_REVISION}\")
 
 option(
