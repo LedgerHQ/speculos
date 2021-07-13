@@ -313,20 +313,16 @@ def main():
     if args.xy:
         x, y = (int(i) for i in args.xy.split('x'))
 
+    apirun = None
+    if api_enabled:
+        apirun = api.ApiRunner(args.api_port)
+
     display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
-    server_args = display.ServerArgs(apdu, button, finger, seph, vnc)
+    server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 
     if api_enabled:
-        app = api.create_app(screen, seph)
-        # threaded must be set to allow serving requests along events streaming
-        api_thread = threading.Thread(
-            target=lambda: app.run(
-                host="0.0.0.0", port=args.api_port, threaded=True, use_reloader=False
-            ),
-            daemon=True,
-        )
-        api_thread.start()
+        apirun.start_server_thread(screen, seph)
 
     screen.run()
 
