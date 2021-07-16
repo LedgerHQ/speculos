@@ -1,9 +1,10 @@
 include speculos/api/resources/*.schema
-include speculos/api/swagger/*.css
-include speculos/api/swagger/*.html
-include speculos/api/swagger/*.js
-include speculos/api/swagger/*.json
-include speculos/api/swagger/*.md
+include speculos/api/static/index.html
+include speculos/api/static/swagger/*.css
+include speculos/api/static/swagger/*.html
+include speculos/api/static/swagger/*.js
+include speculos/api/static/swagger/*.json
+include speculos/api/static/swagger/*.md
 include speculos/cxlib/*.elf
 include speculos/mcu/resources/*.schema
 include speculos/resources/launcher
