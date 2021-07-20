@@ -161,11 +161,7 @@ function add_apdu(data, received) {
 
 function send_apdu() {
   var element = document.getElementById("apdu");
-  /* don't send default value */
-  if (element.value == "APDU (in hexadecimal)") {
-    return;
-  }
-  apdu = element.value.replace(" ", "");
+  var apdu = element.value.replace(" ", "");
   if (apdu == "") {
     return;
   }
@@ -237,7 +233,7 @@ function main() {
         <div class="container-textarea">
           <div class="send-apdu">
             <div class="input-apdu-container">
-              <input type="text" class="input-apdu" value="APDU (in hexadecimal)" onfocus="this.value=''" id="apdu" />
+              <input type="text" class="input-apdu" placeholder="APDU (in hexadecimal)" id="apdu" />
             </div>
             <div class="button-apdu">
               <button type="button" class="button-send" onClick="send_apdu();">send</button>
