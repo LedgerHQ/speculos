@@ -142,7 +142,7 @@ function post_request(url, data, callback) {
   http.open("POST", url, true);
   http.setRequestHeader("Content-type", "application/json");
   http.onreadystatechange = function() {
-  if (http.readyState == 4 && http.status == 200 && callback !== null) {
+    if (http.readyState == 4 && http.status == 200 && callback !== null) {
       callback(http);
     }
   }
