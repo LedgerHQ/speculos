@@ -149,6 +149,8 @@ function send_apdu() {
     var data = JSON.parse(http.responseText)["data"];
     add_apdu(data, false);
   });
+  // Clear the command which was sent, to prevent from accidentally sending it twice.
+  // Users who want to send the same command several times can copy it again from the "APDUs" text area.
   element.value = "";
 }
 
