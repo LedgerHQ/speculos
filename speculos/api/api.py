@@ -15,7 +15,7 @@ from ..mcu import automation as mcu_automation
 from ..mcu.readerror import ReadError
 
 
-static_folder = pkg_resources.resource_filename(__name__, "/swagger")
+static_folder = pkg_resources.resource_filename(__name__, "/static")
 
 app = Flask(__name__, static_url_path="", static_folder=static_folder)
 app.env = "development"
@@ -261,6 +261,11 @@ class Screenshot(Resource):
 
 class Swagger(Resource):
     def get(self):
+        return app.send_static_file("swagger/index.html")
+
+
+class WebInterface(Resource):
+    def get(self):
         return app.send_static_file("index.html")
 
 
@@ -270,4 +275,5 @@ api.add_resource(Button, "/button/left", "/button/right", "/button/both")
 api.add_resource(Events, "/events")
 api.add_resource(Finger, "/finger")
 api.add_resource(Screenshot, "/screenshot")
-api.add_resource(Swagger, "/")
+api.add_resource(Swagger, "/swagger/")
+api.add_resource(WebInterface, "/")
