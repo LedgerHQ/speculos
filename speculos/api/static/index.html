@@ -194,12 +194,12 @@ function main() {
       <div class="device">
         <div class="container-device">
           <div>
-            <img src="/screenshot" id="screenshot" class="screenshot" />
+            <img src="/screenshot" id="screenshot" class="screenshot" alt="Device screen" title="Device screen" />
           </div>
           <div class="buttons">
-            <button type="button" class="button-device" onClick="click_button('left');">left</button>
-            <button type="button" class="button-device" onClick="click_button('right');">right</button>
-            <button type="button" class="button-device" onClick="click_button('both');">both</button>
+            <button type="button" class="button-device" onClick="click_button('left');" title="Press the left button (&larr;)">&lt;&nbsp;left</button>
+            <button type="button" class="button-device" onClick="click_button('both');" title="Press both buttons (&darr;)">both</button>
+            <button type="button" class="button-device" onClick="click_button('right');" title="Press the right button (&rarr;)">right&nbsp;&gt;</button>
           </div>
         </div>
       </div>
@@ -207,19 +207,19 @@ function main() {
         <div class="container-textarea">
           <div class="send-apdu">
             <div class="input-apdu-container">
-              <input type="text" class="input-apdu" placeholder="APDU (in hexadecimal)" id="apdu" />
+              <input type="text" class="input-apdu" placeholder="APDU (in hexadecimal)" id="apdu" title="Input data sent to the application" />
             </div>
             <div class="button-apdu">
               <button type="button" class="button-send" onClick="send_apdu();">send</button>
             </div>
           </div>
           <div>
-            <textarea id="apdus" readonly rows="20" cols="50"></textarea>
+            <textarea id="apdus" readonly rows="20" cols="50" title="Data exchanged with the application"></textarea>
             <p>APDUs</p>
           </div>
         </div>
         <div class="container-textarea">
-          <textarea id="events" readonly rows="20" cols="50"></textarea>
+          <textarea id="events" readonly rows="20" cols="50" title="Events received from the virtual device"></textarea>
           <p>Events</p>
         </div>
       </div>
