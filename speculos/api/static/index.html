@@ -173,12 +173,19 @@ function stream_events() {
 
 function on_keydown(e) {
   e = e || window.event;
-  if (e.code == "ArrowDown" || e.keyCode == 38) {
-    click_button("both");
-  } else if (e.code == "ArrowLeft" || e.keyCode == 37) {
-    click_button("left");
-  } else if (e.code == "ArrowRight" || e.keyCode == 39) {
-    click_button("right");
+  if (document.activeElement.id == "apdu") {
+    if (e.code == "Enter" || e.keyCode == 13) {
+      send_apdu();
+    }
+  } else {
+    // Only send buttons when the APDU input does not have the focus
+    if (e.code == "ArrowDown" || e.keyCode == 40) {
+      click_button("both");
+    } else if (e.code == "ArrowLeft" || e.keyCode == 37) {
+      click_button("left");
+    } else if (e.code == "ArrowRight" || e.keyCode == 39) {
+      click_button("right");
+    }
   }
 }
 
