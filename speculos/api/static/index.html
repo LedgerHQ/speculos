@@ -9,6 +9,11 @@ body {
   background-color: #eee;
 }
 
+body.dark-mode {
+  background-color: #121212;
+  color: #00fffb;
+}
+
 .main {
   /* center to the middle of the screen */
   display: flex;
@@ -34,12 +39,21 @@ body {
 .container-textarea {
   display: inline-block;
   padding: 10px;
-  color: #000;
 }
 
 textarea, input {
+  background-color: inherit;
   border-radius: 4px;
   border-color: #888;
+  color: inherit;
+}
+
+body.dark-mode input {
+  background-color: #222;
+}
+
+body.dark-mode textarea {
+  background-color: #222;
 }
 
 .container-device {
@@ -68,9 +82,18 @@ textarea, input {
   padding-left: 10px;
 }
 
+body.dark-mode .button-device {
+  background-color: #00fffb;
+  color: black;
+}
+
 a {
   color: #41ccb4;
   font-weight: bold;
+}
+
+body.dark-mode a {
+  color: inherit;
 }
 
 .buttons {
@@ -86,6 +109,14 @@ a {
 }
 
 .button-send {
+}
+
+body.dark-mode .button-send {
+  background-color: #00fffb;
+  color: black;
+  font-weight: bold;
+  border-color: #41ccb4;
+  border-radius: 4px;
 }
 
 .input-apdu-container {
@@ -111,6 +142,10 @@ a {
   width: 100%;
   background-color: #fff;
   border-top: solid 1px #888;
+}
+
+body.dark-mode .footer {
+  background-color: #121212;
 }
     </style>
     <script>
@@ -190,6 +225,8 @@ function on_keydown(e) {
       click_button("left");
     } else if (e.code == "ArrowRight" || e.keyCode == 39) {
       click_button("right");
+    } else if (e.code == "KeyD" || e.keyCode == 68) {
+      document.body.classList.toggle("dark-mode");
     }
   }
 }
