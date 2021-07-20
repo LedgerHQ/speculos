@@ -197,13 +197,11 @@ function stream_events() {
 
 function on_keydown(e) {
   e = e || window.event;
-  if (e.keyCode == '38') {
+  if (e.code == "ArrowDown" || e.keyCode == 38) {
     click_button("both");
-  }
-  if (e.keyCode == '37') {
+  } else if (e.code == "ArrowLeft" || e.keyCode == 37) {
     click_button("left");
-  }
-  else if (e.keyCode == '39') {
+  } else if (e.code == "ArrowRight" || e.keyCode == 39) {
     click_button("right");
   }
 }
