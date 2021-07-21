@@ -14,8 +14,6 @@
 int emulate_2_0(unsigned long syscall, unsigned long *parameters,
                 unsigned long *ret, bool verbose)
 {
-  int retid;
-
   switch (syscall) {
     /* clang-format off */
 
@@ -278,8 +276,9 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
              unsigned char *, privateKey);
 
   default:
-    retid = emulate_common(syscall, parameters, ret, verbose);
+    emulate_common(syscall, parameters, ret, verbose);
     break;
   }
-  return retid;
+  /* retid is no longer used in SDK 2.0 */
+  return 0;
 }
