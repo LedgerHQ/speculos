@@ -13,7 +13,9 @@ else ()
   add_compile_options(-mthumb)
   message(STATUS "Using default compiler ${CMAKE_C_COMPILER}")
 endif ()
-add_link_options(-static)
+
+# add_link_options(-static) should be used but was introduced into CMake version 3.13
+set(CMAKE_EXE_LINKER_FLAGS -static)
 
 enable_testing()
 
