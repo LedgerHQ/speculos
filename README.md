@@ -1,9 +1,9 @@
 # Speculos
 
-![screenshot btc nano s](docs/screenshot-btc-nanos.png)
-
 [![codecov](https://codecov.io/gh/LedgerHQ/speculos/branch/master/graph/badge.svg)](https://codecov.io/gh/LedgerHQ/speculos)
 [![lgtm](https://img.shields.io/lgtm/alerts/g/LedgerHQ/speculos.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/LedgerHQ/speculos/alerts/)
+
+![screenshot btc nano s](docs/screenshot-api-nanos-btc.png)
 
 The goal of this project is to emulate Ledger Nano S, Nano X and Blue apps on
 standard desktop computers, without any hardware device. More information can
@@ -11,8 +11,12 @@ be found here in the
 [documentation website](https://ledgerhq.github.io/speculos) (or in the
 [docs/ folder](docs/) directly).
 
-Usage example: `./speculos.py apps/btc.elf`.
+Usage example:
 
+```shell
+./speculos.py apps/btc.elf
+# ... and open a browser on http://127.0.0.1:5000
+```
 
 ## Bugs and contributions
 
