@@ -25,6 +25,8 @@ jobs:
     steps:
     - name: Clone
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Lint C code
       uses: DoozyX/clang-format-lint-action@v0.11
