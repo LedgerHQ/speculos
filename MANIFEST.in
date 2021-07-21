@@ -1,3 +1,6 @@
+include CMakeLists.txt
+recursive-include sdk *.h
+recursive-include src *.c *.h *.txt
 include speculos/api/resources/*.schema
 include speculos/api/static/index.html
 include speculos/api/static/swagger/*.css

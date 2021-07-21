@@ -45,7 +45,7 @@ setup(
     name="speculos",
     author="Ledger",
     author_email="hello@ledger.fr",
-    version="0.0.1",
+    version="0.1.0",
     url="https://github.com/LedgerHQ/speculos",
     python_requires=">=3.6.0",
     description="Ledger Blue and Nano S/X application emulator",
