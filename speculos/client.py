@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from PIL import Image, ImageChops
-from typing import Generator, Tuple
+from typing import Generator, List, Optional, Tuple
 import json
 import logging
 import requests
@@ -28,7 +28,7 @@ def screenshot_equal(path1: str, path2: str) -> bool:
 
 
 class ApduException(Exception):
-    def __init__(self, sw=0x6F00) -> None:
+    def __init__(self, sw: int = 0x6F00) -> None:
         self.sw = sw
 
     def __str__(self) -> str:
@@ -59,7 +59,7 @@ class Api:
         assert stream.status_code == 200
         return stream
 
-    def get_next_event(self):
+    def get_next_event(self) -> dict:
         line = self.stream.raw.readline()
         event = json.loads(line)
         assert event
@@ -74,13 +74,13 @@ class Api:
                 break
         return event
 
-    def press_and_release(self, button: str):
+    def press_and_release(self, button: str) -> None:
         assert button in ["left", "right", "both"]
         data = {"action": "press-and-release"}
         with self.session.post(f"{self.api_url}/button/{button}", json=data) as response:
             assert response.status_code == 200
 
-    def finger_touch(self, x: int, y: int):
+    def finger_touch(self, x: int, y: int) -> None:
         data = {"action": "press-and-release", "x": x, "y": y}
         with self.session.post(f"{self.api_url}/finger", json=data) as response:
             assert response.status_code == 200
@@ -99,16 +99,16 @@ class Api:
     def _apdu_exchange_async(self, data: bytes) -> requests.Response:
         return self.session.post(f"{self.api_url}/apdu", json={"data": data.hex()}, stream=True)
 
-    def set_automation_rules(self, rules: dict):
+    def set_automation_rules(self, rules: dict) -> None:
         with self.session.post(f"{self.api_url}/automation", json=rules) as response:
             assert response.status_code == 200
 
 
 class SpeculosInstance:
-    def __init__(self, app: str, args=[]) -> None:
+    def __init__(self, app: str, args: List[str] = []) -> None:
         self.app = app
         self.args = args
-        self.process = None
+        self.process: Optional[subprocess.Popen] = None
 
         if "--display" not in self.args:
             self.args += ["--display", "headless"]
@@ -119,7 +119,7 @@ class SpeculosInstance:
             n = self.args.index("--api-port")
             self.port = int(self.args[n])
 
-    def _wait_until_ready(self):
+    def _wait_until_ready(self) -> None:
         connected = False
         for i in range(0, 20):
             try:
@@ -134,13 +134,13 @@ class SpeculosInstance:
 
         s.close()
 
-    def start(self):
-        cmd = ["python3", "-m", "speculos.main"] + self.args + [self.app]
+    def start(self) -> None:
+        cmd = ["python3", "-m", "speculos"] + self.args + [self.app]
         logger.info(f"starting speculos with command: {' '.join(cmd)}")
         self.process = subprocess.Popen(cmd)
         self._wait_until_ready()
 
-    def stop(self):
+    def stop(self) -> None:
         logger.info("stopping speculos")
         if self.process is None:
             return
@@ -155,22 +155,22 @@ class SpeculosInstance:
 
         self.process = None
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.stop()
 
 
 class SpeculosClient(Api, SpeculosInstance):
-    def __init__(self, app: str, args=[], api_url="http://127.0.0.1:5000") -> None:
+    def __init__(self, app: str, args: List[str] = [], api_url: str = "http://127.0.0.1:5000") -> None:
         SpeculosInstance.__init__(self, app, args)
-        self.start()
+        SpeculosInstance.start(self)
         Api.__init__(self, api_url)
 
-    def apdu_exchange(self, cla: int, ins: int, data=b"", p1=0, p2=0) -> bytes:
+    def apdu_exchange(self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0) -> bytes:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
         return Api._apdu_exchange(self, apdu)
 
     @contextmanager
-    def apdu_exchange_async(self, cla: int, ins: int, data=b"", p1=0, p2=0) -> Generator[ApduResponse, None, None]:
+    def apdu_exchange_async(self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0) -> Generator[ApduResponse, None, None]:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
         response = None
         try:
