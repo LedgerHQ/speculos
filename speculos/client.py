@@ -12,8 +12,38 @@ logger = logging.getLogger("speculos-client")
 logger.setLevel(logging.INFO)
 
 
+class ApduException(Exception):
+    def __init__(self, sw: int = 0x6F00) -> None:
+        self.sw = sw
+
+    def __str__(self) -> str:
+        return f"Exception: invalid status 0x{self.sw:x}"
+
+
+class ClientException(Exception):
+    pass
+
+
+def check_status_code(response: requests.Response, url: str) -> None:
+    if response.status_code != 200:
+        raise ClientException(f"HTTP request on {url} failed, status={response.status_code}, error={response.content}")
+
+
+class ApduResponse:
+    def __init__(self, response: requests.Response) -> None:
+        self.response = response
+
+    def receive(self) -> bytes:
+        check_status_code(self.response, "/apdu")
+        data, status = split_apdu(bytes.fromhex(self.response.json()["data"]))
+        if status != 0x9000:
+            raise ApduException(status)
+        return data
+
+
 def split_apdu(data: bytes) -> Tuple[bytes, int]:
-    assert len(data) >= 2
+    if len(data) < 2:
+        raise ClientException(f"APDU response length is shorter than 2 ({data})")
     status = int.from_bytes(data[-2:], "big")
     return data[:-2], status
 
@@ -27,26 +57,6 @@ def screenshot_equal(path1: str, path2: str) -> bool:
     return diff_img.getbbox() is None
 
 
-class ApduException(Exception):
-    def __init__(self, sw: int = 0x6F00) -> None:
-        self.sw = sw
-
-    def __str__(self) -> str:
-        return f"Exception: invalid status 0x{self.sw:x}"
-
-
-class ApduResponse:
-    def __init__(self, response: requests.Response) -> None:
-        self.response = response
-
-    def receive(self) -> bytes:
-        assert self.response.status_code == 200
-        data, status = split_apdu(bytes.fromhex(self.response.json()["data"]))
-        if status != 0x9000:
-            raise ApduException(status)
-        return data
-
-
 class Api:
     def __init__(self, api_url: str) -> None:
         self.api_url = api_url
@@ -56,13 +66,14 @@ class Api:
 
     def _open_stream(self) -> requests.Response:
         stream = self.session.get(f"{self.api_url}/events?stream=true", stream=True)
-        assert stream.status_code == 200
+        check_status_code(stream, "/events")
         return stream
 
     def get_next_event(self) -> dict:
         line = self.stream.raw.readline()
         event = json.loads(line)
-        assert event
+        if not isinstance(event, dict):
+            raise ClientException(f"Invalid event ({event})")
         return event
 
     def wait_for_text_event(self, text: str) -> dict:
@@ -78,17 +89,16 @@ class Api:
         assert button in ["left", "right", "both"]
         data = {"action": "press-and-release"}
         with self.session.post(f"{self.api_url}/button/{button}", json=data) as response:
-            assert response.status_code == 200
+            check_status_code(response, f"/button/{button}")
 
     def finger_touch(self, x: int, y: int) -> None:
         data = {"action": "press-and-release", "x": x, "y": y}
         with self.session.post(f"{self.api_url}/finger", json=data) as response:
-            assert response.status_code == 200
+            check_status_code(response, "/finger")
 
     def get_screenshot(self) -> bytes:
         with self.session.get(f"{self.api_url}/screenshot") as response:
-            assert response.status_code == 200
-            assert response.headers["Content-Type"] == "image/png"
+            check_status_code(response, "/screenshot")
             return response.content
 
     def _apdu_exchange(self, data: bytes) -> bytes:
@@ -101,7 +111,7 @@ class Api:
 
     def set_automation_rules(self, rules: dict) -> None:
         with self.session.post(f"{self.api_url}/automation", json=rules) as response:
-            assert response.status_code == 200
+            check_status_code(response, "/automation")
 
 
 class SpeculosInstance:
@@ -130,7 +140,7 @@ class SpeculosInstance:
                 time.sleep(0.1)
 
         if not connected:
-            raise f"Failed to connect to the speculos instance on port {self.port}"
+            raise ClientException(f"Failed to connect to the speculos instance on port {self.port}")
 
         s.close()
 
