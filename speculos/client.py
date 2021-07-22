@@ -51,7 +51,7 @@ class Api:
     def __init__(self, api_url: str) -> None:
         self.api_url = api_url
         self.timeout = 2000
-        self.session = requests.session()
+        self.session = requests.Session()
         self.stream = self._open_stream()
 
     def _open_stream(self) -> requests.Response:

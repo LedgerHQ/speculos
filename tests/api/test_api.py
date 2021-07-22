@@ -74,7 +74,7 @@ class TestApi:
         times.
         """
 
-        with requests.session() as r:
+        with requests.Session() as r:
             with r.get(f"{API_URL}/events?stream=true", stream=True) as stream:
                 assert stream.status_code == 200
 
