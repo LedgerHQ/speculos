@@ -49,7 +49,7 @@ def test_btc_get_public_key_with_user_approval(client, app):
     bip32_path = bytes.fromhex("8000002C80000000800000000000000000000000")
     payload = bytes([len(bip32_path) // 4]) + bip32_path
 
-    with client.apdu_exchange_async(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01) as response:
+    with client.apdu_exchange_nowait(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01) as response:
         if app.model == "blue":
             client.wait_for_text_event("CONFIRM ACCOUNT")
         else:

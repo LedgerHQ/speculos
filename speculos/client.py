@@ -96,7 +96,7 @@ class Api:
             apdu_response = ApduResponse(response)
             return apdu_response.receive()
 
-    def _apdu_exchange_async(self, data: bytes) -> requests.Response:
+    def _apdu_exchange_nowait(self, data: bytes) -> requests.Response:
         return self.session.post(f"{self.api_url}/apdu", json={"data": data.hex()}, stream=True)
 
     def set_automation_rules(self, rules: dict) -> None:
@@ -170,11 +170,12 @@ class SpeculosClient(Api, SpeculosInstance):
         return Api._apdu_exchange(self, apdu)
 
     @contextmanager
-    def apdu_exchange_async(self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0) -> Generator[ApduResponse, None, None]:
+    def apdu_exchange_nowait(self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0) \
+            -> Generator[ApduResponse, None, None]:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
         response = None
         try:
-            response = Api._apdu_exchange_async(self, apdu)
+            response = Api._apdu_exchange_nowait(self, apdu)
             yield ApduResponse(response)
         finally:
             if response:
