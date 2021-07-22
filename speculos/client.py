@@ -5,6 +5,7 @@ import json
 import logging
 import requests
 import socket
+import sys
 import subprocess
 import time
 
@@ -145,7 +146,7 @@ class SpeculosInstance:
         s.close()
 
     def start(self) -> None:
-        cmd = ["python3", "-m", "speculos"] + self.args + [self.app]
+        cmd = [sys.executable or "python3", "-m", "speculos"] + self.args + [self.app]
         logger.info(f"starting speculos with command: {' '.join(cmd)}")
         self.process = subprocess.Popen(cmd)
         self._wait_until_ready()
