@@ -156,7 +156,7 @@ def setup_logging(args):
             sys.exit(1)
 
 
-def main():
+def main(prog=None):
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
@@ -200,6 +200,8 @@ def main():
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
 
+    if prog:
+        parser.prog = prog
     args = parser.parse_args()
     args.model.lower()
 
@@ -327,7 +329,3 @@ def main():
     screen.run()
 
     s2.close()
-
-
-if __name__ == '__main__':
-    main()
