@@ -25,7 +25,9 @@ class ClientException(Exception):
 
 def check_status_code(response: requests.Response, url: str) -> None:
     if response.status_code != 200:
-        raise ClientException(f"HTTP request on {url} failed, status={response.status_code}, error={response.content!r}")
+        raise ClientException(
+            f"HTTP request on {url} failed, status={response.status_code}, error={response.content!r}"
+        )
 
 
 class ApduResponse:
@@ -179,8 +181,9 @@ class SpeculosClient(Api, SpeculosInstance):
         return Api._apdu_exchange(self, apdu)
 
     @contextmanager
-    def apdu_exchange_nowait(self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0) \
-            -> Generator[ApduResponse, None, None]:
+    def apdu_exchange_nowait(
+        self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0
+    ) -> Generator[ApduResponse, None, None]:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
         response = None
         try:
