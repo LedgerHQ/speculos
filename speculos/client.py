@@ -27,7 +27,7 @@ class ClientException(Exception):
 
 def check_status_code(response: requests.Response, url: str) -> None:
     if response.status_code != 200:
-        raise ClientException(f"HTTP request on {url} failed, status={response.status_code}, error={response.content}")
+        raise ClientException(f"HTTP request on {url} failed, status={response.status_code}, error={response.content!r}")
 
 
 class ApduResponse:
@@ -44,7 +44,7 @@ class ApduResponse:
 
 def split_apdu(data: bytes) -> Tuple[bytes, int]:
     if len(data) < 2:
-        raise ClientException(f"APDU response length is shorter than 2 ({data})")
+        raise ClientException(f"APDU response length is shorter than 2 ({data!r})")
     status = int.from_bytes(data[-2:], "big")
     return data[:-2], status
 
