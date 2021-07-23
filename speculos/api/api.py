@@ -256,7 +256,9 @@ class Screenshot(Resource):
         image = Image.frombytes("RGB", screen_size, data)
         iobytes = io.BytesIO()
         image.save(iobytes, format="PNG")
-        return Response(iobytes.getvalue(), mimetype="image/png")
+        response = Response(iobytes.getvalue(), mimetype="image/png")
+        response.headers.add("Cache-control", "no-cache,no-store")
+        return response
 
 
 class Swagger(Resource):
