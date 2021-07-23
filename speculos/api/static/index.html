@@ -195,18 +195,13 @@ function refresh_screen() {
 }
 
 function stream_events() {
-  var http = new XMLHttpRequest();
-  http.open("GET", "/events?stream=true", true);
-  http.onreadystatechange = function() {
-    if (http.readyState == 3) {
-      refresh_screen();
-      var data = http.response.substr(http.seenBytes);
-      var element = document.getElementById("events");
-      element.value += data;
-      element.scrollTop = element.scrollHeight;
-    }
-  }
-  http.send();
+  var source = new EventSource('/events?stream=true');
+  var element = document.getElementById("events");
+  source.onmessage = function (event) {
+    refresh_screen();
+    element.value += event.data + "\n";
+    element.scrollTop = element.scrollHeight;
+  };
 }
 
 function on_keydown(e) {

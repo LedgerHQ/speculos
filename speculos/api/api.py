@@ -153,8 +153,10 @@ class EventClient:
 
                 while self.events:
                     event = self.events.pop(0)
-                    data = json.dumps(event).encode()
-                    yield data + b"\n"
+                    data = json.dumps(event)
+                    # Format the event as specified in the specification:
+                    # https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream
+                    yield f"data: {data}\n\n".encode()
         finally:
             events.remove_client(self)
 
