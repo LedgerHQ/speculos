@@ -15,10 +15,8 @@ logger.setLevel(logging.INFO)
 
 class ApduException(Exception):
     def __init__(self, sw: int = 0x6F00) -> None:
+        super().__init__(f"Exception: invalid status 0x{sw:x}")
         self.sw = sw
-
-    def __str__(self) -> str:
-        return f"Exception: invalid status 0x{self.sw:x}"
 
 
 class ClientException(Exception):
