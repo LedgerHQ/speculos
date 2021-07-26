@@ -92,10 +92,10 @@ class TextWidget(FrameBuffer):
         self.stdscr.addstr(0, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
         self.stdscr.addstr(self.height//2, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
         self.stdscr.refresh()
+        self.screenshot_update_pixels()
 
     def draw_point(self, x, y, color):
         self.pixels[(x, y)] = color
-        self.screenshot_update_pixels()
 
 
 class TextScreen(Display):
