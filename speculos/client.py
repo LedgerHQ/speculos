@@ -128,7 +128,7 @@ class SpeculosInstance:
             self.port = 5000
         else:
             n = self.args.index("--api-port")
-            self.port = int(self.args[n])
+            self.port = int(self.args[n + 1])
 
     def _wait_until_ready(self) -> None:
         connected = False
