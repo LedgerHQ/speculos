@@ -57,7 +57,7 @@ def app(request, client):
 
 
 def get_apps(name):
-    # retrieve the list of apps in the ../apps directory
+    """Retrieve the list of apps in the ../apps directory."""
     app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
     apps = list_apps_to_test(app_dir)
     apps = [app for app in apps if app.name == name]
@@ -72,6 +72,14 @@ def default_btc_app():
 
 
 def idfn(app):
+    """
+    Set the test ID to the app file name for each test running on a set of apps.
+
+    From https://docs.pytest.org/en/6.2.x/example/parametrize.html#different-options-for-test-ids:
+
+      These IDs can be used with -k to select specific cases to run, and they will
+      also identify the specific case when one is failing.
+    """
     return os.path.basename(app.filepath)
 
 
