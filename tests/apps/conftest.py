@@ -83,8 +83,10 @@ def idfn(app):
     return os.path.basename(app.filepath)
 
 
-def client_instance(app, additional_args=[]):
-    args = ["--model", app.model, "--sdk", app.sdk] + additional_args
+def client_instance(app, additional_args=None):
+    args = ["--model", app.model, "--sdk", app.sdk]
+    if additional_args is not None:
+        args += additional_args
     return SpeculosClient(app.filepath, args=args)
 
 
