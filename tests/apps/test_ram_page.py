@@ -1,9 +1,12 @@
-class TestRamPage:
-    '''Tests for Vault app.'''
+"""Tests for Vault app."""
 
-    app_names = ["ram-page"]
+import pytest
 
-    def test_access_ram_page(self, app):
-        app.run(headless=True)
-        response, status = app.exchange(bytes.fromhex("e0010000"))
-        assert status == 0x9000
+
+@pytest.fixture(scope="module")
+def client(client_ram_page):
+    return client_ram_page
+
+
+def test_access_ram_page(client):
+    client.apdu_exchange(0xe0, 0x01, b"")

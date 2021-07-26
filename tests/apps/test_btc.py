@@ -4,95 +4,82 @@
 Tests to ensure that speculos launches correctly the BTC apps.
 '''
 
-import binascii
+import json
+import io
 import os
 import pkg_resources
 import pytest
 
+from enum import IntEnum
 
-from .utils import Vnc
+import speculos.client
 
-
-class TestBtc:
-    """Tests for Bitcoin app."""
-
-    app_names = ['btc']
-
-    @staticmethod
-    def get_automation_path(name):
-        path = os.path.join("resources", name)
-        path = pkg_resources.resource_filename(__name__, path)
-        return f"file:{path}"
-
-    def test_btc_get_version(self, app):
-        """Send a get_version APDU to the BTC app."""
-        app.run()
-        packet = binascii.unhexlify("E0C4000000")
-        data, status = app.exchange(packet)
-        assert status == 0x9000
-
-    def test_btc_get_public_key_with_user_approval(self, app, finger_client):
-        if app.model != "blue":
-            pytest.skip("Device not supported")
-
-        app.run(finger_port=1236, headless=True)
-
-        finger_client.eventsLoop = ["220,440,1", "220,440,0"]  # x,y,pressed
-        finger_client.start()
-
-        bip32_path = bytes.fromhex(
-            "8000002C" + "80000000" + "80000000" + "00000000" + "00000000"
-        )
-        payload = bytes([len(bip32_path) // 4]) + bip32_path
-        apdu = bytes.fromhex("e0400100") + bytes([len(payload)]) + payload
-
-        response, status = app.exchange(apdu)
-        assert status == 0x9000
-
-    def test_btc_automation(self, app):
-        """Retrieve the pubkey, which requires a validation"""
-
-        if app.revision == "00000000" and app.model == "nanos":
-            pytest.skip("unsupported get pubkey ux for this app version")
-
-        args = ['--automation', TestBtc.get_automation_path(f'btc_getpubkey_{app.model}.json')]
-        app.run(args=args)
-
-        packet = binascii.unhexlify('e040010115058000003180000000800000000000000000000000')
-        data, status = app.exchange(packet)
-        assert status == 0x9000
-
-    def test_vnc_no_password(self, app):
-        port = 5900
-        args = ["--vnc-port", f"{port}"]
-        app.run(args=args)
-
-        vnc = Vnc(port)
-        vnc.auth()
-
-    def test_vnc_with_password(self, app):
-        password = "secret"
-        port = 5900
-        args = ["--vnc-port", f"{port}", "--vnc-password", password]
-        app.run(args=args)
-
-        vnc = Vnc(port)
-        vnc.auth(password)
+CLA = 0xE0
 
 
-class TestBtcTestnet:
-    """Tests for Bitcoin Testnet app."""
+class Ins(IntEnum):
+    GET_PUBLIC_KEY = 0x40
+    GET_VERSION = 0xC4
 
-    app_names = ['btc-test']
 
-    def test_btc_lib(self, app):
-        # assumes that the Bitcoin version of the app also exists.
-        btc_app = app.path.replace("btc-test", "btc")
-        assert os.path.exists(btc_app)
+@pytest.fixture(scope="module")
+def client(client_btc):
+    return client_btc
 
-        args = ["-l", "Bitcoin:%s" % btc_app]
-        app.run(args=args)
 
-        packet = binascii.unhexlify('E0C4000000')
-        data, status = app.exchange(packet)
-        assert status == 0x9000
+def read_automation_rules(name):
+    path = os.path.join("resources", name)
+    path = pkg_resources.resource_filename(__name__, path)
+    with open(path, "rb") as fp:
+        rules = json.load(fp)
+    return rules
+
+
+def test_btc_get_version(client):
+    """Send a get_version APDU to the BTC app."""
+    client.apdu_exchange(CLA, Ins.GET_VERSION, b"")
+
+
+def test_btc_get_public_key_with_user_approval(client, app):
+    """Ask for the public key, compare screenshots and press reject."""
+
+    if app.model == "nanos" and app.hash == "00000000":
+        pytest.skip(f"skipped on model {app.model} because of animated text")
+
+    bip32_path = bytes.fromhex("8000002C80000000800000000000000000000000")
+    payload = bytes([len(bip32_path) // 4]) + bip32_path
+
+    with client.apdu_exchange_nowait(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01) as response:
+        if app.model == "blue":
+            client.wait_for_text_event("CONFIRM ACCOUNT")
+        else:
+            event = client.wait_for_text_event("Address")
+            while "Reject" not in event["text"]:
+                client.press_and_release("right")
+                event = client.get_next_event()
+
+        screenshot = client.get_screenshot()
+        path = pkg_resources.resource_filename(__name__, f"resources/btc_getpubkey_{app.model}.png")
+        assert speculos.client.screenshot_equal(path, io.BytesIO(screenshot))
+
+        if app.model == "blue":
+            client.finger_touch(110, 440)
+        else:
+            client.press_and_release("both")
+
+        with pytest.raises(speculos.client.ApduException) as e:
+            response.receive()
+        assert e.value.sw == 0x6985
+
+
+def test_btc_automation(client, app):
+    """Retrieve the pubkey, which requires a validation"""
+
+    if app.model == "nanos" and app.hash == "00000000":
+        pytest.skip(f"skipped on model {app.model} and revision {app.hash}")
+
+    rules = read_automation_rules(f"btc_getpubkey_{app.model}.json")
+    client.set_automation_rules(rules)
+
+    payload = bytes.fromhex("058000003180000000800000000000000000000000")
+    client.apdu_exchange(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01, p2=0x01)

@@ -144,6 +144,7 @@ class SeProxyHal:
         self.printf_queue = ''
         self.automation = automation
         self.automation_server = automation_server
+        self.events = []
 
         self.status_event = threading.Event()
         self.packet_thread = PacketThread(self.s, self.status_event)
@@ -207,9 +208,10 @@ class SeProxyHal:
                 else:
                     assert False
 
-    def apply_automation(self, events):
-        for event in events:
+    def apply_automation(self):
+        for event in self.events:
             self.apply_automation_helper(event)
+        self.events = []
 
     def _close(self, s, screen):
         screen.remove_notifier(self.s.fileno())
@@ -241,16 +243,23 @@ class SeProxyHal:
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
         if tag & 0xf0 == SephTag.GENERAL_STATUS or tag == SephTag.PRINTC_STATUS:
-            events = []
+
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     if screen.screen_update():
                         if screen.model == "nanox":
-                            events = self.nanox_ocr.get_events()
+                            self.events += self.nanox_ocr.get_events()
+
+                    # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
+                    # screen to be updated before broadcasting the events.
+                    if self.events:
+                        self.apply_automation()
 
             elif tag == SephTag.SCREEN_DISPLAY_STATUS:
                 self.logger.debug(f"DISPLAY_STATUS {data!r}")
                 events = screen.display_status(data)
+                if events:
+                    self.events += events
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
 
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
@@ -288,10 +297,6 @@ class SeProxyHal:
 
             # signal the sending thread that a status has been received
             self.status_event.set()
-
-            # apply automation rules after having replied to the app
-            if events:
-                self.apply_automation(events)
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)

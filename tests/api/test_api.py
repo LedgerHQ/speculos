@@ -3,10 +3,9 @@ import os
 import pkg_resources
 import pytest
 import requests
-import subprocess
-import time
-
 from collections import namedtuple
+
+from speculos.client import SpeculosClient
 
 AppInfo = namedtuple("AppInfo", ["filepath", "device", "name", "version", "hash"])
 
@@ -14,48 +13,8 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 API_URL = "http://127.0.0.1:5000"
 
 
-class App:
-    def __init__(self, app_info: AppInfo):
-        self.path = app_info.filepath
-        self.process = None
-        self.name = app_info.name
-        self.model = app_info.device
-        self.sdk = app_info.version
-
-    def run(self, headless=True, args=[]):
-        """Launch an app."""
-
-        # if the app is already running, do nothing
-        if self.process:
-            return
-
-        cmd = [os.path.join(SCRIPT_DIR, "..", "..", "speculos.py")]
-        cmd += args
-        if headless:
-            cmd += ["--display", "headless"]
-        cmd += ["--model", self.model]
-        cmd += ["--sdk", self.sdk]
-        cmd += [self.path]
-
-        print("[*]", cmd)
-        self.process = subprocess.Popen(cmd)
-        time.sleep(1)
-
-    def stop(self):
-        # if the app has already quit, do nothing
-        if not self.process:
-            return
-
-        if self.process.poll() is None:
-            self.process.terminate()
-            time.sleep(0.2)
-        if self.process.poll() is None:
-            self.process.kill()
-        self.process.wait()
-
-
 @pytest.fixture(scope="class")
-def app(request):
+def client(request):
     """Run the API tests on the default btc.elf app."""
 
     app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
@@ -63,12 +22,14 @@ def app(request):
     info = [filepath] + os.path.basename(filepath).split("#")
     info = AppInfo(*info)
 
-    _app = App(info)
-    _app.run()
-    yield _app
-    _app.stop()
+    args = ["--model", info.device, "--sdk", info.version]
+
+    _client = SpeculosClient(app=filepath, args=args)
+    yield _client
+    _client.stop()
 
 
+@pytest.mark.usefixtures("client")
 class TestApi:
     @staticmethod
     def get_automation_data(name):
@@ -78,17 +39,17 @@ class TestApi:
             data = fp.read()
         return data
 
-    def test_automation_valid(self, app):
+    def test_automation_valid(self):
         data = TestApi.get_automation_data("automation.json")
         with requests.post(f"{API_URL}/automation", data=data) as response:
             assert response.status_code == 200
             assert response.json() == {}
 
-    def test_automation_invalid_path(self, app):
+    def test_automation_invalid_path(self):
         with requests.post(f"{API_URL}/automation", data=b"file:/etc/passwd") as response:
             assert response.status_code == 400
 
-    def test_automation_invalid_json(self, app):
+    def test_automation_invalid_json(self):
         with requests.post(f"{API_URL}/automation", data=b"x") as response:
             assert response.status_code == 400
 
@@ -98,22 +59,22 @@ class TestApi:
         with requests.post(f"{API_URL}/button/{button}", data=data) as response:
             assert response.status_code == 200
 
-    def test_button(self, app):
+    def test_button(self):
         for button in ["right", "left", "both"]:
             TestApi.press_button(button)
 
-    def test_finger(self, app):
+    def test_finger(self):
         data = json.dumps({"x": 0, "y": 0, "action": "press-and-release"}).encode()
         with requests.post(f"{API_URL}/finger", data=data) as response:
             assert response.status_code == 200
 
-    def test_events(self, app):
+    def test_events(self):
         """
         Read a stream of events while pressing the button 'right' and left 3
         times.
         """
 
-        with requests.session() as r:
+        with requests.Session() as r:
             with r.get(f"{API_URL}/events?stream=true", stream=True) as stream:
                 assert stream.status_code == 200
 
@@ -136,20 +97,20 @@ class TestApi:
             with r.get(f"{API_URL}/events") as response:
                 assert json.loads(response.content) == {"events": []}
 
-    def test_screenshot(self, app):
+    def test_screenshot(self):
         with requests.get(f"{API_URL}/screenshot") as response:
             assert response.status_code == 200
             assert response.headers["Content-Type"] == "image/png"
             assert response.content.startswith(b"\x89PNG")
 
-    def test_apdu(self, app):
+    def test_apdu(self):
         # Send GET_RANDOM APDU to get 16 bytes of random
         with requests.post(f"{API_URL}/apdu", json={"data": "e0c0000010"}) as response:
             assert response.status_code == 200
             data = bytes.fromhex(response.json()["data"])
             assert len(data) == 18 and data[-2:] == b"\x90\x00"
 
-    def test_apdu_invalid_data(self, app):
+    def test_apdu_invalid_data(self):
         with requests.post(f"{API_URL}/apdu", json={"data": "xyz"}) as response:
             assert response.status_code == 400
         with requests.post(f"{API_URL}/apdu") as response:  # Missing data field

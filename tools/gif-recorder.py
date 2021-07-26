@@ -23,7 +23,7 @@ def record_images(api_url):
     logging.info("press CTRL-C to stop recording")
 
     try:
-        with requests.session() as session:
+        with requests.Session() as session:
             with session.get(f"{api_url}/events?stream=true", stream=True) as stream:
                 while True:
                     image = take_screenshot(session, api_url)

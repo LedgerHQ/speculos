@@ -1,3 +1,4 @@
+import pytest
 import socket
 import time
 
@@ -30,3 +31,20 @@ class Vnc:
             assert data == b"\x01\x01"
         else:
             assert data == b"\x01\x02"
+
+
+@pytest.fixture(scope="function")
+def client(client_vnc):
+    return client_vnc
+
+
+@pytest.mark.additional_args("--vnc-port", "5900")
+def test_vnc_no_password(client):
+    vnc = Vnc(5900)
+    vnc.auth()
+
+
+@pytest.mark.additional_args("--vnc-port", "5900", "--vnc-password", "secret")
+def test_vnc_with_password(client):
+    vnc = Vnc(5900)
+    vnc.auth("secret")
