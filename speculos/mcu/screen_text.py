@@ -94,9 +94,6 @@ class TextWidget(FrameBuffer):
         self.stdscr.refresh()
         self.screenshot_update_pixels()
 
-    def draw_point(self, x, y, color):
-        self.pixels[(x, y)] = color
-
 
 class TextScreen(Display):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
