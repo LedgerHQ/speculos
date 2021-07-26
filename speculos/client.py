@@ -116,9 +116,12 @@ class Api:
 
 
 class SpeculosInstance:
-    def __init__(self, app: str, args: List[str] = []) -> None:
+    def __init__(self, app: str, args: Optional[List[str]] = None) -> None:
         self.app = app
-        self.args = args
+        if args is None:
+            self.args: List[str] = []
+        else:
+            self.args = list(args)
         self.process: Optional[subprocess.Popen] = None
 
         if "--display" not in self.args:
