@@ -191,24 +191,23 @@ function send_apdu() {
 
 function refresh_screen() {
   var element = document.getElementById("screenshot");
-  element.src = "/screenshot?nocache=" + Date.now();
-  element.width = element.naturalWidth * 2;
-  element.height = element.naturalHeight * 2;
+  /* 
+   * A new event might be received while the current request to /screenshot
+   * isn't finished. The browser doesn't make a new request and the resulting
+   * screenshot is outdated. Appending Date.now() forces the browser to cancel
+   * the current request and make a new one.
+   */
+  element.src = "/screenshot?force=" + Date.now();
 }
 
 function stream_events() {
-  var http = new XMLHttpRequest();
-  http.open("GET", "/events?stream=true", true);
-  http.onreadystatechange = function() {
-    if (http.readyState == 3) {
-      refresh_screen();
-      var data = http.response.substr(http.seenBytes);
-      var element = document.getElementById("events");
-      element.value += data;
-      element.scrollTop = element.scrollHeight;
-    }
-  }
-  http.send();
+  var source = new EventSource('/events?stream=true');
+  var element = document.getElementById("events");
+  source.onmessage = function (event) {
+    refresh_screen();
+    element.value += event.data + "\n";
+    element.scrollTop = element.scrollHeight;
+  };
 }
 
 function on_keydown(e) {
@@ -231,7 +230,14 @@ function on_keydown(e) {
   }
 }
 
+function zoom_screenshot() {
+  var element = document.getElementById("screenshot");
+  element.width = element.naturalWidth * 2;
+  element.height = element.naturalHeight * 2;
+}
+
 function main() {
+  zoom_screenshot();
   refresh_screen();
   stream_events();
   document.onkeydown = on_keydown;

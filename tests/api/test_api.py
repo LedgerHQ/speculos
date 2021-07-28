@@ -2,6 +2,7 @@ import json
 import os
 import pkg_resources
 import pytest
+import re
 import requests
 from collections import namedtuple
 
@@ -74,19 +75,42 @@ class TestApi:
         times.
         """
 
+        def get_next_event(stream):
+            """
+            Return the next event.
+
+            A subset of the event stream format is recognized by this function
+            and the event is expected to be encoded in JSON.
+            """
+
+            data = b""
+            while True:
+                line = stream.raw.readline()
+                if line == b"\n":
+                    break
+                assert line.startswith(b"data: ")
+                data += line[6:]
+            event = json.loads(data)
+            assert isinstance(event, dict)
+            return event
+
         with requests.Session() as r:
             with r.get(f"{API_URL}/events?stream=true", stream=True) as stream:
                 assert stream.status_code == 200
 
+                texts = [("Settings",), ("Version", ".*"), ("Quit",)]
                 for i in range(0, 3):
                     TestApi.press_button("right")
-                    data = stream.raw.readline()
-                    assert json.loads(data)
+                    for text in texts[i]:
+                        event = get_next_event(stream)
+                        assert re.match(text, event["text"])
 
+                texts = [("Version", ".*"), ("Settings",), ("Application", "is ready")]
                 for i in range(0, 3):
                     TestApi.press_button("left")
-                    data = stream.raw.readline()
-                    assert json.loads(data)
+                    for text in texts[i]:
+                        event = get_next_event(stream)
+                        assert re.match(text, event["text"])
 
             with r.get(f"{API_URL}/events") as response:
                 assert json.loads(response.content)

@@ -71,10 +71,25 @@ class Api:
         return stream
 
     def get_next_event(self) -> dict:
-        line = self.stream.raw.readline()
-        event = json.loads(line)
+        """
+        A subset of the event stream format is recognized by this function and the event is expected to be encoded in
+        JSON.
+
+        https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream
+        """
+        data = b""
+        while True:
+            line = self.stream.raw.readline()
+            if line == b"\n":
+                break
+            if not line.startswith(b"data: "):
+                raise ClientException(f"unexpected stream event line ({line!r})")
+            data += line[6:]
+
+        event = json.loads(data)
         if not isinstance(event, dict):
             raise ClientException(f"Invalid event ({event})")
+
         return event
 
     def wait_for_text_event(self, text: str) -> dict:
