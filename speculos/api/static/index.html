@@ -191,7 +191,13 @@ function send_apdu() {
 
 function refresh_screen() {
   var element = document.getElementById("screenshot");
-  element.src = "/screenshot";
+  /* 
+   * A new event might be received while the current request to /screenshot
+   * isn't finished. The browser doesn't make a new request and the resulting
+   * screenshot is outdated. Appending Date.now() forces the browser to cancel
+   * the current request and make a new one.
+   */
+  element.src = "/screenshot?force=" + Date.now();
 }
 
 function stream_events() {
