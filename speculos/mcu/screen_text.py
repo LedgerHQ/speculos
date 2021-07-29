@@ -69,14 +69,16 @@ class TextWidget(FrameBuffer):
         color = self.pixels.get((x, y), 0)
         return int(color != 0)
 
+    def update(self):
+        if self.pixels != self.previous_screen:
+            self._redraw()
+            self.previous_screen = self.pixels.copy()
+            return True
+        return False
+
     def _redraw(self):
-        if self.pixels == self.previous_screen:
-            return False
-
-        self.previous_screen = self.pixels.copy()
-
         self.stdscr.clear()
-        for i in range(0, self.height-2, 2):
+        for i in range(0, self.height, 2):
             line = []
             for j in range(0, self.width-2, 2):
                 a = self.get_pixel(j, i)
@@ -90,11 +92,8 @@ class TextWidget(FrameBuffer):
             self.stdscr.addstr(1 + i//2, self.width//2 + 1, ' ', curses.color_pair(2))
 
         self.stdscr.addstr(0, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
-        self.stdscr.addstr(self.height//2, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
+        self.stdscr.addstr(self.height//2+1, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
         self.stdscr.refresh()
-
-    def draw_point(self, x, y, color):
-        self.pixels[(x, y)] = color
         self.screenshot_update_pixels()
 
 
@@ -126,7 +125,7 @@ class TextScreen(Display):
         self.bagl.display_raw_status(data)
 
     def screen_update(self) -> bool:
-        return self.m._redraw()
+        return self.bagl.refresh()
 
     def get_keypress(self):
         key = self.m.stdscr.getch()
