@@ -14,9 +14,10 @@ logger.setLevel(logging.INFO)
 
 
 class ApduException(Exception):
-    def __init__(self, sw: int = 0x6F00) -> None:
+    def __init__(self, sw: int, data: bytes) -> None:
         super().__init__(f"Exception: invalid status 0x{sw:x}")
         self.sw = sw
+        self.data = data
 
 
 class ClientException(Exception):
@@ -38,7 +39,7 @@ class ApduResponse:
         check_status_code(self.response, "/apdu")
         data, status = split_apdu(bytes.fromhex(self.response.json()["data"]))
         if status != 0x9000:
-            raise ApduException(status)
+            raise ApduException(status, data)
         return data
 
 
