@@ -68,7 +68,7 @@ def test_btc_get_public_key_with_user_approval(client, app):
             client.press_and_release("both")
 
         with pytest.raises(speculos.client.ApduException) as e:
-            response.receive()
+            response.data()
         assert e.value.sw == 0x6985
 
 
