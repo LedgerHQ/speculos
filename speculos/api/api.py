@@ -23,7 +23,7 @@ api = Api(app)
 automation_events = []
 
 
-class Events:
+class EventsBroadcaster:
     """This used to be the 'Automation Server'."""
 
     def __init__(self):
@@ -48,7 +48,7 @@ class Events:
             self.condition.notify_all()
 
 
-events = Events()
+events = EventsBroadcaster()
 
 
 class ApiRunner:
@@ -206,7 +206,7 @@ class Finger(Resource):
         return {}, 200
 
 
-class APDU:
+class APDUBridge:
     def __init__(self):
         # We want to be notified when APDU response is transmitted from the SE
         self.endpoint_lock = threading.Lock()
@@ -235,7 +235,7 @@ class APDU:
             self.response_condition.notify()
 
 
-apdu = APDU()
+apdu = APDUBridge()
 
 
 class APDU(Resource):
