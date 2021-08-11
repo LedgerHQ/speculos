@@ -92,11 +92,8 @@ def client_instance(app, additional_args=None):
 
 @pytest.fixture(scope="module", params=get_apps("btc"), ids=idfn)
 def client_btc(request):
-    _client = client_instance(request.param)
-    try:
+    with client_instance(request.param) as _client:
         yield _client
-    finally:
-        _client.stop()
 
 
 @pytest.fixture(scope="module", params=get_apps("btc-test"), ids=idfn)
@@ -106,20 +103,14 @@ def client_btc_testnet(request):
     assert os.path.exists(btc_app)
     args = ["-l", "Bitcoin:%s" % btc_app]
 
-    _client = client_instance(request.param, additional_args=args)
-    try:
+    with client_instance(request.param, additional_args=args) as _client:
         yield _client
-    finally:
-        _client.stop()
 
 
 @pytest.fixture(scope="module", params=get_apps("ram-page"), ids=idfn)
 def client_ram_page(request):
-    _client = client_instance(request.param)
-    try:
+    with client_instance(request.param) as _client:
         yield _client
-    finally:
-        _client.stop()
 
 
 @pytest.fixture(scope="function", params=default_btc_app(), ids=idfn)
@@ -130,8 +121,5 @@ def client_vnc(request):
     else:
         get_closest_marker = request.node.get_marker
     args = list(get_closest_marker("additional_args").args)
-    _client = client_instance(request.param, args)
-    try:
+    with client_instance(request.param, args) as _client:
         yield _client
-    finally:
-        _client.stop()

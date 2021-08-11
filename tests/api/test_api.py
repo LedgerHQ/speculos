@@ -25,9 +25,8 @@ def client(request):
 
     args = ["--model", info.device, "--sdk", info.version]
 
-    _client = SpeculosClient(app=filepath, args=args)
-    yield _client
-    _client.stop()
+    with SpeculosClient(app=filepath, args=args) as _client:
+        yield _client
 
 
 @pytest.mark.usefixtures("client")

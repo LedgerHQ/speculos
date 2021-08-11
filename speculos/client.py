@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from PIL import Image, ImageChops
-from typing import Generator, List, Optional, Tuple
+from typing import Generator, List, Optional, Tuple, Type
+from types import TracebackType
 import json
 import logging
 import requests
@@ -64,12 +65,16 @@ class Api:
         self.api_url = api_url
         self.timeout = 2000
         self.session = requests.Session()
-        self.stream = self._open_stream()
+        self.stream = None
 
-    def _open_stream(self) -> requests.Response:
-        stream = self.session.get(f"{self.api_url}/events?stream=true", stream=True)
-        check_status_code(stream, "/events")
-        return stream
+    def open_stream(self) -> None:
+        assert self.stream is None
+        self.stream = self.session.get(f"{self.api_url}/events?stream=true", stream=True)
+        check_status_code(self.stream, "/events")
+
+    def close_stream(self) -> None:
+        self.stream.close()
+        self.stream = None
 
     def get_next_event(self) -> dict:
         """
@@ -185,15 +190,36 @@ class SpeculosInstance:
 
         self.process = None
 
-    def __del__(self) -> None:
-        self.stop()
-
 
 class SpeculosClient(Api, SpeculosInstance):
     def __init__(self, app: str, args: List[str] = [], api_url: str = "http://127.0.0.1:5000") -> None:
         SpeculosInstance.__init__(self, app, args)
-        SpeculosInstance.start(self)
         Api.__init__(self, api_url)
+
+    def start(self) -> None:
+        """
+        Start speculos to emulate the application. `stop` must be called to ensure proper
+        termination of speculos.
+        Note that context `with` statement can be used with `SpeculosClient` instance instead of
+        using `start` and `stop` methods.
+        """
+        SpeculosInstance.start(self)
+        self.open_stream()
+
+    def stop(self) -> None:
+        """ Terminate speculos instance started with `start` method. """
+        self.close_stream()
+        SpeculosInstance.stop(self)
+
+    def __enter__(self) -> "SpeculosClient":
+        self.start()
+        return self
+
+    def __exit__(
+        self, exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]
+    ) -> None:
+        self.stop()
 
     def apdu_exchange(self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0) -> bytes:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
