@@ -90,6 +90,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
+    app_path = app_path.replace('\\', '/')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
