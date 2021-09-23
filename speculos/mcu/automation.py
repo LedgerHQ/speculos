@@ -21,7 +21,7 @@ class Automation:
 
         if document.startswith("file:"):
             path = document[5:]
-            with open(path) as fp:
+            with open(path) as fp:  # lgtm [py/path-injection]
                 self.json = json.load(fp)
         else:
             self.json = json.loads(document)
