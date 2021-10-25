@@ -269,7 +269,7 @@ cx_err_t sys_cx_ecpoint_double_scalarmul_bn(cx_ecpoint_t *ec_R,
                                             cx_ecpoint_t *ec_Q,
                                             const cx_bn_t bn_k,
                                             const cx_bn_t bn_r);
-// cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool
-// *is_on_curve);
+cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P,
+                                    bool *is_on_curve);
 cx_err_t sys_cx_ecpoint_is_at_infinity(const cx_ecpoint_t *ec_P,
                                        bool *is_infinite);
