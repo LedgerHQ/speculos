@@ -5,6 +5,7 @@ typedef enum {
   SDK_NANO_S_1_5,
   SDK_NANO_S_1_6,
   SDK_NANO_S_2_0,
+  SDK_NANO_S_2_1,
   SDK_BLUE_2_2_5,
   SDK_COUNT
 } sdk_version_t;

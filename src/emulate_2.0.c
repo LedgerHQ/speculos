@@ -137,6 +137,9 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     SYSCALL2(cx_ecpoint_is_at_infinity, "(%p, %p)", void *, ec_P, bool *,
              is_infinite);
 
+    SYSCALL2(cx_ecpoint_is_on_curve, "(%p, %p)", void *, ec_P, bool *,
+             is_on_curve);
+
     SYSCALL0(cx_bn_is_locked);
 
     SYSCALL2(cx_bn_lock, "(%u %u)", size_t, word_nbytes, uint32_t, flags);

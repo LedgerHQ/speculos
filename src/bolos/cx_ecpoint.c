@@ -587,3 +587,44 @@ cx_err_t sys_cx_ecpoint_is_at_infinity(const cx_ecpoint_t *ec_P,
 end:
   return error;
 }
+
+cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool *is_on_curve)
+{
+  cx_err_t error = CX_INTERNAL_ERROR;
+  cx_mpi_ecpoint_t P;
+  int nid;
+  EC_POINT *point;
+  BN_CTX *ctx;
+  int res = 0;
+
+  EC_GROUP *group = NULL;
+  *is_on_curve = false;
+
+  CX_CHECK(cx_mpi_ecpoint_from_ecpoint(&P, ec_P));
+
+  if ((nid = cx_nid_from_curve(ec_P->curve)) >= 0) {
+    group = EC_GROUP_new_by_curve_name(nid);
+  }
+  if (group != NULL) {
+    point = EC_POINT_new(group);
+
+    if (point != NULL) {
+      ctx = cx_get_bn_ctx();
+
+      if (ctx != NULL) {
+        if (EC_POINT_set_affine_coordinates(group, point, P.x, P.y, ctx) == 1) {
+          res = EC_POINT_is_on_curve(group, point, ctx);
+        }
+      }
+    }
+  }
+  if (res == -1) {
+    return CX_EC_INVALID_POINT;
+  }
+  if (res) {
+    *is_on_curve = true;
+  }
+
+end:
+  return error;
+}

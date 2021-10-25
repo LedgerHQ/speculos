@@ -55,7 +55,7 @@ struct memory_s {
 };
 
 static char *sdkmap[SDK_COUNT] = {
-  "1.2", "1.5", "1.6", "2.0", "blue-2.2.5",
+  "1.2", "1.5", "1.6", "2.0", "2.1", "blue-2.2.5",
 };
 
 static struct memory_s memory;
@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
   switch (model) {
   case MODEL_NANO_S:
     if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_NANO_S_1_6 &&
-        sdk_version != SDK_NANO_S_2_0) {
+        sdk_version != SDK_NANO_S_2_0 && sdk_version != SDK_NANO_S_2_1) {
       errx(1, "invalid SDK version for the Ledger Nano S");
     }
     break;
@@ -563,7 +563,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (sdk_version == SDK_NANO_S_2_0) {
+  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1) {
     if (load_cxlib(cxlib_path) != 0) {
       return 1;
     }
