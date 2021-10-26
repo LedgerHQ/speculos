@@ -17,6 +17,26 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
   switch (syscall) {
     /* clang-format off */
 
+  SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
+           int,                  x,
+           int,                  y,
+           unsigned int,         width,
+           unsigned int,         height,
+           unsigned int,         color_count,
+           const unsigned int *, colors,
+           unsigned int,         bit_per_pixel,
+           const uint8_t *,      bitmap,
+           unsigned int,         bitmap_length_bits);
+
+  SYSCALL5(bagl_hal_draw_rect, "(0x%08x, %d, %d, %u, %u)",
+           unsigned int, color,
+           int,          x,
+           int,          y,
+           unsigned int, width,
+           unsigned int, height);
+
+  SYSCALL0(screen_update);
+
   SYSCALL0(get_api_level);
 
   SYSCALL2(cx_get_random_bytes, "(%p %u)",
@@ -250,6 +270,8 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     SYSCALL0(os_flags);
 
     SYSCALL2(os_version, "(%p, %u)", uint8_t *, buffer, size_t, length);
+    SYSCALL2(os_serial, "(%p, %u)", unsigned char *, serial, unsigned int,
+             maxlength);
 
     SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)", unsigned int,
              tag, uint8_t *, buffer, size_t, length);

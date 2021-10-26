@@ -24,15 +24,12 @@
 #define GIT_REVISION "00000000"
 #endif
 
-#define CX_ADDR   ((void *)0x00120000)
-#define CX_SIZE   0x8000
-#define CX_OFFSET 0x10000
+#define CX_ADDR_NANOS ((void *)0x00120000)
+#define CX_ADDR_NANOX ((void *)0x00210000)
+#define CX_SIZE       0x8000
+#define CX_OFFSET     0x10000
 
-typedef enum {
-  MODEL_NANO_S,
-  MODEL_NANO_X,
-  MODEL_BLUE,
-} hw_model_t;
+typedef enum { MODEL_NANO_S, MODEL_NANO_X, MODEL_BLUE, MODEL_COUNT } hw_model_t;
 
 struct elf_info_s {
   unsigned long load_offset;
@@ -54,9 +51,18 @@ struct memory_s {
   size_t data_size;
 };
 
-static char *sdkmap[SDK_COUNT] = {
-  "1.2", "1.5", "1.6", "2.0", "2.1", "blue-2.2.5",
+typedef struct model_sdk_s {
+  hw_model_t model;
+  char *sdk;
+} MODEL_SDK;
+
+static MODEL_SDK sdkmap[SDK_COUNT] = {
+  { MODEL_NANO_X, "1.2" }, { MODEL_NANO_X, "2.0" },     { MODEL_NANO_S, "1.5" },
+  { MODEL_NANO_S, "1.6" }, { MODEL_NANO_S, "2.0" },     { MODEL_NANO_S, "2.1" },
+  { MODEL_BLUE, "1.5" },   { MODEL_BLUE, "blue-2.2.5" }
 };
+
+static char *model_name[MODEL_COUNT] = { "nanos", "nanox", "blue" };
 
 static struct memory_s memory;
 static struct app_s apps[MAX_APP];
@@ -306,7 +312,7 @@ error:
   return NULL;
 }
 
-static int load_cxlib(char *cxlib_path)
+static int load_cxlib(hw_model_t model, char *cxlib_path)
 {
   // First, try to open the cx.elf file specified (could be the one by default):
   int fd = open(cxlib_path, O_RDONLY);
@@ -331,14 +337,16 @@ static int load_cxlib(char *cxlib_path)
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ | PROT_EXEC;
-  void *p = mmap(CX_ADDR, CX_SIZE, prot, flags, fd, CX_OFFSET);
+  void *cx_addr = (model == MODEL_NANO_S) ? CX_ADDR_NANOS : CX_ADDR_NANOX;
+
+  void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, CX_OFFSET);
   if (p == MAP_FAILED) {
     warn("mmap cxlib");
     close(fd);
     return -1;
   }
 
-  if (patch_svc(CX_ADDR, CX_SIZE) != 0) {
+  if (patch_svc(cx_addr, CX_SIZE) != 0) {
     if (munmap(p, CX_SIZE) != 0) {
       warn("munmap");
     }
@@ -452,13 +460,15 @@ static int load_apps(int argc, char *argv[])
   return 0;
 }
 
-static sdk_version_t str2sdkver(char *arg)
+static sdk_version_t str2sdkver(hw_model_t model, char *arg)
 {
   sdk_version_t version;
 
-  for (version = SDK_NANO_X_1_2; version < SDK_COUNT; version++) {
-    if (strcmp(sdkmap[version], arg) == 0) {
-      fprintf(stderr, "[*] using SDK version %s\n", sdkmap[version]);
+  for (version = 0; version < SDK_COUNT; version++) {
+    if (sdkmap[version].model == model &&
+        strcmp(sdkmap[version].sdk, arg) == 0) {
+      fprintf(stderr, "[*] using SDK version %s on %s\n", sdkmap[version].sdk,
+              model_name[model]);
       break;
     }
   }
@@ -483,12 +493,14 @@ static void usage(char *argv0)
 int main(int argc, char *argv[])
 {
   char *cxlib_path = NULL;
-  hw_model_t model = MODEL_NANO_S;
+  hw_model_t model;
   int opt;
 
   trace_syscalls = false;
-  sdk_version = SDK_NANO_S_1_5;
+  // Nano S with SDK 2.0 by default:
+  sdk_version = SDK_NANO_S_2_0;
   model = MODEL_NANO_S;
+  char *sdk = sdkmap[SDK_NANO_S_2_0].sdk;
 
   extra_rampage_addr = NULL;
   extra_rampage_size = 0;
@@ -501,7 +513,7 @@ int main(int argc, char *argv[])
       cxlib_path = optarg;
       break;
     case 'k':
-      sdk_version = str2sdkver(optarg);
+      sdk = optarg;
       break;
     case 't':
       trace_syscalls = true;
@@ -533,6 +545,8 @@ int main(int argc, char *argv[])
     usage(argv[0]);
   }
 
+  sdk_version = str2sdkver(model, sdk);
+
   if (sdk_version == SDK_COUNT) {
     errx(1, "invalid SDK version");
   }
@@ -545,14 +559,17 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_NANO_X:
-    if (sdk_version != SDK_NANO_X_1_2) {
+    if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
   case MODEL_BLUE:
-    if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_BLUE_2_2_5) {
+    if (sdk_version != SDK_BLUE_1_5 && sdk_version != SDK_BLUE_2_2_5) {
       errx(1, "invalid SDK version for the Ledger Blue");
     }
+    break;
+  default:
+    usage(argv[0]);
     break;
   }
 
@@ -563,8 +580,9 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1) {
-    if (load_cxlib(cxlib_path) != 0) {
+  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
+      sdk_version == SDK_NANO_X_2_0) {
+    if (load_cxlib(model, cxlib_path) != 0) {
       return 1;
     }
   }
