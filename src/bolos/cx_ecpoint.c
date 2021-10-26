@@ -588,6 +588,7 @@ end:
   return error;
 }
 
+// This only supports SECP256K1, SECP256R1 and SECP384R1 for now due to openssl
 cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool *is_on_curve)
 {
   cx_err_t error = CX_INTERNAL_ERROR;
