@@ -5,7 +5,8 @@
 #include "emulate.h"
 #include "svc.h"
 
-#define OS_SETTING_PLANEMODE 5
+#define OS_SETTING_PLANEMODE_OLD 5
+#define OS_SETTING_PLANEMODE_NEW 6
 
 #define BOLOS_TAG_APPNAME    0x01
 #define BOLOS_TAG_APPVERSION 0x02
@@ -41,13 +42,15 @@ unsigned long sys_os_perso_isonboarded(void)
 unsigned long sys_os_setting_get(unsigned int setting_id,
                                  uint8_t *UNUSED(value), size_t UNUSED(maxlen))
 {
-  switch (setting_id) {
-  case OS_SETTING_PLANEMODE:
+  // Since Nano X SDK 2.0 & Nano S SDK 2.1, OS_SETTING_PLANEMODE is 6!
+  if (sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_S_2_1) {
+    if (setting_id == OS_SETTING_PLANEMODE_NEW) {
+      return 1;
+    }
+  } else if (setting_id == OS_SETTING_PLANEMODE_OLD) {
     return 1;
-  default:
-    fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
-    break;
   }
+  fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
 
   return 0;
 }

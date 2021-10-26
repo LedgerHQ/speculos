@@ -55,6 +55,7 @@ void test_os_global_pin_is_validated(void **UNUSED(state))
   struct testcase_s testcases[] = {
     { SDK_NANO_X_1_2, SYSCALL_PIN_1_2, BOLOS_UX_OK_1_2 },
     { SDK_NANO_S_1_5, SYSCALL_PIN_1_5, BOLOS_UX_OK_1_5 },
+    { SDK_BLUE_1_5, SYSCALL_PIN_1_5, BOLOS_UX_OK_1_5 },
     { SDK_NANO_S_1_6, SYSCALL_PIN_1_6, BOLOS_UX_OK_1_6 },
   };
 

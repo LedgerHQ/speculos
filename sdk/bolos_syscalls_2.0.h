@@ -80,13 +80,13 @@
 #define SYSCALL_cx_ecpoint_scalarmul_bn_ID_IN 0x600111f0UL
 #define SYSCALL_cx_ecpoint_rnd_scalarmul_ID_IN 0x6001274dUL
 #define SYSCALL_cx_ecpoint_rnd_scalarmul_bn_ID_IN 0x60012889UL
+#define SYSCALL_cx_ecpoint_rnd_fixed_scalarmul_ID_IN 0x6001293cUL
 #define SYSCALL_cx_ecpoint_double_scalarmul_ID_IN 0x600148a8UL
 #define SYSCALL_cx_ecpoint_double_scalarmul_bn_ID_IN 0x60014a9dUL
 #define SYSCALL_cx_ecpoint_cmp_ID_IN 0x6000fbc5UL
 #define SYSCALL_cx_ecpoint_is_on_curve_ID_IN 0x6000fcc5UL
 #define SYSCALL_cx_ecpoint_is_at_infinity_ID_IN 0x60014babUL
 #define SYSCALL_cx_crc32_hw_ID_IN 0x60010271UL
-#define SYSCALL_cx_ecpoint_rnd_fixed_scalarmul_ID_IN 0x6001293cUL
 #define SYSCALL_cx_get_random_bytes_ID_IN 0x60010775
 #define SYSCALL_cx_trng_get_random_data_ID_IN 0x60010676UL
 #define SYSCALL_os_perso_erase_all_ID_IN 0x60004bf5UL
@@ -152,5 +152,8 @@
 #define SYSCALL_os_deny_protected_flash_ID_IN 0x60009134UL
 #define SYSCALL_os_allow_protected_ram_ID_IN 0x60009269UL
 #define SYSCALL_os_deny_protected_ram_ID_IN 0x600093e9UL
+#define SYSCALL_screen_update_ID_IN 0x60007af3UL
+#define SYSCALL_bagl_hal_draw_bitmap_within_rect_ID_IN 0x60007ca0UL
+#define SYSCALL_bagl_hal_draw_rect_ID_IN 0x60007da4UL
 
 #define SYSCALL_PARAMETER_ARRAY_MAX_LEN 11

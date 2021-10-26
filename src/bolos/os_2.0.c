@@ -35,3 +35,14 @@ unsigned int sys_os_perso_seed_cookie(unsigned char *seed_cookie
 {
   return 0;
 }
+
+unsigned int sys_os_serial(unsigned char *serial, unsigned int maxlength)
+{
+  char *sn = "1.2.3.4";
+  size_t size = strlen(sn);
+  if (maxlength < size) {
+    size = maxlength;
+  }
+  memcpy(serial, sn, size);
+  return size;
+}
