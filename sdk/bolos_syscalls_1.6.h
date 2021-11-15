@@ -9,8 +9,6 @@
 #define SYSCALL_nvm_write_ID_OUT  0x900003bcUL
 #define SYSCALL_cx_rng_u8_ID_IN  0x600004c0UL
 #define SYSCALL_cx_rng_u8_ID_OUT  0x90000425UL
-#define SYSCALL_cx_rng_u32_ID_IN  0x600089ecUL
-#define SYSCALL_cx_rng_u32_ID_OUT  0x900089d4UL
 #define SYSCALL_cx_rng_ID_IN  0x6000052cUL
 #define SYSCALL_cx_rng_ID_OUT  0x90000567UL
 #define SYSCALL_cx_hash_ID_IN  0x6000073bUL
@@ -173,8 +171,8 @@
 #define SYSCALL_os_perso_derive_node_bip32_ID_OUT  0x9000531eUL
 #define SYSCALL_os_perso_derive_node_with_seed_key_ID_IN  0x6000a6d8UL
 #define SYSCALL_os_perso_derive_node_with_seed_key_ID_OUT  0x9000a604UL
-#define SYSCALL_os_perso_seed_cookie_ID_IN  0x6000a7d6UL
-#define SYSCALL_os_perso_seed_cookie_ID_OUT  0x9000a732UL
+#define SYSCALL_os_perso_seed_cookie_ID_IN 0x6000a8fcUL
+#define SYSCALL_os_perso_seed_cookie_ID_OUT 0x9000a877UL
 #define SYSCALL_os_endorsement_get_code_hash_ID_IN  0x6000550fUL
 #define SYSCALL_os_endorsement_get_code_hash_ID_OUT  0x900055a1UL
 #define SYSCALL_os_endorsement_get_public_key_ID_IN  0x600056f3UL

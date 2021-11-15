@@ -91,6 +91,8 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters,
            unsigned int,         out_len);
     /* clang-format on */
 
+    SYSCALL2(os_perso_seed_cookie, "(%p, %u)", void *, seed, size_t, seed_len);
+
   default:
     retid = emulate_common(syscall, parameters, ret, verbose);
     break;
