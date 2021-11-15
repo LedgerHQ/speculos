@@ -291,10 +291,8 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     SYSCALL2(nvm_erase, "(%p, %u)", void *, dst_addr, size_t, src_len);
 
     SYSCALL1(nvm_erase_page, "(%u)", unsigned int, page_addr);
-    /*
-        SYSCALL2(os_perso_seed_cookie, "(%p, %u)", void *, seed, size_t,
-       seed_len);
-    */
+
+    SYSCALL2(os_perso_seed_cookie, "(%p, %u)", void *, seed, size_t, seed_len);
 
     SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)", cx_curve_t, curve,
              const unsigned int *, path, unsigned int, pathLength,
