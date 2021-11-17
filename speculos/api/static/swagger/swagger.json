@@ -1,0 +1,410 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Speculos API",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:5000"
+    }
+  ],
+  "paths": {
+    "/apdu": {
+      "post": {
+        "summary": "Transmit APDU and return device response",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Apdu"
+              },
+              "example": {
+                "data": "e0c0000004"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Device response to the APDU command",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Apdu"
+                },
+                "example": {
+                  "data": "105e441f9000"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/automation": {
+      "post": {
+        "summary": "Updates the automation rules",
+        "externalDocs": {
+          "description": "More information about the automation feature and the rules format can be found in the speculos documentation.",
+          "url": "https://github.com/LedgerHQ/speculos/blob/master/docs/user/automation.md"
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "examples": {
+                "full-syntax": {
+                  "summary": "Regexp, conditions and actions",
+                  "value": {
+                    "version": 1,
+                    "rules": [
+                      {
+                        "text": "Application",
+                        "x": 35,
+                        "y": 3,
+                        "conditions": [
+                          [
+                            "seen",
+                            false
+                          ]
+                        ],
+                        "actions": [
+                          [
+                            "button",
+                            2,
+                            true
+                          ],
+                          [
+                            "button",
+                            2,
+                            false
+                          ],
+                          [
+                            "setbool",
+                            "seen",
+                            true
+                          ]
+                        ]
+                      },
+                      {
+                        "regexp": "\\d+",
+                        "actions": [
+                          [
+                            "exit"
+                          ]
+                        ]
+                      },
+                      {
+                        "actions": [
+                          [
+                            "setbool",
+                            "default_match",
+                            true
+                          ]
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "press-buttons": {
+                  "summary": "Press both button when the text \"Approve\" is displayed",
+                  "value": {
+                    "version": 1,
+                    "rules": [
+                      {
+                        "text": "Approve",
+                        "actions": [
+                          [
+                            "button",
+                            1,
+                            true
+                          ],
+                          [
+                            "button",
+                            2,
+                            true
+                          ],
+                          [
+                            "button",
+                            1,
+                            false
+                          ],
+                          [
+                            "button",
+                            2,
+                            false
+                          ]
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/button/{button}": {
+      "post": {
+        "summary": "Press or release a button (Nano S and Nano X)",
+        "parameters": [
+          {
+            "name": "button",
+            "in": "path",
+            "description": "Button to press",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "$ref": "#/components/schemas/ButtonName"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Button"
+              },
+              "examples": {
+                "button-press-and-release": {
+                  "summary": "Press and release the specified button",
+                  "value": {
+                    "action": "press-and-release"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          },
+          "400": {
+            "description": "invalid parameter"
+          }
+        }
+      }
+    },
+    "/events": {
+      "get": {
+        "summary": "Get the events produced by the app",
+        "parameters": [
+          {
+            "name": "stream",
+            "in": "query",
+            "description": "Stream the events instead of returning a list",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of events separated by line-returns",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "{\"text\": \"Application\", \"x\": 35, \"y\": 3}\\n{\"text\": \"is ready\", \"x\": 44, \"y\": 17}\\n{\"text\": \"Settings\", \"x\": 41, \"y\": 19}\\n"
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventList"
+                },
+                "example": {
+                  "events": [
+                    {
+                      "text": "Application",
+                      "x": 35,
+                      "y": 3
+                    },
+                    {
+                      "text": "is ready",
+                      "x": 44,
+                      "y": 17
+                    },
+                    {
+                      "text": "Settings",
+                      "x": 41,
+                      "y": 19
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Reset the list of events",
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/finger": {
+      "post": {
+        "summary": "Touch the screen (Blue)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Finger"
+              },
+              "examples": {
+                "finger-press-and-release": {
+                  "summary": "Press and release",
+                  "value": {
+                    "action": "press-and-release",
+                    "x": 10,
+                    "y": 25
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          },
+          "400": {
+            "description": "invalid parameter"
+          }
+        }
+      }
+    },
+    "/screenshot": {
+      "get": {
+        "summary": "Get a screenshot",
+        "responses": {
+          "200": {
+            "description": "Image in format PNG",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Apdu": {
+        "required": [
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "data": {
+            "pattern": "^([0-9a-fA-F]{2})+$",
+            "type": "string",
+            "description": "APDU data, in hexadecimal."
+          }
+        }
+      },
+      "Button": {
+        "required": [
+          "action"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Press, release or press and release the specified button(s).",
+            "enum": [
+              "press",
+              "release",
+              "press-and-release"
+            ]
+          },
+          "delay": {
+            "$ref": "#/components/schemas/Delay"
+          }
+        }
+      },
+      "ButtonName": {
+        "type": "string",
+        "enum": [
+          "left",
+          "right",
+          "both"
+        ]
+      },
+      "Delay": {
+        "type": "number",
+        "description": "Delay in seconds between press and release, ignored if action isn't `press-and-released`.",
+        "format": "float",
+        "default": 0.1
+      },
+      "EventList": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "Finger": {
+        "required": [
+          "action",
+          "x",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Press, release or press and release.",
+            "enum": [
+              "press",
+              "release",
+              "press-and-release"
+            ]
+          },
+          "x": {
+            "type": "integer",
+            "description": "Vertical position"
+          },
+          "y": {
+            "type": "integer",
+            "description": "Horizontal position"
+          },
+          "delay": {
+            "$ref": "#/components/schemas/Delay"
+          }
+        }
+      }
+    }
+  }
+}

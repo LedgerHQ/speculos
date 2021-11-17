@@ -5,7 +5,8 @@
 #include "emulate.h"
 #include "svc.h"
 
-#define OS_SETTING_PLANEMODE 5
+#define OS_SETTING_PLANEMODE_OLD 5
+#define OS_SETTING_PLANEMODE_NEW 6
 
 #define BOLOS_TAG_APPNAME    0x01
 #define BOLOS_TAG_APPVERSION 0x02
@@ -20,6 +21,7 @@
 struct libcall_s {
   struct app_s *app;
   struct sigcontext sigcontext;
+  try_context_t *trycontext;
 };
 
 static try_context_t *try_context;
@@ -40,13 +42,15 @@ unsigned long sys_os_perso_isonboarded(void)
 unsigned long sys_os_setting_get(unsigned int setting_id,
                                  uint8_t *UNUSED(value), size_t UNUSED(maxlen))
 {
-  switch (setting_id) {
-  case OS_SETTING_PLANEMODE:
+  // Since Nano X SDK 2.0 & Nano S SDK 2.1, OS_SETTING_PLANEMODE is 6!
+  if (sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_S_2_1) {
+    if (setting_id == OS_SETTING_PLANEMODE_NEW) {
+      return 1;
+    }
+  } else if (setting_id == OS_SETTING_PLANEMODE_OLD) {
     return 1;
-  default:
-    fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
-    break;
   }
+  fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
 
   return 0;
 }
@@ -103,6 +107,9 @@ unsigned long sys_os_lib_call(unsigned long *call_parameters)
     _exit(1);
   }
 
+  /* save current try_context of the caller */
+  libcalls[libcall_index].trycontext = try_context;
+
   /* save current app to restore it later */
   save_current_context(&libcalls[libcall_index].sigcontext);
   libcalls[libcall_index].app = get_current_app();
@@ -131,7 +138,7 @@ unsigned long sys_os_version(uint8_t *buffer, unsigned int len)
     if (len < kLen)
       return len;
     else
-      return kLen; // This mimick the real behaviour that does return the data
+      return kLen; // This mimics the real behaviour that does return the data
                    // without the '\0'
   }
 
@@ -169,6 +176,9 @@ unsigned long sys_os_lib_end(void)
   }
 
   replace_current_context(&libcalls[libcall_index].sigcontext);
+
+  /* restore try_context of the caller */
+  try_context = libcalls[libcall_index].trycontext;
 
   return 0;
 }

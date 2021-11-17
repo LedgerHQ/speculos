@@ -10,6 +10,7 @@ add_library(emu
         bolos/cx_ecpoint.c
         bolos/cx_ed25519.c
         bolos/cx_hmac.c
+        bolos/cx_hkdf.c
         bolos/cx_montgomery.c
         bolos/cx_mpi.c
         bolos/cx_ripemd160.c
@@ -31,6 +32,7 @@ add_library(emu
         bolos/os_1.6.c
         bolos/os_2.0.c
         bolos/os_bip32.c
+        bolos/os_eip2333.c
         bolos/cx.c
         bolos/cx_hash.c
         bolos/cx_math.c
@@ -47,5 +49,21 @@ add_dependencies(emu openssl)
 
 add_executable(launcher launcher.c)
 # ensure the loader .text section doesn't mess with cxlib
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Ttext-segment=0xff000000")
+if (CMAKE_C_COMPILER_ID MATCHES "(Apple)?[Cc]lang")
+  # Option for clang
+  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+    set_property(TARGET launcher APPEND PROPERTY LINK_OPTIONS "LINKER:--image-base=0xf0000000")
+  else()
+    set_property(TARGET launcher APPEND PROPERTY LINK_FLAGS "-Xlinker --image-base=0xf0000000")
+  endif ()
+elseif (CMAKE_C_COMPILER_ID MATCHES "GNU")
+  # Option for gcc
+  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
+    set_property(TARGET launcher APPEND PROPERTY LINK_OPTIONS "LINKER:-Ttext-segment=0xf0000000")
+  else()
+    set_property(TARGET launcher APPEND PROPERTY LINK_FLAGS "-Wl,-Ttext-segment=0xf0000000")
+  endif ()
+else ()
+  message(FATAL_ERROR "Unable to identify the compiler!")
+endif ()
 target_link_libraries(launcher PRIVATE emu)

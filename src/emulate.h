@@ -60,6 +60,7 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters,
                        unsigned long *ret, bool verbose);
 
 unsigned long sys_os_version(uint8_t *buffer, unsigned int len);
+unsigned int sys_os_serial(unsigned char *serial, unsigned int maxlength);
 unsigned long sys_os_seph_version(uint8_t *buffer, size_t len);
 unsigned long sys_os_lib_call(unsigned long *parameters);
 unsigned long sys_os_lib_end(void);

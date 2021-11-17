@@ -22,6 +22,7 @@ int emulate(unsigned long syscall, unsigned long *parameters,
   case SDK_NANO_X_1_2:
     retid = emulate_1_2(syscall, parameters, ret, verbose);
     break;
+  case SDK_BLUE_1_5:
   case SDK_NANO_S_1_5:
     retid = emulate_1_5(syscall, parameters, ret, verbose);
     break;
@@ -29,6 +30,8 @@ int emulate(unsigned long syscall, unsigned long *parameters,
     retid = emulate_1_6(syscall, parameters, ret, verbose);
     break;
   case SDK_NANO_S_2_0:
+  case SDK_NANO_S_2_1:
+  case SDK_NANO_X_2_0:
     retid = emulate_2_0(syscall, parameters, ret, verbose);
     break;
   case SDK_BLUE_2_2_5:
@@ -127,6 +130,13 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
            cx_ecfp_public_key_t *,  public_key,
            cx_ecfp_private_key_t *, private_key,
            int,                     keep_private);
+
+  SYSCALL5(cx_ecfp_generate_pair2, "(0x%x, %p, %p, %d, %d)",
+          cx_curve_t,              curve,
+          cx_ecfp_public_key_t *,  public_key,
+          cx_ecfp_private_key_t *, private_key,
+          int,                     keep_private,
+          cx_md_t,                 hashID);
 
   SYSCALL4(cx_ecfp_init_private_key, "(0x%x, %p, %u, %p)",
            cx_curve_t,              curve,

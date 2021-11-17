@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Speculos Web Interface</title>
+    <link rel="icon" type="image/png" sizes="225x225" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAADhCAMAAAAJbSJIAAAAgVBMVEUQJTT///8AAB7Lzc+PlZoAEyciM0EAFyp8gofR09UAHS4MIzIAAA4AESYAGCoAABMAABlFUFr4+fkABCCytrm8v8IACiIAABfq6+zEx8qhpqqBh41nbnUwP0tweH5ianGrr7MXKznd3+A+SlRQWmPi5OUsOkaUmZ4AAAUAAADw8PFvU0lGAAAEn0lEQVR4nO3da3OiMBSH8QNUbROugrTipdZa7fL9P+BirfVGhGRGzGn/z9udk+E3YGyH7C45V3oZF5NpMuufR5trU1WeuJi5TbNkOim88tq1kOoPhqN5L0qDgZCX9R6ahG7N1G0SYZBGcj7SFY5f/TyUpKiFUDV6m2SYRlNPQ7h4i8W1Ba0TbgvjftZSmMlUefd2WSms7qT7VvOwXgiXM7fBZ62wMsbJR5Pwwb/6fO6yVkgkouKqsHxP2yxjsZDIXQ3VwmWvxQ0ky4UUypMn9Vg4jho/gbvsFlY7zlO9MPNbAm0XkoyOvhsPwrHfegXbhRXxcBd/hE9tH1FiIKwe1J/P4l5YBu2BDIQk5X5H3Qvf2+2iuxgIKVydCh9ynWkOQnKLY+Gy/S6zjYWQoo8j4VrnGeUiFMlBuNC8IB5Cikc/wp7GPrqNiVC+7YWF1jZDbITkZt9CoXkL2QhlfyccaV8OFyHF3pdwpbeREiNhON0KS73vwm1shBRthQvdfYaTMB1Vwlfth5SRMJxXwmf9OT5CKR1axvpzfIQUlTTS/xhyEqYebQb6Y4yEQUFz/Y2GkzCc0Er3RzZiJRRTWv9uoUyMxjgJZ0ZjnIR9ozEIIewwCBVBCGGHQagIQgg7DEJFEELYYX9CODAoZiV8NKn2MK6twoZrNQvC7oIQQgjvH4QQQnj/IIQQwvsHIYQQ3j8IIYTw/kEIIYT3D0IIIbx/f0L4ZNLFPwJjs9A16HPCSWgSr/f4JkEIYYdBqAhCCDsMQkUQQthhECqCEMIOg1ARhBB2GISKIISwwyBUBCGEHQahIggh7DAIFUEIYYdBqAhCCDsMQkUQQthhECqCEMIOg1ARhHYJjc55Nwr/mSx7kwR5JjWd1S+NVr1Nt/n7FjYFIf8g5B+E/IOQfxDyD0L+Qcg/CPkHIf8g5B+E/IOQfxDyD0L+Qcg/ejBp3LDqh8mik6a3kpnJqhvqGfTc+A7402DVz6eGVR9jg1XNXo7f5j2+2yg0+I/urTqpACGEtUGoCEII64MQwtogVAQhhPVBCGFtf0IoDa6Fk3BGawMiJ2FCye8WiinNhf4YI+FgQhuDMUbCoKAs1x9jJEzHtIz1xxgJoxdyIv0xPkLZc8hZ6W81fIThvBIuAu05PsJ8VAlLX3uOj9Afbt+uJdqPKRuheP16f5iluoNshPF494Y00P3BjYtQvjk74UZ3r+EiTBffwmGueROZCKVwvoVOofmTGxOhm/0Inb7eTeQhFDPnIPT0vhN5CP3lkdB51NpsWAjT74vcn6dZ63ztcxCKd+dU+OJqfBQZCGWvPBNqfRTtF8pouZ86nPrK2hPtF/qHU1tH59oWrYm2C6WfHaaOT+5lfsvPouVCGR2fuzs5m+i57XZUu4UiOFno9PTly7rV96LVwvy9PJk6P1/62OZJtVgo/PNruzhB6/Wbf9OwVijd9fJ8quaMcJE3/UpsqVDmvcXlVN0p6OEmSK9uOVYKhSuKuinFOe8s8QM10j6hyP3VqH5KeZK9XKyiOB8IWfPEWiSUUgzy+Pl1Uaqmrp7VX2abeVLzCtUi4Xo134wudpfj/gO/lI+IYqIlLwAAAABJRU5ErkJggg==" />
+    <style>
+body {
+  display: block;
+  background-color: #eee;
+}
+
+body.dark-mode {
+  background-color: #121212;
+  color: #00fffb;
+}
+
+.main {
+  /* center to the middle of the screen */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 95vh;
+}
+
+.device {
+  text-align: center;
+  vertical-align: middle;
+  display: block;
+}
+
+.infos {
+  display: block;
+  text-align: center;
+  margin-bottom: 2.5em;
+}
+
+.container-textarea {
+  display: inline-block;
+  padding: 10px;
+}
+
+textarea, input {
+  background-color: #fff;
+  border-radius: 4px;
+  border-color: #888;
+  color: inherit;
+}
+
+body.dark-mode input {
+  background-color: #222;
+}
+
+body.dark-mode textarea {
+  background-color: #222;
+}
+
+.container-device {
+  display: inline-block;
+}
+
+.screenshot {
+  background-color: #111;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.button-device {
+  background-color: #41ccb4;
+  color: #fff;
+  font-weight: bold;
+  border-color: #41ccb4;
+  border-radius: 4px;
+  padding-top: 5px;
+  padding-right: 10px;
+  padding-bottom: 5px;
+  padding-left: 10px;
+}
+
+body.dark-mode .button-device {
+  background-color: #00fffb;
+  color: black;
+}
+
+a {
+  color: #41ccb4;
+  font-weight: bold;
+}
+
+body.dark-mode a {
+  color: inherit;
+}
+
+.buttons {
+  padding-top: 10px;
+}
+
+.send-apdu {
+  text-align: left;
+  width: 100%;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  display: flex;
+}
+
+.button-send {
+}
+
+body.dark-mode .button-send {
+  background-color: #00fffb;
+  color: black;
+  font-weight: bold;
+  border-color: #41ccb4;
+  border-radius: 4px;
+}
+
+.input-apdu-container {
+  display: inline-block;
+  flex-grow: 1;
+  padding-right: 5px;
+}
+
+.input-apdu {
+  min-width: 100%;
+  max-width: 100%;
+}
+
+.button-apdu {
+  display: inline-block;
+  padding-left: 5px;
+  float: right;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: #fff;
+  border-top: solid 1px #888;
+}
+
+body.dark-mode .footer {
+  background-color: #121212;
+}
+    </style>
+    <script>
+"use strict";
+
+function post_request(url, data, callback) {
+  var http = new XMLHttpRequest();
+  http.open("POST", url, true);
+  http.setRequestHeader("Content-type", "application/json");
+  http.onreadystatechange = function() {
+    if (http.readyState == 4 && http.status == 200 && callback !== null) {
+      callback(http);
+    }
+  }
+  http.send(JSON.stringify(data));
+}
+
+function click_button(button) {
+  post_request("/button/" + button, {"action": "press-and-release"}, null);
+}
+
+function add_apdu(data, received) {
+  var element = document.getElementById("apdus");
+  element.value += (received ? "<" : ">") + " " + data + "\n";
+  element.scrollTop = element.scrollHeight;
+}
+
+function send_apdu() {
+  var element = document.getElementById("apdu");
+  var apdu = element.value.replace(" ", "");
+  if (apdu == "") {
+    return;
+  }
+  add_apdu(apdu, true);
+  post_request("/apdu", {"data": apdu}, function (http) {
+    var data = JSON.parse(http.responseText)["data"];
+    add_apdu(data, false);
+  });
+  // Clear the command which was sent, to prevent from accidentally sending it twice.
+  // Users who want to send the same command several times can copy it again from the "APDUs" text area.
+  element.value = "";
+}
+
+function refresh_screen() {
+  var element = document.getElementById("screenshot");
+  /* 
+   * A new event might be received while the current request to /screenshot
+   * isn't finished. The browser doesn't make a new request and the resulting
+   * screenshot is outdated. Appending Date.now() forces the browser to cancel
+   * the current request and make a new one.
+   */
+  element.src = "/screenshot?force=" + Date.now();
+}
+
+function stream_events() {
+  var source = new EventSource('/events?stream=true');
+  var element = document.getElementById("events");
+  source.onmessage = function (event) {
+    refresh_screen();
+    element.value += event.data + "\n";
+    element.scrollTop = element.scrollHeight;
+  };
+}
+
+function on_keydown(e) {
+  e = e || window.event;
+  if (document.activeElement.id == "apdu") {
+    if (e.code == "Enter" || e.keyCode == 13) {
+      send_apdu();
+    }
+  } else {
+    // Only send buttons when the APDU input does not have the focus
+    if (e.code == "ArrowDown" || e.keyCode == 40) {
+      click_button("both");
+    } else if (e.code == "ArrowLeft" || e.keyCode == 37) {
+      click_button("left");
+    } else if (e.code == "ArrowRight" || e.keyCode == 39) {
+      click_button("right");
+    } else if (e.code == "KeyD" || e.keyCode == 68) {
+      document.body.classList.toggle("dark-mode");
+    }
+  }
+}
+
+function zoom_screenshot() {
+  var element = document.getElementById("screenshot");
+  element.width = element.naturalWidth * 2;
+  element.height = element.naturalHeight * 2;
+}
+
+function main() {
+  zoom_screenshot();
+  refresh_screen();
+  stream_events();
+  document.onkeydown = on_keydown;
+}
+    </script>
+  </head>
+  <body onLoad="main();">
+    <div class="main">
+      <div class="device">
+        <div class="container-device">
+          <div>
+            <img src="/screenshot" id="screenshot" class="screenshot" alt="Device screen" title="Device screen" />
+          </div>
+          <div class="buttons">
+            <button type="button" class="button-device" onClick="click_button('left');" title="Press the left button (&larr;)">&lt;&nbsp;left</button>
+            <button type="button" class="button-device" onClick="click_button('both');" title="Press both buttons (&darr;)">both</button>
+            <button type="button" class="button-device" onClick="click_button('right');" title="Press the right button (&rarr;)">right&nbsp;&gt;</button>
+          </div>
+        </div>
+      </div>
+      <div class="infos">
+        <div class="container-textarea">
+          <div class="send-apdu">
+            <div class="input-apdu-container">
+              <input type="text" class="input-apdu" placeholder="APDU (in hexadecimal)" id="apdu" title="Input data sent to the application" />
+            </div>
+            <div class="button-apdu">
+              <button type="button" class="button-send" onClick="send_apdu();">send</button>
+            </div>
+          </div>
+          <div>
+            <textarea id="apdus" readonly rows="20" cols="50" title="Data exchanged with the application"></textarea>
+            <p>APDUs</p>
+          </div>
+        </div>
+        <div class="container-textarea">
+          <textarea id="events" readonly rows="20" cols="50" title="Events received from the virtual device"></textarea>
+          <p>Events</p>
+        </div>
+      </div>
+      <div class="footer">
+        <p>
+Speculos (<a href="https://ledgerhq.github.io/speculos">documentation</a>, <a href="/swagger/">API</a>) is open source, please contribute on <a href="https://github.com/LedgerHQ/speculos">GitHub</a>.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

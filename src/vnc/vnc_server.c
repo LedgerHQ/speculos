@@ -214,6 +214,7 @@ static int load_seccomp(void)
     ALLOW_SYSCALL(mmap),
     ALLOW_SYSCALL(munmap),
     ALLOW_SYSCALL(prlimit64),
+    ALLOW_SYSCALL(pselect6),
     ALLOW_SYSCALL(read),
     ALLOW_SYSCALL(recvfrom),
     ALLOW_SYSCALL(rt_sigaction),

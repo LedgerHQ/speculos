@@ -4,7 +4,7 @@
 #
 # Prerequisite: a working speculos build.
 
-FROM python:3.8-slim
+FROM docker.io/library/python:3.9-slim
 
 ADD . /speculos
 WORKDIR /speculos

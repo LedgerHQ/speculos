@@ -25,14 +25,27 @@ jobs:
     steps:
     - name: Clone
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
-    - name: Lint
+    - name: Lint C code
       uses: DoozyX/clang-format-lint-action@v0.11
       with:
         source: 'src tests'
         extensions: 'c,h'
         clangFormatVersion: 11
         fail_ci_if_error: true
+
+    - name: Lint Python code
+      run: find . -type f -name '*.py' -exec flake8 --max-line-length=120 '{}' '+'
+
+    - name: Check misspellings
+      uses: codespell-project/actions-codespell@de089481bd65b71b4d02e34ffb3566b6d189333e
+      with:
+        builtin: clear,rare
+        check_filenames: true
+        ignore_words_file: .codespell-ignore
+        skip: ./speculos/api/static/swagger/swagger-ui.css,./speculos/api/static/swagger/swagger-ui-bundle.js,./speculos/api/static/swagger/swagger-ui-standalone-preset.js
 
     - name: Build
       run: |
@@ -44,18 +57,40 @@ jobs:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
         make -C build/ test
-        pytest
+        python3 -m pytest
 
-    - name: Publish to DockerHub
+    - name: Use pip to install speculos in a virtual environment
+      run: |
+        python3 -m venv venv-test
+        ./venv-test/bin/pip install .
+        ./venv-test/bin/speculos --help
+
+    # Use commands from https://packaging.python.org/tutorials/packaging-projects/
+    # to build the Speculos package, but using a dedicated virtual environment
+    # to be cleanly upgrade Python packages.
+    - name: Build Speculos python package
+      run: |
+        if [ -e dist ] ; then
+          echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
+          exit 1
+        fi
+        sed -i 's;docs/screenshot-api-nanos-btc\.png;https://raw.githubusercontent.com/LedgerHQ/speculos/master/docs/screenshot-api-nanos-btc.png;' README.md
+        ./tools/update_setup_version_from_git.sh
+        python3 -m venv venv-build
+        ./venv-build/bin/pip install --upgrade pip build twine
+        ./venv-build/bin/python -m build
+        ./venv-build/bin/python -m twine check dist/*
+
+    # TEST_PYPI_API_TOKEN is an API token created on
+    # https://test.pypi.org/manage/account/#api-tokens with restriction to speculos project
+    - name: Publish Python package to test.pypi.org
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
-      uses: docker/build-push-action@v1
-      with:
-        repository: ledgerhq/speculos
-        dockerfile: Dockerfile
-        username: ${{ secrets.dockerhub_username }}
-        password: ${{ secrets.dockerhub_password }}
-        tag_with_sha: true
-        tags: latest
+      run: |
+        ./venv-build/bin/python -m twine upload --repository testpypi dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        TWINE_NON_INTERACTIVE: 1
 
     - name: Build and publish to GitHub Packages
       if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -77,9 +112,8 @@ jobs:
         make -C build clean
         make -C build
         make -C build test
-        pytest
+        python3 -m pytest
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
         name: codecov-speculos
-        fail_ci_if_error: true

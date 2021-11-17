@@ -25,7 +25,6 @@ static int cx_weierstrass_mult(cx_curve_t curve, cx_mpi_t *qx, cx_mpi_t *qy,
   int nid;
   int ret = 0;
 
-  // curve must be CX_CURVE_SECP256K1, CX_CURVE_SECP256R1 or CX_CURVE_SECP384R1.
   if ((nid = cx_nid_from_curve(curve)) >= 0) {
     group = EC_GROUP_new_by_curve_name(nid);
   }
@@ -289,9 +288,17 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
     }
     break;
   }
-  case CX_CURVE_SECP384R1:
   case CX_CURVE_SECP256K1:
-  case CX_CURVE_SECP256R1: {
+  case CX_CURVE_SECP256R1:
+  case CX_CURVE_SECP384R1:
+  case CX_CURVE_BrainPoolP256R1:
+  case CX_CURVE_BrainPoolP256T1:
+  case CX_CURVE_BrainPoolP320R1:
+  case CX_CURVE_BrainPoolP320T1:
+  case CX_CURVE_BrainPoolP384R1:
+  case CX_CURVE_BrainPoolP384T1:
+  case CX_CURVE_BrainPoolP512R1:
+  case CX_CURVE_BrainPoolP512T1: {
     if (cx_weierstrass_mult(ec_P->curve, Qx, Qy, P.x, P.y, e) != 1) {
       error = CX_INTERNAL_ERROR;
       goto cleanup;
@@ -584,6 +591,48 @@ cx_err_t sys_cx_ecpoint_is_at_infinity(const cx_ecpoint_t *ec_P,
   } else {
     *is_infinite = 0;
   }
+end:
+  return error;
+}
+
+// This only supports SECP256K1, SECP256R1 and SECP384R1 for now due to openssl
+cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool *is_on_curve)
+{
+  cx_err_t error = CX_INTERNAL_ERROR;
+  cx_mpi_ecpoint_t P;
+  int nid;
+  EC_POINT *point;
+  BN_CTX *ctx;
+  int res = 0;
+
+  EC_GROUP *group = NULL;
+  *is_on_curve = false;
+
+  CX_CHECK(cx_mpi_ecpoint_from_ecpoint(&P, ec_P));
+
+  if ((nid = cx_nid_from_curve(ec_P->curve)) >= 0) {
+    group = EC_GROUP_new_by_curve_name(nid);
+  }
+  if (group != NULL) {
+    point = EC_POINT_new(group);
+
+    if (point != NULL) {
+      ctx = cx_get_bn_ctx();
+
+      if (ctx != NULL) {
+        if (EC_POINT_set_affine_coordinates(group, point, P.x, P.y, ctx) == 1) {
+          res = EC_POINT_is_on_curve(group, point, ctx);
+        }
+      }
+    }
+  }
+  if (res == -1) {
+    return CX_EC_INVALID_POINT;
+  }
+  if (res) {
+    *is_on_curve = true;
+  }
+
 end:
   return error;
 }

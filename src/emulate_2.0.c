@@ -14,10 +14,28 @@
 int emulate_2_0(unsigned long syscall, unsigned long *parameters,
                 unsigned long *ret, bool verbose)
 {
-  int retid;
-
   switch (syscall) {
     /* clang-format off */
+
+  SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
+           int,                  x,
+           int,                  y,
+           unsigned int,         width,
+           unsigned int,         height,
+           unsigned int,         color_count,
+           const unsigned int *, colors,
+           unsigned int,         bit_per_pixel,
+           const uint8_t *,      bitmap,
+           unsigned int,         bitmap_length_bits);
+
+  SYSCALL5(bagl_hal_draw_rect, "(0x%08x, %d, %d, %u, %u)",
+           unsigned int, color,
+           int,          x,
+           int,          y,
+           unsigned int, width,
+           unsigned int, height);
+
+  SYSCALL0(screen_update);
 
   SYSCALL0(get_api_level);
 
@@ -139,6 +157,9 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     SYSCALL2(cx_ecpoint_is_at_infinity, "(%p, %p)", void *, ec_P, bool *,
              is_infinite);
 
+    SYSCALL2(cx_ecpoint_is_on_curve, "(%p, %p)", void *, ec_P, bool *,
+             is_on_curve);
+
     SYSCALL0(cx_bn_is_locked);
 
     SYSCALL2(cx_bn_lock, "(%u %u)", size_t, word_nbytes, uint32_t, flags);
@@ -249,6 +270,8 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     SYSCALL0(os_flags);
 
     SYSCALL2(os_version, "(%p, %u)", uint8_t *, buffer, size_t, length);
+    SYSCALL2(os_serial, "(%p, %u)", unsigned char *, serial, unsigned int,
+             maxlength);
 
     SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)", unsigned int,
              tag, uint8_t *, buffer, size_t, length);
@@ -271,14 +294,16 @@ int emulate_2_0(unsigned long syscall, unsigned long *parameters,
     /*
         SYSCALL2(os_perso_seed_cookie, "(%p, %u)", void *, seed, size_t,
        seed_len);
-
-        SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)", cx_curve_t,
-       curve, const unsigned int *, path, unsigned int, pathLength, unsigned
-       char *, privateKey);
     */
+
+    SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)", cx_curve_t, curve,
+             const unsigned int *, path, unsigned int, pathLength,
+             unsigned char *, privateKey);
+
   default:
-    retid = emulate_common(syscall, parameters, ret, verbose);
+    emulate_common(syscall, parameters, ret, verbose);
     break;
   }
-  return retid;
+  /* retid is no longer used in SDK 2.0 */
+  return 0;
 }

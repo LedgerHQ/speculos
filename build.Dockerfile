@@ -3,7 +3,7 @@
 #
 # Support Debian buster & Ubuntu Bionic
 
-FROM python:3.9-slim
+FROM docker.io/library/python:3.9-slim
 ENV LANG C.UTF-8
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -22,14 +22,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
   rm -rf /var/lib/apt/lists/
 
 # There are issues with PYTHONHOME if using distro packages, use pip instead.
-RUN pip3 install construct jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow
+RUN pip3 install construct flake8 flask flask_restful jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow requests
 
 # Create SHA256SUMS, download dependencies and verify their integrity
 RUN \
   echo 892a0875b9872acd04a9fde79b1f943075d5ea162415de3047c327df33fbaee5 openssl-1.1.1k.tar.gz >> SHA256SUMS && \
   echo f0ccd8242d55e2fd74b16ba518359151f6f8383ff8aef4976e48393f77bba8b6 cmocka-1.1.5.tar.xz >> SHA256SUMS && \
-  wget https://www.openssl.org/source/openssl-1.1.1k.tar.gz && \
-  wget https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz && \
+  wget --quiet https://www.openssl.org/source/openssl-1.1.1k.tar.gz && \
+  wget --quiet https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz && \
   sha256sum --check SHA256SUMS && \
   rm SHA256SUMS
 

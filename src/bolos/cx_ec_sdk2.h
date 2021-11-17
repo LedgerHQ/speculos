@@ -21,6 +21,15 @@
 #define HAVE_SECP384R1_CURVE
 #define HAVE_SECP521R1_CURVE
 
+#define HAVE_BRAINPOOL_P256R1_CURVE
+#define HAVE_BRAINPOOL_P256T1_CURVE
+#define HAVE_BRAINPOOL_P320R1_CURVE
+#define HAVE_BRAINPOOL_P320T1_CURVE
+#define HAVE_BRAINPOOL_P384R1_CURVE
+#define HAVE_BRAINPOOL_P384T1_CURVE
+#define HAVE_BRAINPOOL_P512R1_CURVE
+#define HAVE_BRAINPOOL_P512T1_CURVE
+
 #define HAVE_ED25519_CURVE
 #define HAVE_ED448_CURVE
 
@@ -64,6 +73,48 @@ enum cx_curve_e {
   CX_CURVE_SECP521R1 = 0x24,
 #define CX_CURVE_NISTP521 CX_CURVE_SECP521R1
 #endif
+
+#ifdef HAVE_BRAINPOOL_P256T1_CURVE
+  /** BrainpoolP256t1 */
+  CX_CURVE_BrainPoolP256T1 = 0x31,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P256R1_CURVE
+  /** BrainpoolP256r1 */
+  CX_CURVE_BrainPoolP256R1 = 0x32,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P320T1_CURVE
+  /** BrainpoolP320t1 */
+  CX_CURVE_BrainPoolP320T1 = 0x33,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P320R1_CURVE
+  /** BrainpoolP320r1 */
+  CX_CURVE_BrainPoolP320R1 = 0x34,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P384T1_CURVE
+  /** BrainpoolP384t1 */
+  CX_CURVE_BrainPoolP384T1 = 0x35,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P384R1_CURVE
+  /** Brainpool384r1 */
+  CX_CURVE_BrainPoolP384R1 = 0x36,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P512T1_CURVE
+  /** BrainpoolP512t1 */
+  CX_CURVE_BrainPoolP512T1 = 0x37,
+#endif
+
+#ifdef HAVE_BRAINPOOL_P512R1_CURVE
+  /** BrainpoolP512r1 */
+  CX_CURVE_BrainPoolP512R1 = 0x38,
+#endif
+
+  CX_CURVE_BLS12_381_G1 = 0x39,
 
   /** High limit (not included) of Weierstrass curve ID */
   CX_CURVE_WEIERSTRASS_END = 0x6F,
@@ -129,7 +180,7 @@ typedef enum cx_curve_e cx_curve_t;
   cx_curve_t curve;                                                            \
   /** Curve size in bits */                                                    \
   unsigned int bit_size;                                                       \
-  /** component lenth in bytes */                                              \
+  /** component length in bytes */                                             \
   unsigned int length;                                                         \
   /**  a coef */                                                               \
   const uint8_t *a;                                                            \

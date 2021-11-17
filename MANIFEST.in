@@ -1,0 +1,16 @@
+include CMakeLists.txt
+recursive-include sdk *.h
+recursive-include src *.c *.h *.txt
+include speculos/api/resources/*.schema
+include speculos/api/static/index.html
+include speculos/api/static/swagger/*.css
+include speculos/api/static/swagger/*.html
+include speculos/api/static/swagger/*.js
+include speculos/api/static/swagger/*.json
+include speculos/api/static/swagger/*.md
+include speculos/cxlib/*.elf
+include speculos/mcu/resources/*.schema
+include speculos/resources/launcher
+include speculos/resources/vnc_server
+graft build
+exclude speculos.py

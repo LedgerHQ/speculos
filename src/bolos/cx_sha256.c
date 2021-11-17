@@ -6,7 +6,7 @@
 #include "cx_hash.h"
 #include "cx_utils.h"
 
-/** RAM overlayed  to NES RAM under ST */
+/** RAM overlaid to NES RAM under ST */
 union cx_u {
   cx_sha256_t sha256;
 };

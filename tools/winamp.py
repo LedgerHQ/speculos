@@ -31,6 +31,7 @@ from PIL import Image
 OFFSET_X, OFFSET_Y = 0, 0
 SCREEN_WIDTH, SCREEN_HEIGHT = 128, 32
 
+
 def button_press_event(box, event):
     global OFFSET_X, OFFSET_Y
 
@@ -44,11 +45,13 @@ def button_press_event(box, event):
         root = window.get_root_window()
         root.set_cursor(arrow)
 
+
 def button_release_event(box, event):
     if event.button == 1:
         arrow = gdk.Cursor(gdk.LEFT_PTR)
         root = window.get_root_window()
         root.set_cursor(arrow)
+
 
 def motion_notify_event(box, event):
     global OFFSET_X, OFFSET_Y
@@ -57,6 +60,7 @@ def motion_notify_event(box, event):
     x = int(event.x_root - OFFSET_X)
     y = int(event.y_root - OFFSET_Y)
     window.move(x, y)
+
 
 def vnc_screenshot(src, ev, vnc):
     if ev.keyval == gtk.gdk.keyval_from_name("s"):
@@ -67,22 +71,28 @@ def vnc_screenshot(src, ev, vnc):
 
     return False
 
+
 def vnc_grab(src, window):
     pass
+
 
 def vnc_ungrab(src, window):
     pass
 
+
 def vnc_connected(src):
-    print "Connected to server"
+    print("Connected to server")
+
 
 def vnc_initialized(src, window):
-    print "Connection initialized"
+    print("Connection initialized")
     window.show_all()
 
+
 def vnc_disconnected(src):
-    print "Disconnected from server"
+    print("Disconnected from server")
     gtk.main_quit()
+
 
 def expose(widget, event):
     """
@@ -104,6 +114,7 @@ def expose(widget, event):
     cr.paint()
     cr.fill()
 
+
 def is_black_rectangle(pixels, x, y, width, height):
     black = (0, 0, 0, 255)
     for i in range(0, SCREEN_WIDTH):
@@ -111,6 +122,7 @@ def is_black_rectangle(pixels, x, y, width, height):
             if pixels[x+i, y+j] != black:
                 return False
     return True
+
 
 def find_screen_position(image):
     width, height = image.size
@@ -125,6 +137,7 @@ def find_screen_position(image):
     x = (width - SCREEN_WIDTH) / 2
     y = (height - SCREEN_HEIGHT) / 2
     return x, y
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -171,7 +184,7 @@ if __name__ == '__main__':
     vnc.set_keyboard_grab(True)
 
     # Example to change grab key combination to Ctrl+Alt+g
-    grab_keys = [ gtk.keysyms.Control_L, gtk.keysyms.Alt_L, gtk.keysyms.g ]
+    grab_keys = [gtk.keysyms.Control_L, gtk.keysyms.Alt_L, gtk.keysyms.g]
     vnc.set_grab_keys(grab_keys)
 
     print("Connecting to %s %s" % (args.host, args.port))
