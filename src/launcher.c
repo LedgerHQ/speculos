@@ -258,9 +258,22 @@ static void *load_app(char *name)
       warn("mmap data");
       goto error;
     }
-    /* initialize .bss (and the stack) to 0xa5 to mimic BOLOS behavior, even if
-     * it violates section 3.5.7 of the C89 standard */
-    memset(data_addr, 0xa5, data_size);
+    /* initialize .bss (and the stack) to 0xa5 to mimic BOLOS behavior in older
+     * FW versions, even if it violates section 3.5.7 of the C89 standard */
+    switch (sdk_version) {
+    case SDK_BLUE_1_5:
+    case SDK_BLUE_2_2_5:
+    case SDK_NANO_S_1_5:
+    case SDK_NANO_S_1_6:
+    case SDK_NANO_S_2_0:
+    case SDK_NANO_X_1_2:
+      memset(data_addr, 0xa5, data_size);
+      break;
+    /* In newer FW versions the app RAM (.bss and stack) is zeroized.
+     * This is done by mmap thanks to the MAP_ANONYMOUS flag. */
+    default:
+      break;
+    }
   }
 
   /* setup extra page as additional RAM available to the app */
