@@ -19,7 +19,7 @@ import threading
 
 import pkg_resources
 
-from .api import ApiRunner, events
+from .api import ApiRunner, EventsBroadcaster
 from .mcu import apdu as apdu_server
 from .mcu import automation
 from .mcu import display
@@ -277,7 +277,7 @@ def main(prog=None):
         automation_thread.start()
 
     if api_enabled:
-        automation_server = events
+        automation_server = EventsBroadcaster()
 
     s1, s2 = socket.socketpair()
 
@@ -325,7 +325,7 @@ def main(prog=None):
     screen = Screen(display_args, server_args)
 
     if api_enabled:
-        apirun.start_server_thread(screen, seph)
+        apirun.start_server_thread(screen, seph, automation_server)
 
     screen.run()
 

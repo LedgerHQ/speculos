@@ -10,7 +10,7 @@ from ..mcu.seproxyhal import SeProxyHal
 from .apdu import APDU
 from .automation import Automation
 from .button import Button
-from .events import Events
+from .events import Events, EventsBroadcaster
 from .finger import Finger
 from .screenshot import Screenshot
 from .swagger import Swagger
@@ -43,15 +43,18 @@ class ApiRunner:
         finally:
             self._notify_exit.close()
 
-    def start_server_thread(self, screen_, seph_: SeProxyHal) -> None:
-        wrapper = ApiWrapper(screen_, seph_)
+    def start_server_thread(self,
+                            screen_,
+                            seph_: SeProxyHal,
+                            automation_server: EventsBroadcaster) -> None:
+        wrapper = ApiWrapper(screen_, seph_, automation_server)
         self._app = wrapper.app
         api_thread = threading.Thread(target=self._run, name="API-server", daemon=True)
         api_thread.start()
 
 
 class ApiWrapper:
-    def __init__(self, screen, seph: SeProxyHal):
+    def __init__(self, screen, seph: SeProxyHal, automation_server: EventsBroadcaster):
         self._screen = screen
         self._seph = seph
         self._set_app()
@@ -64,7 +67,8 @@ class ApiWrapper:
         self._api.add_resource(Button, "/button/left", "/button/right", "/button/both",
                                resource_class_kwargs=self._seph_kwargs)
         self._api.add_resource(Events, "/events",
-                               resource_class_kwargs=self._app_kwargs)
+                               resource_class_kwargs={**self._app_kwargs,
+                                                      'automation_server': automation_server})
         self._api.add_resource(Finger, "/finger",
                                resource_class_kwargs=self._seph_kwargs)
         self._api.add_resource(Screenshot, "/screenshot",
