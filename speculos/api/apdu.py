@@ -48,7 +48,6 @@ class APDU(SephResource):
         super().__init__(*args, **kwargs)
         self._bridge = APDUBridge(self.seph)
 
-
     def post(self):
         args = request.get_json(force=True)
         try:

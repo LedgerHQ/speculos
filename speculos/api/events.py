@@ -34,7 +34,6 @@ class EventsBroadcaster:
             self.condition.notify_all()
 
 
-
 class EventClient:
     def __init__(self, broadcaster: EventsBroadcaster):
         self.events = []

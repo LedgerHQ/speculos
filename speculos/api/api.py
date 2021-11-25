@@ -20,13 +20,13 @@ from .web_interface import WebInterface
 class ApiRunner:
     """Run the Speculos API server, with a notification when it stops"""
     def __init__(self, api_port: int) -> None:
-        self._app : Optional[Flask] = None
+        self._app: Optional[Flask] = None
         # self.s is used by Screen.add_notifier. Closing self._notify_exit
         # signals it that the API is no longer running.
-        self.s : socket.socket
-        self._notify_exit : socket.socket
+        self.s: socket.socket
+        self._notify_exit: socket.socket
         self.s, self._notify_exit = socket.socketpair()
-        self.api_port : int = api_port
+        self.api_port: int = api_port
 
     def can_read(self, s: int, screen) -> None:
         assert s == self.s.fileno()
