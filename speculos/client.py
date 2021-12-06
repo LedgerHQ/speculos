@@ -73,7 +73,8 @@ class Api:
         check_status_code(self.stream, "/events")
 
     def close_stream(self) -> None:
-        self.stream.close()
+        if self.stream:
+            self.stream.close()
         self.stream = None
 
     def get_next_event(self) -> dict:
