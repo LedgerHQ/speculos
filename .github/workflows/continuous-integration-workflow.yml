@@ -112,7 +112,9 @@ jobs:
         make -C build clean
         make -C build
         make -C build test
-        python3 -m pytest
+        python3 -m pip install pytest-cov
+        python3 -m pytest --cov=speculos --cov-report=xml
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
