@@ -8,3 +8,8 @@ build/
 core
 /speculos/resources/launcher
 /speculos/resources/vnc_server
+
+# python
+*.pyc
+dist/
+*egg-info
