@@ -15,7 +15,7 @@ class EventsBroadcaster:
         self.clients = []
         self.events = []
         self.condition = threading.Condition()
-        self.logger = logging.getLogger('events')
+        self.logger = logging.getLogger("events")
 
     def add_client(self, client):
         self.logger.debug("events: new client")
@@ -64,7 +64,7 @@ class EventClient:
 class Events(AppResource):
     def __init__(self, *args, automation_server: Optional[EventsBroadcaster] = None, **kwargs):
         if automation_server is None:
-            raise RuntimeError('Argument \'automation_server\' must not be None')
+            raise RuntimeError("Argument 'automation_server' must not be None")
         self._broadcaster = automation_server
         self.parser = reqparse.RequestParser()
         self.parser.add_argument("stream", type=inputs.boolean, default=False)

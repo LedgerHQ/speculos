@@ -68,7 +68,7 @@ class ApiWrapper:
                                resource_class_kwargs=self._seph_kwargs)
         self._api.add_resource(Events, "/events",
                                resource_class_kwargs={**self._app_kwargs,
-                                                      'automation_server': automation_server})
+                                                      "automation_server": automation_server})
         self._api.add_resource(Finger, "/finger",
                                resource_class_kwargs=self._seph_kwargs)
         self._api.add_resource(Screenshot, "/screenshot",
@@ -85,15 +85,15 @@ class ApiWrapper:
 
     @property
     def _screen_kwargs(self):
-        return {'screen': self.screen}
+        return {"screen": self.screen}
 
     @property
     def _app_kwargs(self) -> Dict[str, Flask]:
-        return {'app': self.app}
+        return {"app": self.app}
 
     @property
     def _seph_kwargs(self) -> Dict[str, SeProxyHal]:
-        return {'seph': self.seph}
+        return {"seph": self.seph}
 
     @property
     def app(self) -> Flask:
