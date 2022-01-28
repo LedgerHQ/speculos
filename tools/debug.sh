@@ -2,11 +2,14 @@
 
 set -e
 
+export READELF="${READELF-"arm-none-eabi-readelf"}"
+export GDB="${GDB-"gdb-multiarch"}"
+
 function get_text_addr()
 {
     local elf="$1"
 
-    arm-none-eabi-readelf -WS "$elf" \
+    "${READELF}" -WS "$elf" \
         | grep '\.text' \
         | awk '{ print "0x"$5 }'
 }
@@ -32,7 +35,7 @@ b *0x40000000
 c
 EOF
 
-    gdb-multiarch -q -nh -x /tmp/x.gdb
+    "${GDB}" -q -nh -x /tmp/x.gdb
 }
 
 if [ $# -ne 1 ]; then
