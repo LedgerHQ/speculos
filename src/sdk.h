@@ -3,6 +3,7 @@
 typedef enum {
   SDK_NANO_X_1_2,
   SDK_NANO_X_2_0,
+  SDK_NANO_X_2_0_2,
   SDK_NANO_S_1_5,
   SDK_NANO_S_1_6,
   SDK_NANO_S_2_0,

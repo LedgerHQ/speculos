@@ -59,9 +59,9 @@ typedef struct model_sdk_s {
 } MODEL_SDK;
 
 static MODEL_SDK sdkmap[SDK_COUNT] = {
-  { MODEL_NANO_X, "1.2" }, { MODEL_NANO_X, "2.0" },     { MODEL_NANO_S, "1.5" },
-  { MODEL_NANO_S, "1.6" }, { MODEL_NANO_S, "2.0" },     { MODEL_NANO_S, "2.1" },
-  { MODEL_BLUE, "1.5" },   { MODEL_BLUE, "blue-2.2.5" }
+  { MODEL_NANO_X, "1.2" }, { MODEL_NANO_X, "2.0" }, { MODEL_NANO_X, "2.0.2" },
+  { MODEL_NANO_S, "1.5" }, { MODEL_NANO_S, "1.6" }, { MODEL_NANO_S, "2.0" },
+  { MODEL_NANO_S, "2.1" }, { MODEL_BLUE, "1.5" },   { MODEL_BLUE, "blue-2.2.5" }
 };
 
 static char *model_name[MODEL_COUNT] = { "nanos", "nanox", "blue" };
@@ -583,7 +583,8 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_NANO_X:
-    if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0) {
+    if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
+        sdk_version != SDK_NANO_X_2_0_2) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -605,7 +606,7 @@ int main(int argc, char *argv[])
   }
 
   if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-      sdk_version == SDK_NANO_X_2_0) {
+      sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2) {
     if (load_cxlib(model, cxlib_path) != 0) {
       return 1;
     }
