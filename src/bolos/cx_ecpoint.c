@@ -10,6 +10,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "bolos/cx_curve25519.h"
 #include "bolos/cx_ed25519.h"
 #include "bolos/cxlib.h"
 #include "emulate.h"
@@ -258,6 +259,12 @@ end:
   return error;
 }
 
+static const uint8_t X25519_GEN[] = { 0x5f, 0x51, 0xe6, 0x5e, 0x47, 0x5f, 0x79,
+                                      0x4b, 0x1f, 0xe1, 0x22, 0xd3, 0x88, 0xb7,
+                                      0x2e, 0xb3, 0x6d, 0xc2, 0xb2, 0x81, 0x92,
+                                      0x83, 0x9e, 0x4d, 0xd6, 0x16, 0x3a, 0x5d,
+                                      0x81, 0x31, 0x2c, 0x14 };
+
 cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
                                   size_t k_len)
 {
@@ -266,6 +273,31 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
   cx_mpi_t *Qx, *Qy, *e;
 
   CX_CHECK(cx_mpi_ecpoint_from_ecpoint(&P, ec_P));
+
+  if (ec_P->curve == CX_CURVE_Curve25519) {
+    uint8_t x[32], y[32], out[32];
+    sys_cx_ecpoint_export(ec_P, x, sizeof(x), y, sizeof(y));
+    if (memcmp(X25519_GEN, y, 32) != 0) {
+      errx(1, "X25519 scalar mult TODO");
+      error = CX_INTERNAL_ERROR;
+      goto cleanup;
+    }
+    public_from_private_curve25519(out, k);
+    Qy = NULL;
+    e = NULL;
+    Qx = BN_new();
+    if (Qx == NULL) {
+      error = CX_MEMORY_FULL;
+      goto cleanup;
+    }
+    if (BN_bin2bn(out, 32, Qx) == NULL) {
+      error = CX_INTERNAL_ERROR;
+      goto cleanup;
+    }
+    BN_copy(P.x, Qx);
+    goto cleanup;
+  }
+
   // TODO Check if ec_P point is on curve.
   // TODO (?) use internal alloc, to update/check count & total memory.
   Qx = BN_new();
@@ -632,6 +664,30 @@ cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool *is_on_curve)
   if (res) {
     *is_on_curve = true;
   }
+
+end:
+  return error;
+}
+
+extern int X25519(uint8_t out_shared_key[32], const uint8_t private_key[32],
+                  const uint8_t peer_public_value[32]);
+
+cx_err_t sys_cx_ecpoint_x25519(cx_bn_t u, const uint8_t *k, size_t k_len)
+{
+  cx_err_t error;
+  uint8_t uRaw[32], out[32], i;
+
+  if (k_len != 32) {
+    error = CX_INVALID_PARAMETER;
+    goto end;
+  }
+
+  CX_CHECK(sys_cx_bn_export(u, uRaw, sizeof(uRaw)));
+  X25519(out, k, uRaw);
+  for (i = 0; i < 32; i++) {
+    uRaw[i] = out[31 - i];
+  }
+  CX_CHECK(sys_cx_bn_init(u, uRaw, 32));
 
 end:
   return error;

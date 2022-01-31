@@ -273,3 +273,4 @@ cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P,
                                     bool *is_on_curve);
 cx_err_t sys_cx_ecpoint_is_at_infinity(const cx_ecpoint_t *ec_P,
                                        bool *is_infinite);
+cx_err_t sys_cx_ecpoint_x25519(cx_bn_t u, const uint8_t *k, size_t k_len);
