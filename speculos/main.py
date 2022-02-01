@@ -253,7 +253,7 @@ def main(prog=None):
 
     if args.sdk is None:
         default_sdk = {
-            "nanos": "2.0",
+            "nanos": "2.1",
             "nanox": "2.0",
             "blue": "blue-2.2.5",
         }
