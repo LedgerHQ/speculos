@@ -17,6 +17,7 @@ Model = namedtuple('Model', 'name screen_size box_position box_size')
 MODELS = {
     'nanos': Model('Nano S', (128, 32), (20, 13), (100, 26)),
     'nanox': Model('Nano X', (128, 64), (5, 5), (10, 10)),
+    'nanosp': Model('Nano SP', (128, 64), (5, 5), (10, 10)),
     'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
 }
 
@@ -60,6 +61,7 @@ class FrameBuffer(ABC):
     COLORS = {
         "nanos": 0x00fffb,
         "nanox": 0xdddddd,
+        "nanosp": 0xdddddd,
     }
 
     def __init__(self, model):
