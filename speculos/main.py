@@ -220,7 +220,7 @@ def main(prog=None):
             logger.error("invalid ram page argument")
             sys.exit(1)
 
-    if args.display == 'text' and args.model not in ['nanos', 'nanox']:
+    if args.display == 'text' and args.model not in ['nanos', 'nanox', 'nanosp']:
         logger.error(f"unsupported model '{args.model}' with argument --display text")
         sys.exit(1)
 
@@ -256,6 +256,7 @@ def main(prog=None):
             "nanos": "2.1",
             "nanox": "2.0.2",
             "blue": "blue-2.2.5",
+            "nanosp": "1.0"
         }
         args.sdk = default_sdk.get(args.model)
 
@@ -308,6 +309,7 @@ def main(prog=None):
         default_zoom = {
             "nanos": 2,
             "nanox": 2,
+            "nanosp": 2,
             "blue": 1,
         }
         zoom = default_zoom.get(args.model)

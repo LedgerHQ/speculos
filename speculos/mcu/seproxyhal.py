@@ -248,7 +248,7 @@ class SeProxyHal:
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     if screen.screen_update():
-                        if screen.model == "nanox":
+                        if screen.model in ["nanox", "nanosp"]:
                             self.events += self.nanox_ocr.get_events()
 
                     # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
@@ -266,7 +266,7 @@ class SeProxyHal:
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
-                if screen.model == "nanox":
+                if screen.model in ["nanox", "nanosp"]:
                     self.nanox_ocr.analyze_bitmap(data)
                 # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
                 #
