@@ -35,6 +35,9 @@ int emulate(unsigned long syscall, unsigned long *parameters,
   case SDK_NANO_X_2_0_2:
     retid = emulate_2_0(syscall, parameters, ret, verbose);
     break;
+  case SDK_NANO_SP_1_0:
+    retid = emulate_nanosp_1_0(syscall, parameters, ret, verbose);
+    break;
   case SDK_BLUE_2_2_5:
     retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
     break;
