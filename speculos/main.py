@@ -68,6 +68,20 @@ def get_elf_infos(app_path):
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
 
 
+def get_cx_infos(app_path):
+    with open(app_path, 'rb') as fp:
+        elf = ELFFile(fp)
+        text = elf.get_section_by_name('.text')
+        cxram = elf.get_section_by_name('.cxram')
+        sh_offset = text['sh_offset']
+        sh_size = text['sh_size']
+        sh_load = text['sh_addr']
+        cx_ram_load = cxram["sh_addr"]
+        cx_ram_size = cxram["sh_size"]
+
+    return sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load
+
+
 def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> None:
     argv = ['qemu-arm-static']
 
@@ -87,7 +101,9 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     # load cxlib only if available for the specified sdk
     cxlib = pkg_resources.resource_filename(__name__, f"/cxlib/{args.model}-cx-{args.sdk}.elf")
     if os.path.exists(cxlib):
-        argv += ['-c', cxlib]
+        sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
+        cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
+        argv += ['-c', cxlib_args]
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')

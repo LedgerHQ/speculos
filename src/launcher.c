@@ -24,20 +24,6 @@
 #define GIT_REVISION "00000000"
 #endif
 
-#define CX_ADDR_NANOS  ((void *)0x00120000)
-#define CX_ADDR_NANOX  ((void *)0x00210000)
-#define CX_ADDR_NANOSP ((void *)0x00808000)
-
-#define CX_SIZE          0x8000
-#define CX_OFFSET        0x10000
-#define CX_OFFSET_NANOSP 0x8000 // offset of text section within cx.elf
-
-#define CXRAM_ADDR ((void *)0x00603000)
-#define CXRAM_SIZE 0x800
-
-#define CXRAM_NANOSP_ADDR ((void *)0x20003000)
-#define CXRAM_NANOSP_SIZE 0x800
-
 typedef enum {
   MODEL_NANO_S,
   MODEL_NANO_SP,
@@ -343,66 +329,45 @@ error:
   return NULL;
 }
 
-static int load_cxlib(hw_model_t model, char *cxlib_path)
+static int load_cxlib(hw_model_t model, char *cxlib_args)
 {
+  char *cxlib_path = strdup(cxlib_args);
+  uint32_t sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load;
+
+  int ret = sscanf(cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x", cxlib_path,
+                   &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load);
+
+  if (ret != 6) {
+    fprintf(stderr, "sscanf failed: %d", ret);
+  }
   // First, try to open the cx.elf file specified (could be the one by default)
   int fd = open(cxlib_path, O_RDONLY);
   if (fd == -1) {
-    // Try to use environment variable CXLIB_PATH
-    char *path = getenv("CXLIB_PATH");
-    if (path == NULL) {
-      warnx("failed to open \"%s\" and no CXLIB_PATH environment found!",
-            cxlib_path);
-      return -1;
-    }
-    fprintf(stderr, "[*] failed to open \"%s\", trying CXLIB_PATH...\n",
-            cxlib_path);
-    fd = open(path, O_RDONLY);
-    if (fd == -1) {
-      warn("failed to open \"%s\"!", path);
-      return -1;
-    }
-    cxlib_path = path;
+    warnx("failed to open \"%s\"", cxlib_path);
+    return -1;
   }
   fprintf(stderr, "[*] loading CXLIB from \"%s\"\n", cxlib_path);
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ | PROT_EXEC;
-
-  void *cx_addr = CX_ADDR_NANOS;
-  int offset = CX_OFFSET;
-
-  switch (model) {
-  case MODEL_NANO_X:
-    cx_addr = CX_ADDR_NANOX;
-    if (mmap(CXRAM_ADDR, CXRAM_SIZE, PROT_READ | PROT_WRITE,
-             MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
-      warn("mmap cxram");
-      return -1;
-    }
-    break;
-  case MODEL_NANO_SP:
-    cx_addr = CX_ADDR_NANOSP;
-    offset = CX_OFFSET_NANOSP;
-    if (mmap(CXRAM_NANOSP_ADDR, CXRAM_NANOSP_SIZE, PROT_READ | PROT_WRITE,
-             MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
-      warn("mmap cxram");
-      return -1;
-    }
-    break;
-  default:
-    break;
-  }
-
-  void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, offset);
+  void *p = mmap((void *)sh_load, sh_size, prot, flags, fd, sh_offset);
   if (p == MAP_FAILED) {
     warn("mmap cxlib");
     close(fd);
     return -1;
   }
 
-  if (patch_svc(cx_addr, CX_SIZE) != 0) {
-    if (munmap(p, CX_SIZE) != 0) {
+  // Map CXRAM on non NanoS devices
+  if (model != MODEL_NANO_S) {
+    if (mmap((void *)cx_ram_load, cx_ram_size, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
+      warn("mmap cxram");
+      return -1;
+    }
+  }
+
+  if (patch_svc(p, sh_size) != 0) {
+    if (munmap(p, sh_size) != 0) {
       warn("munmap");
     }
     close(fd);
