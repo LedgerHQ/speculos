@@ -14,7 +14,7 @@
 #include "bolos_syscalls_lnsp.h"
 
 int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
-                unsigned long *ret, bool verbose)
+                       unsigned long *ret, bool verbose)
 {
   switch (syscall) {
     /* clang-format off */
@@ -296,36 +296,26 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
     SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)", cx_curve_t, curve,
              const unsigned int *, path, unsigned int, pathLength,
              unsigned char *, privateKey);
-    SYSCALL3(nvm_write,  "(%p, %p, %u)",
-            void *, dst_addr,
-            void *, src_addr,
-            size_t, src_len);
+    SYSCALL3(nvm_write, "(%p, %p, %u)", void *, dst_addr, void *, src_addr,
+             size_t, src_len);
 
-    SYSCALL2(os_endorsement_get_public_key, "(%d, %p)",
-            uint8_t,   index,
-            uint8_t *, buffer);
+    SYSCALL2(os_endorsement_get_public_key, "(%d, %p)", uint8_t, index,
+             uint8_t *, buffer);
 
-    SYSCALL3(os_endorsement_key1_sign_data, "(%p, %u, %p)",
-            uint8_t *, data,
-            size_t,    dataLength,
-            uint8_t *, signature);
+    SYSCALL3(os_endorsement_key1_sign_data, "(%p, %u, %p)", uint8_t *, data,
+             size_t, dataLength, uint8_t *, signature);
 
-    SYSCALL5(os_perso_derive_node_bip32, "(0x%x, %p, %u, %p, %p)",
-            cx_curve_t,       curve,
-            const uint32_t *, path,
-            size_t,           length,
-            uint8_t*,         private_key,
-            uint8_t *,        chain
-            );
+    SYSCALL5(os_perso_derive_node_bip32, "(0x%x, %p, %u, %p, %p)", cx_curve_t,
+             curve, const uint32_t *, path, size_t, length, uint8_t *,
+             private_key, uint8_t *, chain);
 
     SYSCALL1(os_endorsement_get_code_hash, "(%p)", uint8_t *, buffer);
 
     SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
-            unsigned char,   index,
-            unsigned char *, buffer);
+             unsigned char, index, unsigned char *, buffer);
 
-    default:
-      break;
+  default:
+    break;
   }
   /* retid is no longer used in SDK 2.0 */
   return 0;

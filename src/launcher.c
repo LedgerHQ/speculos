@@ -24,22 +24,27 @@
 #define GIT_REVISION "00000000"
 #endif
 
-#define CX_ADDR_NANOS ((void *)0x00120000)
-#define CX_ADDR_NANOX ((void *)0x00210000)
+#define CX_ADDR_NANOS  ((void *)0x00120000)
+#define CX_ADDR_NANOX  ((void *)0x00210000)
 #define CX_ADDR_NANOSP ((void *)0x00808000)
 
+#define CX_SIZE          0x8000
+#define CX_OFFSET        0x10000
+#define CX_OFFSET_NANOSP 0x8000 // offset of text section within cx.elf
 
-#define CX_SIZE              0x8000
-#define CX_OFFSET           0x10000
-#define CX_OFFSET_NANOSP     0x8000 // offset of text section within cx.elf
+#define CXRAM_ADDR ((void *)0x00603000)
+#define CXRAM_SIZE 0x800
 
-#define CXRAM_ADDR    ((void *)0x00603000)
-#define CXRAM_SIZE    0x800
+#define CXRAM_NANOSP_ADDR ((void *)0x20003000)
+#define CXRAM_NANOSP_SIZE 0x800
 
-#define CXRAM_NANOSP_ADDR    ((void *)0x20003000)
-#define CXRAM_NANOSP_SIZE    0x800
-
-typedef enum { MODEL_NANO_S, MODEL_NANO_SP, MODEL_NANO_X, MODEL_BLUE, MODEL_COUNT } hw_model_t;
+typedef enum {
+  MODEL_NANO_S,
+  MODEL_NANO_SP,
+  MODEL_NANO_X,
+  MODEL_BLUE,
+  MODEL_COUNT
+} hw_model_t;
 
 struct elf_info_s {
   unsigned long load_offset;
@@ -67,10 +72,11 @@ typedef struct model_sdk_s {
 } MODEL_SDK;
 
 static MODEL_SDK sdkmap[SDK_COUNT] = {
-  { MODEL_NANO_X, "1.2" }, { MODEL_NANO_X, "2.0" }, { MODEL_NANO_X, "2.0.2" },
-  { MODEL_NANO_S, "1.5" }, { MODEL_NANO_S, "1.6" }, { MODEL_NANO_S, "2.0" }, { MODEL_NANO_S, "2.1" },
-  { MODEL_BLUE, "1.5" },   { MODEL_BLUE, "blue-2.2.5" },
-  { MODEL_NANO_SP, "1.0"}
+  { MODEL_NANO_X, "1.2" },      { MODEL_NANO_X, "2.0" },
+  { MODEL_NANO_X, "2.0.2" },    { MODEL_NANO_S, "1.5" },
+  { MODEL_NANO_S, "1.6" },      { MODEL_NANO_S, "2.0" },
+  { MODEL_NANO_S, "2.1" },      { MODEL_BLUE, "1.5" },
+  { MODEL_BLUE, "blue-2.2.5" }, { MODEL_NANO_SP, "1.0" }
 };
 
 static char *model_name[MODEL_COUNT] = { "nanos", "nanosp", "nanox", "blue" };
@@ -361,9 +367,9 @@ static int load_cxlib(hw_model_t model, char *cxlib_path)
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ | PROT_EXEC;
-  void *cx_addr = (model == MODEL_NANO_S) ? CX_ADDR_NANOS :
-                  (model == MODEL_NANO_X) ? CX_ADDR_NANOX :
-                  CX_ADDR_NANOSP;
+  void *cx_addr = (model == MODEL_NANO_S)   ? CX_ADDR_NANOS
+                  : (model == MODEL_NANO_X) ? CX_ADDR_NANOX
+                                            : CX_ADDR_NANOSP;
   int offset = (model == MODEL_NANO_SP) ? CX_OFFSET_NANOSP : CX_OFFSET;
   void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, offset);
   if (p == MAP_FAILED) {
@@ -632,7 +638,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1   ||
+  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
       sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
       sdk_version == SDK_NANO_SP_1_0) {
     if (load_cxlib(model, cxlib_path) != 0) {
