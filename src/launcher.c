@@ -26,12 +26,20 @@
 
 #define CX_ADDR_NANOS ((void *)0x00120000)
 #define CX_ADDR_NANOX ((void *)0x00210000)
-#define CX_SIZE       0x8000
-#define CX_OFFSET     0x10000
+#define CX_ADDR_NANOSP ((void *)0x00808000)
+
+
+#define CX_SIZE              0x8000
+#define CX_OFFSET           0x10000
+#define CX_OFFSET_NANOSP     0x8000 // offset of text section within cx.elf
+
 #define CXRAM_ADDR    ((void *)0x00603000)
 #define CXRAM_SIZE    0x800
 
-typedef enum { MODEL_NANO_S, MODEL_NANO_X, MODEL_BLUE, MODEL_COUNT } hw_model_t;
+#define CXRAM_NANOSP_ADDR    ((void *)0x20003000)
+#define CXRAM_NANOSP_SIZE    0x800
+
+typedef enum { MODEL_NANO_S, MODEL_NANO_SP, MODEL_NANO_X, MODEL_BLUE, MODEL_COUNT } hw_model_t;
 
 struct elf_info_s {
   unsigned long load_offset;
@@ -60,11 +68,12 @@ typedef struct model_sdk_s {
 
 static MODEL_SDK sdkmap[SDK_COUNT] = {
   { MODEL_NANO_X, "1.2" }, { MODEL_NANO_X, "2.0" }, { MODEL_NANO_X, "2.0.2" },
-  { MODEL_NANO_S, "1.5" }, { MODEL_NANO_S, "1.6" }, { MODEL_NANO_S, "2.0" },
-  { MODEL_NANO_S, "2.1" }, { MODEL_BLUE, "1.5" },   { MODEL_BLUE, "blue-2.2.5" }
+  { MODEL_NANO_S, "1.5" }, { MODEL_NANO_S, "1.6" }, { MODEL_NANO_S, "2.0" }, { MODEL_NANO_S, "2.1" },
+  { MODEL_BLUE, "1.5" },   { MODEL_BLUE, "blue-2.2.5" },
+  { MODEL_NANO_SP, "1.0"}
 };
 
-static char *model_name[MODEL_COUNT] = { "nanos", "nanox", "blue" };
+static char *model_name[MODEL_COUNT] = { "nanos", "nanosp", "nanox", "blue" };
 
 static struct memory_s memory;
 static struct app_s apps[MAX_APP];
@@ -352,9 +361,11 @@ static int load_cxlib(hw_model_t model, char *cxlib_path)
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ | PROT_EXEC;
-  void *cx_addr = (model == MODEL_NANO_S) ? CX_ADDR_NANOS : CX_ADDR_NANOX;
-
-  void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, CX_OFFSET);
+  void *cx_addr = (model == MODEL_NANO_S) ? CX_ADDR_NANOS :
+                  (model == MODEL_NANO_X) ? CX_ADDR_NANOX :
+                  CX_ADDR_NANOSP;
+  int offset = (model == MODEL_NANO_SP) ? CX_OFFSET_NANOSP : CX_OFFSET;
+  void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, offset);
   if (p == MAP_FAILED) {
     warn("mmap cxlib");
     close(fd);
@@ -364,6 +375,15 @@ static int load_cxlib(hw_model_t model, char *cxlib_path)
   // Map CXRAM on Nano X devices
   if (model == MODEL_NANO_X) {
     if (mmap(CXRAM_ADDR, CXRAM_SIZE, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
+      warn("mmap cxram");
+      return -1;
+    }
+  }
+
+  // Map CXRAM on Nano SP devices
+  if (model == MODEL_NANO_SP) {
+    if (mmap(CXRAM_NANOSP_ADDR, CXRAM_NANOSP_SIZE, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
       warn("mmap cxram");
       return -1;
@@ -509,7 +529,7 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
-                        ted. Currently supports \"nanos\", \"nanox\" and \"blue\".\n\
+                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\" and \"blue\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n");
   exit(EXIT_FAILURE);
 }
@@ -555,6 +575,8 @@ int main(int argc, char *argv[])
         model = MODEL_NANO_X;
       } else if (strcmp(optarg, "blue") == 0) {
         model = MODEL_BLUE;
+      } else if (strcmp(optarg, "nanosp") == 0) {
+        model = MODEL_NANO_SP;
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
@@ -593,6 +615,11 @@ int main(int argc, char *argv[])
       errx(1, "invalid SDK version for the Ledger Blue");
     }
     break;
+  case MODEL_NANO_SP:
+    if (sdk_version != SDK_NANO_SP_1_0) {
+      errx(1, "invalid SDK version for the Ledger NanoSP");
+    }
+    break;
   default:
     usage(argv[0]);
     break;
@@ -605,8 +632,9 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-      sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2) {
+  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1   ||
+      sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
+      sdk_version == SDK_NANO_SP_1_0) {
     if (load_cxlib(model, cxlib_path) != 0) {
       return 1;
     }
