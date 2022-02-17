@@ -9,9 +9,9 @@ cx_err_t cx_twisted_edwards_recover_x(cx_mpi_ecpoint_t *P, uint32_t sign)
   cx_mpi_t *p, *t1, *t2, *t3;
   cx_bn_t bn_p, bn_t1, bn_t2, bn_t3;
   uint32_t sz;
-  cx_curve_twisted_edwards_t *domain;
+  const cx_curve_twisted_edwards_t *domain;
 
-  domain = (cx_curve_twisted_edwards_t *)cx_ecdomain(P->curve);
+  domain = (const cx_curve_twisted_edwards_t *)cx_ecdomain(P->curve);
   if (domain == NULL) {
     return CX_INVALID_PARAMETER;
   }

@@ -38,18 +38,18 @@ void cx_scc_struct_check_hash(const cx_hash_t *hash)
   case CX_SHA224:
 #endif
   case CX_SHA256:
-    cx_scc_assert_param(((cx_sha256_t *)hash)->blen < 64);
+    cx_scc_assert_param(((const cx_sha256_t *)hash)->blen < 64);
     return;
 
   case CX_RIPEMD160:
-    cx_scc_assert_param(((cx_ripemd160_t *)hash)->blen < 64);
+    cx_scc_assert_param(((const cx_ripemd160_t *)hash)->blen < 64);
     return;
 
 #if 0
   case CX_SHA384:
 #endif
   case CX_SHA512:
-    cx_scc_assert_param(((cx_sha512_t *)hash)->blen < 128);
+    cx_scc_assert_param(((const cx_sha512_t *)hash)->blen < 128);
     return;
 #if 0
 
@@ -82,9 +82,9 @@ void cx_scc_struct_check_hash(const cx_hash_t *hash)
 #endif
 
   case CX_BLAKE2B: {
-    os = ((cx_blake2b_t *)hash)->output_size;
+    os = ((const cx_blake2b_t *)hash)->output_size;
     cx_scc_assert_param((os >= 8 / 8) && (os <= 512 / 8));
-    struct blake2b_state__ *ctx = &((cx_blake2b_t *)hash)->ctx;
+    const struct blake2b_state__ *ctx = &((const cx_blake2b_t *)hash)->ctx;
     cx_scc_assert_param((ctx->buflen <= BLAKE2B_BLOCKBYTES) &&
                         (ctx->outlen <= BLAKE2B_BLOCKBYTES));
   }
@@ -111,7 +111,7 @@ void cx_scc_struct_check_hashmac(const cx_hmac_t *hmac)
       && hash_algorithm != CX_SHA512 && hash_algorithm != CX_RIPEMD160) {
     THROW(INVALID_PARAMETER);
   }
-  cx_scc_struct_check_hash((cx_hash_t *)&hmac->hash_ctx);
+  cx_scc_struct_check_hash((const cx_hash_t *)&hmac->hash_ctx);
 }
 
 #if 0

@@ -95,17 +95,17 @@ typedef enum cx_curve_e cx_curve_t;
   /** component length in bytes */                                             \
   unsigned int length;                                                         \
   /** Curve field */                                                           \
-  unsigned char *p;                                                            \
+  const unsigned char *p;                                                      \
   /** @internal 2nd Mongtomery constant for Field */                           \
-  unsigned char *Hp;                                                           \
+  const unsigned char *Hp;                                                     \
   /** Point Generator x coordinate*/                                           \
-  unsigned char *Gx;                                                           \
+  const unsigned char *Gx;                                                     \
   /** Point Generator y coordinate*/                                           \
-  unsigned char *Gy;                                                           \
+  const unsigned char *Gy;                                                     \
   /** Curve order*/                                                            \
-  unsigned char *n;                                                            \
+  const unsigned char *n;                                                      \
   /** @internal 2nd Mongtomery constant for Curve order*/                      \
-  unsigned char *Hn;                                                           \
+  const unsigned char *Hn;                                                     \
   /**  cofactor */                                                             \
   int h
 
@@ -116,9 +116,9 @@ typedef enum cx_curve_e cx_curve_t;
 struct cx_curve_weierstrass_s {
   CX_CURVE_HEADER;
   /**  a coef */
-  unsigned char *a;
+  const unsigned char *a;
   /**  b coef */
-  unsigned char *b;
+  const unsigned char *b;
 };
 
 /** Convenience type. See #cx_curve_weierstrass_s. */
@@ -130,13 +130,13 @@ typedef struct cx_curve_weierstrass_s cx_curve_weierstrass_t;
 struct cx_curve_twisted_edward_s {
   CX_CURVE_HEADER;
   /**  a coef */
-  unsigned char *a;
+  const unsigned char *a;
   /**  d coef */
-  unsigned char *d;
+  const unsigned char *d;
   /** @internal Square root of -1 or zero */
-  unsigned char *I;
+  const unsigned char *I;
   /** @internal  (q+3)/8 or (q+1)/4*/
-  unsigned char *Qq;
+  const unsigned char *Qq;
 };
 /** Convenience type. See #cx_curve_twisted_edward_s. */
 typedef struct cx_curve_twisted_edward_s cx_curve_twisted_edward_t;

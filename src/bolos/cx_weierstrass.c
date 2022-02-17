@@ -9,9 +9,9 @@ cx_err_t cx_weierstrass_recover_y(cx_mpi_ecpoint_t *P, uint32_t sign)
   cx_mpi_t *p, *sqy, *t1, *t2;
   cx_bn_t bn_p, bn_sqy, bn_t1, bn_t2;
   uint32_t sz;
-  cx_curve_montgomery_t *domain;
+  const cx_curve_weierstrass_t *domain;
 
-  domain = (cx_curve_montgomery_t *)cx_ecdomain(P->curve);
+  domain = (const cx_curve_weierstrass_t *)cx_ecdomain(P->curve);
   if (domain == NULL) {
     return CX_INVALID_PARAMETER;
   }

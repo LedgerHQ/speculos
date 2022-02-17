@@ -15,10 +15,10 @@
 #include "bolos_syscalls_1.5.h"
 
 int emulate(unsigned long syscall, unsigned long *parameters,
-            unsigned long *ret, bool verbose, sdk_version_t sdk_version)
+            unsigned long *ret, bool verbose, sdk_version_t version)
 {
   int retid = 0;
-  switch (sdk_version) {
+  switch (version) {
   case SDK_NANO_X_1_2:
     retid = emulate_1_2(syscall, parameters, ret, verbose);
     break;
@@ -39,7 +39,7 @@ int emulate(unsigned long syscall, unsigned long *parameters,
     retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
     break;
   default:
-    errx(1, "Unsupported SDK version %i", sdk_version);
+    errx(1, "Unsupported SDK version %i", version);
     break;
   }
   return retid;

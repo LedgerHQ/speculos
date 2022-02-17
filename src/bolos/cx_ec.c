@@ -75,15 +75,15 @@ static cx_curve_weierstrass_t const C_cx_secp256k1 = {
   CX_CURVE_SECP256K1,
   256,
   32,
-  (unsigned char *)C_cx_secp256k1_p,
-  (unsigned char *)C_cx_secp256k1_Hp,
-  (unsigned char *)C_cx_secp256k1_Gx,
-  (unsigned char *)C_cx_secp256k1_Gy,
-  (unsigned char *)C_cx_secp256k1_n,
-  (unsigned char *)C_cx_secp256k1_Hn,
+  C_cx_secp256k1_p,
+  C_cx_secp256k1_Hp,
+  C_cx_secp256k1_Gx,
+  C_cx_secp256k1_Gy,
+  C_cx_secp256k1_n,
+  C_cx_secp256k1_Hn,
   C_cx_secp256k1_h,
-  (unsigned char *)C_cx_secp256k1_a,
-  (unsigned char *)C_cx_secp256k1_b,
+  C_cx_secp256k1_a,
+  C_cx_secp256k1_b,
 };
 
 static unsigned char const C_cx_secp256r1_a[] = {
@@ -137,15 +137,15 @@ static cx_curve_weierstrass_t const C_cx_secp256r1 = {
   CX_CURVE_SECP256R1,
   256,
   32,
-  (unsigned char *)C_cx_secp256r1_p,
-  (unsigned char *)C_cx_secp256r1_Hp,
-  (unsigned char *)C_cx_secp256r1_Gx,
-  (unsigned char *)C_cx_secp256r1_Gy,
-  (unsigned char *)C_cx_secp256r1_n,
-  (unsigned char *)C_cx_secp256r1_Hn,
+  C_cx_secp256r1_p,
+  C_cx_secp256r1_Hp,
+  C_cx_secp256r1_Gx,
+  C_cx_secp256r1_Gy,
+  C_cx_secp256r1_n,
+  C_cx_secp256r1_Hn,
   C_cx_secp256r1_h,
-  (unsigned char *)C_cx_secp256r1_a,
-  (unsigned char *)C_cx_secp256r1_b,
+  C_cx_secp256r1_a,
+  C_cx_secp256r1_b,
 };
 
 static uint8_t const C_cx_secp384r1_a[] = {
@@ -211,15 +211,15 @@ static cx_curve_weierstrass_t const C_cx_secp384r1 = {
   CX_CURVE_SECP384R1,
   384,
   48,
-  (unsigned char *)C_cx_secp384r1_p,
-  (unsigned char *)C_cx_secp384r1_Hp,
-  (unsigned char *)C_cx_secp384r1_Gx,
-  (unsigned char *)C_cx_secp384r1_Gy,
-  (unsigned char *)C_cx_secp384r1_n,
-  (unsigned char *)C_cx_secp384r1_Hn,
+  C_cx_secp384r1_p,
+  C_cx_secp384r1_Hp,
+  C_cx_secp384r1_Gx,
+  C_cx_secp384r1_Gy,
+  C_cx_secp384r1_n,
+  C_cx_secp384r1_Hn,
   C_cx_secp384r1_h,
-  (unsigned char *)C_cx_secp384r1_a,
-  (unsigned char *)C_cx_secp384r1_b,
+  C_cx_secp384r1_a,
+  C_cx_secp384r1_b,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -279,15 +279,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP256r1 = {
   .bit_size = 256,
   .length = 32,
 
-  .a = (uint8_t *)C_cx_BrainpoolP256r1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP256r1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP256r1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP256r1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP256r1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP256r1_n,
+  .a = C_cx_BrainpoolP256r1_a,
+  .b = C_cx_BrainpoolP256r1_b,
+  .p = C_cx_BrainpoolP256r1_p,
+  .Gx = C_cx_BrainpoolP256r1_Gx,
+  .Gy = C_cx_BrainpoolP256r1_Gy,
+  .n = C_cx_BrainpoolP256r1_n,
   .h = C_cx_BrainpoolP256r1_h,
-  .Hn = (uint8_t *)C_cx_BrainpoolP256r1_Hn,
-  .Hp = (uint8_t *)C_cx_BrainpoolP256r1_Hp,
+  .Hn = C_cx_BrainpoolP256r1_Hn,
+  .Hp = C_cx_BrainpoolP256r1_Hp,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -347,15 +347,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP256t1 = {
   .bit_size = 256,
   .length = 32,
 
-  .a = (uint8_t *)C_cx_BrainpoolP256t1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP256t1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP256t1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP256t1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP256t1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP256t1_n,
+  .a = C_cx_BrainpoolP256t1_a,
+  .b = C_cx_BrainpoolP256t1_b,
+  .p = C_cx_BrainpoolP256t1_p,
+  .Gx = C_cx_BrainpoolP256t1_Gx,
+  .Gy = C_cx_BrainpoolP256t1_Gy,
+  .n = C_cx_BrainpoolP256t1_n,
   .h = C_cx_BrainpoolP256t1_h,
-  .Hn = (uint8_t *)C_cx_BrainpoolP256t1_Hn,
-  .Hp = (uint8_t *)C_cx_BrainpoolP256t1_Hp,
+  .Hn = C_cx_BrainpoolP256t1_Hn,
+  .Hp = C_cx_BrainpoolP256t1_Hp,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -429,15 +429,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP320r1 = {
   .bit_size = 320,
   .length = 40,
 
-  .a = (uint8_t *)C_cx_BrainpoolP320r1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP320r1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP320r1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP320r1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP320r1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP320r1_n,
+  .a = C_cx_BrainpoolP320r1_a,
+  .b = C_cx_BrainpoolP320r1_b,
+  .p = C_cx_BrainpoolP320r1_p,
+  .Gx = C_cx_BrainpoolP320r1_Gx,
+  .Gy = C_cx_BrainpoolP320r1_Gy,
+  .n = C_cx_BrainpoolP320r1_n,
   .h = C_cx_BrainpoolP320r1_h,
-  .Hp = (uint8_t *)C_cx_BrainpoolP320r1_Hp,
-  .Hn = (uint8_t *)C_cx_BrainpoolP320r1_Hn,
+  .Hp = C_cx_BrainpoolP320r1_Hp,
+  .Hn = C_cx_BrainpoolP320r1_Hn,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -512,15 +512,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP320t1 = {
   .bit_size = 320,
   .length = 40,
 
-  .a = (uint8_t *)C_cx_BrainpoolP320t1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP320t1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP320t1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP320t1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP320t1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP320t1_n,
+  .a = C_cx_BrainpoolP320t1_a,
+  .b = C_cx_BrainpoolP320t1_b,
+  .p = C_cx_BrainpoolP320t1_p,
+  .Gx = C_cx_BrainpoolP320t1_Gx,
+  .Gy = C_cx_BrainpoolP320t1_Gy,
+  .n = C_cx_BrainpoolP320t1_n,
   .h = C_cx_BrainpoolP320t1_h,
-  .Hp = (uint8_t *)C_cx_BrainpoolP320t1_Hp,
-  .Hn = (uint8_t *)C_cx_BrainpoolP320t1_Hn,
+  .Hp = C_cx_BrainpoolP320t1_Hp,
+  .Hn = C_cx_BrainpoolP320t1_Hn,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -594,15 +594,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP384r1 = {
   .bit_size = 384,
   .length = 48,
 
-  .a = (uint8_t *)C_cx_BrainpoolP384r1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP384r1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP384r1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP384r1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP384r1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP384r1_n,
+  .a = C_cx_BrainpoolP384r1_a,
+  .b = C_cx_BrainpoolP384r1_b,
+  .p = C_cx_BrainpoolP384r1_p,
+  .Gx = C_cx_BrainpoolP384r1_Gx,
+  .Gy = C_cx_BrainpoolP384r1_Gy,
+  .n = C_cx_BrainpoolP384r1_n,
   .h = C_cx_BrainpoolP384r1_h,
-  .Hp = (uint8_t *)C_cx_BrainpoolP384r1_Hp,
-  .Hn = (uint8_t *)C_cx_BrainpoolP384r1_Hn,
+  .Hp = C_cx_BrainpoolP384r1_Hp,
+  .Hn = C_cx_BrainpoolP384r1_Hn,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -676,15 +676,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP384t1 = {
   .bit_size = 384,
   .length = 48,
 
-  .a = (uint8_t *)C_cx_BrainpoolP384t1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP384t1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP384t1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP384t1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP384t1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP384t1_n,
+  .a = C_cx_BrainpoolP384t1_a,
+  .b = C_cx_BrainpoolP384t1_b,
+  .p = C_cx_BrainpoolP384t1_p,
+  .Gx = C_cx_BrainpoolP384t1_Gx,
+  .Gy = C_cx_BrainpoolP384t1_Gy,
+  .n = C_cx_BrainpoolP384t1_n,
   .h = C_cx_BrainpoolP384t1_h,
-  .Hp = (uint8_t *)C_cx_BrainpoolP384t1_Hp,
-  .Hn = (uint8_t *)C_cx_BrainpoolP384t1_Hn,
+  .Hp = C_cx_BrainpoolP384t1_Hp,
+  .Hn = C_cx_BrainpoolP384t1_Hn,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -766,15 +766,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP512r1 = {
   .bit_size = 512,
   .length = 64,
 
-  .a = (uint8_t *)C_cx_BrainpoolP512r1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP512r1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP512r1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP512r1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP512r1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP512r1_n,
+  .a = C_cx_BrainpoolP512r1_a,
+  .b = C_cx_BrainpoolP512r1_b,
+  .p = C_cx_BrainpoolP512r1_p,
+  .Gx = C_cx_BrainpoolP512r1_Gx,
+  .Gy = C_cx_BrainpoolP512r1_Gy,
+  .n = C_cx_BrainpoolP512r1_n,
   .h = C_cx_BrainpoolP512r1_h,
-  .Hp = (uint8_t *)C_cx_BrainpoolP512r1_Hp,
-  .Hn = (uint8_t *)C_cx_BrainpoolP512r1_Hn,
+  .Hp = C_cx_BrainpoolP512r1_Hp,
+  .Hn = C_cx_BrainpoolP512r1_Hn,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -856,15 +856,15 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP512t1 = {
   .bit_size = 512,
   .length = 64,
 
-  .a = (uint8_t *)C_cx_BrainpoolP512t1_a,
-  .b = (uint8_t *)C_cx_BrainpoolP512t1_b,
-  .p = (uint8_t *)C_cx_BrainpoolP512t1_p,
-  .Gx = (uint8_t *)C_cx_BrainpoolP512t1_Gx,
-  .Gy = (uint8_t *)C_cx_BrainpoolP512t1_Gy,
-  .n = (uint8_t *)C_cx_BrainpoolP512t1_n,
+  .a = C_cx_BrainpoolP512t1_a,
+  .b = C_cx_BrainpoolP512t1_b,
+  .p = C_cx_BrainpoolP512t1_p,
+  .Gx = C_cx_BrainpoolP512t1_Gx,
+  .Gy = C_cx_BrainpoolP512t1_Gy,
+  .n = C_cx_BrainpoolP512t1_n,
   .h = C_cx_BrainpoolP512t1_h,
-  .Hn = (uint8_t *)C_cx_BrainpoolP512t1_Hn,
-  .Hp = (uint8_t *)C_cx_BrainpoolP512t1_Hp,
+  .Hn = C_cx_BrainpoolP512t1_Hn,
+  .Hp = C_cx_BrainpoolP512t1_Hp,
 
 };
 
@@ -916,20 +916,18 @@ static uint8_t const C_cx_BLS12_381_G1_Gy[BLS12_381_SIZE_u8] = {
 // The cofactor of BLS12-381 0x396c8c005555e1568c00aaab0000aaab
 // does not fit.
 #define C_cx_BLS12_381_G1_h 1
-cx_curve_weierstrass_t const C_cx_BLS12_381_G1 = {
-  CX_CURVE_BLS12_381_G1,
-  381,
-  48,
-  (unsigned char *)C_cx_BLS12_381_G1_p,
-  (unsigned char *)C_cx_BLS12_381_G1_Hp,
-  (unsigned char *)C_cx_BLS12_381_G1_Gx,
-  (unsigned char *)C_cx_BLS12_381_G1_Gy,
-  (unsigned char *)C_cx_BLS12_381_G1_n,
-  (unsigned char *)C_cx_BLS12_381_G1_Hn,
-  C_cx_BLS12_381_G1_h,
-  (unsigned char *)C_cx_BLS12_381_G1_a,
-  (unsigned char *)C_cx_BLS12_381_G1_b
-};
+cx_curve_weierstrass_t const C_cx_BLS12_381_G1 = { CX_CURVE_BLS12_381_G1,
+                                                   381,
+                                                   48,
+                                                   C_cx_BLS12_381_G1_p,
+                                                   C_cx_BLS12_381_G1_Hp,
+                                                   C_cx_BLS12_381_G1_Gx,
+                                                   C_cx_BLS12_381_G1_Gy,
+                                                   C_cx_BLS12_381_G1_n,
+                                                   C_cx_BLS12_381_G1_Hn,
+                                                   C_cx_BLS12_381_G1_h,
+                                                   C_cx_BLS12_381_G1_a,
+                                                   C_cx_BLS12_381_G1_b };
 
 static unsigned char const C_cx_Ed25519_a[] = {
   0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -995,17 +993,17 @@ static cx_curve_twisted_edward_t const C_cx_Ed25519 = {
   CX_CURVE_Ed25519,
   256,
   32,
-  (unsigned char *)C_cx_Ed25519_q,
-  (unsigned char *)C_cx_Ed25519_Hq,
-  (unsigned char *)C_cx_Ed25519_Bx,
-  (unsigned char *)C_cx_Ed25519_By,
-  (unsigned char *)C_cx_Ed25519_l,
-  (unsigned char *)C_cx_Ed25519_Hl,
+  C_cx_Ed25519_q,
+  C_cx_Ed25519_Hq,
+  C_cx_Ed25519_Bx,
+  C_cx_Ed25519_By,
+  C_cx_Ed25519_l,
+  C_cx_Ed25519_Hl,
   C_cx_Ed25519_h,
-  (unsigned char *)C_cx_Ed25519_a,
-  (unsigned char *)C_cx_Ed25519_d,
-  (unsigned char *)C_cx_Ed25519_I,
-  (unsigned char *)C_cx_Ed25519_Qplus3div8,
+  C_cx_Ed25519_a,
+  C_cx_Ed25519_d,
+  C_cx_Ed25519_I,
+  C_cx_Ed25519_Qplus3div8,
 };
 
 static cx_curve_domain_t const *const C_cx_allCurves[] = {
@@ -1208,12 +1206,12 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
         errx(1, "ssl: EC_KEY_generate_key");
       }
 
-      bn = (BIGNUM *)EC_KEY_get0_private_key(key);
-      if (BN_num_bytes(bn) > (int)domain->length) {
+      const BIGNUM *priv = EC_KEY_get0_private_key(key);
+      if (BN_num_bytes(priv) > (int)domain->length) {
         errx(1, "ssl: invalid bn");
       }
       private_key->curve = curve;
-      private_key->d_len = BN_bn2bin(bn, private_key->d);
+      private_key->d_len = BN_bn2bin(priv, private_key->d);
     } else {
       BIGNUM *priv;
 
@@ -1237,8 +1235,8 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
     }
 
     bn = BN_new();
-    pub = (EC_POINT *)EC_KEY_get0_public_key(key);
-    EC_POINT_point2bn(group, pub, POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
+    EC_POINT_point2bn(group, EC_KEY_get0_public_key(key),
+                      POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
 
     if (BN_num_bytes(bn) > 2 * (int)domain->length + 1) {
       errx(1, "ssl: invalid bn");
@@ -1441,13 +1439,13 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
                         unsigned int hash_len, const uint8_t *sig,
                         unsigned int sig_len)
 {
-  cx_curve_weierstrass_t *domain;
+  const cx_curve_weierstrass_t *domain;
   unsigned int size;
   const uint8_t *r, *s;
   size_t rlen, slen;
   int nid = 0;
 
-  domain = (cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
+  domain = (const cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
   size = domain->length; // bits  -> bytes
 
   if (!cx_ecfp_decode_sig_der(sig, sig_len, size, &r, &rlen, &s, &slen)) {

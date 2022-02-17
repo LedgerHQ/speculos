@@ -1,3 +1,5 @@
+add_compile_options(-Wextra -Wcast-qual -Wshadow -Werror)
+
 add_library(emu
         bolos/cx_aes.c
         bolos/cx_aes_sdk2.c
