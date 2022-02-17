@@ -28,6 +28,8 @@ class SephTag(IntEnum):
 
     REQUEST_STATUS = 0x52
     RAPDU = 0x53
+    PLAY_TUNE = 0x56
+
     PRINTC_STATUS = 0x5f
 
     GENERAL_STATUS = 0x60
@@ -248,7 +250,7 @@ class SeProxyHal:
 
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
-                    if screen.screen_update():
+                    if screen.model != "stax" and screen.screen_update():
                         if screen.model in ["nanox", "nanosp"]:
                             self.events += self.nanox_ocr.get_events()
 
@@ -292,7 +294,16 @@ class SeProxyHal:
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
-
+            elif tag == 0x6a:
+                screen.nbgl.hal_draw_rect(data)
+            elif tag == 0x6b:
+                screen.nbgl.hal_refresh(data)
+            elif tag == 0x6c:
+                screen.nbgl.hal_draw_line(data)
+            elif tag == 0x6d:
+                screen.nbgl.hal_draw_image(data)
+            elif tag == 0x6e:
+                screen.nbgl.hal_draw_image_file(data)
             else:
                 self.logger.error(f"unknown tag: {tag:#x}")
                 sys.exit(0)
@@ -331,6 +342,9 @@ class SeProxyHal:
 
         elif tag == SephTag.REQUEST_STATUS:
             # Ignore calls to io_seproxyhal_request_mcu_status()
+            pass
+
+        elif tag == SephTag.PLAY_TUNE:
             pass
 
         else:

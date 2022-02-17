@@ -13,12 +13,182 @@
 
 #include "bolos_syscalls_api_level_1.h"
 
+typedef uint8_t nbgl_transformation_t;
+typedef uint8_t nbgl_color_map_t;
+
+typedef enum { BLACK = 0, DARK_GRAY, LIGHT_GRAY, WHITE } color_t;
+
+typedef enum {
+  NBGL_BPP_1 = 0, ///< 1 bit per pixel
+  NBGL_BPP_2,     ///< 2 bits per pixel
+  NBGL_BPP_4,     ///< 4 bits per pixel
+} nbgl_bpp_t;
+
+typedef struct __attribute__((__packed__)) nbgl_area_s {
+  uint16_t x0;     ///< horizontal position of the upper left point of the area
+  uint16_t y0;     ///< vertical position of the upper left point of the area
+  uint16_t width;  ///< width of the area, in pixels
+  uint16_t height; ///< height of the area, in pixels
+  uint8_t backgroundColor; ///< color (usually background) to be applied
+  uint8_t bpp;             ///< bits per pixel for this area
+} nbgl_area_t;
+
+#define SEPROXYHAL_TAG_FINGER_EVENT         0x0C
+#define SEPROXYHAL_TAG_FINGER_EVENT_TOUCH   0x01
+#define SEPROXYHAL_TAG_FINGER_EVENT_RELEASE 0x02
+#define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0x6A
+#define SEPROXYHAL_TAG_NBGL_REFRESH         0x6B
+#define SEPROXYHAL_TAG_NBGL_DRAW_LINE       0x6C
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0x6D
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0x6E
+
+typedef struct io_touch_info_s {
+  uint16_t x;
+  uint16_t y;
+  uint8_t state;
+} io_touch_info_t;
+
+// Last touch infos sent by seph.
+// These infos can be returned by touch_get_last_infos syscall.
+static io_touch_info_t last_touch_infos;
+
+void catch_touch_info_from_seph(uint8_t *buffer, uint16_t size)
+{
+  if (size < 5) {
+    return;
+  }
+
+  if (buffer[0] != SEPROXYHAL_TAG_FINGER_EVENT) {
+    return;
+  }
+
+  last_touch_infos.state = buffer[3];
+  last_touch_infos.x = (buffer[4] << 8) + buffer[5];
+  last_touch_infos.y = (buffer[6] << 8) + buffer[7];
+}
+
+unsigned long sys_touch_get_last_info(io_touch_info_t *info)
+{
+  memcpy(info, &last_touch_infos, sizeof(io_touch_info_t));
+  return 0;
+}
+#define FONTS_ARRAY_ADDR 0x00805000
+unsigned long sys_nbgl_get_font(unsigned int fontId)
+{
+  if (fontId >= 4) {
+    return 0;
+  } else {
+    return *((unsigned int *)(FONTS_ARRAY_ADDR + (4 * fontId)));
+  }
+}
+
+unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area)
+{
+  uint8_t header[3];
+  size_t len = sizeof(nbgl_area_t);
+
+  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_RECT;
+  header[1] = (len >> 8) & 0xff;
+  header[2] = len & 0xff;
+
+  sys_io_seph_send(header, sizeof(header));
+  sys_io_seph_send((const uint8_t *)area, len);
+
+  return 0;
+}
+
+unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
+                                                  uint8_t mask,
+                                                  color_t lineColor)
+{
+  uint8_t header[3];
+  size_t len = sizeof(nbgl_area_t) + 2;
+
+  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
+  header[1] = (len >> 8) & 0xff;
+  header[2] = len & 0xff;
+
+  sys_io_seph_send(header, sizeof(header));
+  sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
+  sys_io_seph_send((const uint8_t *)&mask, 1);
+  sys_io_seph_send((const uint8_t *)&lineColor, 1);
+
+  return 0;
+}
+
+unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
+                                      nbgl_transformation_t transformation,
+                                      nbgl_color_map_t colorMap)
+{
+  uint8_t header[3];
+  uint32_t buffer_len = (area->width * area->height * (area->bpp + 1)) / 8;
+  size_t len = sizeof(nbgl_area_t) + buffer_len + 2;
+
+  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE;
+  header[1] = (len >> 8) & 0xff;
+  header[2] = len & 0xff;
+
+  sys_io_seph_send(header, sizeof(header));
+  sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
+  sys_io_seph_send(buffer, buffer_len);
+  sys_io_seph_send((const uint8_t *)&transformation, 1);
+  sys_io_seph_send((const uint8_t *)&colorMap, 1);
+
+  return 0;
+}
+
+unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area)
+{
+  uint8_t header[3];
+  size_t len = sizeof(nbgl_area_t);
+
+  header[0] = SEPROXYHAL_TAG_NBGL_REFRESH;
+  header[1] = (len >> 8) & 0xff;
+  header[2] = len & 0xff;
+
+  sys_io_seph_send(header, sizeof(header));
+  sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
+
+  return 0;
+}
+
+unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
+                                           nbgl_color_map_t colorMap,
+                                           uint8_t *optional_uzlib_work_buffer)
+{
+  uint8_t header[3];
+
+  uint8_t compressed = buffer[4] & 0xF;
+  if (compressed && optional_uzlib_work_buffer == NULL) {
+    fprintf(stderr, "no uzlib work buffer provided, failing");
+    return 0;
+  }
+
+  size_t len = sizeof(nbgl_area_t) + 1;
+  size_t buffer_len;
+  if (compressed) {
+    buffer_len = (buffer[5] | (buffer[5 + 1] << 8) | (buffer[5 + 2] << 16)) + 8;
+  } else {
+    buffer_len = (area->width * area->height * (area->bpp + 1)) / 8;
+  }
+
+  len += buffer_len;
+
+  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE;
+  header[1] = (len >> 8) & 0xff;
+  header[2] = len & 0xff;
+
+  sys_io_seph_send(header, sizeof(header));
+  sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
+  sys_io_seph_send(buffer, buffer_len);
+  sys_io_seph_send(&colorMap, 1);
+
+  return 0;
+}
+
 int emulate_sdk_api_level_1(unsigned long syscall, unsigned long *parameters,
                             unsigned long *ret, bool verbose, hw_model_t model)
 {
-  (void)
-      model; // Will be necessary if syscall behaves differently between devices
-
   switch (syscall) {
     /* clang-format off */
   SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
@@ -318,7 +488,31 @@ int emulate_sdk_api_level_1(unsigned long syscall, unsigned long *parameters,
              unsigned char, index, unsigned char *, buffer);
 
   default:
-    break;
+    if (model == MODEL_STAX) {
+      switch (syscall) {
+        SYSCALL1(nbgl_front_draw_rect, "%p", nbgl_area_t *, area);
+        SYSCALL1(nbgl_front_refresh_area, "%p", nbgl_area_t *, area);
+        SYSCALL3(nbgl_front_draw_horizontal_line, "%p, %d, %d", nbgl_area_t *,
+                 area, uint8_t, mask, uint8_t, lineColor);
+        SYSCALL4(nbgl_front_draw_img, "%p, %p, %d, %d", nbgl_area_t *, area,
+                 uint8_t *, buffer, uint8_t, transformation, nbgl_color_map_t,
+                 colorMap);
+        SYSCALL4(nbgl_front_draw_img_file, "%p, %p, %d, %p", nbgl_area_t *,
+                 area, uint8_t *, buffer, nbgl_color_map_t, colorMap, uint8_t *,
+                 uzlib_buffer);
+
+        SYSCALL1(touch_get_last_info, "%p", io_touch_info_t *, info);
+        SYSCALL1(nbgl_get_font, "%u", unsigned int, fontId);
+
+      default:
+        fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
+        break;
+      }
+      break;
+    } else {
+      fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
+      break;
+    }
   }
   return 0;
 }

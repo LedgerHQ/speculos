@@ -2,6 +2,7 @@ import select
 from typing import Optional
 
 from . import bagl
+from . import nbgl
 from .display import Display, DisplayArgs, FrameBuffer, Model, MODELS, ServerArgs
 from .readerror import ReadError
 from .vnc import VNC
@@ -13,7 +14,10 @@ class Headless(Display):
         self._init_notifiers(server)
 
         self.m = HeadlessPaintWidget(self, self.model, server.vnc)
-        self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size)
+        if display.model != "stax":
+            self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size)
+        else:
+            self.nbgl = nbgl.NBGL(self.m, MODELS[self.model].screen_size)
 
     def display_status(self, data):
         ret = self.bagl.display_status(data)
@@ -50,7 +54,7 @@ class HeadlessPaintWidget(FrameBuffer):
         super().__init__(model)
         self.vnc = vnc
 
-    def update(self):
+    def update(self, x=None, y=None, w=None, h=None):
         if self.pixels:
             self._redraw()
             self.pixels = {}

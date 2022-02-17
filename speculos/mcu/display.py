@@ -19,6 +19,7 @@ MODELS = {
     'nanox': Model('Nano X', (128, 64), (5, 5), (10, 10)),
     'nanosp': Model('Nano SP', (128, 64), (5, 5), (10, 10)),
     'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
+    'stax': Model('Stax', (400, 672), (13, 13), (26, 26)),
 }
 
 COLORS = {
@@ -62,6 +63,7 @@ class FrameBuffer(ABC):
         "nanos": 0x00fffb,
         "nanox": 0xdddddd,
         "nanosp": 0xdddddd,
+        "stax": 0xdddddd,
     }
 
     def __init__(self, model):
@@ -72,8 +74,9 @@ class FrameBuffer(ABC):
     def draw_point(self, x, y, color):
         # There are only 2 colors on the Nano S and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
-        if color != 0x000000:
-            color = FrameBuffer.COLORS.get(self.model, color)
+        if self.model != 'stax':
+            if color != 0x000000:
+                color = FrameBuffer.COLORS.get(self.model, color)
         self.pixels[(x, y)] = color
 
     def screenshot_update_pixels(self):

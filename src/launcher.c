@@ -321,6 +321,39 @@ error:
   return NULL;
 }
 
+static int load_fonts(char *fonts_path)
+{
+  int fd = open(fonts_path, O_RDONLY);
+  if (fd == -1) {
+    warnx("failed to open \"%s\"", fonts_path);
+    return -1;
+  }
+  fprintf(stderr, "[*] loading fonts from \"%s\"\n", fonts_path);
+
+  int flags = MAP_PRIVATE | MAP_FIXED;
+  int prot = PROT_READ;
+  int load_addr;
+  int load_size;
+
+  if (sdk_version == SDK_API_LEVEL_1) {
+    load_addr = 0x00805000;
+    load_size = 20480;
+  } else {
+    warn("Invalid sdk version for fonts");
+    close(fd);
+    return -1;
+  }
+  void *p = mmap((void *)load_addr, load_size, prot, flags, fd, 0);
+  fprintf(stderr, "[*] loaded fonts at %p\n", p);
+
+  if (p == MAP_FAILED) {
+    warn("mmap fonts");
+    close(fd);
+    return -1;
+  }
+  return 0;
+}
+
 static int load_cxlib(char *cxlib_args)
 {
   char *cxlib_path = strdup(cxlib_args);
@@ -351,9 +384,15 @@ static int load_cxlib(char *cxlib_args)
 
   // Map CXRAM on non NanoS devices
   if (hw_model != MODEL_NANO_S) {
+    // Make sure cr_ram is aligned
+    if (cx_ram_load % sysconf(_SC_PAGESIZE)) {
+      cx_ram_size += cx_ram_load % sysconf(_SC_PAGESIZE);
+      cx_ram_load -= (cx_ram_load % sysconf(_SC_PAGESIZE));
+    }
+
     if (mmap((void *)cx_ram_load, cx_ram_size, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
-      warn("mmap cxram");
+      warn("mmap cxram %x, %x", cx_ram_load, cx_ram_size);
       return -1;
     }
   }
@@ -505,7 +544,7 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
-                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\" and \"blue\".\n\
+                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\", \"stax\" and \"blue\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n\
   -a <api_level>:       A string representing the SDK api level to be used, like \"1\".\n");
   exit(EXIT_FAILURE);
@@ -514,6 +553,7 @@ static void usage(char *argv0)
 int main(int argc, char *argv[])
 {
   char *cxlib_path = NULL;
+  char *fonts_path = NULL;
 
   int opt;
 
@@ -527,8 +567,11 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:")) != -1) {
     switch (opt) {
+    case 'f':
+      fonts_path = optarg;
+      break;
     case 'c':
       cxlib_path = optarg;
       break;
@@ -557,6 +600,8 @@ int main(int argc, char *argv[])
         hw_model = MODEL_BLUE;
       } else if (strcmp(optarg, "nanosp") == 0) {
         hw_model = MODEL_NANO_SP;
+      } else if (strcmp(optarg, "stax") == 0) {
+        hw_model = MODEL_STAX;
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
@@ -613,6 +658,11 @@ int main(int argc, char *argv[])
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
+  case MODEL_STAX:
+    if (sdk_version != SDK_API_LEVEL_1) {
+      errx(1, "invalid SDK version for the Ledger Stax");
+    }
+    break;
   default:
     usage(argv[0]);
     break;
@@ -630,6 +680,12 @@ int main(int argc, char *argv[])
       sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3 ||
       sdk_version == SDK_API_LEVEL_1) {
     if (load_cxlib(cxlib_path) != 0) {
+      return 1;
+    }
+  }
+
+  if (hw_model == MODEL_STAX && fonts_path) {
+    if (load_fonts(fonts_path) != 0) {
       return 1;
     }
   }

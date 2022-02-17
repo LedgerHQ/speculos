@@ -135,6 +135,14 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         logger.warn(f"Cx lib {cxlib_filepath} not found")
 
+    if args.model == "stax":
+        fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
+        if os.path.exists(fonts):
+            argv += ['-f', fonts]
+        else:
+            logger.warn(f"Fonts {fonts_filepath} not found")
+
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
@@ -396,6 +404,7 @@ def main(prog=None):
             "nanox": 2,
             "nanosp": 2,
             "blue": 1,
+            "stax": 1,
         }
         zoom = default_zoom.get(args.model)
 
