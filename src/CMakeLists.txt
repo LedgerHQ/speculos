@@ -1,4 +1,6 @@
-add_compile_options(-Wextra -Wcast-qual -Wshadow -Werror)
+add_compile_options(-Wextra -Wcast-qual -Wshadow -Werror
+        -Wformat=2 -Wformat-overflow=2 -Wformat-truncation=2 -Wformat-security -Wformat-signedness
+)
 
 add_library(emu
         bolos/cx_aes.c

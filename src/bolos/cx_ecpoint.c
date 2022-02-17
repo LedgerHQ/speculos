@@ -68,7 +68,7 @@ static cx_err_t cx_mpi_ecpoint_normalize(cx_mpi_ecpoint_t *P)
     return CX_EC_INFINITE_POINT;
   }
   if (cx_mpi_cmp_u32(P->z, 1) != 0) {
-    errx(1, "cx_mpi_ecpoint_normalize: TODO: unsupported curve (P->z=%d)",
+    errx(1, "cx_mpi_ecpoint_normalize: TODO: unsupported curve (P->z=%u)",
          cx_mpi_get_u32(P->z));
     return CX_INTERNAL_ERROR;
   }

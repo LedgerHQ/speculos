@@ -39,7 +39,7 @@ int emulate(unsigned long syscall, unsigned long *parameters,
     retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
     break;
   default:
-    errx(1, "Unsupported SDK version %i", version);
+    errx(1, "Unsupported SDK version %u", version);
     break;
   }
   return retid;
@@ -56,7 +56,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL6(cx_aes, "(%p, 0x%x, %p, %u, %p, %u)",
            const cx_aes_key_t *, key,
-           int,                  mode,
+           unsigned int,         mode,
            const uint8_t *,      in,
            unsigned int,         len,
            uint8_t *,            out,
@@ -64,7 +64,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL8(cx_aes_iv, "(%p, 0x%x, %p, %u, %p, %u, %p, %u)",
            const cx_aes_key_t *, key,
-           int,                  mode,
+           unsigned int,         mode,
            const uint8_t *,      iv,
            unsigned int,         iv_len,
            const uint8_t *,      in,
@@ -100,9 +100,9 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
           uint8_t *,                     secret,
           size_t,                        secret_len);
 
-  SYSCALL8(cx_ecdsa_sign, "(%p, 0x%x, %d, %p, %u, %p, %u, %p)",
+  SYSCALL8(cx_ecdsa_sign, "(%p, 0x%x, %u, %p, %u, %p, %u, %p)",
            const cx_ecfp_private_key_t *, key,
-           int,                           mode,
+           unsigned int,                  mode,
            cx_md_t,                       hashID,
            const uint8_t *,               hash,
            unsigned int,                  hash_len,
@@ -110,9 +110,9 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
            unsigned int,                  sig_len,
            unsigned int *,                info);
 
-  SYSCALL7(cx_ecdsa_verify, "(%p, 0x%x, %d, %p, %u, %p, %u)",
+  SYSCALL7(cx_ecdsa_verify, "(%p, 0x%x, %u, %p, %u, %p, %u)",
            const cx_ecfp_public_key_t *, key,
-           int,                          mode,
+           unsigned int,                 mode,
            cx_md_t,                      hashID,
            const uint8_t *,              hash,
            unsigned int,                 hash_len,
@@ -132,7 +132,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
            cx_ecfp_private_key_t *, private_key,
            int,                     keep_private);
 
-  SYSCALL5(cx_ecfp_generate_pair2, "(0x%x, %p, %p, %d, %d)",
+  SYSCALL5(cx_ecfp_generate_pair2, "(0x%x, %p, %p, %d, %u)",
           cx_curve_t,              curve,
           cx_ecfp_public_key_t *,  public_key,
           cx_ecfp_private_key_t *, private_key,
@@ -165,7 +165,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL10(cx_eddsa_sign, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u, %p)",
             const cx_ecfp_private_key_t *, pvkey,
-            int,                           mode,
+            unsigned int,                  mode,
             cx_md_t,                       hashID,
             const unsigned char *,         hash,
             unsigned int,                  hash_len,
@@ -177,7 +177,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL9(cx_eddsa_verify, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u)",
            const cx_ecfp_public_key_t *, pu_key,
-           int,                          mode,
+           unsigned int,                 mode,
            cx_md_t,                      hashID,
            const unsigned char *,        hash,
            unsigned int,                 hash_len,
@@ -198,7 +198,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL6(cx_hash, "(%p, 0x%x, %p, %u, %p, %u)",
            cx_hash_t *,     hash,
-           int,             mode,
+           unsigned int,    mode,
            const uint8_t *, in,
            size_t,          len,
            uint8_t *,       out,
@@ -218,7 +218,7 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL6(cx_hmac, "(%p, 0x%x, %p, %u, %p, %u)",
            cx_hmac_t *,     hmac,
-           int,             mode,
+           unsigned int,    mode,
            const uint8_t *, in,
            unsigned int,    len,
            uint8_t *,       out,

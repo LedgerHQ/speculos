@@ -158,7 +158,7 @@ unsigned long sys_os_lib_throw(unsigned int exception);
 #define print_ret(ret)                                                         \
   do {                                                                         \
     if (verbose) {                                                             \
-      fprintf(stderr, " = %ld (0x%lx)\n", ret, ret);                           \
+      fprintf(stderr, " = %lu (0x%lx)\n", ret, ret);                           \
     }                                                                          \
   } while (0)
 

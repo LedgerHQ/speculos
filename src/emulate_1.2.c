@@ -108,7 +108,7 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL8(cx_aes_iv, "(%p, 0x%x, %p, %u, %p, %u, %p, %u)",
            const cx_aes_key_t *, key,
-           int,                  mode,
+           unsigned int,         mode,
            const uint8_t *,      iv,
            unsigned int,         iv_len,
            const uint8_t *,      in,
