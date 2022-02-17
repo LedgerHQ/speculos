@@ -225,14 +225,14 @@ static void *load_app(char *name)
   }
 
   if (app->elf.load_offset > st.st_size) {
-    warnx("app load offset is larger than file size (%ld > %lld)\n",
+    warnx("app load offset is larger than file size (%lu > %lld)\n",
           app->elf.load_offset, st.st_size);
     goto error;
   }
 
   size = app->elf.load_size;
   if (size > st.st_size - app->elf.load_offset) {
-    warnx("app load size is larger than file size (%ld > %lld)\n",
+    warnx("app load size is larger than file size (%lu > %lld)\n",
           app->elf.load_size, st.st_size);
     goto error;
   }

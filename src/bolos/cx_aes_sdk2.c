@@ -16,7 +16,7 @@ static uint32_t local_aes_mode;
 //-----------------------------------------------------------------------------
 cx_err_t sys_cx_aes_set_key_hw(const cx_aes_key_t *key, uint32_t mode)
 {
-  memcpy((void *)&local_aes_key, (void *)key, sizeof(local_aes_key));
+  memcpy(&local_aes_key, key, sizeof(local_aes_key));
   local_aes_mode = mode;
   local_aes_ready = true;
 

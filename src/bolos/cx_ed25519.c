@@ -152,11 +152,11 @@ static void cx_compress(uint8_t *x, uint8_t *y, size_t size)
 
 int sys_cx_edward_compress_point(cx_curve_t curve, uint8_t *P, size_t P_len)
 {
-  cx_curve_twisted_edward_t *domain;
+  const cx_curve_twisted_edward_t *domain;
   uint8_t *x, *y;
   size_t size;
 
-  domain = (cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
+  domain = (const cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
   size = domain->length;
   if (curve != CX_CURVE_Ed25519 || P_len < (1 + 2 * size)) {
     errx(1, "cx_edward_compress_point: invalid parameters");
@@ -260,11 +260,11 @@ free_bn:
 
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len)
 {
-  cx_curve_twisted_edward_t *domain;
+  const cx_curve_twisted_edward_t *domain;
   unsigned int size;
   uint8_t *x, *y;
 
-  domain = (cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
+  domain = (const cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
   size = domain->length;
   if (curve != CX_CURVE_Ed25519 || P_len < (1 + 2 * size)) {
     errx(1, "cx_edward_compress_point: invalid parameters");
