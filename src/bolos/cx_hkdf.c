@@ -13,7 +13,7 @@ void cx_hkdf_extract(const cx_md_t hash_id, const unsigned char *ikm,
 {
   cx_hmac_t hmac_ctx;
   const cx_hash_info_t *hash_info;
-  unsigned int md_len;
+  size_t md_len;
 
   hash_info = cx_hash_get_info(hash_id);
   md_len = hash_info->output_size;
@@ -38,7 +38,7 @@ void cx_hkdf_expand(const cx_md_t hash_id, const unsigned char *prk,
   unsigned char T[MAX_HASH_SIZE];
   cx_hmac_t hmac_ctx;
   const cx_hash_info_t *hash_info;
-  unsigned int md_len;
+  size_t md_len;
 
   hash_info = cx_hash_get_info(hash_id);
   md_len = hash_info->output_size;
