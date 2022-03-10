@@ -268,7 +268,7 @@ cx_err_t cx_mpi_destroy(cx_bn_t *bn_x)
 
 cx_err_t cx_mpi_unlock(void)
 {
-  size_t i;
+  unsigned int i;
 
   // Release & clear all allocated cx_mpi_array entries:
   for (i = 0; i < MAX_MPI_ARRAY_ENTRIES; i++)

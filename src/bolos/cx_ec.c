@@ -2026,7 +2026,7 @@ int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
   switch (curve) {
   case CX_CURVE_Ed25519:
     if (X_len != 65) {
-      errx(1, "cx_ecfp_add_point: invalid X_len (%u)", X_len);
+      errx(1, "cx_ecfp_add_point: invalid X_len (%zu)", X_len);
       ret = -1;
       break;
     }
