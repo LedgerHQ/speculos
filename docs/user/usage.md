@@ -16,7 +16,7 @@ The Nano S is the default model; the Nano X and Blue can be specified on the
 command-line:
 
 ```shell
-./speculos.py --model nanox apps/nanox#btc#1.2#57272a0f.elf
+./speculos.py --model nanox apps/nanox#btc#2.0.2#1c8db8da.elf
 ./speculos.py --model blue --sdk 1.5 apps/blue#btc#1.5#00000000.elf
 ```
 
