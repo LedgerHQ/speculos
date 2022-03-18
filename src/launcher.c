@@ -367,33 +367,37 @@ static int load_cxlib(hw_model_t model, char *cxlib_path)
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ | PROT_EXEC;
-  void *cx_addr = (model == MODEL_NANO_S)   ? CX_ADDR_NANOS
-                  : (model == MODEL_NANO_X) ? CX_ADDR_NANOX
-                                            : CX_ADDR_NANOSP;
-  int offset = (model == MODEL_NANO_SP) ? CX_OFFSET_NANOSP : CX_OFFSET;
-  void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, offset);
-  if (p == MAP_FAILED) {
-    warn("mmap cxlib");
-    close(fd);
-    return -1;
-  }
 
-  // Map CXRAM on Nano X devices
-  if (model == MODEL_NANO_X) {
+  void *cx_addr = CX_ADDR_NANOS;
+  int offset = CX_OFFSET;
+
+  switch (model) {
+  case MODEL_NANO_X:
+    cx_addr = CX_ADDR_NANOX;
     if (mmap(CXRAM_ADDR, CXRAM_SIZE, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
       warn("mmap cxram");
       return -1;
     }
-  }
-
-  // Map CXRAM on Nano SP devices
-  if (model == MODEL_NANO_SP) {
+    break;
+  case MODEL_NANO_SP:
+    cx_addr = CX_ADDR_NANOSP;
+    offset = CX_OFFSET_NANOSP;
     if (mmap(CXRAM_NANOSP_ADDR, CXRAM_NANOSP_SIZE, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
       warn("mmap cxram");
       return -1;
     }
+    break;
+  default:
+    break;
+  }
+
+  void *p = mmap(cx_addr, CX_SIZE, prot, flags, fd, offset);
+  if (p == MAP_FAILED) {
+    warn("mmap cxlib");
+    close(fd);
+    return -1;
   }
 
   if (patch_svc(cx_addr, CX_SIZE) != 0) {
