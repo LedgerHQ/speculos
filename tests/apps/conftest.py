@@ -13,7 +13,7 @@ AppInfo = namedtuple("AppInfo", ["filepath", "model", "name", "sdk", "hash"])
 
 def app_info_from_path(path) -> AppInfo:
     # name example: nanos#btc#1.5#5b6693b8.elf
-    app_regexp = re.compile(r"^(nanos|nanox|blue)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]{8})\.elf$")
+    app_regexp = re.compile(r"^(nanos|nanox|blue|nanosp)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]{8})\.elf$")
     filename = os.path.basename(path)
     matching = re.match(app_regexp, filename)
     if not matching:
