@@ -1639,6 +1639,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   } while (ecdsa_sig == NULL);
   BN_CTX_free(bn_ctx);
   BN_free(q);
+  BN_free(x);
   BN_free(k);
   BN_free(kinv);
   BN_free(rp);
