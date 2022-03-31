@@ -29,7 +29,7 @@ against the SDK `1.5` on the Nano S:
 ./speculos.py --sdk 1.5 --model nanos apps/btc.elf
 ```
 
-Supported SDK values for each device are defined in [src/sdk.h](../../src/sdk.h).
+Supported SDK values for each device are defined in [src/sdk.h](https://github.com/LedgerHQ/speculos/blob/master/src/sdk.h).
 You main choose the SDK using `-k`/`--sdk` argument:
 
 |     | Nano S             | Nano X          | Blue            |
