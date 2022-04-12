@@ -3,8 +3,10 @@
 #include <openssl/ec.h>
 #include <stdbool.h>
 
+#define _SDK_2_0_
+
 #include "bolos/cx_aes.h"
-#include "bolos/cx_ec_sdk2.h"
+#include "bolos/cx_ec.h"
 #include "bolos/cx_ed25519.h"
 
 //-----------------------------------------------------------------------------
