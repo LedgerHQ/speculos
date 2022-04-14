@@ -83,26 +83,6 @@ enum cx_curve_e {
   /** High limit (not included) of Montgomery curve ID */
 };
 #else
-#define HAVE_SECP256K1_CURVE
-#define HAVE_SECP256R1_CURVE
-#define HAVE_SECP384R1_CURVE
-#define HAVE_SECP521R1_CURVE
-
-#define HAVE_BRAINPOOL_P256R1_CURVE
-#define HAVE_BRAINPOOL_P256T1_CURVE
-#define HAVE_BRAINPOOL_P320R1_CURVE
-#define HAVE_BRAINPOOL_P320T1_CURVE
-#define HAVE_BRAINPOOL_P384R1_CURVE
-#define HAVE_BRAINPOOL_P384T1_CURVE
-#define HAVE_BRAINPOOL_P512R1_CURVE
-#define HAVE_BRAINPOOL_P512T1_CURVE
-
-#define HAVE_ED25519_CURVE
-#define HAVE_ED448_CURVE
-
-#define HAVE_CV25519_CURVE
-#define HAVE_CV448_CURVE
-
 /** List of supported elliptic curves */
 enum cx_curve_e {
   CX_CURVE_NONE,
@@ -113,67 +93,42 @@ enum cx_curve_e {
   /** Low limit (not included) of Weierstrass curve ID */
   CX_CURVE_WEIERSTRASS_START = 0x20,
 
-/** Secp.org */
-#ifdef HAVE_SECP256K1_CURVE
+  /** Secp.org */
   CX_CURVE_SECP256K1 = 0x21,
-#define CX_CURVE_256K1 CX_CURVE_SECP256K1
-#endif
 
-#ifdef HAVE_SECP256R1_CURVE
   CX_CURVE_SECP256R1 = 0x22,
 #define CX_CURVE_256R1    CX_CURVE_SECP256R1
 #define CX_CURVE_NISTP256 CX_CURVE_SECP256R1
-#endif
 
-#ifdef HAVE_SECP384R1_CURVE
   CX_CURVE_SECP384R1 = 0x23,
 #define CX_CURVE_NISTP384 CX_CURVE_SECP384R1
-#endif
 
-#ifdef HAVE_SECP521R1_CURVE
   CX_CURVE_SECP521R1 = 0x24,
 #define CX_CURVE_NISTP521 CX_CURVE_SECP521R1
-#endif
 
-#ifdef HAVE_BRAINPOOL_P256T1_CURVE
   /** BrainpoolP256t1 */
   CX_CURVE_BrainPoolP256T1 = 0x31,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P256R1_CURVE
   /** BrainpoolP256r1 */
   CX_CURVE_BrainPoolP256R1 = 0x32,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P320T1_CURVE
   /** BrainpoolP320t1 */
   CX_CURVE_BrainPoolP320T1 = 0x33,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P320R1_CURVE
   /** BrainpoolP320r1 */
   CX_CURVE_BrainPoolP320R1 = 0x34,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P384T1_CURVE
   /** BrainpoolP384t1 */
   CX_CURVE_BrainPoolP384T1 = 0x35,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P384R1_CURVE
   /** Brainpool384r1 */
   CX_CURVE_BrainPoolP384R1 = 0x36,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P512T1_CURVE
   /** BrainpoolP512t1 */
   CX_CURVE_BrainPoolP512T1 = 0x37,
-#endif
 
-#ifdef HAVE_BRAINPOOL_P512R1_CURVE
   /** BrainpoolP512r1 */
   CX_CURVE_BrainPoolP512R1 = 0x38,
-#endif
 
   CX_CURVE_BLS12_381_G1 = 0x39,
 
@@ -186,14 +141,10 @@ enum cx_curve_e {
   /** Low limit (not included) of  Twister Edwards curve ID */
   CX_CURVE_TWISTED_EDWARDS_START = 0x70,
 
-/** Ed25519 curve */
-#ifdef HAVE_ED25519_CURVE
+  /** Ed25519 curve */
   CX_CURVE_Ed25519 = 0x71,
-#endif
 
-#ifdef HAVE_ED25519_CURVE
   CX_CURVE_Ed448 = 0x72,
-#endif
 
   CX_CURVE_TWISTED_EDWARDS_END = 0x7F,
   /** High limit (not included) of Twister Edwards  curve ID */
@@ -204,13 +155,9 @@ enum cx_curve_e {
   /** Low limit (not included) of Montgomery curve ID */
   CX_CURVE_MONTGOMERY_START = 0x80,
 
-/** Curve25519 curve */
-#ifdef HAVE_CV25519_CURVE
+  /** Curve25519 curve */
   CX_CURVE_Curve25519 = 0x81,
-#endif
-#ifdef HAVE_CV448_CURVE
   CX_CURVE_Curve448 = 0x82,
-#endif
 
   CX_CURVE_MONTGOMERY_END = 0x8F
 
