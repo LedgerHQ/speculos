@@ -240,8 +240,8 @@ int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size);
 int cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len);
 int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest);
 
-int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
-                       unsigned char *out, unsigned int out_len);
+int sys_cx_hash_sha256(const uint8_t *in, size_t len,
+                       uint8_t *out, size_t out_len);
 
 #define sys_cx_blake2b_init   cx_blake2b_init
 #define sys_cx_blake2b_init2  cx_blake2b_init2
