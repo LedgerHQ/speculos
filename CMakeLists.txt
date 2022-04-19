@@ -7,8 +7,13 @@ include(ExternalProject)
 
 if (CMAKE_TOOLCHAIN_FILE)
   message(STATUS "Using toolchain ${CMAKE_TOOLCHAIN_FILE}")
+elseif (CMAKE_C_COMPILER)
+  # Use chosen compiler, useful for distributions such as ArchLinux and NixPkgs
+  add_compile_options(-mthumb)
+  message(STATUS "Using compiler ${CMAKE_C_COMPILER}")
 else ()
-  # By default, use gcc cross-compiler for ARM-Thumb
+  # By default, use gcc cross-compiler for ARM-Thumb distributed by
+  # Debian-based distributions
   set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)
   add_compile_options(-mthumb)
   message(STATUS "Using default compiler ${CMAKE_C_COMPILER}")
