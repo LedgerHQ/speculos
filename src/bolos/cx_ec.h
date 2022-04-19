@@ -294,7 +294,7 @@ struct cx_ecfp_256_public_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int W_len;
+  size_t W_len;
   /** Public key value starting at offset 0 */
   unsigned char W[65];
 };
@@ -303,7 +303,7 @@ struct cx_ecfp_256_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int d_len;
+  size_t d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[32];
 };
@@ -312,7 +312,7 @@ struct cx_ecfp_256_extended_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int d_len;
+  size_t d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[64];
 };
@@ -356,7 +356,7 @@ struct cx_ecfp_512_public_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int W_len;
+  size_t W_len;
   /** Public key value starting at offset 0 */
   unsigned char W[129];
 };
@@ -365,7 +365,7 @@ struct cx_ecfp_512_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int d_len;
+  size_t d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[64];
 };
@@ -374,7 +374,7 @@ struct cx_ecfp_512_extented_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int d_len;
+  size_t d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[128];
 };
@@ -391,7 +391,7 @@ struct cx_ecfp_640_public_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int W_len;
+  size_t W_len;
   /** Public key value starting at offset 0 */
   unsigned char W[161];
 };
@@ -400,7 +400,7 @@ struct cx_ecfp_640_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  unsigned int d_len;
+  size_t d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[80];
 };

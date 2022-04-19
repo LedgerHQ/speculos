@@ -1092,7 +1092,7 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
   }
 
   if (pv_key->d_len != 32) {
-    errx(1, "cx_eddsa_get_public_key: invalid key size (0x%x)", pv_key->d_len);
+    errx(1, "cx_eddsa_get_public_key: invalid key size (0x%zx)", pv_key->d_len);
     return -1;
   }
 
@@ -1451,7 +1451,6 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   if (!cx_ecfp_decode_sig_der(sig, sig_len, size, &r, &rlen, &s, &slen)) {
     return 0;
   }
-
   // Load ECDSA signature
   BIGNUM *sig_r = BN_new();
   BIGNUM *sig_s = BN_new();

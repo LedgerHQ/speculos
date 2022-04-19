@@ -55,7 +55,7 @@ struct cx_hash_header_s {
   /** Message digest identifier, See cx_md_e. */
   cx_md_t algo;
   /** Number of block already processed */
-  unsigned int counter;
+  uint32_t counter;
 };
 /** Convenience type. See #cx_hash_header_s. */
 typedef struct cx_hash_header_s cx_hash_t;
@@ -67,7 +67,7 @@ struct cx_sha256_s {
   /** @copydoc cx_ripemd160_s::header */
   struct cx_hash_header_s header;
   /** @internal @copydoc cx_ripemd160_s::blen */
-  unsigned int blen;
+  size_t blen;
   /** @internal @copydoc cx_ripemd160_s::block */
   unsigned char block[64];
   /** @copydoc cx_ripemd160_s::acc */
@@ -171,8 +171,8 @@ typedef struct cx_sha3_s cx_sha3_t;
 /* Generic API */
 typedef struct {
   cx_md_t md_type;
-  unsigned int output_size;
-  unsigned int block_size;
+  size_t output_size;
+  size_t block_size;
   int (*init_func)(void *ctx);
   int (*update_func)(void *ctx, const uint8_t *data, size_t len);
   int (*finish_func)(void *ctx, uint8_t *digest);
