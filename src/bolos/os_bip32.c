@@ -92,17 +92,17 @@ void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed,
 
   buf[0] = 0x01;
   memcpy(buf + 1, seed, seed_length);
-  cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length, key->chain_code,
-                 CX_SHA256_SIZE);
+  spec_cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length, key->chain_code,
+                      CX_SHA256_SIZE);
 
-  cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
+  spec_cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
 
   memcpy(key->private_key, hash, 32);
   memcpy(key->chain_code, hash + 32, 32);
 
   while (key->private_key[31] & 0x20) {
-    cx_hmac_sha512(sk, sk_length, key->private_key, CX_SHA512_SIZE,
-                   key->private_key, CX_SHA512_SIZE);
+    spec_cx_hmac_sha512(sk, sk_length, key->private_key, CX_SHA512_SIZE,
+                        key->private_key, CX_SHA512_SIZE);
   }
 
   key->private_key[0] &= 0xF8;
@@ -114,7 +114,7 @@ void expand_seed_slip10(const uint8_t *sk, size_t sk_length, uint8_t *seed,
 {
   uint8_t hash[CX_SHA512_SIZE];
 
-  cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
+  spec_cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
 
   memcpy(key->private_key, hash, 32);
   memcpy(key->chain_code, hash + 32, 32);
@@ -128,15 +128,15 @@ void expand_seed_ed25519_bip32(const uint8_t *sk, size_t sk_length,
 
   buf[0] = 0x01;
   memcpy(buf + 1, seed, seed_length);
-  cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length, key->chain_code,
-                 CX_SHA256_SIZE);
+  spec_cx_hmac_sha256(sk, sk_length, buf, 1 + seed_length, key->chain_code,
+                      CX_SHA256_SIZE);
 
-  cx_hmac_sha512(sk, sk_length, seed, seed_length, key->private_key,
-                 CX_SHA512_SIZE);
+  spec_cx_hmac_sha512(sk, sk_length, seed, seed_length, key->private_key,
+                      CX_SHA512_SIZE);
 
   while (key->private_key[31] & 0x20) {
-    cx_hmac_sha512(sk, sk_length, key->private_key, CX_SHA512_SIZE,
-                   key->private_key, CX_SHA512_SIZE);
+    spec_cx_hmac_sha512(sk, sk_length, key->private_key, CX_SHA512_SIZE,
+                        key->private_key, CX_SHA512_SIZE);
   }
 
   key->private_key[0] &= 0xF8;
@@ -152,7 +152,7 @@ static void expand_seed(cx_curve_t curve, const uint8_t *sk, size_t sk_length,
 
   domain = cx_ecfp_get_domain(curve);
 
-  cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
+  spec_cx_hmac_sha512(sk, sk_length, seed, seed_length, hash, CX_SHA512_SIZE);
 
   memcpy(key->private_key, hash, 32);
   memcpy(key->chain_code, hash + 32, 32);
@@ -162,7 +162,8 @@ static void expand_seed(cx_curve_t curve, const uint8_t *sk, size_t sk_length,
          cx_math_cmp(key->private_key, domain->n, 32) >= 0) {
     memcpy(hash, key->private_key, 32);
     memcpy(hash + 32, key->chain_code, 32);
-    cx_hmac_sha512(sk, sk_length, hash, CX_SHA512_SIZE, hash, CX_SHA512_SIZE);
+    spec_cx_hmac_sha512(sk, sk_length, hash, CX_SHA512_SIZE, hash,
+                        CX_SHA512_SIZE);
     memcpy(key->private_key, hash, 32);
     memcpy(key->chain_code, hash + 32, 32);
   }
@@ -281,7 +282,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path,
     len += 4;
 
     // compute Z = Hmac(...)
-    cx_hmac_sha512(key->chain_code, 32, tmp, len, Z, CX_SHA512_SIZE);
+    spec_cx_hmac_sha512(key->chain_code, 32, tmp, len, Z, CX_SHA512_SIZE);
     // kL = 8*Zl + kLP (use multm, but never overflow order, so ok)
     le2be(ZL, 32);
     le2be(kLP, 32);
@@ -323,7 +324,7 @@ static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path,
     tmp[len + 2] = (path[i] >> 16) & 0xff;
     tmp[len + 3] = (path[i] >> 24) & 0xff;
     len += 4;
-    cx_hmac_sha512(key->chain_code, 32, tmp, len, tmp, CX_SHA512_SIZE);
+    spec_cx_hmac_sha512(key->chain_code, 32, tmp, len, tmp, CX_SHA512_SIZE);
     // store new c
     memcpy(key->chain_code, tmp + 32, 32);
   }
@@ -359,7 +360,7 @@ static int hdw_slip10(extended_private_key *key, const uint32_t *path,
     tmp[35] = (path[i] >> 8) & 0xff;
     tmp[36] = path[i] & 0xff;
 
-    cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
+    spec_cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
 
     memcpy(key->private_key, tmp, 32);
     memcpy(key->chain_code, tmp + 32, 32);
@@ -410,7 +411,7 @@ static int hdw_bip32(extended_private_key *key, cx_curve_t curve,
       tmp[35] = (path[i] >> 8) & 0xff;
       tmp[36] = path[i] & 0xff;
 
-      cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
+      spec_cx_hmac_sha512(key->chain_code, 32, tmp, 37, tmp, CX_SHA512_SIZE);
 
       if (cx_math_cmp(tmp, domain->n, 32) < 0) {
         cx_math_addm(tmp, tmp, key->private_key, domain->n, 32);
@@ -450,10 +451,10 @@ static int hdw_slip21(const uint8_t *sk, size_t sk_length, const uint8_t *seed,
   }
 
   /* derive master node */
-  cx_hmac_sha512(sk, sk_length, seed, seed_size, node, CX_SHA512_SIZE);
+  spec_cx_hmac_sha512(sk, sk_length, seed, seed_size, node, CX_SHA512_SIZE);
 
   /* derive child node */
-  cx_hmac_sha512(node, 32, path, path_len, node, CX_SHA512_SIZE);
+  spec_cx_hmac_sha512(node, 32, path, path_len, node, CX_SHA512_SIZE);
 
   if (private_key != NULL) {
     memcpy(private_key, node + 32, 32);

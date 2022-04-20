@@ -1388,9 +1388,9 @@ end:
   return ret;
 }
 
-int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-                           size_t max_size, const uint8_t **r, size_t *r_len,
-                           const uint8_t **s, size_t *s_len)
+int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+                                size_t max_size, const uint8_t **r,
+                                size_t *r_len, const uint8_t **s, size_t *s_len)
 {
   size_t len;
   int ret = 0;
@@ -1448,7 +1448,7 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   domain = (const cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
   size = domain->length; // bits  -> bytes
 
-  if (!cx_ecfp_decode_sig_der(sig, sig_len, size, &r, &rlen, &s, &slen)) {
+  if (!spec_cx_ecfp_decode_sig_der(sig, sig_len, size, &r, &rlen, &s, &slen)) {
     return 0;
   }
   // Load ECDSA signature
@@ -1482,9 +1482,9 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   return ret;
 }
 
-int cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
-                           unsigned char *r, unsigned int r_len,
-                           unsigned char *s, unsigned int s_len)
+int spec_cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
+                                unsigned char *r, unsigned int r_len,
+                                unsigned char *s, unsigned int s_len)
 {
   unsigned int offset;
 
@@ -1564,9 +1564,9 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   case CX_RND_TRNG:
     // Use deterministic signatures with "TRNG" mode in Speculos, in order to
     // avoid signing objects with a weak PRNG, only if the hash is compatible
-    // with cx_hmac_init (hash_info->output_size is defined).
+    // with spec_cx_hmac_init (hash_info->output_size is defined).
     // Otherwise, fall back to OpenSSL signature.
-    hash_info = cx_hash_get_info(hashID);
+    hash_info = spec_cx_hash_get_info(hashID);
     if (hash_info == NULL || hash_info->output_size == 0) {
       do_rfc6979_signature = false;
       break;
@@ -1602,12 +1602,12 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
     if (domain->length >= CX_RFC6979_MAX_RLEN) {
       errx(1, "rfc6979_ecdsa_sign: curve too large");
     }
-    cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash, hash_len,
-                        domain->n, domain->length);
+    spec_cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash,
+                             hash_len, domain->n, domain->length);
   }
   do {
     if (do_rfc6979_signature) {
-      cx_rng_rfc6979_next(&rfc_ctx, rnd, domain->length);
+      spec_cx_rng_rfc6979_next(&rfc_ctx, rnd, domain->length);
       BN_bin2bn(rnd, domain->length, k);
     } else {
       BN_rand(k, domain->length, 0, 0);
@@ -1666,8 +1666,8 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   buf_s = malloc(domain->length);
   BN_bn2binpad(r, buf_r, domain->length);
   BN_bn2binpad(normalized_s, buf_s, domain->length);
-  int ret = cx_ecfp_encode_sig_der(sig, sig_len, buf_r, domain->length, buf_s,
-                                   domain->length);
+  int ret = spec_cx_ecfp_encode_sig_der(sig, sig_len, buf_r, domain->length,
+                                        buf_s, domain->length);
   free(buf_r);
   free(buf_s);
   ECDSA_SIG_free(ecdsa_sig);

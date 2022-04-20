@@ -49,7 +49,8 @@ int cx_blake2b_init2(cx_blake2b_t *hash, unsigned int size, unsigned char *salt,
   hash->output_size = size;
   hash->header.algo = CX_BLAKE2B;
 
-  if (blake2b_init(&hash->ctx, size, salt, salt_len, perso, perso_len) < 0) {
+  if (spec_blake2b_init(&hash->ctx, size, salt, salt_len, perso, perso_len) <
+      0) {
     goto err;
   }
   return CX_BLAKE2B;
@@ -58,7 +59,7 @@ err:
   THROW(INVALID_PARAMETER);
 }
 
-int cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len)
+int spec_cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len)
 {
   if (ctx == NULL) {
     return 0;
@@ -66,15 +67,15 @@ int cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len)
   if (data == NULL && len != 0) {
     return 0;
   }
-  return blake2b_update(&ctx->ctx, data, len) == 0;
+  return spec_blake2b_update(&ctx->ctx, data, len) == 0;
 }
 
-int cx_blake2b_final(cx_blake2b_t *ctx, uint8_t *digest)
+int spec_cx_blake2b_final(cx_blake2b_t *ctx, uint8_t *digest)
 {
-  return blake2b_final(&ctx->ctx, digest, ctx->output_size) == 0;
+  return spec_blake2b_final(&ctx->ctx, digest, ctx->output_size) == 0;
 }
 
-size_t cx_blake2b_get_output_size(const cx_blake2b_t *ctx)
+size_t spec_cx_blake2b_get_output_size(const cx_blake2b_t *ctx)
 {
   return ctx->output_size;
 }
@@ -97,12 +98,12 @@ int cx_blake2b_validate_context(const cx_blake2b_t *ctx)
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int cx_blake2b(cx_hash_t *hash, int mode, const unsigned char *in,
-               unsigned int len, unsigned char *out, unsigned int out_len)
+int spec_cx_blake2b(cx_hash_t *hash, int mode, const unsigned char *in,
+                    unsigned int len, unsigned char *out, unsigned int out_len)
 {
 
   unsigned int sz = 0;
-  if (blake2b_update(&((cx_blake2b_t *)hash)->ctx, in, len) < 0) {
+  if (spec_blake2b_update(&((cx_blake2b_t *)hash)->ctx, in, len) < 0) {
     THROW(INVALID_PARAMETER);
   }
   if (mode & CX_LAST) {
@@ -110,7 +111,7 @@ int cx_blake2b(cx_hash_t *hash, int mode, const unsigned char *in,
     if (out && (out_len < sz)) {
       THROW(INVALID_PARAMETER);
     }
-    if (blake2b_final(&((cx_blake2b_t *)hash)->ctx, out, out_len) < 0) {
+    if (spec_blake2b_final(&((cx_blake2b_t *)hash)->ctx, out, out_len) < 0) {
       THROW(INVALID_PARAMETER);
     }
   }
@@ -279,7 +280,7 @@ static void blake2b_increment_counter( blake2b_state *S, const uint64_t inc )
   S->t[1] += ( S->t[0] < inc );
 }
 
-static void blake2b_init0( blake2b_state *S )
+static void spec_blake2b_init0( blake2b_state *S )
 {
   size_t i;
   memset( S, 0, sizeof( blake2b_state ) );
@@ -288,12 +289,12 @@ static void blake2b_init0( blake2b_state *S )
 }
 
 /* init xors IV with input parameter block */
-int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
+int spec_blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 {
   const uint8_t *p = ( const uint8_t * )( P );
   size_t i;
 
-  blake2b_init0( S );
+  spec_blake2b_init0( S );
 
   /* IV XOR ParamBlock */
   for( i = 0; i < 8; ++i )
@@ -305,7 +306,7 @@ int blake2b_init_param( blake2b_state *S, const blake2b_param *P )
 
 
 
-int blake2b_init( blake2b_state *S, size_t outlen,
+int spec_blake2b_init( blake2b_state *S, size_t outlen,
                   unsigned char *salt, size_t salt_len,
                   unsigned char *personal, size_t personal_len){
   blake2b_param P[1];
@@ -330,11 +331,11 @@ int blake2b_init( blake2b_state *S, size_t outlen,
   if(personal) {
     memcpy(P->personal, personal, personal_len);
   }
-  return blake2b_init_param( S, P );
+  return spec_blake2b_init_param( S, P );
 }
 
 
-int blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen )
+int spec_blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen )
 {
   blake2b_param P[1];
 
@@ -355,14 +356,14 @@ int blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t k
   memset( P->salt,     0, sizeof( P->salt ) );
   memset( P->personal, 0, sizeof( P->personal ) );
 
-  if( blake2b_init_param( S, P ) < 0 ) return -1;
+  if( spec_blake2b_init_param( S, P ) < 0 ) return -1;
 
   {
     //uint8_t block[BLAKE2B_BLOCKBYTES];
     #define block G_cx.blake.block1
     memset( block, 0, BLAKE2B_BLOCKBYTES );
     memcpy( block, key, keylen );
-    blake2b_update( S, block, BLAKE2B_BLOCKBYTES );
+    spec_blake2b_update( S, block, BLAKE2B_BLOCKBYTES );
     secure_zero_memory( block, BLAKE2B_BLOCKBYTES ); /* Burn the key from stack */
     #undef block
   }
@@ -429,7 +430,7 @@ static void blake2b_compress( blake2b_state *S, const uint8_t block[BLAKE2B_BLOC
 #undef G
 #undef ROUND
 
-int blake2b_update( blake2b_state *S, const void *pin, size_t inlen )
+int spec_blake2b_update( blake2b_state *S, const void *pin, size_t inlen )
 {
   const unsigned char * in = (const unsigned char *)pin;
   if( inlen > 0 )
@@ -456,7 +457,7 @@ int blake2b_update( blake2b_state *S, const void *pin, size_t inlen )
   return 0;
 }
 
-int blake2b_final( blake2b_state *S, void *out, size_t outlen )
+int spec_blake2b_final( blake2b_state *S, void *out, size_t outlen )
 {
   size_t i;
   //uint8_t buffer[BLAKE2B_OUTBYTES] = {0};
@@ -507,15 +508,15 @@ int blake2b( void *out, size_t outlen, const void *in, size_t inlen, const void 
 
   if( keylen > 0 )
   {
-    if( blake2b_init_key( S, outlen, key, keylen ) < 0 ) return -1;
+    if( spec_blake2b_init_key( S, outlen, key, keylen ) < 0 ) return -1;
   }
   else
   {
-    if( blake2b_init( S, outlen ) < 0 ) return -1;
+    if( spec_blake2b_init( S, outlen ) < 0 ) return -1;
   }
 
-  blake2b_update( S, ( const uint8_t * )in, inlen );
-  blake2b_final( S, out, outlen );
+  spec_blake2b_update( S, ( const uint8_t * )in, inlen );
+  spec_blake2b_final( S, out, outlen );
   return 0;
 }
 
@@ -566,21 +567,21 @@ int main( void )
       size_t mlen = i;
       int err = 0;
 
-      if( (err = blake2b_init_key(&S, BLAKE2B_OUTBYTES, key, BLAKE2B_KEYBYTES)) < 0 ) {
+      if( (err = spec_blake2b_init_key(&S, BLAKE2B_OUTBYTES, key, BLAKE2B_KEYBYTES)) < 0 ) {
         goto fail;
       }
 
       while (mlen >= step) {
-        if ( (err = blake2b_update(&S, p, step)) < 0 ) {
+        if ( (err = spec_blake2b_update(&S, p, step)) < 0 ) {
           goto fail;
         }
         mlen -= step;
         p += step;
       }
-      if ( (err = blake2b_update(&S, p, mlen)) < 0) {
+      if ( (err = spec_blake2b_update(&S, p, mlen)) < 0) {
         goto fail;
       }
-      if ( (err = blake2b_final(&S, hash, BLAKE2B_OUTBYTES)) < 0) {
+      if ( (err = spec_blake2b_final(&S, hash, BLAKE2B_OUTBYTES)) < 0) {
         goto fail;
       }
 

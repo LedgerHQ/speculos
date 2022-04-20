@@ -18,7 +18,7 @@ static union cx_u G_cx;
 
 static size_t get_block_size(cx_md_t md)
 {
-  const cx_hash_info_t *info = cx_hash_get_info(md);
+  const cx_hash_info_t *info = spec_cx_hash_get_info(md);
   if (info == NULL || info->block_size == 0) {
     return 0;
   }
@@ -51,8 +51,8 @@ static cx_hash_ctx *get_hash_ctx(cx_hmac_ctx *ctx)
   return NULL;
 }
 
-int cx_hmac_init(cx_hmac_ctx *ctx, cx_md_t hash_id, const uint8_t *key,
-                 size_t key_len)
+int spec_cx_hmac_init(cx_hmac_ctx *ctx, cx_md_t hash_id, const uint8_t *key,
+                      size_t key_len)
 {
   if (ctx == NULL) {
     return 0;
@@ -73,9 +73,9 @@ int cx_hmac_init(cx_hmac_ctx *ctx, cx_md_t hash_id, const uint8_t *key,
 
   if (key) {
     if (key_len > block_size) {
-      cx_hash_init(hash_ctx, hash_id);
-      cx_hash_update(hash_ctx, key, key_len);
-      cx_hash_final(hash_ctx, ctx->key);
+      spec_cx_hash_init(hash_ctx, hash_id);
+      spec_cx_hash_update(hash_ctx, key, key_len);
+      spec_cx_hash_final(hash_ctx, ctx->key);
     } else {
       memcpy(ctx->key, key, key_len);
     }
@@ -85,12 +85,12 @@ int cx_hmac_init(cx_hmac_ctx *ctx, cx_md_t hash_id, const uint8_t *key,
     }
   }
 
-  cx_hash_init(hash_ctx, hash_id);
-  cx_hash_update(hash_ctx, ctx->key, block_size);
+  spec_cx_hash_init(hash_ctx, hash_id);
+  spec_cx_hash_update(hash_ctx, ctx->key, block_size);
   return 1;
 }
 
-int cx_hmac_update(cx_hmac_ctx *ctx, const uint8_t *data, size_t data_len)
+int spec_cx_hmac_update(cx_hmac_ctx *ctx, const uint8_t *data, size_t data_len)
 {
   if (ctx == NULL || data == NULL) {
     return 0;
@@ -99,10 +99,10 @@ int cx_hmac_update(cx_hmac_ctx *ctx, const uint8_t *data, size_t data_len)
   if (hash_ctx == NULL) {
     return 0;
   }
-  return cx_hash_update(hash_ctx, data, data_len);
+  return spec_cx_hash_update(hash_ctx, data, data_len);
 }
 
-int cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len)
+int spec_cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len)
 {
   uint8_t inner_hash[MAX_HASH_SIZE];
   uint8_t hkey[MAX_HASH_BLOCK_SIZE];
@@ -118,9 +118,9 @@ int cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len)
 
   cx_md_t hash_algorithm = get_algorithm(ctx);
   size_t block_size = get_block_size(hash_algorithm);
-  size_t hash_output_size = cx_hash_get_size(hash_ctx);
+  size_t hash_output_size = spec_cx_hash_get_size(hash_ctx);
 
-  cx_hash_final(hash_ctx, inner_hash);
+  spec_cx_hash_final(hash_ctx, inner_hash);
 
   // hash key xor 5c (and 36 to remove prepadding at init)
   memcpy(hkey, ctx->key, block_size);
@@ -128,10 +128,10 @@ int cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len)
     hkey[i] ^= OPAD ^ IPAD;
   }
 
-  cx_hash_init(hash_ctx, hash_algorithm);
-  cx_hash_update(hash_ctx, hkey, block_size);
-  cx_hash_update(hash_ctx, inner_hash, hash_output_size);
-  cx_hash_final(hash_ctx, hkey);
+  spec_cx_hash_init(hash_ctx, hash_algorithm);
+  spec_cx_hash_update(hash_ctx, hkey, block_size);
+  spec_cx_hash_update(hash_ctx, inner_hash, hash_output_size);
+  spec_cx_hash_final(hash_ctx, hkey);
 
   // length result
   if (*out_len >= hash_output_size) {
@@ -147,7 +147,7 @@ int cx_hmac_final(cx_hmac_ctx *ctx, uint8_t *out, size_t *out_len)
 int cx_hmac_sha256_init(cx_hmac_sha256_t *hmac, const unsigned char *key,
                         unsigned int key_len)
 {
-  if (!cx_hmac_init(hmac, CX_SHA256, key, key_len)) {
+  if (!spec_cx_hmac_init(hmac, CX_SHA256, key, key_len)) {
     THROW(INVALID_PARAMETER);
   }
   return CX_SHA256;
@@ -159,7 +159,7 @@ int cx_hmac_sha256_init(cx_hmac_sha256_t *hmac, const unsigned char *key,
 int cx_hmac_ripemd160_init(cx_hmac_ripemd160_t *hmac, const unsigned char *key,
                            unsigned int key_len)
 {
-  if (!cx_hmac_init(hmac, CX_RIPEMD160, key, key_len)) {
+  if (!spec_cx_hmac_init(hmac, CX_RIPEMD160, key, key_len)) {
     THROW(INVALID_PARAMETER);
   }
   return CX_RIPEMD160;
@@ -171,7 +171,7 @@ int cx_hmac_ripemd160_init(cx_hmac_ripemd160_t *hmac, const unsigned char *key,
 int cx_hmac_sha512_init(cx_hmac_sha512_t *hmac, const unsigned char *key,
                         unsigned int key_len)
 {
-  if (!cx_hmac_init(hmac, CX_SHA512, key, key_len)) {
+  if (!spec_cx_hmac_init(hmac, CX_SHA512, key, key_len)) {
     THROW(INVALID_PARAMETER);
   }
   return CX_SHA512;
@@ -194,14 +194,14 @@ int cx_hmac(cx_hmac_t *hmac, int mode, const unsigned char *in,
   }
   cx_scc_struct_check_hashmac(hmac);
 
-  cx_hmac_update(hmac, in, len);
+  spec_cx_hmac_update(hmac, in, len);
   if (mode & CX_LAST) {
     output_size = out_len;
-    cx_hmac_final(hmac, out, &output_size);
+    spec_cx_hmac_final(hmac, out, &output_size);
     ret = output_size;
 
     if (!(mode & CX_NO_REINIT)) {
-      cx_hmac_init(hmac, get_algorithm(hmac), NULL, 0);
+      spec_cx_hmac_init(hmac, get_algorithm(hmac), NULL, 0);
     }
   }
   return ret;
@@ -213,27 +213,27 @@ err:
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-int cx_hmac_sha256(const unsigned char *key, unsigned int key_len,
-                   const unsigned char *in, unsigned int len,
-                   unsigned char *out, unsigned int out_len)
+int spec_cx_hmac_sha256(const unsigned char *key, unsigned int key_len,
+                        const unsigned char *in, unsigned int len,
+                        unsigned char *out, unsigned int out_len)
 {
   size_t mac_len = out_len;
-  cx_hmac_init(&G_cx.hmac, CX_SHA256, key, key_len);
-  cx_hmac_update(&G_cx.hmac, in, len);
-  cx_hmac_final(&G_cx.hmac, out, &mac_len);
+  spec_cx_hmac_init(&G_cx.hmac, CX_SHA256, key, key_len);
+  spec_cx_hmac_update(&G_cx.hmac, in, len);
+  spec_cx_hmac_final(&G_cx.hmac, out, &mac_len);
   return (int)mac_len;
 }
 
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-int cx_hmac_sha512(const unsigned char *key, unsigned int key_len,
-                   const unsigned char *in, unsigned int len,
-                   unsigned char *out, unsigned int out_len)
+int spec_cx_hmac_sha512(const unsigned char *key, unsigned int key_len,
+                        const unsigned char *in, unsigned int len,
+                        unsigned char *out, unsigned int out_len)
 {
   size_t mac_len = out_len;
-  cx_hmac_init(&G_cx.hmac, CX_SHA512, key, key_len);
-  cx_hmac_update(&G_cx.hmac, in, len);
-  cx_hmac_final(&G_cx.hmac, out, &mac_len);
+  spec_cx_hmac_init(&G_cx.hmac, CX_SHA512, key, key_len);
+  spec_cx_hmac_update(&G_cx.hmac, in, len);
+  spec_cx_hmac_final(&G_cx.hmac, out, &mac_len);
   return (int)mac_len;
 }

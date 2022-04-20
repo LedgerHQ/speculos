@@ -15,7 +15,7 @@ void cx_hkdf_extract(const cx_md_t hash_id, const unsigned char *ikm,
   const cx_hash_info_t *hash_info;
   size_t md_len;
 
-  hash_info = cx_hash_get_info(hash_id);
+  hash_info = spec_cx_hash_get_info(hash_id);
   md_len = hash_info->output_size;
   if (salt == NULL) {
     memset(hmac_ctx.key, 0, md_len);
@@ -23,15 +23,15 @@ void cx_hkdf_extract(const cx_md_t hash_id, const unsigned char *ikm,
     salt_len = md_len;
   }
 
-  cx_hmac_init(&hmac_ctx, hash_id, salt, salt_len);
-  cx_hmac_update(&hmac_ctx, ikm, ikm_len);
-  cx_hmac_final(&hmac_ctx, prk, &md_len);
+  spec_cx_hmac_init(&hmac_ctx, hash_id, salt, salt_len);
+  spec_cx_hmac_update(&hmac_ctx, ikm, ikm_len);
+  spec_cx_hmac_final(&hmac_ctx, prk, &md_len);
 }
 
-void cx_hkdf_expand(const cx_md_t hash_id, const unsigned char *prk,
-                    unsigned int prk_len, unsigned char *info,
-                    unsigned int info_len, unsigned char *okm,
-                    unsigned int okm_len)
+void spec_cx_hkdf_expand(const cx_md_t hash_id, const unsigned char *prk,
+                         unsigned int prk_len, unsigned char *info,
+                         unsigned int info_len, unsigned char *okm,
+                         unsigned int okm_len)
 {
   unsigned char i;
   unsigned int offset = 0;
@@ -40,17 +40,17 @@ void cx_hkdf_expand(const cx_md_t hash_id, const unsigned char *prk,
   const cx_hash_info_t *hash_info;
   size_t md_len;
 
-  hash_info = cx_hash_get_info(hash_id);
+  hash_info = spec_cx_hash_get_info(hash_id);
   md_len = hash_info->output_size;
 
   for (i = 1; okm_len > 0; i++) {
-    cx_hmac_init(&hmac_ctx, hash_id, prk, prk_len);
+    spec_cx_hmac_init(&hmac_ctx, hash_id, prk, prk_len);
     if (i > 1) {
-      cx_hmac_update(&hmac_ctx, T, offset);
+      spec_cx_hmac_update(&hmac_ctx, T, offset);
     }
-    cx_hmac_update(&hmac_ctx, info, info_len);
-    cx_hmac_update(&hmac_ctx, &i, sizeof(i));
-    cx_hmac_final(&hmac_ctx, T, &md_len);
+    spec_cx_hmac_update(&hmac_ctx, info, info_len);
+    spec_cx_hmac_update(&hmac_ctx, &i, sizeof(i));
+    spec_cx_hmac_final(&hmac_ctx, T, &md_len);
     offset = (okm_len < md_len) ? okm_len : md_len;
     memcpy(okm + (i - 1) * md_len, T, offset);
     okm_len -= offset;

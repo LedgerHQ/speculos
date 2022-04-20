@@ -136,7 +136,7 @@ static void cx_ripemd160_block(cx_ripemd160_t *hash)
   memmove(ACCr, accumulator, sizeof(ACCr));
 
 #ifdef OS_BIG_ENDIAN
-  cx_swap_buffer32(X, 16);
+  spec_cx_swap_buffer32(X, 16);
 #endif
 
   for (j = 0; j < 80; j++) {
@@ -193,7 +193,8 @@ static void cx_ripemd160_block(cx_ripemd160_t *hash)
   accumulator[0] = Tl;
 }
 
-int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len)
+int spec_cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data,
+                             size_t len)
 {
   if (ctx == NULL) {
     return 0;
@@ -240,7 +241,7 @@ int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len)
   return 1;
 }
 
-int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest)
+int spec_cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest)
 {
   unsigned char *block;
   unsigned int blen;
@@ -268,14 +269,14 @@ int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest)
   // last block!
   memset(block + blen, 0, (64 - blen));
 #ifdef OS_BIG_ENDIAN
-  (*(unsigned long int *)(&block[64 - 8])) = cx_swap_uint32(bitlen);
+  (*(unsigned long int *)(&block[64 - 8])) = spec_cx_swap_uint32(bitlen);
 #else
   (*(uint64_t *)(&block[64 - 8])) = bitlen;
 #endif
   cx_ripemd160_block(ctx);
   // provide result
 #ifdef OS_BIG_ENDIAN
-  cx_swap_buffer32((unsigned long int *)acc, 5);
+  spec_cx_swap_buffer32((unsigned long int *)acc, 5);
 #endif
   memcpy(digest, ctx->acc, CX_RIPEMD160_SIZE);
   return 1;

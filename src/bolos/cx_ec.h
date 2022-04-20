@@ -494,6 +494,7 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
-int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-                           size_t max_size, const uint8_t **r, size_t *r_len,
-                           const uint8_t **s, size_t *s_len);
+int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+                                size_t max_size, const uint8_t **r,
+                                size_t *r_len, const uint8_t **s,
+                                size_t *s_len);
