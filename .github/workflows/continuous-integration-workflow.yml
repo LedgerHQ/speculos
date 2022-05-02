@@ -29,12 +29,11 @@ jobs:
         fetch-depth: 0
 
     - name: Lint C code
-      uses: DoozyX/clang-format-lint-action@v0.11
+      uses: DoozyX/clang-format-lint-action@v0.13
       with:
         source: 'src tests'
         extensions: 'c,h'
         clangFormatVersion: 11
-        fail_ci_if_error: true
 
     - name: Lint Python code
       run: find . -type f -name '*.py' -exec flake8 --max-line-length=120 '{}' '+'
