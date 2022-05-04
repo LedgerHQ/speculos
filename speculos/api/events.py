@@ -67,7 +67,7 @@ class Events(AppResource):
             raise RuntimeError("Argument 'automation_server' must not be None")
         self._broadcaster = automation_server
         self.parser = reqparse.RequestParser()
-        self.parser.add_argument("stream", type=inputs.boolean, default=False)
+        self.parser.add_argument("stream", type=inputs.boolean, default=False, location='values')
         super().__init__(*args, **kwargs)
 
     def get(self):
