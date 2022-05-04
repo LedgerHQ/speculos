@@ -119,8 +119,8 @@ jobs:
         name: dist
         path: dist
 
-  deploy_python_package:
-    name: Deploy the Speculos Python package
+  deploy_python_package_and_docker:
+    name: Deploy the Speculos Python package and Speculos build Docker
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: [package_python]
@@ -131,6 +131,10 @@ jobs:
       with:
         name: dist
         path: dist
+    - name: Creating venv & installing dependencies
+      run: |
+        python3 -m venv venv-build
+        ./venv-build/bin/pip install --upgrade pip build twine
 
     # TEST_PYPI_API_TOKEN is an API token created on
     # https://test.pypi.org/manage/account/#api-tokens with restriction to speculos project
