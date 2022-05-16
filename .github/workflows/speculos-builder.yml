@@ -26,14 +26,12 @@ jobs:
       uses: docker/setup-buildx-action@v2
 
     - name: Build and push speculos-builder to GitHub Packages
-      uses: docker/build-push-action@v1
+      uses: docker/build-push-action@v3
       with:
         builder: ${{ steps.buildx.outputs.name }}
         dockerfile: build.Dockerfile
         platforms: linux/amd64,linux/arm64
-        repository: ledgerhq/speculos-builder
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        tag_with_sha: true
-        tags: latest
+        tags: ledgerhq/speculos-builder:latest
