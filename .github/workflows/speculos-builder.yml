@@ -28,9 +28,9 @@ jobs:
     - name: Build and push speculos-builder to GitHub Packages
       uses: docker/build-push-action@v3
       with:
-        builder: ${{ steps.buildx.outputs.name }}
         dockerfile: build.Dockerfile
         platforms: linux/amd64,linux/arm64
+        push: true
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
