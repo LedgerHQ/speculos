@@ -141,14 +141,13 @@ jobs:
     - name: Build the Speculos docker
       uses: docker/build-push-action@v3
       with:
-        builder: ${{ steps.buildx.outputs.name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: linux/amd64
         push: false
-        tags: test
+        tags: speculos:test-image
     - name: Run and test Speculos docker
       uses: addnab/docker-run-action@v3
       with:
-        image: ledgerhq/speculos:test
+        image: speculos:test-image
         options: -v ${{ github.workspace }}/apps/:/apps/
         run: |
           apt-get update && apt-get install -qy netcat
