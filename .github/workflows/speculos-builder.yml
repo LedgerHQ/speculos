@@ -21,10 +21,16 @@ jobs:
     - name: Clone
       uses: actions/checkout@v2
 
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+
     - name: Build and push speculos-builder to GitHub Packages
       uses: docker/build-push-action@v1
       with:
+        builder: ${{ steps.buildx.outputs.name }}
         dockerfile: build.Dockerfile
+        platforms: linux/amd64,linux/arm64
         repository: ledgerhq/speculos-builder
         registry: ghcr.io
         username: ${{ github.actor }}

@@ -135,9 +135,14 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
     - name: Build the Speculos docker
       uses: docker/build-push-action@v1
       with:
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: linux/amd64,linux/arm64
         push: false
         tags: test
     - name: Run and test Speculos docker
@@ -160,14 +165,19 @@ jobs:
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
     - name: Build and publish to GitHub Packages
       uses: docker/build-push-action@v1
       with:
+        builder: ${{ steps.buildx.outputs.name }}
         repository: ledgerhq/speculos
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         tag_with_sha: true
+        platforms: linux/amd64,linux/arm64
         tags: latest
 
   coverage:
