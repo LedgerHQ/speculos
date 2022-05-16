@@ -57,7 +57,7 @@ jobs:
     # Use https://ghcr.io/ledgerhq/speculos-builder which has all the required
     # dependencies
     container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+      image: docker://ghcr.io/ledgerhq/speculos-builder:sha-9459c1d
 
     steps:
     - name: Clone
@@ -129,7 +129,7 @@ jobs:
 #    name: Build and test the Speculos docker
 #    runs-on: ubuntu-latest
 #    container:
-#      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+#      image: docker://ghcr.io/ledgerhq/speculos-builder:sha-9459c1d
 #    steps:
 #    - name: Clone
 #      uses: actions/checkout@v2
@@ -182,7 +182,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [linter, misspell]
     container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+      image: docker://ghcr.io/ledgerhq/speculos-builder:sha-9459c1d
     steps:
     - name: Clone
       uses: actions/checkout@v2
