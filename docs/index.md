@@ -8,6 +8,7 @@
 
 - Linux users: [Requirements and build](installation/build.md)
 - Mac OS (and Linux) users: [How to use the Docker image](user/docker.md) with VNC
+- Mac M1 users: [How to build and use the Docker image](user/macm1.md)
 - Windows users: [Using speculos from WSL 2](installation/wsl.md)
 - [Usage](user/usage.md)
 
