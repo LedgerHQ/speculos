@@ -19,6 +19,7 @@
 #include <rfb/rfbclient.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <sys/resource.h>
 #include <termios.h>
 
 #include "cursor.h"
@@ -307,6 +308,15 @@ int main(int argc, char **argv)
   }
   /* initialize the framebuffer to white */
   memset(framebuffer, 0xff, framebuffer_size);
+
+  /* libvncserver counts the number of open fd using fcntl(), which is called
+   * in a loop. Set a sane limit.
+   * https://github.com/LibVNC/libvncserver/blob/97fbbd678b2012e64acddd523677bc55a177bc58/libvncserver/sockets.c#L517
+   */
+  const struct rlimit rlim = { 100, 100 };
+  if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
+    warn("setrlimit(RLIMIT_NOFILE)");
+  }
 
   /* Pass remaining options (after "--") to rfbGetScreen. The first argument
    * will be invalid (either "--" or the last option given) but it's
