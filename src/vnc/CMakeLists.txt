@@ -4,7 +4,7 @@ project(VncServer C)
 
 add_compile_options(-Wall)
 
-if (CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+if (CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "aarch64")
     add_compile_options(-DDISABLE_SANDBOX)
 endif ()
 
