@@ -32,7 +32,6 @@ static uint8_t const C_cofactor_8[] = { 0, 0, 0, 8 };
 /* ------------------------------------------------------------------------ */
 /* ---                            secp256k1                             --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_SECP256K1_CURVE
 
 static uint8_t const C_cx_secp256k1_a[] = {
   // a:  0x00
@@ -100,12 +99,9 @@ cx_curve_weierstrass_t const C_cx_secp256k1 = {
   .Hn = C_cx_secp256k1_Hn,
 };
 
-#endif
-
 /* ------------------------------------------------------------------------ */
 /* ---                            secp256r1                             --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_SECP256R1_CURVE
 
 static uint8_t const C_cx_secp256r1_a[] = {
   // a: 0xffffffff00000001000000000000000000000000fffffffffffffffffffffffc
@@ -174,12 +170,9 @@ cx_curve_weierstrass_t const C_cx_secp256r1 = {
   .Hn = C_cx_secp256r1_Hn,
 };
 
-#endif
-
 /* ------------------------------------------------------------------------ */
 /* ---                       secp384r1                                  --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_SECP384R1_CURVE
 
 static uint8_t const C_cx_secp384r1_a[] = {
   // a:
@@ -256,12 +249,9 @@ cx_curve_weierstrass_t const C_cx_secp384r1 = {
   .Hn = C_cx_secp384r1_Hn,
 };
 
-#endif
-
 /* ------------------------------------------------------------------------ */
 /* ---                            secp521r1                             --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_SECP521R1_CURVE
 
 static uint8_t const C_cx_secp521r1_a[] = {
   // a:
@@ -354,12 +344,9 @@ cx_curve_weierstrass_t const C_cx_secp521r1 = {
   .Hp = C_cx_secp521r1_Hp,
 };
 
-#endif
-
 /* ------------------------------------------------------------------------ */
 /* ---                            BrainpoolP256r1                       --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P256R1_CURVE
 static uint8_t const C_cx_BrainpoolP256r1_a[] = {
   // 0x7D5A0975FC2C3057EEF67530417AFFE7FB8055C126DC5C6CE94A4B44F330B5D9
   0x7d, 0x5a, 0x09, 0x75, 0xfc, 0x2c, 0x30, 0x57, 0xee, 0xf6, 0x75,
@@ -424,11 +411,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP256r1 = {
   .Hp = C_cx_BrainpoolP256r1_Hp,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP256t1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P256T1_CURVE
 static uint8_t const C_cx_BrainpoolP256t1_a[] = {
   // 0xA9FB57DBA1EEA9BC3E660A909D838D726E3BF623D52620282013481D1F6E5374
   0xa9, 0xfb, 0x57, 0xdb, 0xa1, 0xee, 0xa9, 0xbc, 0x3e, 0x66, 0x0a,
@@ -493,11 +478,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP256t1 = {
   .Hp = C_cx_BrainpoolP256t1_Hp,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP320r1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P320R1_CURVE
 static uint8_t const C_cx_BrainpoolP320r1_a[] = {
   // a:  0x
   0x3E, 0xE3, 0x0B, 0x56, 0x8F, 0xBA, 0xB0, 0xF8, 0x83, 0xCC,
@@ -576,11 +559,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP320r1 = {
   .Hn = C_cx_BrainpoolP320r1_Hn,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP320t1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P320T1_CURVE
 static uint8_t const C_cx_BrainpoolP320t1_a[] = {
   // a:
   // 0xD35E472036BC4FB7E13C785ED201E065F98FCFA6F6F40DEF4F92B9EC7893EC28FCD412B1F1B32E24
@@ -660,11 +641,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP320t1 = {
   .Hn = C_cx_BrainpoolP320t1_Hn,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP384r1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P384R1_CURVE
 static uint8_t const C_cx_BrainpoolP384r1_a[] = {
   // a:
   // 0x7BC382C63D8C150C3C72080ACE05AFA0C2BEA28E4FB22787139165EFBA91F90F8AA5814A503AD4EB04A8C7DD22CE2826
@@ -743,11 +722,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP384r1 = {
   .Hn = C_cx_BrainpoolP384r1_Hn,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP384t1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P384T1_CURVE
 static uint8_t const C_cx_BrainpoolP384t1_a[] = {
   // a:
   // 0x8CB91E82A3386D280F5D6F7E50E641DF152F7109ED5456B412B1DA197FB71123ACD3A729901D1A71874700133107EC50
@@ -826,11 +803,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP384t1 = {
   .Hn = C_cx_BrainpoolP384t1_Hn,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP512r1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P512R1_CURVE
 static uint8_t const C_cx_BrainpoolP512r1_a[] = {
   // a:
   // 0x7830A3318B603B89E2327145AC234CC594CBDD8D3DF91610A83441CAEA9863BC2DED5D5AA8253AA10A2EF1C98B9AC8B57F1117A72BF2C7B9E7C1AC4D77FC94CA
@@ -917,11 +892,9 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP512r1 = {
   .Hn = C_cx_BrainpoolP512r1_Hn,
 };
 
-#endif
 /* ------------------------------------------------------------------------ */
 /* ---                       BrainpoolP512t1                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_BRAINPOOL_P512T1_CURVE
 static uint8_t const C_cx_BrainpoolP512t1_a[] = {
   // a:
   // 0xAADD9DB8DBE9C48B3FD4E6AE33C9FC07CB308DB3B3C9D20ED6639CCA703308717D4D9B009BC66842AECDA12AE6A380E62881FF2F2D82C68528AA6056583A48F0
@@ -1009,8 +982,6 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP512t1 = {
 
 };
 
-#endif
-
 /* ========================================================================= */
 /* ========================================================================= */
 /* ===                           TWISTED EDWARDS                         === */
@@ -1020,7 +991,6 @@ cx_curve_weierstrass_t const C_cx_BrainpoolP512t1 = {
 /* ------------------------------------------------------------------------ */
 /* ---                              Ed25519                             --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_ED25519_CURVE
 
 static uint8_t const C_cx_Ed25519_a[] = {
   0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -1085,13 +1055,10 @@ cx_curve_twisted_edwards_t const C_cx_Ed25519 = {
   .Hp = C_cx_Ed25519_Hq,
   .Hn = C_cx_Ed25519_Hl,
 };
-#endif
 
 /* ------------------------------------------------------------------------ */
 /* ---                               Ed448                              --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_ED448_CURVE
-
 static uint8_t const C_cx_Ed448_a[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1178,7 +1145,6 @@ cx_curve_twisted_edwards_t const C_cx_Ed448 = {
   .Hp = C_cx_Ed448_Hq,
   .Hn = C_cx_Ed448_Hl,
 };
-#endif
 
 /* ========================================================================= */
 /* ========================================================================= */
@@ -1189,7 +1155,6 @@ cx_curve_twisted_edwards_t const C_cx_Ed448 = {
 /* ------------------------------------------------------------------------ */
 /* ---                             Curve25519                           --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_CV25519_CURVE
 
 static uint8_t const C_cx_Curve25519_a[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -1255,12 +1220,9 @@ cx_curve_montgomery_t const C_cx_Curve25519 = {
   .Hn = C_cx_Curve25519_Hn,
 };
 
-#endif
-
 /* ------------------------------------------------------------------------ */
 /* ---                              Curve448                            --- */
 /* ------------------------------------------------------------------------ */
-#ifdef HAVE_CV448_CURVE
 
 static uint8_t const C_cx_Curve448_a[] = {
   // a: 0x262a6
@@ -1348,8 +1310,6 @@ cx_curve_montgomery_t const C_cx_Curve448 = {
   .Hn = C_cx_Curve448_Hn,
 };
 
-#endif
-
 /* ========================================================================= */
 /* ========================================================================= */
 /* ===                                ALL                                === */
@@ -1358,60 +1318,28 @@ cx_curve_montgomery_t const C_cx_Curve448 = {
 
 cx_curve_domain_t const *const C_cx_allCurves[] = {
 
-// secp
-#ifdef HAVE_SECP256K1_CURVE
+  // secp
   (const cx_curve_domain_t *)&C_cx_secp256k1,
-#endif
-#ifdef HAVE_SECP256R1_CURVE
   (const cx_curve_domain_t *)&C_cx_secp256r1,
-#endif
-#ifdef HAVE_SECP384R1_CURVE
   (const cx_curve_domain_t *)&C_cx_secp384r1,
-#endif
-#ifdef HAVE_SECP521R1_CURVE
   (const cx_curve_domain_t *)&C_cx_secp521r1,
-#endif
 
-// Brainpool/NIST
-#ifdef HAVE_BRAINPOOL_P256R1_CURVE
+  // Brainpool/NIST
   (const cx_curve_domain_t *)&C_cx_BrainpoolP256r1,
-#endif
-#ifdef HAVE_BRAINPOOL_P256T1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP256t1,
-#endif
-#ifdef HAVE_BRAINPOOL_P320R1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP320r1,
-#endif
-#ifdef HAVE_BRAINPOOL_P320T1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP320t1,
-#endif
-#ifdef HAVE_BRAINPOOL_P384R1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP384r1,
-#endif
-#ifdef HAVE_BRAINPOOL_P384T1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP384t1,
-#endif
-#ifdef HAVE_BRAINPOOL_P512R1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP512r1,
-#endif
-#ifdef HAVE_BRAINPOOL_P512T1_CURVE
   (const cx_curve_domain_t *)&C_cx_BrainpoolP512t1,
-#endif
 
-// TwEd
-#ifdef HAVE_ED25519_CURVE
+  // TwEd
   (const cx_curve_domain_t *)&C_cx_Ed25519,
-#endif
-#ifdef HAVE_ED448_CURVE
   (const cx_curve_domain_t *)&C_cx_Ed448,
-#endif
 
-#ifdef HAVE_CV25519_CURVE
   (const cx_curve_domain_t *)&C_cx_Curve25519,
-#endif
-#ifdef HAVE_CV448_CURVE
   (const cx_curve_domain_t *)&C_cx_Curve448
-#endif
 };
 
 //-----------------------------------------------------------------------------

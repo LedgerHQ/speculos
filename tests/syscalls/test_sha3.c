@@ -35,18 +35,18 @@ void test_cavp_sha3_monte_carlo(cx_md_t md_type, uint8_t *initial_seed,
 
   uint8_t md[CX_MAX_DIGEST_SIZE];
 
-  assert_int_equal(cx_hash_init_ex((cx_hash_ctx *)&ctx, md_type, digest_size),
-                   1);
-  size_t md_len = (size_t)cx_hash_get_size((cx_hash_ctx *)&ctx);
+  assert_int_equal(
+      spec_cx_hash_init_ex((cx_hash_ctx *)&ctx, md_type, digest_size), 1);
+  size_t md_len = (size_t)spec_cx_hash_get_size((cx_hash_ctx *)&ctx);
   assert_int_equal(md_len, digest_size);
   memcpy(md, initial_seed, md_len);
 
   for (int i = 0; i < 100; i++) {
     for (int j = 0; j < 1000; j++) {
       assert_int_equal(
-          cx_hash_init_ex((cx_hash_ctx *)&ctx, md_type, digest_size), 1);
-      assert_int_equal(cx_hash_update((cx_hash_ctx *)&ctx, md, md_len), 1);
-      assert_int_equal(cx_hash_final((cx_hash_ctx *)&ctx, md), 1);
+          spec_cx_hash_init_ex((cx_hash_ctx *)&ctx, md_type, digest_size), 1);
+      assert_int_equal(spec_cx_hash_update((cx_hash_ctx *)&ctx, md, md_len), 1);
+      assert_int_equal(spec_cx_hash_final((cx_hash_ctx *)&ctx, md), 1);
     }
   }
   assert_memory_equal(md, expected_seed, md_len);
@@ -73,14 +73,14 @@ void test_cavp_sha3_xof_monte_carlo(cx_md_t md_type,
   for (int i = 0; i < 100; i++) {
     for (int j = 0; j < 1000; j++) {
       output_length = new_output_length;
-      assert_int_equal(cx_hash_init_ex(&ctx, md_type, output_length), 1);
-      assert_int_equal(cx_hash_update(&ctx, md, 16), 1);
+      assert_int_equal(spec_cx_hash_init_ex(&ctx, md_type, output_length), 1);
+      assert_int_equal(spec_cx_hash_update(&ctx, md, 16), 1);
 
       // The first 16 bytes of md are hashed in the next iteration. However,
       // output_length can be lower than 16 bytes. In that case, output is
       // padded with zeroes.
       memset(md, 0, 16);
-      assert_int_equal(cx_hash_final(&ctx, md), 1);
+      assert_int_equal(spec_cx_hash_final(&ctx, md), 1);
 
       assert_in_range(output_length, 2, max_output_length);
       uint32_t right_bits =
@@ -122,14 +122,14 @@ void test_cavp_sha3_xof(const char *filename, cx_md_t md_type)
     uint8_t data[data_len];
     uint8_t md[md_len], expected[md_len];
 
-    assert_int_equal(cx_hash_init_ex(&ctx, md_type, md_len), 1);
+    assert_int_equal(spec_cx_hash_init_ex(&ctx, md_type, md_len), 1);
 
-    assert_int_equal(md_len, cx_hash_get_size(&ctx));
+    assert_int_equal(md_len, spec_cx_hash_get_size(&ctx));
     assert_int_equal(hexstr2bin(pos1 + 1, data, data_len), data_len);
     assert_int_equal(hexstr2bin(pos2 + 1, expected, md_len), md_len);
 
-    assert_int_equal(cx_hash_update(&ctx, data, data_len), 1);
-    assert_int_equal(cx_hash_final(&ctx, md), 1);
+    assert_int_equal(spec_cx_hash_update(&ctx, data, data_len), 1);
+    assert_int_equal(spec_cx_hash_final(&ctx, md), 1);
     assert_memory_equal(expected, md, md_len);
   }
   fclose(f);

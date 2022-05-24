@@ -100,7 +100,7 @@ static void cx_sha256_block(cx_sha256_t *hash)
   memmove(ACC, accumulator, sizeof(ACC));
 
 #ifdef OS_LITTLE_ENDIAN
-  cx_swap_buffer32(X, 16);
+  spec_cx_swap_buffer32(X, 16);
 #endif
 
   /*
@@ -152,7 +152,7 @@ static void cx_sha256_block(cx_sha256_t *hash)
   accumulator[7] += H;
 }
 
-int cx_sha256_update(cx_sha256_t *ctx, const uint8_t *data, size_t len)
+int spec_cx_sha256_update(cx_sha256_t *ctx, const uint8_t *data, size_t len)
 {
   unsigned int r;
   unsigned int blen;
@@ -197,7 +197,7 @@ int cx_sha256_update(cx_sha256_t *ctx, const uint8_t *data, size_t len)
   return 1;
 }
 
-int cx_sha256_final(cx_sha256_t *ctx, uint8_t *digest)
+int spec_cx_sha256_final(cx_sha256_t *ctx, uint8_t *digest)
 {
   uint64_t bitlen;
 
@@ -223,14 +223,14 @@ int cx_sha256_final(cx_sha256_t *ctx, uint8_t *digest)
   // last block!
   memset(block + ctx->blen, 0, 64 - ctx->blen);
 #ifdef OS_LITTLE_ENDIAN
-  *(uint64_t *)&block[64 - 8] = cx_swap_uint64(bitlen);
+  *(uint64_t *)&block[64 - 8] = spec_cx_swap_uint64(bitlen);
 #else
   (*(uint64_t *)&block[64 - 8]) = bitlen;
 #endif
   cx_sha256_block(ctx);
   // provide result
 #ifdef OS_LITTLE_ENDIAN
-  cx_swap_buffer32((uint32_t *)ctx->acc, 8);
+  spec_cx_swap_buffer32((uint32_t *)ctx->acc, 8);
 #endif
   if (ctx->header.algo == CX_SHA256) {
     memcpy(digest, ctx->acc, CX_SHA256_SIZE);
@@ -248,12 +248,11 @@ int cx_sha256_validate_context(const cx_sha256_t *ctx)
 /* ----------------------------------------------------------------------- */
 /*                                                                         */
 /* ----------------------------------------------------------------------- */
-int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
-                       unsigned char *out,
-                       unsigned int out_len __attribute__((unused)))
+int sys_cx_hash_sha256(const unsigned char *in, size_t len, unsigned char *out,
+                       size_t out_len __attribute__((unused)))
 {
   cx_sha256_init(&G_cx.sha256);
-  cx_sha256_update(&G_cx.sha256, in, len);
-  cx_sha256_final(&G_cx.sha256, out);
+  spec_cx_sha256_update(&G_cx.sha256, in, len);
+  spec_cx_sha256_final(&G_cx.sha256, out);
   return CX_SHA256_SIZE;
 }

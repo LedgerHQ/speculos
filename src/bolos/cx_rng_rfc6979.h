@@ -19,9 +19,9 @@ typedef struct {
   cx_hmac_t hmac;
 } cx_rnd_rfc6979_ctx_t;
 
-void cx_rng_rfc6979_init(cx_rnd_rfc6979_ctx_t *rfc_ctx, cx_md_t hash_id,
-                         const uint8_t *x, size_t x_len, const uint8_t *h1,
-                         size_t h1_len, const uint8_t *q, size_t q_len);
+void spec_cx_rng_rfc6979_init(cx_rnd_rfc6979_ctx_t *rfc_ctx, cx_md_t hash_id,
+                              const uint8_t *x, size_t x_len, const uint8_t *h1,
+                              size_t h1_len, const uint8_t *q, size_t q_len);
 
-void cx_rng_rfc6979_next(cx_rnd_rfc6979_ctx_t *rfc_ctx, uint8_t *out,
-                         size_t out_len);
+void spec_cx_rng_rfc6979_next(cx_rnd_rfc6979_ctx_t *rfc_ctx, uint8_t *out,
+                              size_t out_len);

@@ -79,7 +79,7 @@ static void cx_parent_sk_to_lamport_pk(const unsigned char *parent_sk,
                     prk);
 
     for (j = 1; j < 256; j++) {
-      cx_hmac_init(&hmac_ctx, CX_SHA256, prk, CX_SHA256_SIZE);
+      spec_cx_hmac_init(&hmac_ctx, CX_SHA256, prk, CX_SHA256_SIZE);
       if (j != 1) {
         sys_cx_hmac(&hmac_ctx, 0, tmp, CX_SHA256_SIZE, NULL, 0);
       }
@@ -132,8 +132,8 @@ static void cx_hkdf_mod_r(const unsigned char *ikm, unsigned int ikm_len,
   while (cx_math_is_zero(sk, KEY_LENGTH)) {
     sys_cx_hash_sha256(used_salt, salt_len, salt, CX_SHA256_SIZE);
     cx_hkdf_extract(CX_SHA256, ikm, ikm_len, salt, CX_SHA256_SIZE, prk);
-    cx_hkdf_expand(CX_SHA256, prk, CX_SHA256_SIZE, key_info, key_info_len, okm,
-                   CX_HKDF_MOD_R_CEIL);
+    spec_cx_hkdf_expand(CX_SHA256, prk, CX_SHA256_SIZE, key_info, key_info_len,
+                        okm, CX_HKDF_MOD_R_CEIL);
     cx_math_mod(okm, CX_HKDF_MOD_R_CEIL, domain->n, CX_HKDF_MOD_R_CEIL);
     memcpy(sk, okm + (CX_HKDF_MOD_R_CEIL - KEY_LENGTH), KEY_LENGTH);
     salt_len = sizeof(salt);

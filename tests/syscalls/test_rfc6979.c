@@ -85,24 +85,24 @@ static void test_ecdsa_rfc6979_secp256r1(void **UNUSED(state))
                                                   &private_key),
                      len);
 
-    assert_int_equal(cx_hash_init(&hash_ctx, tv->digest), 1);
+    assert_int_equal(spec_cx_hash_init(&hash_ctx, tv->digest), 1);
     assert_int_equal(
-        cx_hash_update(&hash_ctx, (uint8_t *)tv->msg, strlen(tv->msg)), 1);
-    size_t md_size = cx_hash_get_size(&hash_ctx);
+        spec_cx_hash_update(&hash_ctx, (uint8_t *)tv->msg, strlen(tv->msg)), 1);
+    size_t md_size = spec_cx_hash_get_size(&hash_ctx);
     assert_non_null(md_size);
-    assert_int_equal(cx_hash_final(&hash_ctx, digest), 1);
+    assert_int_equal(spec_cx_hash_final(&hash_ctx, digest), 1);
 
     cx_rnd_rfc6979_ctx_t rfc_ctx = {};
-    cx_rng_rfc6979_init(&rfc_ctx, tv->digest, raw_private_key, len, digest,
-                        md_size, domain->n, len);
-    cx_rng_rfc6979_next(&rfc_ctx, computed_k, len);
+    spec_cx_rng_rfc6979_init(&rfc_ctx, tv->digest, raw_private_key, len, digest,
+                             md_size, domain->n, len);
+    spec_cx_rng_rfc6979_next(&rfc_ctx, computed_k, len);
     assert_memory_equal(k, computed_k, len);
 
     sig_len = sys_cx_ecdsa_sign(&private_key, CX_RND_RFC6979 | CX_NO_CANONICAL,
                                 tv->digest, digest, md_size, sig, 128, NULL);
     assert_int_not_equal(sig_len, 0);
-    assert_int_equal(cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
-                                            &rlen, &computed_s, &slen),
+    assert_int_equal(spec_cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
+                                                 &rlen, &computed_s, &slen),
                      1);
     assert_int_equal(rlen, len);
     assert_int_equal(slen, len);
@@ -213,19 +213,19 @@ static void test_ecdsa_rfc6979_secp384r1(void **UNUSED(state))
                                      (cx_ecfp_private_key_t *)&private_key),
         len);
 
-    assert_int_equal(cx_hash_init(&hash_ctx, tv->digest), 1);
+    assert_int_equal(spec_cx_hash_init(&hash_ctx, tv->digest), 1);
     assert_int_equal(
-        cx_hash_update(&hash_ctx, (uint8_t *)tv->msg, strlen(tv->msg)), 1);
-    size_t md_size = cx_hash_get_size(&hash_ctx);
+        spec_cx_hash_update(&hash_ctx, (uint8_t *)tv->msg, strlen(tv->msg)), 1);
+    size_t md_size = spec_cx_hash_get_size(&hash_ctx);
     assert_non_null(md_size);
-    assert_int_equal(cx_hash_final(&hash_ctx, digest), 1);
+    assert_int_equal(spec_cx_hash_final(&hash_ctx, digest), 1);
 
     sig_len = sys_cx_ecdsa_sign((cx_ecfp_private_key_t *)&private_key,
                                 CX_RND_RFC6979 | CX_NO_CANONICAL, tv->digest,
                                 digest, md_size, sig, 128, NULL);
     assert_int_not_equal(sig_len, 0);
-    assert_int_equal(cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
-                                            &rlen, &computed_s, &slen),
+    assert_int_equal(spec_cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
+                                                 &rlen, &computed_s, &slen),
                      1);
 
     assert_int_equal(rlen, len);
@@ -278,8 +278,8 @@ static void test_ecdsa_rfc6979_secp256k1(void **UNUSED(state))
       sys_cx_ecdsa_sign(&private_key, CX_RND_RFC6979 | CX_NO_CANONICAL,
                         CX_SHA256, md, CX_SHA256_SIZE, sig, sizeof(sig), NULL);
   assert_int_not_equal(sig_len, 0);
-  assert_int_equal(cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r, &rlen,
-                                          &computed_s, &slen),
+  assert_int_equal(spec_cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
+                                               &rlen, &computed_s, &slen),
                    1);
 
   assert_int_equal(rlen, len);
@@ -314,8 +314,8 @@ static void test_ecdsa_rfc6979_secp256k1(void **UNUSED(state))
       sys_cx_ecdsa_sign(&private_key, CX_RND_RFC6979 | CX_NO_CANONICAL,
                         CX_SHA256, md, CX_SHA256_SIZE, sig, sizeof(sig), NULL);
   assert_int_not_equal(sig_len, 0);
-  assert_int_equal(cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r, &rlen,
-                                          &computed_s, &slen),
+  assert_int_equal(spec_cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
+                                               &rlen, &computed_s, &slen),
                    1);
 
   assert_int_equal(rlen, len);
@@ -348,8 +348,8 @@ static void test_ecdsa_rfc6979_secp256k1(void **UNUSED(state))
       sys_cx_ecdsa_sign(&private_key, CX_RND_RFC6979 | CX_NO_CANONICAL,
                         CX_SHA256, md, CX_SHA256_SIZE, sig, sizeof(sig), NULL);
   assert_int_not_equal(sig_len, 0);
-  assert_int_equal(cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r, &rlen,
-                                          &computed_s, &slen),
+  assert_int_equal(spec_cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
+                                               &rlen, &computed_s, &slen),
                    1);
 
   assert_int_equal(rlen, len);
@@ -382,8 +382,8 @@ static void test_ecdsa_rfc6979_secp256k1(void **UNUSED(state))
       sys_cx_ecdsa_sign(&private_key, CX_RND_RFC6979 | CX_NO_CANONICAL,
                         CX_SHA256, md, CX_SHA256_SIZE, sig, sizeof(sig), NULL);
   assert_int_not_equal(sig_len, 0);
-  assert_int_equal(cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r, &rlen,
-                                          &computed_s, &slen),
+  assert_int_equal(spec_cx_ecfp_decode_sig_der(sig, sig_len, len, &computed_r,
+                                               &rlen, &computed_s, &slen),
                    1);
 
   assert_int_equal(rlen, len);

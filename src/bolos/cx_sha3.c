@@ -255,7 +255,7 @@ int cx_sha3_xof_init(cx_sha3_t *hash, unsigned int size,
   return hash->header.algo;
 }
 
-void cx_sha3_block(cx_sha3_t *hash)
+void spec_cx_sha3_block(cx_sha3_t *hash)
 {
   uint64_t *block;
   uint64_t *acc;
@@ -294,7 +294,7 @@ void cx_sha3_block(cx_sha3_t *hash)
   }
 }
 
-int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len)
+int spec_cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len)
 {
   unsigned int r;
   unsigned int block_size;
@@ -329,7 +329,7 @@ int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len)
         THROW(INVALID_PARAMETER);
       }
       memcpy(block + blen, data, r);
-      cx_sha3_block(ctx);
+      spec_cx_sha3_block(ctx);
 
       blen = 0;
       ctx->header.counter++;
@@ -346,7 +346,7 @@ int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len)
   return 1;
 }
 
-int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest)
+int spec_cx_sha3_final(cx_sha3_t *hash, uint8_t *digest)
 {
   unsigned int block_size;
   unsigned char *block;
@@ -371,7 +371,7 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest)
       block[blen] |= 06;
     }
     block[block_size - 1] |= 0x80;
-    cx_sha3_block(hash);
+    spec_cx_sha3_block(hash);
 
     // provide result
     len = (hash)->output_size;
@@ -381,7 +381,7 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest)
     memset(block + blen, 0, (200 - blen));
     block[blen] |= 0x1F;
     block[block_size - 1] |= 0x80;
-    cx_sha3_block(hash);
+    spec_cx_sha3_block(hash);
     // provide result
     len = hash->output_size;
     blen = len;
@@ -392,14 +392,14 @@ int cx_sha3_final(cx_sha3_t *hash, uint8_t *digest)
       memcpy(digest, hash->acc, block_size);
       blen -= block_size;
       digest += block_size;
-      cx_sha3_block(hash);
+      spec_cx_sha3_block(hash);
     }
     memcpy(digest, hash->acc, blen);
   }
   return 1;
 }
 
-size_t cx_sha3_get_output_size(const cx_sha3_t *ctx)
+size_t spec_cx_sha3_get_output_size(const cx_sha3_t *ctx)
 {
   return ctx->output_size;
 }

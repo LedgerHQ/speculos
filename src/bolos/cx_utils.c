@@ -36,7 +36,7 @@ unsigned long int cx_shr(unsigned long int x, unsigned char n)
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-uint32_t cx_swap_uint32(uint32_t v)
+uint32_t spec_cx_swap_uint32(uint32_t v)
 {
   return (((v) << 24) & 0xFF000000U) | (((v) << 8) & 0x00FF0000U) |
          (((v) >> 8) & 0x0000FF00U) | (((v) >> 24) & 0x000000FFU);
@@ -45,7 +45,7 @@ uint32_t cx_swap_uint32(uint32_t v)
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-void cx_swap_buffer32(uint32_t *v, size_t len)
+void spec_cx_swap_buffer32(uint32_t *v, size_t len)
 {
   while (len--) {
 #ifdef ST31
@@ -57,7 +57,7 @@ void cx_swap_buffer32(uint32_t *v, size_t len)
     ((unsigned char *)v)[len * 4 + 2] = ((unsigned char *)v)[len * 4 + 1];
     ((unsigned char *)v)[len * 4 + 1] = tmp;
 #else
-    v[len] = cx_swap_uint32(v[len]);
+    v[len] = spec_cx_swap_uint32(v[len]);
 #endif
   }
 }
@@ -126,24 +126,24 @@ uint64bits_t cx_shr64(uint64bits_t x, unsigned int n)
 // --------------------------------------------------------------------------
 
 #ifndef NATIVE_64BITS
-void cx_swap_uint64(uint64bits_t *v)
+void spec_cx_swap_uint64(uint64bits_t *v)
 {
   unsigned long int h, l;
   h = v->h;
   l = v->l;
-  l = cx_swap_uint32(l);
-  h = cx_swap_uint32(h);
+  l = spec_cx_swap_uint32(l);
+  h = spec_cx_swap_uint32(h);
   v->h = l;
   v->l = h;
 }
 #else
-uint64bits_t cx_swap_uint64(uint64bits_t v)
+uint64bits_t spec_cx_swap_uint64(uint64bits_t v)
 {
   uint32_t h, l;
   h = (uint32_t)((v >> 32) & 0xFFFFFFFF);
   l = (uint32_t)(v & 0xFFFFFFFF);
-  l = cx_swap_uint32(l);
-  h = cx_swap_uint32(h);
+  l = spec_cx_swap_uint32(l);
+  h = spec_cx_swap_uint32(h);
   return (((uint64bits_t)l) << 32) | ((uint64bits_t)h);
 }
 #endif
@@ -151,17 +151,17 @@ uint64bits_t cx_swap_uint64(uint64bits_t v)
 // --------------------------------------------------------------------------
 // -
 // --------------------------------------------------------------------------
-void cx_swap_buffer64(uint64bits_t *v, int len)
+void spec_cx_swap_buffer64(uint64bits_t *v, int len)
 {
 #ifndef NATIVE_64BITS
   while (len--) {
-    cx_swap_uint64(&v[len]);
+    spec_cx_swap_uint64(&v[len]);
   }
 #else
   uint64bits_t i;
   while (len--) {
     i = *v;
-    *v++ = cx_swap_uint64(i);
+    *v++ = spec_cx_swap_uint64(i);
   }
 #endif
 }

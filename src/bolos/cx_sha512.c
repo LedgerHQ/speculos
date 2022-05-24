@@ -207,7 +207,7 @@ void cx_sha512_block(cx_sha512_t *hash)
   H = accumulator[7];
 
 #ifdef OS_LITTLE_ENDIAN
-  cx_swap_buffer64(X, 16);
+  spec_cx_swap_buffer64(X, 16);
 #endif
 
   // init
@@ -349,7 +349,7 @@ void cx_sha512_block(cx_sha512_t *hash)
 void cx_sha512_block(cx_sha512_t *ctx);
 #endif //! CX_SHA512_BLOCK_ALT_METHOD
 
-int cx_sha512_update(cx_sha512_t *ctx, const uint8_t *data, size_t len)
+int spec_cx_sha512_update(cx_sha512_t *ctx, const uint8_t *data, size_t len)
 {
   unsigned int r;
   unsigned char block_size;
@@ -392,7 +392,7 @@ int cx_sha512_update(cx_sha512_t *ctx, const uint8_t *data, size_t len)
   return 1;
 }
 
-int cx_sha512_final(cx_sha512_t *ctx, uint8_t *digest)
+int spec_cx_sha512_final(cx_sha512_t *ctx, uint8_t *digest)
 {
   unsigned long int bitlen;
   size_t len;
@@ -420,7 +420,7 @@ int cx_sha512_final(cx_sha512_t *ctx, uint8_t *digest)
   // last block!
   memset(block + blen, 0, 128 - blen);
 #ifdef OS_LITTLE_ENDIAN
-  (*(uint64_t *)(&block[128 - 8])) = cx_swap_uint64(bitlen);
+  (*(uint64_t *)(&block[128 - 8])) = spec_cx_swap_uint64(bitlen);
 #else
   (*(uint64_t *)(&block[128 - 8])) = bitlen;
 #endif
@@ -428,18 +428,18 @@ int cx_sha512_final(cx_sha512_t *ctx, uint8_t *digest)
   // provide result
   len = (ctx->header.algo == CX_SHA512) ? 512 >> 3 : 384 >> 3;
 #ifdef OS_LITTLE_ENDIAN
-  cx_swap_buffer64((uint64bits_t *)acc, 8);
+  spec_cx_swap_buffer64((uint64bits_t *)acc, 8);
 #endif
   memcpy(digest, acc, len);
   return 1;
 }
 
-int cx_hash_sha512(const unsigned char *in, size_t len, unsigned char *out,
-                   size_t out_len __attribute__((unused)))
+int spec_cx_hash_sha512(const unsigned char *in, size_t len, unsigned char *out,
+                        size_t out_len __attribute__((unused)))
 {
   cx_sha512_init(&G_cx.sha512);
-  cx_sha512_update(&G_cx.sha512, in, len);
-  cx_sha512_final(&G_cx.sha512, out);
+  spec_cx_sha512_update(&G_cx.sha512, in, len);
+  spec_cx_sha512_final(&G_cx.sha512, out);
   return CX_SHA512_SIZE;
 }
 

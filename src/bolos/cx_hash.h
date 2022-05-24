@@ -55,7 +55,7 @@ struct cx_hash_header_s {
   /** Message digest identifier, See cx_md_e. */
   cx_md_t algo;
   /** Number of block already processed */
-  unsigned int counter;
+  uint32_t counter;
 };
 /** Convenience type. See #cx_hash_header_s. */
 typedef struct cx_hash_header_s cx_hash_t;
@@ -67,7 +67,7 @@ struct cx_sha256_s {
   /** @copydoc cx_ripemd160_s::header */
   struct cx_hash_header_s header;
   /** @internal @copydoc cx_ripemd160_s::blen */
-  unsigned int blen;
+  size_t blen;
   /** @internal @copydoc cx_ripemd160_s::block */
   unsigned char block[64];
   /** @copydoc cx_ripemd160_s::acc */
@@ -171,8 +171,8 @@ typedef struct cx_sha3_s cx_sha3_t;
 /* Generic API */
 typedef struct {
   cx_md_t md_type;
-  unsigned int output_size;
-  unsigned int block_size;
+  size_t output_size;
+  size_t block_size;
   int (*init_func)(void *ctx);
   int (*update_func)(void *ctx, const uint8_t *data, size_t len);
   int (*finish_func)(void *ctx, uint8_t *digest);
@@ -197,28 +197,29 @@ int cx_blake2b_init(cx_blake2b_t *hash, unsigned int size);
 int cx_blake2b_init2(cx_blake2b_t *hash, unsigned int size, unsigned char *salt,
                      unsigned int salt_len, unsigned char *perso,
                      unsigned int perso_len);
-int cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len);
-int cx_blake2b_final(cx_blake2b_t *ctx, uint8_t *digest);
+int spec_cx_blake2b_update(cx_blake2b_t *ctx, const uint8_t *data, size_t len);
+int spec_cx_blake2b_final(cx_blake2b_t *ctx, uint8_t *digest);
 int cx_blake2b_validate_context(const cx_blake2b_t *ctx);
-size_t cx_blake2b_get_output_size(const cx_blake2b_t *ctx);
+size_t spec_cx_blake2b_get_output_size(const cx_blake2b_t *ctx);
 
 int cx_sha224_init(cx_sha256_t *hash);
 int cx_sha256_init(cx_sha256_t *hash);
-int cx_sha256_update(cx_sha256_t *ctx, const uint8_t *data, size_t len);
-int cx_sha256_final(cx_sha256_t *ctx, uint8_t *digest);
+int spec_cx_sha256_update(cx_sha256_t *ctx, const uint8_t *data, size_t len);
+int spec_cx_sha256_final(cx_sha256_t *ctx, uint8_t *digest);
 int cx_sha256_validate_context(const cx_sha256_t *ctx);
 
 int cx_sha384_init(cx_sha512_t *hash);
 int cx_sha512_init(cx_sha512_t *hash);
-int cx_sha512_final(cx_sha512_t *ctx, uint8_t *digest);
-int cx_sha512_update(cx_sha512_t *ctx, const uint8_t *data, size_t len);
+int spec_cx_sha512_final(cx_sha512_t *ctx, uint8_t *digest);
+int spec_cx_sha512_update(cx_sha512_t *ctx, const uint8_t *data, size_t len);
 int cx_sha512_validate_context(const cx_sha512_t *ctx);
-int cx_hash_sha512(const uint8_t *data, size_t len, uint8_t *digest,
-                   size_t digest_len);
+int spec_cx_hash_sha512(const uint8_t *data, size_t len, uint8_t *digest,
+                        size_t digest_len);
 
 int cx_ripemd160_init(cx_ripemd160_t *hash);
-int cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data, size_t len);
-int cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest);
+int spec_cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data,
+                             size_t len);
+int spec_cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest);
 int cx_ripemd160_validate_context(const cx_ripemd160_t *ctx);
 
 int cx_sha3_init(cx_sha3_t *hash, unsigned int size);
@@ -227,21 +228,21 @@ int cx_shake128_init(cx_sha3_t *hash, unsigned int out_size);
 int cx_shake256_init(cx_sha3_t *hash, unsigned int out_size);
 int cx_sha3_xof_init(cx_sha3_t *hash, unsigned int size,
                      unsigned int out_length);
-int cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len);
-int cx_sha3_final(cx_sha3_t *ctx, uint8_t *digest);
+int spec_cx_sha3_update(cx_sha3_t *ctx, const uint8_t *data, size_t len);
+int spec_cx_sha3_final(cx_sha3_t *ctx, uint8_t *digest);
 int cx_sha3_validate_context(const cx_sha3_t *ctx);
 int cx_shake_validate_context(const cx_sha3_t *ctx);
-size_t cx_sha3_get_output_size(const cx_sha3_t *ctx);
+size_t spec_cx_sha3_get_output_size(const cx_sha3_t *ctx);
 
-const cx_hash_info_t *cx_hash_get_info(cx_md_t md_type);
-size_t cx_hash_get_size(const cx_hash_ctx *ctx);
-int cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type);
-int cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size);
-int cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len);
-int cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest);
+const cx_hash_info_t *spec_cx_hash_get_info(cx_md_t md_type);
+size_t spec_cx_hash_get_size(const cx_hash_ctx *ctx);
+int spec_cx_hash_init(cx_hash_ctx *ctx, cx_md_t md_type);
+int spec_cx_hash_init_ex(cx_hash_ctx *ctx, cx_md_t md_type, size_t output_size);
+int spec_cx_hash_update(cx_hash_ctx *ctx, const uint8_t *data, size_t len);
+int spec_cx_hash_final(cx_hash_ctx *ctx, uint8_t *digest);
 
-int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
-                       unsigned char *out, unsigned int out_len);
+int sys_cx_hash_sha256(const uint8_t *in, size_t len, uint8_t *out,
+                       size_t out_len);
 
 #define sys_cx_blake2b_init   cx_blake2b_init
 #define sys_cx_blake2b_init2  cx_blake2b_init2
@@ -252,4 +253,4 @@ int sys_cx_hash_sha256(const unsigned char *in, unsigned int len,
 #define sys_cx_keccak_init    cx_keccak_init
 #define sys_cx_sha3_init      cx_sha3_init
 #define sys_cx_sha3_xof_init  cx_sha3_xof_init
-#define sys_cx_hash_sha512    cx_hash_sha512
+#define sys_cx_hash_sha512    spec_cx_hash_sha512

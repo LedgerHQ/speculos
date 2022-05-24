@@ -153,13 +153,13 @@ extern "C" {
   int blake2s_update( blake2s_state *S, const void *in, size_t inlen );
   int blake2s_final( blake2s_state *S, void *out, size_t outlen );
 
-  int blake2b_init( blake2b_state *S, size_t outlen, 
+  int spec_blake2b_init( blake2b_state *S, size_t outlen, 
                     unsigned char *salt, size_t salt_len, 
                     unsigned char *personal, size_t personal_len);
-  int blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen );
-  int blake2b_init_param( blake2b_state *S, const blake2b_param *P );
-  int blake2b_update( blake2b_state *S, const void *in, size_t inlen );
-  int blake2b_final( blake2b_state *S, void *out, size_t outlen );
+  int spec_blake2b_init_key( blake2b_state *S, size_t outlen, const void *key, size_t keylen );
+  int spec_blake2b_init_param( blake2b_state *S, const blake2b_param *P );
+  int spec_blake2b_update( blake2b_state *S, const void *in, size_t inlen );
+  int spec_blake2b_final( blake2b_state *S, void *out, size_t outlen );
 
   int blake2sp_init( blake2sp_state *S, size_t outlen );
   int blake2sp_init_key( blake2sp_state *S, size_t outlen, const void *key, size_t keylen );
