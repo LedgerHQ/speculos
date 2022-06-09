@@ -294,7 +294,7 @@ struct cx_ecfp_256_public_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t W_len;
+  unsigned int W_len;
   /** Public key value starting at offset 0 */
   unsigned char W[65];
 };
@@ -303,7 +303,7 @@ struct cx_ecfp_256_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t d_len;
+  unsigned int d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[32];
 };
@@ -312,7 +312,7 @@ struct cx_ecfp_256_extended_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t d_len;
+  unsigned int d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[64];
 };
@@ -356,7 +356,7 @@ struct cx_ecfp_512_public_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t W_len;
+  unsigned int W_len;
   /** Public key value starting at offset 0 */
   unsigned char W[129];
 };
@@ -365,7 +365,7 @@ struct cx_ecfp_512_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t d_len;
+  unsigned int d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[64];
 };
@@ -374,7 +374,7 @@ struct cx_ecfp_512_extented_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t d_len;
+  unsigned int d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[128];
 };
@@ -391,7 +391,7 @@ struct cx_ecfp_640_public_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t W_len;
+  unsigned int W_len;
   /** Public key value starting at offset 0 */
   unsigned char W[161];
 };
@@ -400,7 +400,7 @@ struct cx_ecfp_640_private_key_s {
   /** curve ID #cx_curve_e */
   cx_curve_t curve;
   /** Public key length in bytes */
-  size_t d_len;
+  unsigned int d_len;
   /** Public key value starting at offset 0 */
   unsigned char d[80];
 };
@@ -494,7 +494,12 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
-int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-                                size_t max_size, const uint8_t **r,
-                                size_t *r_len, const uint8_t **s,
-                                size_t *s_len);
+
+
+int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+                           size_t max_size, const uint8_t **r, size_t *r_len,
+                           const uint8_t **s, size_t *s_len);
+
+#define spec_cx_ecfp_decode_sig_der(a,b,c,d,e,f,g) 	cx_ecfp_decode_sig_der(a,b,c,d,e,f,g)
+
+

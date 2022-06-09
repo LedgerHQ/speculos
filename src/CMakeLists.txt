@@ -41,6 +41,8 @@ add_library(emu
         bolos/cx_hash.c
         bolos/cx_math.c
         bolos/default.c
+        innovation/cx_swu.c
+        innovation/cx_mulmontg.c
         emulate.c
         emulate_1.2.c
         emulate_1.5.c

@@ -49,6 +49,15 @@ const ecdsa_test_vector secp256k1_blake2b512_test_vector[] = {
     "25E1031AFEE585313896444934EB04B903A685B1448B755D56F701AFE9BE2CE" }
 };
 
+/* A stark test vector from Starknet.js*/
+const ecdsa_test_vector stark_test_vector[] ={
+	"04a2c3811d30daef56d3025ab276ebe6bdfc70a8fc0bf22e9b8398af5954d8ef",
+	"0402DD3A230EC2D99D8FD070460433AFD223831B896210AF37A4574C660B726EF2"
+  	"0650AF51BFA3FBF3817641C7633FA0EE9CF4E6787A9DA09D5981935D594E34AD",
+	"008354cec27971fce73ee5e356772ed6188aaedd9051644bbcb5f85b14675cc6"
+};
+
+
 void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector *tv,
                 size_t tv_len)
 {
@@ -149,6 +158,10 @@ void test_ecdsa(cx_curve_t curve, cx_md_t md, const ecdsa_test_vector *tv,
     case CX_CURVE_SECP256R1:
       group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
       break;
+    case CX_CURVE_Stark256:
+       	assert_int_equal(cx_generic_curve( (const cx_curve_weierstrass_t *)domain, ctx, &group), 0);
+       	return; //TODO: adapt rest of the test to stark.
+    break;
     default:
       group = NULL;
       fail();
@@ -205,11 +218,17 @@ static void test_blake2b_secp256k1(void **state __attribute__((unused)))
                  sizeof(secp256k1_blake2b512_test_vector[0]));
 }
 
+static void test_ecdsa_stark(void **state __attribute__((unused)))
+{
+ 	 test_ecdsa(CX_CURVE_Stark256, CX_SHA256, stark_test_vector, sizeof(stark_test_vector) / sizeof(stark_test_vector[0]));
+}
+
 int main()
 {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_ecdsa_secp256k1),
     cmocka_unit_test(test_ecdsa_secp256r1),
+	cmocka_unit_test(test_ecdsa_stark),
     cmocka_unit_test(test_blake2b_secp256k1),
   };
   make_openssl_random_deterministic();
