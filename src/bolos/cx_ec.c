@@ -20,13 +20,12 @@
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
 
-
 #include "cx_const_brainpool.c"
+#include "cx_const_sec256k1.c"
 #include "cx_const_secp.c"
+#include "cx_const_stark.c"
 #include "cx_ecbls12381.c"
 #include "cx_ecedd25519.c"
-#include "cx_const_sec256k1.c"
-#include "cx_const_stark.c"
 
 static cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
@@ -46,15 +45,15 @@ static cx_curve_domain_t const *const C_cx_allCurves[] = {
 };
 
 static cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
-  (const cx_curve_weierstrass_t *) &C_cx_secp256k1,
+  (const cx_curve_weierstrass_t *)&C_cx_secp256k1,
   (const cx_curve_weierstrass_t *)&C_cx_secp256r1,
   (const cx_curve_weierstrass_t *)&C_cx_secp384r1,
-  (const cx_curve_weierstrass_t *) &C_cx_Ed25519,
-  (const cx_curve_weierstrass_t *) &C_cx_BLS12_381_G1,
+  (const cx_curve_weierstrass_t *)&C_cx_Ed25519,
+  (const cx_curve_weierstrass_t *)&C_cx_BLS12_381_G1,
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP256r1,
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP256t1,
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP320r1,
-  (const cx_curve_weierstrass_t *)& C_cx_BrainpoolP320t1,
+  (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP320t1,
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP384r1,
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP384t1,
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP512r1,
@@ -101,8 +100,8 @@ static int nid_from_curve(cx_curve_t curve)
     nid = NID_brainpoolP512t1;
     break;
   case CX_CURVE_Stark256:
-	nid = NID_Stark256;
-	break;
+    nid = NID_Stark256;
+    break;
 #if 0
   case CX_CURVE_SECP521R1:
     nid = NID_secp521r1;
@@ -218,7 +217,6 @@ int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
   return ED25519_verify(hash, hash_len, sig, pub.W + 1);
 }
 
-
 const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve)
 {
   unsigned int i;
@@ -233,151 +231,163 @@ const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve)
 
 /* get generic curve group from parameters*/
 /* curve must be stored in weierstrass form in C_cx_all_Weierstrass_Curves*/
- int cx_generic_curve(const cx_curve_weierstrass_t *i_weier, BN_CTX *ctx, EC_GROUP **o_group)
+int cx_generic_curve(const cx_curve_weierstrass_t *i_weier, BN_CTX *ctx,
+                     EC_GROUP **o_group)
 {
-    BIGNUM *p,*a,*b, *x,  *y, *order;
-    EC_POINT *P = NULL;
+  BIGNUM *p, *a, *b, *x, *y, *order;
+  EC_POINT *P = NULL;
 
-    /* Allocate a BN for each parameter*/
-	p = BN_new();	a = BN_new();	b = BN_new();	x = BN_new();	y = BN_new();	order = BN_new();
+  /* Allocate a BN for each parameter*/
+  p = BN_new();
+  a = BN_new();
+  b = BN_new();
+  x = BN_new();
+  y = BN_new();
+  order = BN_new();
 
-	BN_bin2bn(i_weier->p, i_weier->length, p);
-	BN_bin2bn(i_weier->a, i_weier->length, a);
-	BN_bin2bn(i_weier->b, i_weier->length, b);
-	BN_bin2bn(i_weier->Gx, i_weier->length, x);
-	BN_bin2bn(i_weier->Gy, i_weier->length, y);
-	BN_bin2bn(i_weier->n, i_weier->length, order);
+  BN_bin2bn(i_weier->p, i_weier->length, p);
+  BN_bin2bn(i_weier->a, i_weier->length, a);
+  BN_bin2bn(i_weier->b, i_weier->length, b);
+  BN_bin2bn(i_weier->Gx, i_weier->length, x);
+  BN_bin2bn(i_weier->Gy, i_weier->length, y);
+  BN_bin2bn(i_weier->n, i_weier->length, order);
 
-	*o_group = EC_GROUP_new_curve_GFp(p, a,b, ctx);
+  *o_group = EC_GROUP_new_curve_GFp(p, a, b, ctx);
 
-	P = EC_POINT_new(*o_group);
-    	// if(!EC_POINT_set_compressed_coordinates_GFp(Stark, P, x, 1, ctx))
+  P = EC_POINT_new(*o_group);
+  // if(!EC_POINT_set_compressed_coordinates_GFp(Stark, P, x, 1, ctx))
 
-    	if(!EC_POINT_set_affine_coordinates_GFp(*o_group, P,x,y, ctx)){
-    		errx(1, "Set affine coordinates failed");
-    		return -1;}
-     	 if(!EC_POINT_is_on_curve(*o_group, P, ctx)){
-     		errx(1, "generator not on curve: check curve parameters p,a,b,x,y,q");
-     		return -1;}
-    	if(!EC_GROUP_set_generator(*o_group, P, order, BN_value_one()) ){
-    		errx(1,"\n generator set failed); //ici pour openSSL OK=1 !!!!");
-    		return -1;}
+  if (!EC_POINT_set_affine_coordinates_GFp(*o_group, P, x, y, ctx)) {
+    errx(1, "Set affine coordinates failed");
+    return -1;
+  }
+  if (!EC_POINT_is_on_curve(*o_group, P, ctx)) {
+    errx(1, "generator not on curve: check curve parameters p,a,b,x,y,q");
+    return -1;
+  }
+  if (!EC_GROUP_set_generator(*o_group, P, order, BN_value_one())) {
+    errx(1, "\n generator set failed); //ici pour openSSL OK=1 !!!!");
+    return -1;
+  }
 
-    	 if(!EC_GROUP_check(*o_group,ctx))
-    	 {
-    	    		 errx(1, "EC_GROUP_check() failed");
-    	    	     return -1;
-    	  }
+  if (!EC_GROUP_check(*o_group, ctx)) {
+    errx(1, "EC_GROUP_check() failed");
+    return -1;
+  }
 
-	/* free BN parameters*/
-    BN_free(p);BN_free(a);BN_free(b);BN_free(x);BN_free(y);BN_free(order);
-    /* free generator*/
-    EC_POINT_free(P);
+  /* free BN parameters*/
+  BN_free(p);
+  BN_free(a);
+  BN_free(b);
+  BN_free(x);
+  BN_free(y);
+  BN_free(order);
+  /* free generator*/
+  EC_POINT_free(P);
 
-    return 0;
+  return 0;
 }
 
- int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
-                                cx_ecfp_public_key_t *public_key,
-                                cx_ecfp_private_key_t *private_key,
-                                int keep_private, cx_md_t hashID)
- {
-   EC_GROUP *Stark=NULL;
+int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
+                               cx_ecfp_public_key_t *public_key,
+                               cx_ecfp_private_key_t *private_key,
+                               int keep_private, cx_md_t hashID)
+{
+  EC_GROUP *Stark = NULL;
 
-   EC_POINT *pub;
-   BN_CTX *ctx;
-   EC_KEY *key;
-   BIGNUM *bn;
-   int nid, ret;
-   ctx = BN_CTX_new();
+  EC_POINT *pub;
+  BN_CTX *ctx;
+  EC_KEY *key;
+  BIGNUM *bn;
+  int nid, ret;
+  ctx = BN_CTX_new();
 
-   const cx_curve_weierstrass_t *weier=cx_ecfp_get_weierstrass(curve);
+  const cx_curve_weierstrass_t *weier = cx_ecfp_get_weierstrass(curve);
 
-   if (curve == CX_CURVE_Ed25519) {
-     return sys_cx_eddsa_get_public_key(private_key, hashID, public_key);
-   } else {
+  if (curve == CX_CURVE_Ed25519) {
+    return sys_cx_eddsa_get_public_key(private_key, hashID, public_key);
+  } else {
 
-     nid = nid_from_curve(curve);
-     if(nid==-1)
-     {
-     	errx(1, "nid not supported, refer to manual 'how to add a curve to speculos.txt' ");
-     	return -1;
-     }
+    nid = nid_from_curve(curve);
+    if (nid == -1) {
+      errx(1, "nid not supported, refer to manual 'how to add a curve to "
+              "speculos.txt' ");
+      return -1;
+    }
 
-     	key = EC_KEY_new();
+    key = EC_KEY_new();
 
-     	if(cx_generic_curve(weier, ctx, &Stark)!=0)
-     		return -1;
+    if (cx_generic_curve(weier, ctx, &Stark) != 0)
+      return -1;
 
-     	if(Stark==NULL)
-     		  errx(1, "setting ecc group failed");
+    if (Stark == NULL)
+      errx(1, "setting ecc group failed");
 
-     	ret=EC_KEY_set_group(key, Stark);//here for openSSL OK=1 !!!!
-     	  if (ret !=1) {
-     	      errx(1, "ssl: EC_KEY_set_group");
-     	    }
+    ret = EC_KEY_set_group(key, Stark); // here for openSSL OK=1 !!!!
+    if (ret != 1) {
+      errx(1, "ssl: EC_KEY_set_group");
+    }
 
-     	pub = EC_POINT_new(Stark);
-     	if(pub==NULL) return -1;
+    pub = EC_POINT_new(Stark);
+    if (pub == NULL)
+      return -1;
 
+    if (!keep_private) {
+      if (EC_KEY_generate_key(key) == 0) {
+        errx(1, "ssl: EC_KEY_generate_key");
+      }
 
-     if (!keep_private) {
-       if (EC_KEY_generate_key(key) == 0) {
-         errx(1, "ssl: EC_KEY_generate_key");
-       }
+      const BIGNUM *priv = EC_KEY_get0_private_key(key);
+      if (BN_num_bytes(priv) > (int)weier->length) {
+        errx(1, "ssl: invalid bn");
+      }
+      private_key->curve = curve;
+      private_key->d_len = BN_bn2bin(priv, private_key->d);
+    } else {
+      BIGNUM *priv;
 
-       const BIGNUM *priv = EC_KEY_get0_private_key(key);
-       if (BN_num_bytes(priv) > (int)weier->length) {
-         errx(1, "ssl: invalid bn");
-       }
-       private_key->curve = curve;
-       private_key->d_len = BN_bn2bin(priv, private_key->d);
-     } else {
-       BIGNUM *priv;
+      priv = BN_new();
 
-       priv = BN_new();
+      if (BN_bin2bn(private_key->d, private_key->d_len, priv) == NULL) {
+        errx(1, "ssl : BN_bin2bn of private key");
+      }
 
+      if (EC_KEY_set_private_key(key, priv) == 0) {
+        errx(1, "ssl : EC_KEY_set_private_key");
+      }
 
-       if(BN_bin2bn(private_key->d, private_key->d_len, priv)==NULL) {
-     	  errx(1, "ssl : BN_bin2bn of private key");
-       }
+      if (EC_POINT_mul(Stark, pub, priv, NULL, NULL, ctx) == 0) {
+        errx(1, "ssl: EC_POINT_mul");
+      }
 
-       if (EC_KEY_set_private_key(key, priv) == 0) {
-         errx(1, "ssl : EC_KEY_set_private_key");
-       }
+      if (EC_KEY_set_public_key(key, pub) == 0) {
+        errx(1, "ssl: EC_KEY_set_public_key");
+      }
 
+      BN_free(priv);
+      EC_POINT_free(pub);
+    }
 
-       if (EC_POINT_mul(Stark, pub, priv, NULL, NULL, ctx) == 0) {
-         errx(1, "ssl: EC_POINT_mul");
-       }
+    bn = BN_new();
+    EC_POINT_point2bn(Stark, EC_KEY_get0_public_key(key),
+                      POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
 
-       if (EC_KEY_set_public_key(key, pub) == 0) {
-         errx(1, "ssl: EC_KEY_set_public_key");
-       }
+    if (BN_num_bytes(bn) > 2 * (int)weier->length + 1) {
+      errx(1, "ssl: invalid bn");
+    }
+    public_key->curve = curve;
+    public_key->W_len = BN_bn2bin(bn, public_key->W);
+    EC_POINT_point2oct(Stark, EC_KEY_get0_public_key(key),
+                       POINT_CONVERSION_UNCOMPRESSED, public_key->W,
+                       public_key->W_len, ctx);
 
-       BN_free(priv);
-       EC_POINT_free(pub);
-     }
+    BN_free(bn);
+    EC_KEY_free(key);
+    BN_CTX_free(ctx);
 
-     bn = BN_new();
-     EC_POINT_point2bn(Stark, EC_KEY_get0_public_key(key),
-                       POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
-
-     if (BN_num_bytes(bn) > 2 * (int)weier->length + 1) {
-       errx(1, "ssl: invalid bn");
-     }
-     public_key->curve = curve;
-     public_key->W_len = BN_bn2bin(bn, public_key->W);
-     EC_POINT_point2oct(Stark, EC_KEY_get0_public_key(key),
-                       POINT_CONVERSION_UNCOMPRESSED, public_key->W, public_key->W_len, ctx);
-
-     BN_free(bn);
-     EC_KEY_free(key);
-     BN_CTX_free(ctx);
-
-   return 0;
- }
- }
+    return 0;
+  }
+}
 
 int sys_cx_ecfp_generate_pair(cx_curve_t curve,
                               cx_ecfp_public_key_t *public_key,
@@ -562,7 +572,6 @@ const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve)
   THROW(INVALID_PARAMETER);
 }
 
-
 int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
                         cx_md_t UNUSED(hashID), const uint8_t *hash,
                         unsigned int hash_len, const uint8_t *sig,
@@ -572,10 +581,10 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   unsigned int size;
   const uint8_t *r, *s;
   size_t rlen, slen;
-  //int nid = 0;
+  // int nid = 0;
   BN_CTX *ctx;
   ctx = BN_CTX_new();
-  EC_GROUP *Stark=NULL;
+  EC_GROUP *Stark = NULL;
 
   domain = (const cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
   size = domain->length; // bits  -> bytes
@@ -598,14 +607,14 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   BN_bin2bn(key->W + 1, domain->length, x);
   BN_bin2bn(key->W + domain->length + 1, domain->length, y);
 
-	if(cx_generic_curve(domain, ctx, &Stark)!=0)
-		return -1;
+  if (cx_generic_curve(domain, ctx, &Stark) != 0)
+    return -1;
 
-  //nid = nid_from_curve(key->curve);
-  EC_KEY *ec_key=EC_KEY_new();
+  // nid = nid_from_curve(key->curve);
+  EC_KEY *ec_key = EC_KEY_new();
   EC_KEY_set_group(ec_key, Stark);
 
-//  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
+  //  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
   EC_KEY_set_public_key_affine_coordinates(ec_key, x, y);
 
   int ret = ECDSA_do_verify(hash, hash_len, ecdsa_sig, ec_key);
@@ -694,7 +703,8 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   bool do_rfc6979_signature;
   BN_CTX *ctx = BN_CTX_new();
 
-  const cx_curve_weierstrass_t *domain =(const cx_curve_weierstrass_t *) cx_ecfp_get_domain(key->curve);
+  const cx_curve_weierstrass_t *domain =
+      (const cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
   nid = nid_from_curve(key->curve);
   if (nid < 0) {
     return 0;
@@ -731,20 +741,19 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   BN_bin2bn(domain->n, domain->length, q);
   BN_bin2bn(key->d, key->d_len, x);
 
-  EC_GROUP *Stark=NULL;
+  EC_GROUP *Stark = NULL;
 
-	if(cx_generic_curve(domain, ctx, &Stark)!=0)
-		return -1;
+  if (cx_generic_curve(domain, ctx, &Stark) != 0)
+    return -1;
 
-//nid = nid_from_curve(key->curve);
-	EC_KEY *ec_key=EC_KEY_new();
-	EC_KEY_set_group(ec_key, Stark);
+  // nid = nid_from_curve(key->curve);
+  EC_KEY *ec_key = EC_KEY_new();
+  EC_KEY_set_group(ec_key, Stark);
 
-//  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
-//EC_KEY_set_public_key_affine_coordinates(ec_key, x, y);
+  //  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
+  // EC_KEY_set_public_key_affine_coordinates(ec_key, x, y);
 
-
-//  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
+  //  EC_KEY *ec_key = EC_KEY_new_by_curve_name(nid);
   EC_KEY_set_private_key(ec_key, x);
 
   const EC_GROUP *group = EC_KEY_get0_group(ec_key);
@@ -755,8 +764,8 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
     if (domain->length >= CX_RFC6979_MAX_RLEN) {
       errx(1, "rfc6979_ecdsa_sign: curve too large");
     }
-    spec_cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash, hash_len,
-                        domain->n, domain->length);
+    spec_cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash,
+                             hash_len, domain->n, domain->length);
   }
   do {
     if (do_rfc6979_signature) {
@@ -820,8 +829,8 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   buf_s = malloc(domain->length);
   BN_bn2binpad(r, buf_r, domain->length);
   BN_bn2binpad(normalized_s, buf_s, domain->length);
-  int ret = spec_cx_ecfp_encode_sig_der(sig, sig_len, buf_r, domain->length, buf_s,
-                                   domain->length);
+  int ret = spec_cx_ecfp_encode_sig_der(sig, sig_len, buf_r, domain->length,
+                                        buf_s, domain->length);
   free(buf_r);
   free(buf_s);
   ECDSA_SIG_free(ecdsa_sig);

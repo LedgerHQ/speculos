@@ -58,7 +58,6 @@ static unsigned char const C_cx_Ed25519_Qplus3div8[] = {
 
 #define C_cx_Ed25519_h 8
 
-
 static cx_curve_twisted_edward_t const C_cx_Ed25519 = {
   CX_CURVE_Ed25519,
   256,

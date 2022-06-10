@@ -46,7 +46,6 @@ static unsigned char const C_cx_secp256r1_Hn[] = {
 
 #define C_cx_secp256r1_h 1
 
-
 static cx_curve_weierstrass_t const C_cx_secp256r1 = {
   CX_CURVE_SECP256R1,
   256,
@@ -61,9 +60,6 @@ static cx_curve_weierstrass_t const C_cx_secp256r1 = {
   C_cx_secp256r1_a,
   C_cx_secp256r1_b,
 };
-
-
-
 
 static uint8_t const C_cx_secp384r1_a[] = {
   // a:
@@ -138,5 +134,3 @@ static cx_curve_weierstrass_t const C_cx_secp384r1 = {
   C_cx_secp384r1_a,
   C_cx_secp384r1_b,
 };
-
-
