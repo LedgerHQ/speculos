@@ -135,7 +135,7 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
   }
 
   if (pv_key->d_len != 32) {
-    errx(1, "cx_eddsa_get_public_key: invalid key size (0x%x)", pv_key->d_len);
+    errx(1, "cx_eddsa_get_public_key: invalid key size (0x%zx)", pv_key->d_len);
     return -1;
   }
 
@@ -219,7 +219,6 @@ int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
 }
 
 
-
 const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve)
 {
   unsigned int i;
@@ -229,85 +228,8 @@ const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve)
     }
   }
   THROW(INVALID_PARAMETER);
+  return NULL;
 }
-
-#ifdef _nongeneric
-int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
-                               cx_ecfp_public_key_t *public_key,
-                               cx_ecfp_private_key_t *private_key,
-                               int keep_private, cx_md_t hashID)
-{
-  const EC_GROUP *group;
-  EC_POINT *pub;
-  BN_CTX *ctx;
-  EC_KEY *key;
-  BIGNUM *bn;
-  int nid;
-  const cx_curve_domain_t *domain = cx_ecfp_get_domain(curve);
-
-  if (curve == CX_CURVE_Ed25519) {
-    return sys_cx_eddsa_get_public_key(private_key, hashID, public_key);
-  } else {
-    nid = nid_from_curve(curve);
-    key = EC_KEY_new_by_curve_name(nid);
-    if (key == NULL) {
-      errx(1, "ssl: EC_KEY_new_by_curve_name");
-    }
-
-    group = EC_KEY_get0_group(key);
-
-    ctx = BN_CTX_new();
-
-    if (!keep_private) {
-      if (EC_KEY_generate_key(key) == 0) {
-        errx(1, "ssl: EC_KEY_generate_key");
-      }
-
-      const BIGNUM *priv = EC_KEY_get0_private_key(key);
-      if (BN_num_bytes(priv) > (int)domain->length) {
-        errx(1, "ssl: invalid bn");
-      }
-      private_key->curve = curve;
-      private_key->d_len = BN_bn2bin(priv, private_key->d);
-    } else {
-      BIGNUM *priv;
-
-      priv = BN_new();
-      BN_bin2bn(private_key->d, private_key->d_len, priv);
-      if (EC_KEY_set_private_key(key, priv) == 0) {
-        errx(1, "ssl: EC_KEY_set_private_key");
-      }
-
-      pub = EC_POINT_new(group);
-      if (EC_POINT_mul(group, pub, priv, NULL, NULL, ctx) == 0) {
-        errx(1, "ssl: EC_POINT_mul");
-      }
-
-      if (EC_KEY_set_public_key(key, pub) == 0) {
-        errx(1, "ssl: EC_KEY_set_public_key");
-      }
-
-      BN_free(priv);
-      EC_POINT_free(pub);
-    }
-
-    bn = BN_new();
-    EC_POINT_point2bn(group, EC_KEY_get0_public_key(key),
-                      POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
-
-    if (BN_num_bytes(bn) > 2 * (int)domain->length + 1) {
-      errx(1, "ssl: invalid bn");
-    }
-    public_key->curve = curve;
-    public_key->W_len = BN_bn2bin(bn, public_key->W);
-
-    BN_free(bn);
-    EC_KEY_free(key);
-    BN_CTX_free(ctx);
-  }
-  return 0;
-}
-#endif
 
 /* get generic curve group from parameters*/
 /* curve must be stored in weierstrass form in C_cx_all_Weierstrass_Curves*/
@@ -355,107 +277,107 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
     return 0;
 }
 
-int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
-                               cx_ecfp_public_key_t *public_key,
-                               cx_ecfp_private_key_t *private_key,
-                               int keep_private, cx_md_t hashID)
-{
-  EC_GROUP *Stark=NULL;
+ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
+                                cx_ecfp_public_key_t *public_key,
+                                cx_ecfp_private_key_t *private_key,
+                                int keep_private, cx_md_t hashID)
+ {
+   EC_GROUP *Stark=NULL;
 
-  EC_POINT *pub;
-  BN_CTX *ctx;
-  EC_KEY *key;
-  BIGNUM *bn;
-  int nid, ret;
-  ctx = BN_CTX_new();
+   EC_POINT *pub;
+   BN_CTX *ctx;
+   EC_KEY *key;
+   BIGNUM *bn;
+   int nid, ret;
+   ctx = BN_CTX_new();
 
-  const cx_curve_weierstrass_t *weier=cx_ecfp_get_weierstrass(curve);
+   const cx_curve_weierstrass_t *weier=cx_ecfp_get_weierstrass(curve);
 
-  if (curve == CX_CURVE_Ed25519) {
-    return sys_cx_eddsa_get_public_key(private_key, hashID, public_key);
-  } else {
+   if (curve == CX_CURVE_Ed25519) {
+     return sys_cx_eddsa_get_public_key(private_key, hashID, public_key);
+   } else {
 
-    nid = nid_from_curve(curve);
-    if(nid==-1)
-    {
-    	errx(1, "nid not supported, refer to manual 'how to add a curve to speculos.txt' ");
-    	return -1;
-    }
+     nid = nid_from_curve(curve);
+     if(nid==-1)
+     {
+     	errx(1, "nid not supported, refer to manual 'how to add a curve to speculos.txt' ");
+     	return -1;
+     }
 
-    	key = EC_KEY_new();
+     	key = EC_KEY_new();
 
-    	if(cx_generic_curve(weier, ctx, &Stark)!=0)
-    		return -1;
+     	if(cx_generic_curve(weier, ctx, &Stark)!=0)
+     		return -1;
 
-    	if(Stark==NULL)
-    		  errx(1, "setting ecc group failed");
+     	if(Stark==NULL)
+     		  errx(1, "setting ecc group failed");
 
-    	ret=EC_KEY_set_group(key, Stark);//here for openSSL OK=1 !!!!
-    	  if (ret !=1) {
-    	      errx(1, "ssl: EC_KEY_set_group");
-    	    }
+     	ret=EC_KEY_set_group(key, Stark);//here for openSSL OK=1 !!!!
+     	  if (ret !=1) {
+     	      errx(1, "ssl: EC_KEY_set_group");
+     	    }
 
-    	pub = EC_POINT_new(Stark);
-    	if(pub==NULL) return -1;
-
-
-    if (!keep_private) {
-      if (EC_KEY_generate_key(key) == 0) {
-        errx(1, "ssl: EC_KEY_generate_key");
-      }
-
-      const BIGNUM *priv = EC_KEY_get0_private_key(key);
-      if (BN_num_bytes(priv) > (int)weier->length) {
-        errx(1, "ssl: invalid bn");
-      }
-      private_key->curve = curve;
-      private_key->d_len = BN_bn2bin(priv, private_key->d);
-    } else {
-      BIGNUM *priv;
-
-      priv = BN_new();
+     	pub = EC_POINT_new(Stark);
+     	if(pub==NULL) return -1;
 
 
-      if(BN_bin2bn(private_key->d, private_key->d_len, priv)==NULL) {
-    	  errx(1, "ssl : BN_bin2bn of private key");
-      }
+     if (!keep_private) {
+       if (EC_KEY_generate_key(key) == 0) {
+         errx(1, "ssl: EC_KEY_generate_key");
+       }
 
-      if (EC_KEY_set_private_key(key, priv) == 0) {
-        errx(1, "ssl : EC_KEY_set_private_key");
-      }
+       const BIGNUM *priv = EC_KEY_get0_private_key(key);
+       if (BN_num_bytes(priv) > (int)weier->length) {
+         errx(1, "ssl: invalid bn");
+       }
+       private_key->curve = curve;
+       private_key->d_len = BN_bn2bin(priv, private_key->d);
+     } else {
+       BIGNUM *priv;
+
+       priv = BN_new();
 
 
-      if (EC_POINT_mul(Stark, pub, priv, NULL, NULL, ctx) == 0) {
-        errx(1, "ssl: EC_POINT_mul");
-      }
+       if(BN_bin2bn(private_key->d, private_key->d_len, priv)==NULL) {
+     	  errx(1, "ssl : BN_bin2bn of private key");
+       }
 
-      if (EC_KEY_set_public_key(key, pub) == 0) {
-        errx(1, "ssl: EC_KEY_set_public_key");
-      }
+       if (EC_KEY_set_private_key(key, priv) == 0) {
+         errx(1, "ssl : EC_KEY_set_private_key");
+       }
 
-      BN_free(priv);
-      EC_POINT_free(pub);
-    }
 
-    bn = BN_new();
-    EC_POINT_point2bn(Stark, EC_KEY_get0_public_key(key),
-                      POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
+       if (EC_POINT_mul(Stark, pub, priv, NULL, NULL, ctx) == 0) {
+         errx(1, "ssl: EC_POINT_mul");
+       }
 
-    if (BN_num_bytes(bn) > 2 * (int)weier->length + 1) {
-      errx(1, "ssl: invalid bn");
-    }
-    public_key->curve = curve;
-    public_key->W_len = BN_bn2bin(bn, public_key->W);
-    EC_POINT_point2oct(Stark, EC_KEY_get0_public_key(key),
-                      POINT_CONVERSION_UNCOMPRESSED, public_key->W, public_key->W_len, ctx);
+       if (EC_KEY_set_public_key(key, pub) == 0) {
+         errx(1, "ssl: EC_KEY_set_public_key");
+       }
 
-    BN_free(bn);
-    EC_KEY_free(key);
-    BN_CTX_free(ctx);
+       BN_free(priv);
+       EC_POINT_free(pub);
+     }
 
-  return 0;
-}
-}
+     bn = BN_new();
+     EC_POINT_point2bn(Stark, EC_KEY_get0_public_key(key),
+                       POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
+
+     if (BN_num_bytes(bn) > 2 * (int)weier->length + 1) {
+       errx(1, "ssl: invalid bn");
+     }
+     public_key->curve = curve;
+     public_key->W_len = BN_bn2bin(bn, public_key->W);
+     EC_POINT_point2oct(Stark, EC_KEY_get0_public_key(key),
+                       POINT_CONVERSION_UNCOMPRESSED, public_key->W, public_key->W_len, ctx);
+
+     BN_free(bn);
+     EC_KEY_free(key);
+     BN_CTX_free(ctx);
+
+   return 0;
+ }
+ }
 
 int sys_cx_ecfp_generate_pair(cx_curve_t curve,
                               cx_ecfp_public_key_t *public_key,
@@ -466,7 +388,6 @@ int sys_cx_ecfp_generate_pair(cx_curve_t curve,
                                     keep_private, CX_SHA512);
 }
 
-/* TODO: return should be an error, length a ouput parameter*/
 int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key,
                                  unsigned int key_len,
                                  cx_ecfp_private_key_t *key)
@@ -595,10 +516,9 @@ end:
   return ret;
 }
 
-
-int cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-                           size_t max_size, const uint8_t **r, size_t *r_len,
-                           const uint8_t **s, size_t *s_len)
+int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+                                size_t max_size, const uint8_t **r,
+                                size_t *r_len, const uint8_t **s, size_t *s_len)
 {
   size_t len;
   int ret = 0;
@@ -642,6 +562,7 @@ const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve)
   THROW(INVALID_PARAMETER);
 }
 
+
 int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
                         cx_md_t UNUSED(hashID), const uint8_t *hash,
                         unsigned int hash_len, const uint8_t *sig,
@@ -659,7 +580,7 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   domain = (const cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
   size = domain->length; // bits  -> bytes
 
-  if (!cx_ecfp_decode_sig_der(sig, sig_len, size, &r, &rlen, &s, &slen)) {
+  if (!spec_cx_ecfp_decode_sig_der(sig, sig_len, size, &r, &rlen, &s, &slen)) {
     return 0;
   }
 
@@ -700,9 +621,9 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   return ret;
 }
 
-int cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
-                           unsigned char *r, unsigned int r_len,
-                           unsigned char *s, unsigned int s_len)
+int spec_cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
+                                unsigned char *r, unsigned int r_len,
+                                unsigned char *s, unsigned int s_len)
 {
   unsigned int offset;
 
@@ -899,7 +820,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   buf_s = malloc(domain->length);
   BN_bn2binpad(r, buf_r, domain->length);
   BN_bn2binpad(normalized_s, buf_s, domain->length);
-  int ret = cx_ecfp_encode_sig_der(sig, sig_len, buf_r, domain->length, buf_s,
+  int ret = spec_cx_ecfp_encode_sig_der(sig, sig_len, buf_r, domain->length, buf_s,
                                    domain->length);
   free(buf_r);
   free(buf_s);
