@@ -11,22 +11,22 @@
 #include "cx.h"
 #include "cx_curve25519.h"
 #include "cx_ec.h"
-#include "cx_wrap_ossl.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
+#include "cx_wrap_ossl.h"
 #include "emulate.h"
 
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
 
 #include "cx_const_brainpool.c"
+#include "cx_const_ecbls12381.c"
+#include "cx_const_ecedd25519.c"
 #include "cx_const_sec256k1.c"
 #include "cx_const_secp.c"
 #include "cx_const_stark.c"
-#include "cx_const_ecbls12381.c"
-#include "cx_const_ecedd25519.c"
 
 static cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
@@ -61,7 +61,6 @@ static cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
   (const cx_curve_weierstrass_t *)&C_cx_BrainpoolP512t1,
   (const cx_curve_weierstrass_t *)&C_cx_Stark256
 };
-
 
 /* Unexported functions from OpenSSL, in ec/curve25519.c. Dirty hack... */
 int ED25519_sign(uint8_t *out_sig, const uint8_t *message, size_t message_len,
@@ -115,7 +114,6 @@ const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve)
   THROW(INVALID_PARAMETER);
   return NULL;
 }
-
 
 int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
                                cx_ecfp_public_key_t *public_key,
@@ -401,7 +399,6 @@ const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve)
   THROW(INVALID_PARAMETER);
 }
 
-
 unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve,
                                           const unsigned char *rawkey,
                                           unsigned int key_len,
@@ -442,7 +439,6 @@ unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve,
 
   return key_len;
 }
-
 
 static int cx_weierstrass_mult(cx_curve_t curve, BIGNUM *qx, BIGNUM *qy,
                                BIGNUM *px, BIGNUM *py, BIGNUM *k)

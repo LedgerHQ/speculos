@@ -11,14 +11,13 @@
 #include "cx.h"
 #include "cx_curve25519.h"
 #include "cx_ec.h"
+#include "cx_ecdsa.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
-#include "emulate.h"
 #include "cx_wrap_ossl.h"
-#include "cx_ecdsa.h"
-
+#include "emulate.h"
 
 int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
                       cx_md_t hashID, const uint8_t *hash,
@@ -76,7 +75,6 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
     return -1;
   /* get generic curve group from parameters*/
   /* curve must be stored in weierstrass form in C_cx_all_Weierstrass_Curves*/
-
 
   // nid = nid_from_curve(key->curve);
   EC_KEY *ec_key = EC_KEY_new();

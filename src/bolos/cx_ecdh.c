@@ -10,14 +10,13 @@
 #include "cx.h"
 #include "cx_curve25519.h"
 #include "cx_ec.h"
+#include "cx_ecdh.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
-#include "emulate.h"
 #include "cx_wrap_ossl.h"
-#include "cx_ecdh.h"
-
+#include "emulate.h"
 
 static int ecdh_simple_compute_key_hack(unsigned char *pout, size_t *poutlen,
                                         const EC_POINT *pub_key,

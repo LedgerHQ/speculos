@@ -11,13 +11,12 @@
 #include "cx.h"
 #include "cx_curve25519.h"
 #include "cx_ec.h"
-#include "cx_wrap_ossl.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
+#include "cx_wrap_ossl.h"
 #include "emulate.h"
-
 
 #include "cx_const_ecedd25519.c"
 
@@ -28,7 +27,6 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
                    const uint8_t signature[64], const uint8_t public_key[32]);
 void ED25519_public_from_private(uint8_t out_public_key[32],
                                  const uint8_t private_key[32]);
-
 
 int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey,
                       int mode __attribute__((unused)), cx_md_t hashID,

@@ -12,11 +12,10 @@
 #include "cx_curve25519.h"
 
 #include "cx_ec.h"
-#include "cx_wrap_ossl.h"
 #include "cx_ed25519.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
-
+#include "cx_wrap_ossl.h"
 
 /* get generic curve group from parameters*/
 /* curve must be stored in weierstrass form in C_cx_all_Weierstrass_Curves*/
@@ -79,10 +78,7 @@ int cx_generic_curve(const cx_curve_weierstrass_t *i_weier, BN_CTX *ctx,
 #include "cx_utils.h"
 #include "emulate.h"
 
-
 #include "cx_wrap_ossl.h"
-
-
 
 int nid_from_curve(cx_curve_t curve)
 {
@@ -137,7 +133,6 @@ int nid_from_curve(cx_curve_t curve)
   }
   return nid;
 }
-
 
 int spec_cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
                                 unsigned char *r, unsigned int r_len,
