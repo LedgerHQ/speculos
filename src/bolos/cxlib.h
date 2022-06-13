@@ -7,6 +7,7 @@
 
 #include "bolos/cx_aes.h"
 #include "bolos/cx_ec.h"
+#include "bolos/cx_ecdsa.h"
 #include "bolos/cx_ed25519.h"
 
 //-----------------------------------------------------------------------------

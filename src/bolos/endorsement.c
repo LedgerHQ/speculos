@@ -3,6 +3,7 @@
 #include "bolos/exception.h"
 #include "cx.h"
 #include "cx_ec.h"
+#include "cx_ecdsa.h"
 #include "emulate.h"
 
 #define cx_ecdsa_init_public_key sys_cx_ecfp_init_public_key

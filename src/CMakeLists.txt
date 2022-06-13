@@ -10,6 +10,9 @@ add_library(emu
         bolos/cx_curve25519.c
         bolos/cx_crc.c
         bolos/cx_ec.c
+        bolos/cx_ecdsa.c
+        bolos/cx_eddsa.c
+        bolos/cx_ecdh.c
         bolos/cx_ec_domain.c
         bolos/cx_ecpoint.c
         bolos/cx_ed25519.c
@@ -26,6 +29,7 @@ add_library(emu
         bolos/cx_twisted_edwards.c
         bolos/cx_utils.c
         bolos/cx_weierstrass.c
+        bolos/cx_wrap_ossl.c
         bolos/cxlib.c
         bolos/bagl.c
         bolos/endorsement.c

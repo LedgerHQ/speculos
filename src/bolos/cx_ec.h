@@ -462,30 +462,11 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
                                cx_ecfp_public_key_t *public_key,
                                cx_ecfp_private_key_t *private_key,
                                int keep_private, cx_md_t hashID);
+
 int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key,
                                  unsigned int key_len,
                                  cx_ecfp_private_key_t *key);
-int sys_cx_ecdh(const cx_ecfp_private_key_t *key, int mode,
-                const uint8_t *public_point, size_t P_len, uint8_t *secret,
-                size_t secret_len);
-int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
-                      cx_md_t hashID, const uint8_t *hash,
-                      unsigned int hash_len, uint8_t *sig, unsigned int sig_len,
-                      unsigned int *info);
-int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int mode,
-                        cx_md_t hashID, const uint8_t *hash,
-                        unsigned int hash_len, const uint8_t *sig,
-                        unsigned int sig_len);
-int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey, int mode,
-                      cx_md_t hashID, const unsigned char *hash,
-                      unsigned int hash_len, const unsigned char *ctx,
-                      unsigned int ctx_len, unsigned char *sig,
-                      unsigned int sig_len, unsigned int *info);
-int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key, int mode,
-                        cx_md_t hashID, const unsigned char *hash,
-                        unsigned int hash_len, const unsigned char *ctx,
-                        unsigned int ctx_len, const unsigned char *sig,
-                        unsigned int sig_len);
+
 int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P,
                             unsigned int P_len, const unsigned char *k,
                             unsigned int k_len);
@@ -494,7 +475,9 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
+
 int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
                                 size_t max_size, const uint8_t **r,
                                 size_t *r_len, const uint8_t **s,
                                 size_t *s_len);
+
