@@ -12,6 +12,8 @@
 #include "cx_curve25519.h"
 #include "cx_ec.h"
 #include "cx_ed25519.h"
+#include "cx_eddsa.h"
+#include "cx_errors.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
@@ -44,17 +46,17 @@ int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey,
     return -1;
   }
   if (sig_len < 64) {
-    return -1;
+    return CX_KO;
   }
   /* Key must be a Ed25519 private key */
   if (pvkey->curve != CX_CURVE_Ed25519 || pvkey->d_len != 32) {
-    return -1;
+    return CX_KO;
   }
   ED25519_public_from_private(public_key, pvkey->d);
   if (ED25519_sign(sig, hash, hash_len, public_key, pvkey->d) == 1) {
-    return 64;
+    return _EDD_SIG_T8;
   }
-  return -1;
+  return CX_KO;
 }
 
 int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,

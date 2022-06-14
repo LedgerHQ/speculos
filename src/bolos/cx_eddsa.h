@@ -1,6 +1,8 @@
 #ifndef _CX_EDDSA_H
 #define _CX_EDDSA_H
 
+#define _EDD_SIG_T8 64
+
 int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey, int mode,
                       cx_md_t hashID, const unsigned char *hash,
                       unsigned int hash_len, const unsigned char *ctx,

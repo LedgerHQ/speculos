@@ -9,16 +9,19 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
-#include "cx_curve25519.h"
 #include "cx_ec.h"
 #include "cx_ecdsa.h"
-#include "cx_ed25519.h"
+#include "cx_errors.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
 #include "cx_wrap_ossl.h"
 #include "emulate.h"
 
+/***************** THROW VERSION *********/
+/* the following functions use throw errors instead of error_codes, no_throw
+ * versions should be preferably used*/
+/*nota: the value returned is the size of the signature*/
 int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
                       cx_md_t hashID, const uint8_t *hash,
                       unsigned int hash_len, uint8_t *sig, unsigned int sig_len,
@@ -35,7 +38,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
       (const cx_curve_weierstrass_t *)cx_ecfp_get_domain(key->curve);
   nid = nid_from_curve(key->curve);
   if (nid < 0) {
-    return 0;
+    return CX_NULLSIZE;
   }
 
   switch (mode & CX_MASK_RND) {
@@ -72,7 +75,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   EC_GROUP *Stark = NULL;
 
   if (cx_generic_curve(domain, ctx, &Stark) != 0)
-    return -1;
+    return CX_NULLSIZE;
   /* get generic curve group from parameters*/
   /* curve must be stored in weierstrass form in C_cx_all_Weierstrass_Curves*/
 
@@ -169,6 +172,7 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   EC_KEY_free(ec_key);
   return ret;
 }
+
 int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
                         cx_md_t UNUSED(hashID), const uint8_t *hash,
                         unsigned int hash_len, const uint8_t *sig,
@@ -205,7 +209,7 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   BN_bin2bn(key->W + domain->length + 1, domain->length, y);
 
   if (cx_generic_curve(domain, ctx, &Stark) != 0)
-    return -1;
+    return CX_KO;
 
   // nid = nid_from_curve(key->curve);
   EC_KEY *ec_key = EC_KEY_new();
@@ -215,8 +219,8 @@ int sys_cx_ecdsa_verify(const cx_ecfp_public_key_t *key, int UNUSED(mode),
   EC_KEY_set_public_key_affine_coordinates(ec_key, x, y);
 
   int ret = ECDSA_do_verify(hash, hash_len, ecdsa_sig, ec_key);
-  if (ret != 1) {
-    ret = 0;
+  if (ret != OPEN_SSL_OK) {
+    ret = CX_OK;
   }
 
   ECDSA_SIG_free(ecdsa_sig);

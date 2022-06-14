@@ -12,6 +12,7 @@
 #include "cx_curve25519.h"
 #include "cx_ec.h"
 #include "cx_ed25519.h"
+#include "cx_errors.h"
 #include "cx_hash.h"
 #include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
@@ -139,13 +140,13 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
     if (nid == -1) {
       errx(1, "nid not supported, refer to manual 'how to add a curve to "
               "speculos.txt' ");
-      return -1;
+      return CX_KO;
     }
 
     key = EC_KEY_new();
 
     if (cx_generic_curve(weier, ctx, &Stark) != 0)
-      return -1;
+      return CX_KO;
 
     if (Stark == NULL)
       errx(1, "setting ecc group failed");
@@ -157,7 +158,7 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
 
     pub = EC_POINT_new(Stark);
     if (pub == NULL)
-      return -1;
+      return CX_KO;
 
     if (!keep_private) {
       if (EC_KEY_generate_key(key) == 0) {
@@ -187,7 +188,7 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
         errx(1, "ssl: EC_POINT_mul");
       }
 
-      if (EC_KEY_set_public_key(key, pub) == 0) {
+      if (EC_KEY_set_public_key(key, pub) == OPEN_SSL_KO) {
         errx(1, "ssl: EC_KEY_set_public_key");
       }
 
@@ -212,7 +213,7 @@ int sys_cx_ecfp_generate_pair2(cx_curve_t curve,
     EC_KEY_free(key);
     BN_CTX_free(ctx);
 
-    return 0;
+    return CX_OK;
   }
 }
 
@@ -240,152 +241,8 @@ int sys_cx_ecfp_init_private_key(cx_curve_t curve, const uint8_t *raw_key,
 
   key->curve = curve;
 
+  /* TODO: modify bolos API to return an errcode instead*/
   return key_len;
-}
-
-static int asn1_read_len(const uint8_t **p, const uint8_t *end, size_t *len)
-{
-  /* Adapted from secp256k1 */
-  int lenleft;
-  unsigned int b1;
-  *len = 0;
-
-  if (*p >= end) {
-    return 0;
-  }
-
-  b1 = *((*p)++);
-  if (b1 == 0xff) {
-    /* X.690-0207 8.1.3.5.c the value 0xFF shall not be used. */
-    return 0;
-  }
-  if ((b1 & 0x80u) == 0) {
-    /* X.690-0207 8.1.3.4 short form length octets */
-    *len = b1;
-    return 1;
-  }
-  if (b1 == 0x80) {
-    /* Indefinite length is not allowed in DER. */
-    return 0;
-  }
-  /* X.690-207 8.1.3.5 long form length octets */
-  lenleft = b1 & 0x7Fu;
-  if (lenleft > end - *p) {
-    return 0;
-  }
-  if (**p == 0) {
-    /* Not the shortest possible length encoding. */
-    return 0;
-  }
-  if ((size_t)lenleft > sizeof(size_t)) {
-    /* The resulting length would exceed the range of a size_t, so
-     * certainly longer than the passed array size.
-     */
-    return 0;
-  }
-  while (lenleft > 0) {
-    if ((*len >> ((sizeof(size_t) - 1) * 8)) != 0) {
-      /* (*len << 8) overflows the capacity of size_t */
-      return 0;
-    }
-    *len = (*len << 8u) | **p;
-    if (*len + lenleft > (size_t)(end - *p)) {
-      /* Result exceeds the length of the passed array. */
-      return 0;
-    }
-    (*p)++;
-    lenleft--;
-  }
-  if (*len < 128) {
-    /* Not the shortest possible length encoding. */
-    return 0;
-  }
-  return 1;
-}
-
-static int asn1_read_tag(const uint8_t **p, const uint8_t *end, size_t *len,
-                         int tag)
-{
-  if ((end - *p) < 1) {
-    return 0;
-  }
-
-  if (**p != tag) {
-    return 0;
-  }
-
-  (*p)++;
-  return asn1_read_len(p, end, len);
-}
-
-static int asn1_parse_integer(const uint8_t **p, const uint8_t *end,
-                              const uint8_t **n, size_t *n_len)
-{
-  size_t len;
-  int ret = 0;
-
-  if (!asn1_read_tag(p, end, &len, 0x02)) { /* INTEGER */
-    goto end;
-  }
-
-  if (((*p)[0] & 0x80u) == 0x80u) {
-    /* Truncated, missing leading 0 (negative number) */
-    goto end;
-  }
-
-  if ((*p)[0] == 0 && len >= 2 && ((*p)[1] & 0x80u) == 0) {
-    /* Zeroes have been prepended to the integer */
-    goto end;
-  }
-
-  while (**p == 0 && *p != end && len > 0) { /* Skip leading null bytes */
-    (*p)++;
-    len--;
-  }
-
-  *n = *p;
-  *n_len = len;
-
-  *p += len;
-  ret = 1;
-
-end:
-  return ret;
-}
-
-int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-                                size_t max_size, const uint8_t **r,
-                                size_t *r_len, const uint8_t **s, size_t *s_len)
-{
-  size_t len;
-  int ret = 0;
-  const uint8_t *input_end = input + input_len;
-
-  const uint8_t *p = input;
-
-  if (!asn1_read_tag(&p, input_end, &len, 0x30)) { /* SEQUENCE */
-    goto end;
-  }
-
-  if (p + len != input_end) {
-    goto end;
-  }
-
-  if (!asn1_parse_integer(&p, input_end, r, r_len) ||
-      !asn1_parse_integer(&p, input_end, s, s_len)) {
-    goto end;
-  }
-
-  if (p != input_end) { /* Check if bytes have been appended to the sequence */
-    goto end;
-  }
-
-  if (*r_len > max_size || *s_len > max_size) {
-    return 0;
-  }
-  ret = 1;
-end:
-  return ret;
 }
 
 const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve)
@@ -397,6 +254,28 @@ const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve)
     }
   }
   THROW(INVALID_PARAMETER);
+}
+
+int cx_ecdomain_parameters_length(cx_curve_t i_curve, size_t *o_t8curve)
+{
+
+  const cx_curve_domain_t *ps_curve = cx_ecfp_get_domain(i_curve);
+  if ((ps_curve) == NULL)
+    return CX_KO;
+
+  *o_t8curve = (size_t)ps_curve->length;
+  return CX_OK;
+}
+
+int cx_ecdomain_parameters_size(cx_curve_t i_curve, size_t *o_t8curve)
+{
+
+  const cx_curve_domain_t *ps_curve = cx_ecfp_get_domain(i_curve);
+  if ((ps_curve) == NULL)
+    return CX_KO;
+
+  *o_t8curve = ((size_t)ps_curve->length) << 3;
+  return CX_OK;
 }
 
 unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve,
@@ -437,6 +316,7 @@ unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve,
   key->W_len = key_len;
   memcpy(key->W, rawkey, key_len);
 
+  /* TODO: modify bolos API to return an errcode instead*/
   return key_len;
 }
 
@@ -446,7 +326,7 @@ static int cx_weierstrass_mult(cx_curve_t curve, BIGNUM *qx, BIGNUM *qy,
   EC_POINT *p, *q;
   EC_GROUP *group = NULL;
   BN_CTX *ctx;
-  int ret = 0;
+  int ret = CX_KO;
 
   if (curve == CX_CURVE_SECP256K1) {
     group = EC_GROUP_new_by_curve_name(NID_secp256k1);
@@ -480,7 +360,7 @@ static int cx_weierstrass_mult(cx_curve_t curve, BIGNUM *qx, BIGNUM *qy,
     goto err;
   }
 
-  ret = 1;
+  ret = CX_OK;
 
 err:
   BN_CTX_free(ctx);
@@ -508,7 +388,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P,
     if (P_len != (32 + 1) || k_len != 32) {
       errx(1, "cx_ecfp_scalar_mult: expected P_len == 33 and k_len == 32");
     }
-    if (scalarmult_curve25519(&P[1], k, &P[1]) != 0) {
+    if (scalarmult_curve25519(&P[1], k, &P[1]) != CX_OK) {
       errx(1, "cx_ecfp_scalar_mult: scalarmult_x25519 failed");
     }
     return P_len;
@@ -534,7 +414,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P,
 
   switch (curve) {
   case CX_CURVE_Ed25519: {
-    if (scalarmult_ed25519(Qx, Qy, Px, Py, e) != 0) {
+    if (scalarmult_ed25519(Qx, Qy, Px, Py, e) != CX_OK) {
       errx(1, "cx_ecfp_scalar_mult: scalarmult_ed25519 failed");
     }
   } break;
@@ -544,7 +424,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P,
       errx(1, "cx_ecfp_scalar_mult: compressed points for Weierstrass curves "
               "are not supported yet");
     }
-    if (cx_weierstrass_mult(curve, Qx, Qy, Px, Py, e) != 1) {
+    if (cx_weierstrass_mult(curve, Qx, Qy, Px, Py, e) != CX_OK) {
       errx(1, "cx_ecfp_scalar_mult: cx_weierstrass_mult failed");
     }
     break;
@@ -562,7 +442,7 @@ int sys_cx_ecfp_scalar_mult(cx_curve_t curve, unsigned char *P,
   BN_free(Px);
   BN_free(e);
 
-  return 0;
+  return CX_OK;
 }
 
 int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
@@ -589,13 +469,13 @@ int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
   case CX_CURVE_Ed25519:
     if (X_len != 65) {
       errx(1, "cx_ecfp_add_point: invalid X_len (%zu)", X_len);
-      ret = -1;
+      ret = CX_KO;
       break;
     }
 
     if (P[0] != 0x04 || Q[0] != 0x4) {
       errx(1, "cx_ecfp_add_point: points must be uncompressed");
-      ret = -1;
+      ret = CX_KO;
       break;
     }
 
@@ -606,19 +486,19 @@ int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
 
     if (edwards_add(&RR, &PP, &QQ) != 0) {
       errx(1, "cx_ecfp_add_point: edwards_add failed");
-      ret = -1;
+      ret = CX_KO;
       break;
     }
 
     R[0] = 0x04;
     BN_bn2binpad(RR.x, R + 1, 32);
     BN_bn2binpad(RR.y, R + 33, 32);
-    ret = 0;
+    ret = CX_OK;
     break;
 
   default:
     errx(1, "cx_ecfp_add_point: TODO: unsupported curve (0x%x)", curve);
-    ret = -1;
+    ret = CX_KO;
     break;
   }
 

@@ -134,6 +134,150 @@ int nid_from_curve(cx_curve_t curve)
   return nid;
 }
 
+static int asn1_read_len(const uint8_t **p, const uint8_t *end, size_t *len)
+{
+  /* Adapted from secp256k1 */
+  int lenleft;
+  unsigned int b1;
+  *len = 0;
+
+  if (*p >= end) {
+    return OPEN_SSL_KO;
+  }
+
+  b1 = *((*p)++);
+  if (b1 == 0xff) {
+    /* X.690-0207 8.1.3.5.c the value 0xFF shall not be used. */
+    return OPEN_SSL_KO;
+  }
+  if ((b1 & 0x80u) == 0) {
+    /* X.690-0207 8.1.3.4 short form length octets */
+    *len = b1;
+    return OPEN_SSL_OK;
+  }
+  if (b1 == 0x80) {
+    /* Indefinite length is not allowed in DER. */
+    return OPEN_SSL_KO;
+  }
+  /* X.690-207 8.1.3.5 long form length octets */
+  lenleft = b1 & 0x7Fu;
+  if (lenleft > end - *p) {
+    return OPEN_SSL_KO;
+  }
+  if (**p == 0) {
+    /* Not the shortest possible length encoding. */
+    return 0;
+  }
+  if ((size_t)lenleft > sizeof(size_t)) {
+    /* The resulting length would exceed the range of a size_t, so
+     * certainly longer than the passed array size.
+     */
+    return OPEN_SSL_KO;
+  }
+  while (lenleft > 0) {
+    if ((*len >> ((sizeof(size_t) - 1) * 8)) != 0) {
+      /* (*len << 8) overflows the capacity of size_t */
+      return OPEN_SSL_KO;
+    }
+    *len = (*len << 8u) | **p;
+    if (*len + lenleft > (size_t)(end - *p)) {
+      /* Result exceeds the length of the passed array. */
+      return OPEN_SSL_KO;
+    }
+    (*p)++;
+    lenleft--;
+  }
+  if (*len < 128) {
+    /* Not the shortest possible length encoding. */
+    return OPEN_SSL_KO;
+  }
+  return OPEN_SSL_OK;
+}
+
+static int asn1_read_tag(const uint8_t **p, const uint8_t *end, size_t *len,
+                         int tag)
+{
+  if ((end - *p) < 1) {
+    return OPEN_SSL_KO;
+  }
+
+  if (**p != tag) {
+    return OPEN_SSL_KO;
+  }
+
+  (*p)++;
+  return asn1_read_len(p, end, len);
+}
+
+static int asn1_parse_integer(const uint8_t **p, const uint8_t *end,
+                              const uint8_t **n, size_t *n_len)
+{
+  size_t len;
+  int ret = OPEN_SSL_KO;
+
+  if (!asn1_read_tag(p, end, &len, 0x02)) { /* INTEGER */
+    goto end;
+  }
+
+  if (((*p)[0] & 0x80u) == 0x80u) {
+    /* Truncated, missing leading 0 (negative number) */
+    goto end;
+  }
+
+  if ((*p)[0] == 0 && len >= 2 && ((*p)[1] & 0x80u) == 0) {
+    /* Zeroes have been prepended to the integer */
+    goto end;
+  }
+
+  while (**p == 0 && *p != end && len > 0) { /* Skip leading null bytes */
+    (*p)++;
+    len--;
+  }
+
+  *n = *p;
+  *n_len = len;
+
+  *p += len;
+  ret = OPEN_SSL_OK;
+
+end:
+  return ret;
+}
+
+int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+                                size_t max_size, const uint8_t **r,
+                                size_t *r_len, const uint8_t **s, size_t *s_len)
+{
+  size_t len;
+  int ret = 0;
+  const uint8_t *input_end = input + input_len;
+
+  const uint8_t *p = input;
+
+  if (!asn1_read_tag(&p, input_end, &len, 0x30)) { /* SEQUENCE */
+    goto end;
+  }
+
+  if (p + len != input_end) {
+    goto end;
+  }
+
+  if (!asn1_parse_integer(&p, input_end, r, r_len) ||
+      !asn1_parse_integer(&p, input_end, s, s_len)) {
+    goto end;
+  }
+
+  if (p != input_end) { /* Check if bytes have been appended to the sequence */
+    goto end;
+  }
+
+  if (*r_len > max_size || *s_len > max_size) {
+    return 0;
+  }
+  ret = 1;
+end:
+  return ret;
+}
 int spec_cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
                                 unsigned char *r, unsigned int r_len,
                                 unsigned char *s, unsigned int s_len)

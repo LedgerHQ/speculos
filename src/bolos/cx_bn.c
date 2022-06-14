@@ -1,9 +1,11 @@
 #define _SDK_2_0_
 #include <err.h>
 #include <errno.h>
+
 #include <openssl/bn.h>
 #include <openssl/rand.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

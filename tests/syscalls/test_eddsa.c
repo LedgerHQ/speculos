@@ -7,7 +7,9 @@
 #include <cmocka.h>
 
 #include "bolos/cx_ec.h"
+#include "bolos/cx_eddsa.h"
 #include "bolos/cx_hash.h"
+#include <stdint.h>
 
 #include "utils.h"
 

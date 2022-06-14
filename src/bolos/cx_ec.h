@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cx_bn.h"
 #include "cx_hash.h"
 
 #define CX_MASK_EC               (7 << 12)
@@ -418,9 +419,6 @@ struct cx_curve_montgomery_s {
 /** Convenience type. See #cx_curve_montgomery_s. */
 typedef struct cx_curve_montgomery_s cx_curve_montgomery_t;
 
-// cx_bn_t is an index on the corresponding cx_mpi_array;
-typedef uint32_t cx_bn_t;
-
 /**
  *
  */
@@ -475,7 +473,9 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
+/* Doesn't appear in bolos, shoud be static
 int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
                                 size_t max_size, const uint8_t **r,
                                 size_t *r_len, const uint8_t **s,
                                 size_t *s_len);
+*/
