@@ -1,8 +1,8 @@
 #include <malloc.h>
-#include <stdbool.h>
-#include <string.h>
-
 #include <setjmp.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
 // must come after setjmp.h
 #include <cmocka.h>
 
@@ -10,7 +10,6 @@
 #include "bolos/cx_ec.h"
 #include "bolos/cx_eddsa.h"
 #include "bolos/cx_hash.h"
-#include <stdint.h>
 
 #include "utils.h"
 
