@@ -9,6 +9,7 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
+#include "cx_bn.h"
 #include "cx_ec.h"
 #include "cx_ecdsa.h"
 #include "cx_errors.h"
