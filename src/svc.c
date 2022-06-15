@@ -139,7 +139,8 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
     if (syscall == 0x6000670d) { /* SYSCALL_os_lib_call_ID_IN */
       return;
     }
-  } else if (sdk_version == SDK_NANO_SP_1_0) {
+  } else if (sdk_version == SDK_NANO_SP_1_0 ||
+             sdk_version == SDK_NANO_SP_1_0_3) {
     if (syscall == 0x01000067) { /* SYSCALL_os_lib_call_ID */
       return;
     }
@@ -150,7 +151,8 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
     context->uc_mcontext.arm_r1 = ret;
   } else if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
              sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
-             sdk_version == SDK_NANO_SP_1_0) {
+             sdk_version == SDK_NANO_SP_1_0 ||
+             sdk_version == SDK_NANO_SP_1_0_3) {
     context->uc_mcontext.arm_r0 = ret;
     context->uc_mcontext.arm_r1 = 0;
   } else {
