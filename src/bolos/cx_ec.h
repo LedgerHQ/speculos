@@ -15,15 +15,10 @@
 #define CX_ECSCHNORR_LIBSECP     (6 << 12)
 #define CX_ECSCHNORR_Z           (7 << 12)
 
-
 /** Convenience type. See #cx_curve_e. */
-/* the following curves are not wicheproof tested and thus should be considered as 'experimental feature:
- * sec521r1
- * startk
- * montgomery curves
+/* the following curves are not wicheproof tested and thus should be considered
+ * as 'experimental feature: sec521r1 startk montgomery curves
  */
-
-
 
 #ifndef _SDK_2_0_
 /** List of supported elliptic curves */
@@ -456,7 +451,6 @@ enum cx_curve_dom_param_s {
   CX_CURVE_PARAM_Cofactor = 7,
 };
 typedef enum cx_curve_dom_param_s cx_curve_dom_param_t;
-
 
 extern cx_curve_domain_t const *const C_cx_allCurves[];
 

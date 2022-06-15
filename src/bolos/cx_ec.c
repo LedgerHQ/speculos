@@ -19,7 +19,6 @@
 #include "cx_wrap_ossl.h"
 #include "emulate.h"
 
-
 #include "cx_const_brainpool.c"
 #include "cx_const_curves_zoo.c"
 #include "cx_const_ecbls12381.c"
@@ -28,7 +27,7 @@
 #include "cx_const_secp.c"
 #include "cx_const_stark.c"
 
- cx_curve_domain_t const *const C_cx_allCurves[] = {
+cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
   (const cx_curve_domain_t *)&C_cx_secp256r1,
   (const cx_curve_domain_t *)&C_cx_secp384r1,
@@ -45,7 +44,7 @@
   (const cx_curve_domain_t *)&C_cx_Stark256
 };
 
- cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
+cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
   (const cx_curve_weierstrass_t *)&C_cx_secp256k1,
   (const cx_curve_weierstrass_t *)&C_cx_secp256r1,
   (const cx_curve_weierstrass_t *)&C_cx_secp384r1,
@@ -510,7 +509,3 @@ int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
 
   return ret;
 }
-
-
-
-

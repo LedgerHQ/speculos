@@ -30,14 +30,13 @@ int ED25519_verify(const uint8_t *message, size_t message_len,
 void ED25519_public_from_private(uint8_t out_public_key[32],
                                  const uint8_t private_key[32]);
 
-
 int sys_cx_eddsa_sign_no_throw(const cx_ecfp_private_key_t *pvkey,
-                      int mode __attribute__((unused)), cx_md_t hashID,
-                      const unsigned char *hash, unsigned int hash_len,
-                      const unsigned char *ctx __attribute__((unused)),
-                      unsigned int ctx_len __attribute__((unused)),
-                      unsigned char *sig, unsigned int sig_len,
-                      unsigned int *info __attribute__((unused)))
+                               int mode __attribute__((unused)), cx_md_t hashID,
+                               const unsigned char *hash, unsigned int hash_len,
+                               const unsigned char *ctx __attribute__((unused)),
+                               unsigned int ctx_len __attribute__((unused)),
+                               unsigned char *sig, unsigned int sig_len,
+                               unsigned int *info __attribute__((unused)))
 {
   uint8_t public_key[32];
 
@@ -88,7 +87,6 @@ int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey,
   }
   return CX_KO;
 }
-
 
 int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
                         int mode __attribute__((unused)), cx_md_t hashID,

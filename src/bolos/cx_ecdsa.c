@@ -19,13 +19,14 @@
 #include "cx_wrap_ossl.h"
 #include "emulate.h"
 
-/* TODO: the use of !(function_openssl) is in fact an implicit return code testing
- * it would be cleaner to replace it by an explicit function_openssl!=OPEN_SSL_OK
+/* TODO: the use of !(function_openssl) is in fact an implicit return code
+ * testing it would be cleaner to replace it by an explicit
+ * function_openssl!=OPEN_SSL_OK
  */
 int sys_cx_ecdsa_sign_no_throw(const cx_ecfp_private_key_t *key, int mode,
-                      cx_md_t hashID, const uint8_t *hash,
-                      unsigned int hash_len, uint8_t *sig, unsigned int sig_len,
-                      unsigned int *info)
+                               cx_md_t hashID, const uint8_t *hash,
+                               unsigned int hash_len, uint8_t *sig,
+                               unsigned int sig_len, unsigned int *info)
 {
   int nid = 0;
   uint8_t *buf_r, *buf_s;
@@ -96,7 +97,7 @@ int sys_cx_ecdsa_sign_no_throw(const cx_ecfp_private_key_t *key, int mode,
 
   if (do_rfc6979_signature) {
     if (domain->length >= CX_RFC6979_MAX_RLEN) {
-      //errx(1, "rfc6979_ecdsa_sign: curve too large");
+      // errx(1, "rfc6979_ecdsa_sign: curve too large");
       return CX_INVALID_PARAMETER_SIZE;
     }
     spec_cx_rng_rfc6979_init(&rfc_ctx, hashID, key->d, key->d_len, hash,
@@ -110,16 +111,16 @@ int sys_cx_ecdsa_sign_no_throw(const cx_ecfp_private_key_t *key, int mode,
       BN_rand(k, domain->length, 0, 0);
     }
     if (!EC_POINT_mul(group, kg, k, NULL, NULL, ctx)) {
-      //errx(1, "ssl: EC_POINT_mul");
+      // errx(1, "ssl: EC_POINT_mul");
       return OPEN_SSL_UNEXPECTED_ERROR;
     }
     if (!EC_POINT_get_affine_coordinates(group, kg, rp, kg_y, ctx)) {
-      //errx(1, "ssl: EC_POINT_get_affine_coordinates");
+      // errx(1, "ssl: EC_POINT_get_affine_coordinates");
     }
     if (BN_cmp(rp, q) >= 0) {
       if (!BN_nnmod(rp, rp, q, ctx)) {
-        //errx(1, "ssl: BN_nnmod");
-    	  return OPEN_SSL_UNEXPECTED_ERROR;
+        // errx(1, "ssl: BN_nnmod");
+        return OPEN_SSL_UNEXPECTED_ERROR;
       }
       if (info != NULL) {
         *info |= CX_ECCINFO_xGTn;
@@ -152,7 +153,7 @@ int sys_cx_ecdsa_sign_no_throw(const cx_ecfp_private_key_t *key, int mode,
   BIGNUM *normalized_s = BN_new();
   ECDSA_SIG_get0(ecdsa_sig, &r, &s);
   if ((mode & CX_NO_CANONICAL) == 0 && BN_cmp(s, halfn) > 0) {
-    //fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
+    // fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
     BN_sub(normalized_s, n, s);
 
     if (info != NULL) {
@@ -179,7 +180,8 @@ int sys_cx_ecdsa_sign_no_throw(const cx_ecfp_private_key_t *key, int mode,
 /***************** THROW VERSION *********/
 /* the following functions use throw errors instead of error_codes, no_throw
  * versions should be preferably used*/
-/* the duplication is quite ugly, a macro to only map the throw would be cleaner*/
+/* the duplication is quite ugly, a macro to only map the throw would be
+ * cleaner*/
 /* TODO: factorize using a macro for throw*/
 
 int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
@@ -308,8 +310,8 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   BIGNUM *normalized_s = BN_new();
   ECDSA_SIG_get0(ecdsa_sig, &r, &s);
   if ((mode & CX_NO_CANONICAL) == 0 && BN_cmp(s, halfn) > 0) {
-	//this line is legit and seems to be here for a past debug action
-    //fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
+    // this line is legit and seems to be here for a past debug action
+    // fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
     BN_sub(normalized_s, n, s);
 
     if (info != NULL) {
