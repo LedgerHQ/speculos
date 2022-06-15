@@ -94,6 +94,9 @@ int nid_from_curve(cx_curve_t curve)
   case CX_CURVE_SECP384R1:
     nid = NID_secp384r1;
     break;
+  case CX_CURVE_Ed25519:
+    nid = NID_ED25519;
+    break;
   case CX_CURVE_BrainPoolP256R1:
     nid = NID_brainpoolP256r1;
     break;
