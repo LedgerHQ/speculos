@@ -8,7 +8,7 @@
 /* UGLY return codes of openSSL, when OK=1 and KO=0 :( */
 #define OPEN_SSL_KO 0
 #define OPEN_SSL_OK 1
-
+#define OPEN_SSL_UNEXPECTED_ERROR 0xcaca055L
 /* openssl wrappers*/
 int cx_generic_curve(const cx_curve_weierstrass_t *i_weier, BN_CTX *ctx,
                      EC_GROUP **o_group);
