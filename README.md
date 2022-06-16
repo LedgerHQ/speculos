@@ -74,4 +74,4 @@ For a smooth and quick integration:
 - Symmetric encryption: aes , 
 - Blockchain cryptography: BIP32, SLIP21, EIP2333
 
-Other experimental features are present. 
+Other experimental features are present without further testing. For a full description of the bolos supported cryptography refer to https://developers.ledger.com/docs/nano-app/crypto-api/files/
