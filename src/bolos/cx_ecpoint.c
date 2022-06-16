@@ -1,4 +1,4 @@
-#define _SDK_2_0_
+//#define _SDK_2_0_
 #include <assert.h>
 #include <err.h>
 #include <errno.h>

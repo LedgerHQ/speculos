@@ -3,6 +3,8 @@
 #include "cx_bn.h"
 #include "cx_hash.h"
 
+//#define _SDK_2_0_
+
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
 
