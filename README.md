@@ -66,5 +66,12 @@ For a smooth and quick integration:
 - Follow the developers documentation on the [Developer Portal](https://developers.ledger.com/docs/nano-app/introduction/) and 
 - Go on Discord to chat with developer support and the developer community. See you there! If you are new to Ledger OP3N Discord server [click here](), otherwise directly join [the Nano App channel](https://discord.com/channels/885256081289379850/907623554542080070).
 
-## License
-Up to 11/6/2022 there is no licensing of this repository. As such all code is considered as totally open and comes without any additional warranty. Any usage of this code is at the responsibility of the developer re-using it.. 
+##Cryptography Supported by speculos
+- Elliptic Curve Cryptography (ECDSA, ECDH, Ed25519) with (SHA2 and blake signature):
+      - Sec256r1, Edd25519, Sec256k1, Stark256,    
+- Ledger Endorsement
+- hashing: blake2, sha2, sha3, ripemd
+- Nonce derivation: rfc6979
+- Symmetric encryption: aes , 
+- Blockchain cryptography: BIP32, SLIP21, EIP2333
+Other experimental features are present. 
