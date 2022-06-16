@@ -1,4 +1,4 @@
-#define _SDK_2_0_
+//#define _SDK_2_0_
 #include <assert.h>
 #include <err.h>
 #include <errno.h>
@@ -12,7 +12,10 @@
 
 #include "bolos/cx_ed25519.h"
 #include "bolos/cxlib.h"
+#include "cx_ec.h"
 #include "emulate.h"
+
+#include "cx_wrap_ossl.h"
 
 //-----------------------------------------------------------------------------
 // Almost duplicated from cx_ec.c one because some curves id have changed!

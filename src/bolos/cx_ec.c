@@ -19,17 +19,15 @@
 #include "cx_wrap_ossl.h"
 #include "emulate.h"
 
-#define CX_CURVE_RANGE(i, dom)                                                 \
-  (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
-
 #include "cx_const_brainpool.c"
+#include "cx_const_curves_zoo.c"
 #include "cx_const_ecbls12381.c"
 #include "cx_const_ecedd25519.c"
 #include "cx_const_sec256k1.c"
 #include "cx_const_secp.c"
 #include "cx_const_stark.c"
 
-static cx_curve_domain_t const *const C_cx_allCurves[] = {
+cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
   (const cx_curve_domain_t *)&C_cx_secp256r1,
   (const cx_curve_domain_t *)&C_cx_secp384r1,
@@ -46,7 +44,7 @@ static cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_Stark256
 };
 
-static cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
+cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
   (const cx_curve_weierstrass_t *)&C_cx_secp256k1,
   (const cx_curve_weierstrass_t *)&C_cx_secp256r1,
   (const cx_curve_weierstrass_t *)&C_cx_secp384r1,
@@ -261,7 +259,7 @@ int cx_ecdomain_parameters_length(cx_curve_t i_curve, size_t *o_t8curve)
 
   const cx_curve_domain_t *ps_curve = cx_ecfp_get_domain(i_curve);
   if ((ps_curve) == NULL)
-    return CX_KO;
+    return CX_EC_INVALID_CURVE;
 
   *o_t8curve = (size_t)ps_curve->length;
   return CX_OK;
@@ -272,7 +270,7 @@ int cx_ecdomain_parameters_size(cx_curve_t i_curve, size_t *o_t8curve)
 
   const cx_curve_domain_t *ps_curve = cx_ecfp_get_domain(i_curve);
   if ((ps_curve) == NULL)
-    return CX_KO;
+    return CX_EC_INVALID_CURVE;
 
   *o_t8curve = ((size_t)ps_curve->length) << 3;
   return CX_OK;

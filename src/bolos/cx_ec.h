@@ -3,6 +3,11 @@
 #include "cx_bn.h"
 #include "cx_hash.h"
 
+//#define _SDK_2_0_
+
+#define CX_CURVE_RANGE(i, dom)                                                 \
+  (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
+
 #define CX_MASK_EC               (7 << 12)
 #define CX_ECDH_POINT            (1 << 12)
 #define CX_ECDH_X                (2 << 12)
@@ -11,6 +16,11 @@
 #define CX_ECSCHNORR_BSI03111    (5 << 12)
 #define CX_ECSCHNORR_LIBSECP     (6 << 12)
 #define CX_ECSCHNORR_Z           (7 << 12)
+
+/** Convenience type. See #cx_curve_e. */
+/* the following curves are not wicheproof tested and thus should be considered
+ * as 'experimental feature: sec521r1 startk montgomery curves
+ */
 
 #ifndef _SDK_2_0_
 /** List of supported elliptic curves */
@@ -444,6 +454,10 @@ enum cx_curve_dom_param_s {
 };
 typedef enum cx_curve_dom_param_s cx_curve_dom_param_t;
 
+extern cx_curve_domain_t const *const C_cx_allCurves[];
+
+extern cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[];
+
 const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve);
 
 int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
@@ -473,9 +487,8 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
-/* Doesn't appear in bolos, should be static
-int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
-                                size_t max_size, const uint8_t **r,
-                                size_t *r_len, const uint8_t **s,
-                                size_t *s_len);
+const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve);
+/*
+extern cx_curve_domain_t const *const C_cx_allCurves[];
+extern cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[];
 */
