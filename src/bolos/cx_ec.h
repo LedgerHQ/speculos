@@ -3,7 +3,7 @@
 #include "cx_bn.h"
 #include "cx_hash.h"
 
-//#define _SDK_2_0_
+#define _SDK_2_0_
 
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
@@ -22,78 +22,10 @@
  * as 'experimental feature: sec521r1 startk montgomery curves
  */
 
-#ifndef _SDK_2_0_
-/** List of supported elliptic curves */
-enum cx_curve_e {
-  CX_CURVE_NONE,
-  /* ------------------------ */
-  /* --- Type Weierstrass --- */
-  /* ------------------------ */
-  /** Low limit (not included) of Weierstrass curve ID */
-  CX_CURVE_WEIERSTRASS_START = 0x20,
+static uint8_t const C_cofactor_1[] = { 0, 0, 0, 1 };
+static uint8_t const C_cofactor_4[] = { 0, 0, 0, 4 };
+static uint8_t const C_cofactor_8[] = { 0, 0, 0, 8 };
 
-  /** Secp.org */
-  CX_CURVE_SECP256K1,
-  CX_CURVE_SECP256R1,
-#define CX_CURVE_256K1 CX_CURVE_SECP256K1
-#define CX_CURVE_256R1 CX_CURVE_SECP256R1
-  CX_CURVE_SECP384R1,
-  CX_CURVE_SECP521R1,
-
-  /** BrainPool */
-  CX_CURVE_BrainPoolP256T1,
-  CX_CURVE_BrainPoolP256R1,
-  CX_CURVE_BrainPoolP320T1,
-  CX_CURVE_BrainPoolP320R1,
-  CX_CURVE_BrainPoolP384T1,
-  CX_CURVE_BrainPoolP384R1,
-  CX_CURVE_BrainPoolP512T1,
-  CX_CURVE_BrainPoolP512R1,
-
-/* NIST P256 curve*/
-#define CX_CURVE_NISTP256 CX_CURVE_SECP256R1
-#define CX_CURVE_NISTP384 CX_CURVE_SECP384R1
-#define CX_CURVE_NISTP521 CX_CURVE_SECP521R1
-
-  /* ANSSI P256 */
-  CX_CURVE_FRP256V1,
-
-  /* STARK */
-  CX_CURVE_Stark256,
-
-  /* BLS12-381 G1 curve */
-  CX_CURVE_BLS12_381_G1,
-
-  /** High limit (not included) of Weierstrass curve ID */
-  CX_CURVE_WEIERSTRASS_END,
-
-  /* --------------------------- */
-  /* --- Type Twister Edward --- */
-  /* --------------------------- */
-  /** Low limit (not included) of  Twister Edward curve ID */
-  CX_CURVE_TWISTED_EDWARD_START = 0x40,
-
-  /** Ed25519 curve */
-  CX_CURVE_Ed25519,
-  CX_CURVE_Ed448,
-
-  CX_CURVE_TWISTED_EDWARD_END,
-  /** High limit (not included) of Twister Edward  curve ID */
-
-  /* ----------------------- */
-  /* --- Type Montgomery --- */
-  /* ----------------------- */
-  /** Low limit (not included) of Montgomery curve ID */
-  CX_CURVE_MONTGOMERY_START = 0x60,
-
-  /** Curve25519 curve */
-  CX_CURVE_Curve25519,
-  CX_CURVE_Curve448,
-
-  CX_CURVE_MONTGOMERY_END
-  /** High limit (not included) of Montgomery curve ID */
-};
-#else
 /** List of supported elliptic curves */
 enum cx_curve_e {
   CX_CURVE_NONE,
@@ -106,6 +38,7 @@ enum cx_curve_e {
 
   /** Secp.org */
   CX_CURVE_SECP256K1 = 0x21,
+#define CX_CURVE_256K1 CX_CURVE_SECP256K1
 
   CX_CURVE_SECP256R1 = 0x22,
 #define CX_CURVE_256R1    CX_CURVE_SECP256R1
@@ -142,6 +75,8 @@ enum cx_curve_e {
   CX_CURVE_BrainPoolP512R1 = 0x38,
 
   CX_CURVE_BLS12_381_G1 = 0x39,
+  /* STARK */
+  CX_CURVE_Stark256 = 0x3A,
 
   /** High limit (not included) of Weierstrass curve ID */
   CX_CURVE_WEIERSTRASS_END = 0x6F,
@@ -174,7 +109,6 @@ enum cx_curve_e {
 
   /** High limit (not included) of Montgomery curve ID */
 };
-#endif
 
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
@@ -197,30 +131,6 @@ typedef enum cx_curve_e cx_curve_t;
 
 #define CX_ECCINFO_PARITY_ODD 1
 #define CX_ECCINFO_xGTn       2
-
-#ifndef _SDK_2_0_
-#define CX_CURVE_HEADER                                                        \
-  /** Curve Identifier. See #cx_curve_e */                                     \
-  cx_curve_t curve;                                                            \
-  /** Curve size in bits */                                                    \
-  unsigned int bit_size;                                                       \
-  /** component length in bytes */                                             \
-  unsigned int length;                                                         \
-  /** Curve field */                                                           \
-  const unsigned char *p;                                                      \
-  /** @internal 2nd Mongtomery constant for Field */                           \
-  const unsigned char *Hp;                                                     \
-  /** Point Generator x coordinate*/                                           \
-  const unsigned char *Gx;                                                     \
-  /** Point Generator y coordinate*/                                           \
-  const unsigned char *Gy;                                                     \
-  /** Curve order*/                                                            \
-  const unsigned char *n;                                                      \
-  /** @internal 2nd Mongtomery constant for Curve order*/                      \
-  const unsigned char *Hn;                                                     \
-  /**  cofactor */                                                             \
-  int h;
-#else
 
 #define CX_CURVE_HEADER                                                        \
   /** Curve Identifier. See #cx_curve_e */                                     \
@@ -247,49 +157,24 @@ typedef enum cx_curve_e cx_curve_t;
   const uint8_t *Hn;                                                           \
   /** @internal 2nd Montgomery constant for Field */                           \
   const uint8_t *Hp;
-#endif
 
-/**
- * Weirstrass curve :     y^3=x^2+a*x+b        over F(p)
- *
- */
-#ifndef _SDK_2_0_
 struct cx_curve_weierstrass_s {
-  CX_CURVE_HEADER;
-  /**  a coef */
-  const unsigned char *a;
-  /**  b coef */
-  const unsigned char *b;
+  CX_CURVE_HEADER
 };
 
-/*
- * Twisted Edward curve : a*x^2+y^2=1+d*x2*y2  over F(q)
- */
-struct cx_curve_twisted_edward_s {
+/*Note that the reuse of   CX_CURVE_HEADER is such that coefficient b won't be
+ * used */
+/* Convenience for code compacity*/
+/* TODO: find a better factorization of code*/
+struct cx_curve_twisted_edwards_s {
   CX_CURVE_HEADER;
-  /**  a coef */
-  const unsigned char *a;
-  /**  d coef */
-  const unsigned char *d;
-  /** @internal Square root of -1 or zero */
   const unsigned char *I;
+  const unsigned char *d;
   /** @internal  (q+3)/8 or (q+1)/4*/
   const unsigned char *Qq;
 };
 
-/** Convenience type. See #cx_curve_twisted_edward_s. */
-typedef struct cx_curve_twisted_edward_s cx_curve_twisted_edward_t;
-#else
-struct cx_curve_weierstrass_s {
-  CX_CURVE_HEADER
-};
-
-struct cx_curve_twisted_edwards_s {
-  CX_CURVE_HEADER
-};
-
 typedef struct cx_curve_twisted_edwards_s cx_curve_twisted_edwards_t;
-#endif
 
 /** Convenience type. See #cx_curve_weierstrass_s. */
 typedef struct cx_curve_weierstrass_s cx_curve_weierstrass_t;

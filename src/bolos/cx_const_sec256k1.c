@@ -48,19 +48,19 @@ static unsigned char const C_cx_secp256k1_Hn[] = {
   0xf8, 0x78, 0x89, 0x6c, 0xf2, 0x14, 0x67, 0xd7, 0xd1, 0x40
 };
 
-#define C_cx_secp256k1_h 1
+#define C_cx_secp256k1_h C_cofactor_1
 
-static cx_curve_weierstrass_t const C_cx_secp256k1 = {
-  CX_CURVE_SECP256K1,
-  256,
-  32,
-  C_cx_secp256k1_p,
-  C_cx_secp256k1_Hp,
-  C_cx_secp256k1_Gx,
-  C_cx_secp256k1_Gy,
-  C_cx_secp256k1_n,
-  C_cx_secp256k1_Hn,
-  C_cx_secp256k1_h,
-  C_cx_secp256k1_a,
-  C_cx_secp256k1_b,
+cx_curve_weierstrass_t const C_cx_secp256k1 = {
+  .curve = CX_CURVE_SECP256K1,
+  .bit_size = 256,
+  .length = 32,
+  .a = C_cx_secp256k1_a,
+  .b = C_cx_secp256k1_b,
+  .p = C_cx_secp256k1_p,
+  .Gx = C_cx_secp256k1_Gx,
+  .Gy = C_cx_secp256k1_Gy,
+  .n = C_cx_secp256k1_n,
+  .h = C_cx_secp256k1_h,
+  .Hp = C_cx_secp256k1_Hp,
+  .Hn = C_cx_secp256k1_Hn,
 };

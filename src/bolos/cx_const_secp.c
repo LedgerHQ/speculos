@@ -44,21 +44,22 @@ static unsigned char const C_cx_secp256r1_Hn[] = {
   0x6f, 0xa6, 0x83, 0x24, 0x4c, 0x95, 0xbe, 0x79, 0xee, 0xa2
 };
 
-#define C_cx_secp256r1_h 1
+#define C_cx_secp256r1_h C_cofactor_1
 
-static cx_curve_weierstrass_t const C_cx_secp256r1 = {
-  CX_CURVE_SECP256R1,
-  256,
-  32,
-  C_cx_secp256r1_p,
-  C_cx_secp256r1_Hp,
-  C_cx_secp256r1_Gx,
-  C_cx_secp256r1_Gy,
-  C_cx_secp256r1_n,
-  C_cx_secp256r1_Hn,
-  C_cx_secp256r1_h,
-  C_cx_secp256r1_a,
-  C_cx_secp256r1_b,
+cx_curve_weierstrass_t const C_cx_secp256r1 = {
+  .curve = CX_CURVE_SECP256R1,
+  .bit_size = 256,
+  .length = 32,
+
+  .a = C_cx_secp256r1_a,
+  .b = C_cx_secp256r1_b,
+  .p = C_cx_secp256r1_p,
+  .Gx = C_cx_secp256r1_Gx,
+  .Gy = C_cx_secp256r1_Gy,
+  .n = C_cx_secp256r1_n,
+  .h = C_cx_secp256r1_h,
+  .Hp = C_cx_secp256r1_Hp,
+  .Hn = C_cx_secp256r1_Hn,
 };
 
 static uint8_t const C_cx_secp384r1_a[] = {
@@ -118,19 +119,22 @@ static uint8_t const C_cx_secp384r1_Hn[] = {
   0xdf, 0x1a, 0xa4, 0x19, 0x2d, 0x31, 0x9b, 0x24, 0x19, 0xb4, 0x09, 0xa9
 };
 
-#define C_cx_secp384r1_h 1
+#define C_cx_secp384r1_h C_cofactor_1
 
-static cx_curve_weierstrass_t const C_cx_secp384r1 = {
-  CX_CURVE_SECP384R1,
-  384,
-  48,
-  C_cx_secp384r1_p,
-  C_cx_secp384r1_Hp,
-  C_cx_secp384r1_Gx,
-  C_cx_secp384r1_Gy,
-  C_cx_secp384r1_n,
-  C_cx_secp384r1_Hn,
-  C_cx_secp384r1_h,
-  C_cx_secp384r1_a,
-  C_cx_secp384r1_b,
+#define C_cx_secp384r1_h C_cofactor_1
+
+cx_curve_weierstrass_t const C_cx_secp384r1 = {
+  .curve = CX_CURVE_SECP384R1,
+  .bit_size = 384,
+  .length = 48,
+
+  .a = C_cx_secp384r1_a,
+  .b = C_cx_secp384r1_b,
+  .p = C_cx_secp384r1_p,
+  .Gx = C_cx_secp384r1_Gx,
+  .Gy = C_cx_secp384r1_Gy,
+  .n = C_cx_secp384r1_n,
+  .h = C_cx_secp384r1_h,
+  .Hp = C_cx_secp384r1_Hp,
+  .Hn = C_cx_secp384r1_Hn,
 };

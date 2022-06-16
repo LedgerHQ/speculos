@@ -72,13 +72,18 @@ int sys_cx_eddsa_sign(const cx_ecfp_private_key_t *pvkey,
   /* Only SHA-512 is supported in Speculos, as it was the only supported hash
    * in OpenSSL */
   if (hashID != CX_SHA512) {
+    // printf("here1");
     return CX_INVALID_PARAMETER;
   }
   if (sig_len < 64) {
+    // printf("here2");
+
     return CX_KO;
   }
   /* Key must be a Ed25519 private key */
   if (pvkey->curve != CX_CURVE_Ed25519 || pvkey->d_len != 32) {
+    // printf("here3");
+
     return CX_KO;
   }
   ED25519_public_from_private(public_key, pvkey->d);

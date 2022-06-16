@@ -51,12 +51,22 @@ static uint8_t const C_cx_Stark_Gy[Stark_SIZE_u8] = {
   0x43, 0xa3, 0x28, 0x73, 0x00, 0x0c, 0x36, 0xe8, 0xdc, 0x1f
 };
 
-#define C_cx_Stark_h 1
+#define C_cx_Stark_h C_cofactor_1
 
 cx_curve_weierstrass_t const C_cx_Stark256 = {
-  CX_CURVE_Stark256, 251,           32,           C_cx_Stark_p,  C_cx_Stark_Hp,
-  C_cx_Stark_Gx,     C_cx_Stark_Gy, C_cx_Stark_n, C_cx_Stark_Hn, C_cx_Stark_h,
-  C_cx_Stark_a,      C_cx_Stark_b
+  .curve = CX_CURVE_Stark256,
+  .bit_size = 251,
+  .length = 32,
+
+  .a = C_cx_Stark_a,
+  .b = C_cx_Stark_b,
+  .p = C_cx_Stark_p,
+  .Gx = C_cx_Stark_Gx,
+  .Gy = C_cx_Stark_Gy,
+  .n = C_cx_Stark_n,
+  .h = C_cx_Stark_h,
+  .Hp = C_cx_Stark_Hp,
+  .Hn = C_cx_Stark_Hn,
 };
 
 /* Parameters from https://docs.starkware.co/starkex-v4/crypto/stark-curve,

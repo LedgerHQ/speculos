@@ -45,17 +45,19 @@ static uint8_t const C_cx_BLS12_381_G1_Gy[BLS12_381_SIZE_u8] = {
 };
 
 // The cofactor of BLS12-381 0x396c8c005555e1568c00aaab0000aaab
-// does not fit.
-#define C_cx_BLS12_381_G1_h 1
-cx_curve_weierstrass_t const C_cx_BLS12_381_G1 = { CX_CURVE_BLS12_381_G1,
-                                                   381,
-                                                   48,
-                                                   C_cx_BLS12_381_G1_p,
-                                                   C_cx_BLS12_381_G1_Hp,
-                                                   C_cx_BLS12_381_G1_Gx,
-                                                   C_cx_BLS12_381_G1_Gy,
-                                                   C_cx_BLS12_381_G1_n,
-                                                   C_cx_BLS12_381_G1_Hn,
-                                                   C_cx_BLS12_381_G1_h,
-                                                   C_cx_BLS12_381_G1_a,
-                                                   C_cx_BLS12_381_G1_b };
+// TODO: write correct value (unused for now)
+#define C_cx_BLS12_381_G1_h C_cofactor_1
+
+cx_curve_weierstrass_t const C_cx_BLS12_381_G1 = { .curve =
+                                                       CX_CURVE_BLS12_381_G1,
+                                                   .bit_size = 381,
+                                                   .length = 48,
+                                                   .p = C_cx_BLS12_381_G1_p,
+                                                   .Hp = C_cx_BLS12_381_G1_Hp,
+                                                   .Gx = C_cx_BLS12_381_G1_Gx,
+                                                   .Gy = C_cx_BLS12_381_G1_Gy,
+                                                   .n = C_cx_BLS12_381_G1_n,
+                                                   .Hn = C_cx_BLS12_381_G1_Hn,
+                                                   .h = C_cx_BLS12_381_G1_h,
+                                                   .a = C_cx_BLS12_381_G1_a,
+                                                   .b = C_cx_BLS12_381_G1_b };

@@ -9,6 +9,8 @@ static unsigned char const C_cx_Ed25519_d[] = {
   0x79, 0x77, 0x79, 0xe8, 0x98, 0x00, 0x70, 0x0a, 0x4d, 0x41, 0x41,
   0xd8, 0xab, 0x75, 0xeb, 0x4d, 0xca, 0x13, 0x59, 0x78, 0xa3
 };
+
+/* prime field referred as p everywhere else*/
 static unsigned char const C_cx_Ed25519_q[] = {
   // q:  0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffed
   0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -56,21 +58,23 @@ static unsigned char const C_cx_Ed25519_Qplus3div8[] = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe
 };
 
-#define C_cx_Ed25519_h 8
+#define C_cx_Ed25519_h C_cofactor_8
 
-static cx_curve_twisted_edward_t const C_cx_Ed25519 = {
-  CX_CURVE_Ed25519,
-  256,
-  32,
-  C_cx_Ed25519_q,
-  C_cx_Ed25519_Hq,
-  C_cx_Ed25519_Bx,
-  C_cx_Ed25519_By,
-  C_cx_Ed25519_l,
-  C_cx_Ed25519_Hl,
-  C_cx_Ed25519_h,
-  C_cx_Ed25519_a,
-  C_cx_Ed25519_d,
-  C_cx_Ed25519_I,
-  C_cx_Ed25519_Qplus3div8,
+static cx_curve_twisted_edwards_t const C_cx_Ed25519 = {
+  .curve = CX_CURVE_Ed25519,
+  .bit_size = 256,
+  .length = 32,
+  .a = C_cx_Ed25519_a,
+  .b = C_cx_Ed25519_d, /*unused field, convenient for structure reuse*/
+  .p = C_cx_Ed25519_q,
+  .Gx = C_cx_Ed25519_Bx,
+  .Gy = C_cx_Ed25519_By,
+  .n = C_cx_Ed25519_l,
+  .h = C_cx_Ed25519_h,
+  .Hp = C_cx_Ed25519_Hq,
+  .Hn = C_cx_Ed25519_Hl,
+
+  .I = C_cx_Ed25519_I,
+  .d = C_cx_Ed25519_d,
+  .Qq = C_cx_Ed25519_Qplus3div8,
 };

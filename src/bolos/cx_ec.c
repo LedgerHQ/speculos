@@ -293,13 +293,13 @@ unsigned long sys_cx_ecfp_init_public_key(cx_curve_t curve,
   if (rawkey != NULL) {
     expected_key_len = 0;
     if (rawkey[0] == 0x02) {
-      if (CX_CURVE_RANGE(curve, TWISTED_EDWARD) ||
+      if (CX_CURVE_RANGE(curve, TWISTED_EDWARDS) ||
           CX_CURVE_RANGE(curve, MONTGOMERY)) {
         expected_key_len = 1 + size;
       }
     } else if (rawkey[0] == 0x04) {
       if (CX_CURVE_RANGE(curve, WEIERSTRASS) ||
-          CX_CURVE_RANGE(curve, TWISTED_EDWARD)) {
+          CX_CURVE_RANGE(curve, TWISTED_EDWARDS)) {
         expected_key_len = 1 + size * 2;
       }
     }

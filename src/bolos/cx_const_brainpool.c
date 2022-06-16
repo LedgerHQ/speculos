@@ -51,7 +51,7 @@ static uint8_t const C_cx_BrainpoolP256r1_Hn[] = {
   0xe4, 0xa0, 0xe1, 0xd8, 0xd8, 0xde, 0x33, 0x12, 0xfc, 0xa6
 };
 
-#define C_cx_BrainpoolP256r1_h 1
+#define C_cx_BrainpoolP256r1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP256r1 = {
   .curve = CX_CURVE_BrainPoolP256R1,
   .bit_size = 256,
@@ -119,7 +119,7 @@ static uint8_t const C_cx_BrainpoolP256t1_Hn[] = {
   0xe4, 0xa0, 0xe1, 0xd8, 0xd8, 0xde, 0x33, 0x12, 0xfc, 0xa6
 };
 
-#define C_cx_BrainpoolP256t1_h 1
+#define C_cx_BrainpoolP256t1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP256t1 = {
   .curve = CX_CURVE_BrainPoolP256T1,
   .bit_size = 256,
@@ -200,7 +200,7 @@ static uint8_t const C_cx_BrainpoolP320r1_Hn[] = {
 
 };
 
-#define C_cx_BrainpoolP320r1_h 1
+#define C_cx_BrainpoolP320r1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP320r1 = {
   .curve = CX_CURVE_BrainPoolP320R1,
   // 384, 48,
@@ -283,7 +283,7 @@ static uint8_t const C_cx_BrainpoolP320t1_Hn[] = {
   0xf1, 0xa0, 0xb9, 0xb6, 0xac, 0x1d, 0x66, 0x16, 0x3f, 0x17
 };
 
-#define C_cx_BrainpoolP320t1_h 1
+#define C_cx_BrainpoolP320t1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP320t1 = {
   .curve = CX_CURVE_BrainPoolP320T1,
   // 384, 48,
@@ -366,7 +366,7 @@ static uint8_t const C_cx_BrainpoolP384r1_Hn[] = {
   0x2f, 0x2b, 0x6b, 0x6e, 0xac, 0x4e, 0xd3, 0xa2, 0xde, 0x77, 0x1c, 0x8e
 };
 
-#define C_cx_BrainpoolP384r1_h 1
+#define C_cx_BrainpoolP384r1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP384r1 = {
   .curve = CX_CURVE_BrainPoolP384R1,
   .bit_size = 384,
@@ -448,7 +448,7 @@ static uint8_t const C_cx_BrainpoolP384t1_Hn[] = {
   0x2f, 0x2b, 0x6b, 0x6e, 0xac, 0x4e, 0xd3, 0xa2, 0xde, 0x77, 0x1c, 0x8e
 };
 
-#define C_cx_BrainpoolP384t1_h 1
+#define C_cx_BrainpoolP384t1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP384t1 = {
   .curve = CX_CURVE_BrainPoolP384T1,
   .bit_size = 384,
@@ -538,7 +538,7 @@ static uint8_t const C_cx_BrainpoolP512r1_Hn[] = {
   0x95, 0x28, 0x3d, 0xdd, 0xd2, 0xa3, 0x68, 0x1e, 0xcd, 0xa8, 0x16, 0x71
 };
 
-#define C_cx_BrainpoolP512r1_h 1
+#define C_cx_BrainpoolP512r1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP512r1 = {
   .curve = CX_CURVE_BrainPoolP512R1,
   .bit_size = 512,
@@ -628,7 +628,7 @@ static uint8_t const C_cx_BrainpoolP512t1_Hn[] = {
   0x95, 0x28, 0x3d, 0xdd, 0xd2, 0xa3, 0x68, 0x1e, 0xcd, 0xa8, 0x16, 0x71
 };
 
-#define C_cx_BrainpoolP512t1_h 1
+#define C_cx_BrainpoolP512t1_h C_cofactor_1
 static cx_curve_weierstrass_t const C_cx_BrainpoolP512t1 = {
   .curve = CX_CURVE_BrainPoolP512T1,
   .bit_size = 512,
