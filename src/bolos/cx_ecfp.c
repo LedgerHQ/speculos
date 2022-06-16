@@ -159,11 +159,10 @@ cx_err_t sys_cx_ecdomain_size(cx_curve_t curve, size_t *length)
   return CX_OK;
 }
 
-
 int cx_ecfp_init_private_key_no_throw(cx_curve_t curve,
-                                          const unsigned char *rawkey,
-                                          unsigned int key_len,
-                                          cx_ecfp_public_key_t *key)
+                                      const unsigned char *rawkey,
+                                      unsigned int key_len,
+                                      cx_ecfp_public_key_t *key)
 {
   const cx_curve_domain_t *domain;
   unsigned int expected_key_len;
@@ -189,7 +188,7 @@ int cx_ecfp_init_private_key_no_throw(cx_curve_t curve,
       }
     }
     if (expected_key_len == 0 || key_len != expected_key_len) {
-      ret=CX_INVALID_PARAMETER_SIZE;
+      ret = CX_INVALID_PARAMETER_SIZE;
       goto end;
     }
   } else {
@@ -200,14 +199,14 @@ int cx_ecfp_init_private_key_no_throw(cx_curve_t curve,
   key->W_len = key_len;
   memcpy(key->W, rawkey, key_len);
 
-  end:
+end:
   return ret;
 }
 
 int sys_cx_ecfp_generate_pair_no_throw(cx_curve_t curve,
-                               cx_ecfp_public_key_t *public_key,
-                               cx_ecfp_private_key_t *private_key,
-                               int keep_private, cx_md_t hashID)
+                                       cx_ecfp_public_key_t *public_key,
+                                       cx_ecfp_private_key_t *private_key,
+                                       int keep_private, cx_md_t hashID)
 {
   EC_GROUP *Stark = NULL;
 
@@ -246,17 +245,17 @@ int sys_cx_ecfp_generate_pair_no_throw(cx_curve_t curve,
 
     pub = EC_POINT_new(Stark);
     if (pub == NULL)
-       return OPEN_SSL_UNEXPECTED_ERROR;
+      return OPEN_SSL_UNEXPECTED_ERROR;
 
     if (!keep_private) {
       if (EC_KEY_generate_key(key) == 0) {
-    	  return OPEN_SSL_UNEXPECTED_ERROR;
+        return OPEN_SSL_UNEXPECTED_ERROR;
       }
 
       const BIGNUM *priv = EC_KEY_get0_private_key(key);
       if (BN_num_bytes(priv) > (int)weier->length) {
-        //errx(1, "ssl: invalid bn");
-     	  return OPEN_SSL_UNEXPECTED_ERROR;
+        // errx(1, "ssl: invalid bn");
+        return OPEN_SSL_UNEXPECTED_ERROR;
       }
       private_key->curve = curve;
       private_key->d_len = BN_bn2bin(priv, private_key->d);
@@ -266,23 +265,23 @@ int sys_cx_ecfp_generate_pair_no_throw(cx_curve_t curve,
       priv = BN_new();
 
       if (BN_bin2bn(private_key->d, private_key->d_len, priv) == NULL) {
-        //errx(1, "ssl : BN_bin2bn of private key");
-    	  return OPEN_SSL_UNEXPECTED_ERROR;
+        // errx(1, "ssl : BN_bin2bn of private key");
+        return OPEN_SSL_UNEXPECTED_ERROR;
       }
 
       if (EC_KEY_set_private_key(key, priv) == 0) {
-        //errx(1, "ssl : EC_KEY_set_private_key");
+        // errx(1, "ssl : EC_KEY_set_private_key");
         return OPEN_SSL_UNEXPECTED_ERROR;
       }
 
       if (EC_POINT_mul(Stark, pub, priv, NULL, NULL, ctx) == 0) {
-        //errx(1, "ssl: EC_POINT_mul");
+        // errx(1, "ssl: EC_POINT_mul");
         return OPEN_SSL_UNEXPECTED_ERROR;
       }
 
       if (EC_KEY_set_public_key(key, pub) == OPEN_SSL_KO) {
-        //errx(1, "ssl: EC_KEY_set_public_key");
-    	  return OPEN_SSL_UNEXPECTED_ERROR;
+        // errx(1, "ssl: EC_KEY_set_public_key");
+        return OPEN_SSL_UNEXPECTED_ERROR;
       }
 
       BN_free(priv);
@@ -294,7 +293,7 @@ int sys_cx_ecfp_generate_pair_no_throw(cx_curve_t curve,
                       POINT_CONVERSION_UNCOMPRESSED, bn, ctx);
 
     if (BN_num_bytes(bn) > 2 * (int)weier->length + 1) {
-      //errx(1, "ssl: invalid bn");
+      // errx(1, "ssl: invalid bn");
       return OPEN_SSL_UNEXPECTED_ERROR;
     }
     public_key->curve = curve;
@@ -320,6 +319,3 @@ cx_ecdsa_sign_no_throw() added in cx_ecdsa.c
 cx_eddsa_sign_no_throw()  added in cx_ecdsa.c
 cx_ecdomain_parameters_length() already present, exported in .h
 */
-
-
-
