@@ -28,6 +28,7 @@ RUN pipenv install --deploy --system
 RUN apt-get update && apt-get install -qy \
     qemu-user-static \
     libvncserver-dev \
+    gdb-multiarch \
     && apt-get clean
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/

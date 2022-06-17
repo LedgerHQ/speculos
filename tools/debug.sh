@@ -24,8 +24,14 @@ function main()
     launcher_text_addr=$(get_text_addr "$launcher_path")
     local gdbinit="$script_dir/gdbinit"
 
-    cat >/tmp/x.gdb<<EOF
+    local arch
+    arch=$(uname -m)
+    if [ "$arch" != "aarch64" ]; then
+        cat >/tmp/x.gdb<<EOF
 source ${gdbinit}
+EOF
+    fi
+    cat >>/tmp/x.gdb<<EOF
 set architecture arm
 target remote 127.0.0.1:1234
 handle SIGILL nostop pass noprint
@@ -34,7 +40,6 @@ add-symbol-file "${app}" 0x40000000
 b *0x40000000
 c
 EOF
-
     "${GDB}" -q -nh -x /tmp/x.gdb
 }
 
