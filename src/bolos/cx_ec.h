@@ -83,9 +83,8 @@ enum cx_curve_e {
   /** High limit (not included) of Montgomery curve ID */
 };
 
-
 #define CX_CURVE_TWISTED_EDWARDS_START CX_CURVE_TWISTED_EDWARD_START
-#define CX_CURVE_TWISTED_EDWARDS_END CX_CURVE_TWISTED_EDWARD_END
+#define CX_CURVE_TWISTED_EDWARDS_END   CX_CURVE_TWISTED_EDWARD_END
 
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
@@ -108,7 +107,6 @@ typedef enum cx_curve_e cx_curve_t;
 
 #define CX_ECCINFO_PARITY_ODD 1
 #define CX_ECCINFO_xGTn       2
-
 
 #define CX_CURVE_HEADER                                                        \
   /** Curve Identifier. See #cx_curve_e */                                     \
@@ -135,7 +133,6 @@ typedef enum cx_curve_e cx_curve_t;
   const uint8_t *Hn;                                                           \
   /** @internal 2nd Montgomery constant for Field */                           \
   const uint8_t *Hp;
-
 
 /**
  * Weirstrass curve :     y^3=x^2+a*x+b        over F(p)
@@ -168,7 +165,6 @@ struct cx_curve_twisted_edwards_s {
 };
 
 typedef struct cx_curve_twisted_edwards_s cx_curve_twisted_edwards_t;
-
 
 /** Convenience type. See #cx_curve_weierstrass_s. */
 typedef struct cx_curve_weierstrass_s cx_curve_weierstrass_t;
@@ -362,15 +358,14 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
-
-extern  uint8_t const C_cofactor_1[] ;
-extern uint8_t const C_cofactor_4[] ;
-extern uint8_t const C_cofactor_8[] ;
+extern uint8_t const C_cofactor_1[];
+extern uint8_t const C_cofactor_4[];
+extern uint8_t const C_cofactor_8[];
 
 #define _NB_SUPPORTED_CURVES 14
 extern cx_curve_domain_t const *const C_cx_allCurves[_NB_SUPPORTED_CURVES];
-extern cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[_NB_SUPPORTED_CURVES];
-
+extern cx_curve_weierstrass_t const
+    *const C_cx_all_Weierstrass_Curves[_NB_SUPPORTED_CURVES];
 
 /* Doesn't appear in bolos, should be static
 int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,

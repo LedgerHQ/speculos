@@ -93,9 +93,9 @@ int sys_cx_eddsa_verify(const cx_ecfp_public_key_t *pu_key,
 }
 
 int sys_cx_eddsa_sign_no_throw(const cx_ecfp_private_key_t *pvkey,
-                      cx_md_t hashID,
-                      const unsigned char *hash, unsigned int hash_len,
-                      unsigned char *sig, unsigned int sig_len)
+                               cx_md_t hashID, const unsigned char *hash,
+                               unsigned int hash_len, unsigned char *sig,
+                               unsigned int sig_len)
 {
   uint8_t public_key[32];
 

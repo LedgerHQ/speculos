@@ -76,7 +76,6 @@ static uint8_t const C_cx_secp521r1_Hn[] = {
   0xb4, 0x7e, 0xe7, 0xf0, 0x56, 0x21, 0x96, 0x51, 0x92, 0x0b, 0xb5
 };
 
-
 #define C_cx_secp521r1_h C_cofactor_1
 
 cx_curve_weierstrass_t const C_cx_secp521r1 = {

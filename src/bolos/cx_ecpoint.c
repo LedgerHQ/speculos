@@ -17,7 +17,6 @@
 
 #include "emulate.h"
 
-
 //-----------------------------------------------------------------------------
 // Almost duplicated from cx_ec.c one because some curves id have changed!
 static int cx_weierstrass_mult(cx_curve_t curve, cx_mpi_t *qx, cx_mpi_t *qy,

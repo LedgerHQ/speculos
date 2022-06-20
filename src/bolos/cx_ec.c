@@ -29,11 +29,11 @@
 #include "cx_const_secp.c"
 #include "cx_const_stark.c"
 
- uint8_t const C_cofactor_1[] = { 0, 0, 0, 1 };
- uint8_t const C_cofactor_4[] = { 0, 0, 0, 4 };
- uint8_t const C_cofactor_8[] = { 0, 0, 0, 8 };
+uint8_t const C_cofactor_1[] = { 0, 0, 0, 1 };
+uint8_t const C_cofactor_4[] = { 0, 0, 0, 4 };
+uint8_t const C_cofactor_8[] = { 0, 0, 0, 8 };
 
- cx_curve_domain_t const *const C_cx_allCurves[] = {
+cx_curve_domain_t const *const C_cx_allCurves[] = {
   (const cx_curve_domain_t *)&C_cx_secp256k1,
   (const cx_curve_domain_t *)&C_cx_secp256r1,
   (const cx_curve_domain_t *)&C_cx_secp384r1,
@@ -50,7 +50,7 @@
   (const cx_curve_domain_t *)&C_cx_Stark256
 };
 
- cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
+cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[] = {
   (const cx_curve_weierstrass_t *)&C_cx_secp256k1,
   (const cx_curve_weierstrass_t *)&C_cx_secp256r1,
   (const cx_curve_weierstrass_t *)&C_cx_secp384r1,

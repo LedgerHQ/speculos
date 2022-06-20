@@ -6,8 +6,8 @@
 #define NID_BLS12_381_G1 666
 
 /* UGLY return codes of openSSL, when OK=1 and KO=0 :( */
-#define OPEN_SSL_KO 0
-#define OPEN_SSL_OK 1
+#define OPEN_SSL_KO               0
+#define OPEN_SSL_OK               1
 #define OPEN_SSL_UNEXPECTED_ERROR 0xcaca055L
 
 #define cx_nid_from_curve(a) nid_from_curve(a)

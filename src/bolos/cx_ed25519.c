@@ -6,9 +6,9 @@
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 
-#include "cx_errors.h"
 #include "cx_ec.h"
 #include "cx_ed25519.h"
+#include "cx_errors.h"
 #include "cx_utils.h"
 
 static const char *constant_q = "5789604461865809771178549250434395392663499233"
@@ -285,9 +285,8 @@ int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len)
   return 0;
 }
 
-
-
-int sys_cx_edward_compress_point_no_throw(cx_curve_t curve, uint8_t *P, size_t P_len)
+int sys_cx_edward_compress_point_no_throw(cx_curve_t curve, uint8_t *P,
+                                          size_t P_len)
 {
   const cx_curve_twisted_edward_t *domain;
   uint8_t *x, *y;
@@ -296,7 +295,7 @@ int sys_cx_edward_compress_point_no_throw(cx_curve_t curve, uint8_t *P, size_t P
   domain = (const cx_curve_twisted_edward_t *)cx_ecfp_get_domain(curve);
   size = domain->length;
   if (curve != CX_CURVE_Ed25519 || P_len < (1 + 2 * size)) {
-    //errx(1, "cx_edward_compress_point: invalid parameters");
+    // errx(1, "cx_edward_compress_point: invalid parameters");
     return CX_INVALID_PARAMETER;
   }
 
