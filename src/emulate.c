@@ -54,7 +54,7 @@ int emulate(unsigned long syscall, unsigned long *parameters,
 int emulate_common(unsigned long syscall, unsigned long *parameters,
                    unsigned long *ret, bool verbose)
 {
-  int retid = -1;
+  int retid;
 
   switch (syscall) {
     /* clang-format off */

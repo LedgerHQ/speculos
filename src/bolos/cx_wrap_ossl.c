@@ -94,9 +94,6 @@ int nid_from_curve(cx_curve_t curve)
   case CX_CURVE_SECP384R1:
     nid = NID_secp384r1;
     break;
-  case CX_CURVE_Ed25519:
-    nid = NID_ED25519;
-    break;
   case CX_CURVE_BrainPoolP256R1:
     nid = NID_brainpoolP256r1;
     break;
@@ -281,6 +278,7 @@ int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
 end:
   return ret;
 }
+
 int spec_cx_ecfp_encode_sig_der(unsigned char *sig, unsigned int sig_len,
                                 unsigned char *r, unsigned int r_len,
                                 unsigned char *s, unsigned int s_len)

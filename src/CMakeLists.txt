@@ -10,10 +10,10 @@ add_library(emu
         bolos/cx_curve25519.c
         bolos/cx_crc.c
         bolos/cx_ec.c
-        bolos/cx_ecfp.c
         bolos/cx_ecdsa.c
         bolos/cx_eddsa.c
         bolos/cx_ecdh.c
+        bolos/cx_ec_domain.c
         bolos/cx_ecpoint.c
         bolos/cx_ed25519.c
         bolos/cx_hmac.c

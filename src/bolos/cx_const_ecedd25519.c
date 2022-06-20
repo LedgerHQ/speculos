@@ -60,7 +60,7 @@ static unsigned char const C_cx_Ed25519_Qplus3div8[] = {
 
 #define C_cx_Ed25519_h C_cofactor_8
 
-static cx_curve_twisted_edwards_t const C_cx_Ed25519 = {
+static cx_curve_twisted_edward_t const C_cx_Ed25519 = {
   .curve = CX_CURVE_Ed25519,
   .bit_size = 256,
   .length = 32,

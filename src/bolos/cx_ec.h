@@ -3,11 +3,6 @@
 #include "cx_bn.h"
 #include "cx_hash.h"
 
-#define _SDK_2_0_
-
-#define CX_CURVE_RANGE(i, dom)                                                 \
-  (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
-
 #define CX_MASK_EC               (7 << 12)
 #define CX_ECDH_POINT            (1 << 12)
 #define CX_ECDH_X                (2 << 12)
@@ -17,19 +12,9 @@
 #define CX_ECSCHNORR_LIBSECP     (6 << 12)
 #define CX_ECSCHNORR_Z           (7 << 12)
 
-/** Convenience type. See #cx_curve_e. */
-/* the following curves are not wicheproof tested and thus should be considered
- * as 'experimental feature: sec521r1 startk montgomery curves
- */
-
-static uint8_t const C_cofactor_1[] = { 0, 0, 0, 1 };
-static uint8_t const C_cofactor_4[] = { 0, 0, 0, 4 };
-static uint8_t const C_cofactor_8[] = { 0, 0, 0, 8 };
-
 /** List of supported elliptic curves */
 enum cx_curve_e {
   CX_CURVE_NONE,
-
   /* ------------------------ */
   /* --- Type Weierstrass --- */
   /* ------------------------ */
@@ -37,78 +22,70 @@ enum cx_curve_e {
   CX_CURVE_WEIERSTRASS_START = 0x20,
 
   /** Secp.org */
-  CX_CURVE_SECP256K1 = 0x21,
+  CX_CURVE_SECP256K1,
+  CX_CURVE_SECP256R1,
 #define CX_CURVE_256K1 CX_CURVE_SECP256K1
+#define CX_CURVE_256R1 CX_CURVE_SECP256R1
+  CX_CURVE_SECP384R1,
+  CX_CURVE_SECP521R1,
 
-  CX_CURVE_SECP256R1 = 0x22,
-#define CX_CURVE_256R1    CX_CURVE_SECP256R1
+  /** BrainPool */
+  CX_CURVE_BrainPoolP256T1,
+  CX_CURVE_BrainPoolP256R1,
+  CX_CURVE_BrainPoolP320T1,
+  CX_CURVE_BrainPoolP320R1,
+  CX_CURVE_BrainPoolP384T1,
+  CX_CURVE_BrainPoolP384R1,
+  CX_CURVE_BrainPoolP512T1,
+  CX_CURVE_BrainPoolP512R1,
+
+/* NIST P256 curve*/
 #define CX_CURVE_NISTP256 CX_CURVE_SECP256R1
-
-  CX_CURVE_SECP384R1 = 0x23,
 #define CX_CURVE_NISTP384 CX_CURVE_SECP384R1
-
-  CX_CURVE_SECP521R1 = 0x24,
 #define CX_CURVE_NISTP521 CX_CURVE_SECP521R1
 
-  /** BrainpoolP256t1 */
-  CX_CURVE_BrainPoolP256T1 = 0x31,
+  /* ANSSI P256 */
+  CX_CURVE_FRP256V1,
 
-  /** BrainpoolP256r1 */
-  CX_CURVE_BrainPoolP256R1 = 0x32,
-
-  /** BrainpoolP320t1 */
-  CX_CURVE_BrainPoolP320T1 = 0x33,
-
-  /** BrainpoolP320r1 */
-  CX_CURVE_BrainPoolP320R1 = 0x34,
-
-  /** BrainpoolP384t1 */
-  CX_CURVE_BrainPoolP384T1 = 0x35,
-
-  /** Brainpool384r1 */
-  CX_CURVE_BrainPoolP384R1 = 0x36,
-
-  /** BrainpoolP512t1 */
-  CX_CURVE_BrainPoolP512T1 = 0x37,
-
-  /** BrainpoolP512r1 */
-  CX_CURVE_BrainPoolP512R1 = 0x38,
-
-  CX_CURVE_BLS12_381_G1 = 0x39,
   /* STARK */
-  CX_CURVE_Stark256 = 0x3A,
+  CX_CURVE_Stark256,
+
+  /* BLS12-381 G1 curve */
+  CX_CURVE_BLS12_381_G1,
 
   /** High limit (not included) of Weierstrass curve ID */
-  CX_CURVE_WEIERSTRASS_END = 0x6F,
+  CX_CURVE_WEIERSTRASS_END,
 
-  /* ---------------------------- */
-  /* --- Type Twister Edwards --- */
-  /* ---------------------------- */
-  /** Low limit (not included) of  Twister Edwards curve ID */
-  CX_CURVE_TWISTED_EDWARDS_START = 0x70,
+  /* --------------------------- */
+  /* --- Type Twister Edward --- */
+  /* --------------------------- */
+  /** Low limit (not included) of  Twister Edward curve ID */
+  CX_CURVE_TWISTED_EDWARD_START = 0x40,
 
   /** Ed25519 curve */
-  CX_CURVE_Ed25519 = 0x71,
+  CX_CURVE_Ed25519,
+  CX_CURVE_Ed448,
 
-  CX_CURVE_Ed448 = 0x72,
-
-  CX_CURVE_TWISTED_EDWARDS_END = 0x7F,
-  /** High limit (not included) of Twister Edwards  curve ID */
+  CX_CURVE_TWISTED_EDWARD_END,
+  /** High limit (not included) of Twister Edward  curve ID */
 
   /* ----------------------- */
   /* --- Type Montgomery --- */
   /* ----------------------- */
   /** Low limit (not included) of Montgomery curve ID */
-  CX_CURVE_MONTGOMERY_START = 0x80,
+  CX_CURVE_MONTGOMERY_START = 0x60,
 
   /** Curve25519 curve */
-  CX_CURVE_Curve25519 = 0x81,
-  CX_CURVE_Curve448 = 0x82,
+  CX_CURVE_Curve25519,
+  CX_CURVE_Curve448,
 
-  CX_CURVE_MONTGOMERY_END = 0x8F
-
+  CX_CURVE_MONTGOMERY_END
   /** High limit (not included) of Montgomery curve ID */
 };
+
+
+#define CX_CURVE_TWISTED_EDWARDS_START CX_CURVE_TWISTED_EDWARD_START
+#define CX_CURVE_TWISTED_EDWARDS_END CX_CURVE_TWISTED_EDWARD_END
 
 #define CX_CURVE_RANGE(i, dom)                                                 \
   (((i) > (CX_CURVE_##dom##_START)) && ((i) < (CX_CURVE_##dom##_END)))
@@ -131,6 +108,7 @@ typedef enum cx_curve_e cx_curve_t;
 
 #define CX_ECCINFO_PARITY_ODD 1
 #define CX_ECCINFO_xGTn       2
+
 
 #define CX_CURVE_HEADER                                                        \
   /** Curve Identifier. See #cx_curve_e */                                     \
@@ -158,23 +136,39 @@ typedef enum cx_curve_e cx_curve_t;
   /** @internal 2nd Montgomery constant for Field */                           \
   const uint8_t *Hp;
 
-struct cx_curve_weierstrass_s {
-  CX_CURVE_HEADER
-};
 
-/*Note that the reuse of   CX_CURVE_HEADER is such that coefficient b won't be
- * used */
-/* Convenience for code compacity*/
-/* TODO: find a better factorization of code*/
-struct cx_curve_twisted_edwards_s {
+/**
+ * Weirstrass curve :     y^3=x^2+a*x+b        over F(p)
+ *
+ */
+
+/*
+ * Twisted Edward curve : a*x^2+y^2=1+d*x2*y2  over F(q)
+ */
+struct cx_curve_twisted_edward_s {
   CX_CURVE_HEADER;
-  const unsigned char *I;
+
+  /**  d coef */
   const unsigned char *d;
+  /** @internal Square root of -1 or zero */
+  const unsigned char *I;
   /** @internal  (q+3)/8 or (q+1)/4*/
   const unsigned char *Qq;
 };
 
+/** Convenience type. See #cx_curve_twisted_edward_s. */
+typedef struct cx_curve_twisted_edward_s cx_curve_twisted_edward_t;
+
+struct cx_curve_weierstrass_s {
+  CX_CURVE_HEADER
+};
+
+struct cx_curve_twisted_edwards_s {
+  CX_CURVE_HEADER
+};
+
 typedef struct cx_curve_twisted_edwards_s cx_curve_twisted_edwards_t;
+
 
 /** Convenience type. See #cx_curve_weierstrass_s. */
 typedef struct cx_curve_weierstrass_s cx_curve_weierstrass_t;
@@ -339,10 +333,6 @@ enum cx_curve_dom_param_s {
 };
 typedef enum cx_curve_dom_param_s cx_curve_dom_param_t;
 
-extern cx_curve_domain_t const *const C_cx_allCurves[];
-
-extern cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[];
-
 const cx_curve_domain_t *cx_ecfp_get_domain(cx_curve_t curve);
 
 int sys_cx_ecfp_add_point(cx_curve_t curve, uint8_t *R, const uint8_t *P,
@@ -372,8 +362,19 @@ int sys_cx_eddsa_get_public_key(const cx_ecfp_private_key_t *pv_key,
                                 cx_md_t hashID, cx_ecfp_public_key_t *pu_key);
 int sys_cx_edward_decompress_point(cx_curve_t curve, uint8_t *P, size_t P_len);
 
-const cx_curve_weierstrass_t *cx_ecfp_get_weierstrass(cx_curve_t curve);
-/*
-extern cx_curve_domain_t const *const C_cx_allCurves[];
-extern cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[];
+
+extern  uint8_t const C_cofactor_1[] ;
+extern uint8_t const C_cofactor_4[] ;
+extern uint8_t const C_cofactor_8[] ;
+
+#define _NB_SUPPORTED_CURVES 14
+extern cx_curve_domain_t const *const C_cx_allCurves[_NB_SUPPORTED_CURVES];
+extern cx_curve_weierstrass_t const *const C_cx_all_Weierstrass_Curves[_NB_SUPPORTED_CURVES];
+
+
+/* Doesn't appear in bolos, should be static
+int spec_cx_ecfp_decode_sig_der(const uint8_t *input, size_t input_len,
+                                size_t max_size, const uint8_t **r,
+                                size_t *r_len, const uint8_t **s,
+                                size_t *s_len);
 */
