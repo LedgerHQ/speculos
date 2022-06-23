@@ -5,9 +5,7 @@
 
 #define _SDK_2_0_
 
-#include "bolos/cx_aes.h"
-#include "bolos/cx_ec.h"
-#include "bolos/cx_ed25519.h"
+#include "bolos/cx.h"
 
 //-----------------------------------------------------------------------------
 // Defines

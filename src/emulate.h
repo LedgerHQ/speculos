@@ -12,15 +12,7 @@
 /* for BIGNUM */
 #include <openssl/bn.h>
 
-#ifndef _SDK_2_0_
-/* for cx_curve_t */
-#include "bolos/cx_ec.h"
-#endif //_SDK_2_0_
-
-/* for cx_hash_t */
-#include "bolos/cx_hash.h"
-
-#include "bolos/cx_crc.h"
+#include "bolos/cx.h"
 
 #include "sdk.h"
 

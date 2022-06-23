@@ -7,9 +7,6 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
-#include "cx_ec.h"
-#include "cx_hmac.h"
-#include "cx_math.h"
 #include "cx_utils.h"
 #include "emulate.h"
 

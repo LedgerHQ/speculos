@@ -35,7 +35,6 @@ print(binascii.hexlify(dt))
 #include <cmocka.h>
 
 #include "bolos/cx.h"
-#include "bolos/cx_aes.h"
 #include "emulate.h"
 
 #include "utils.h"

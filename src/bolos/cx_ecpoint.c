@@ -10,7 +10,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "bolos/cx_ed25519.h"
+#include "bolos/cx.h"
 #include "bolos/cxlib.h"
 #include "emulate.h"
 

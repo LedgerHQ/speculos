@@ -6,8 +6,7 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
-#include "bolos/cx_ec.h"
-#include "bolos/cx_hash.h"
+#include "bolos/cx.h"
 
 #include "utils.h"
 

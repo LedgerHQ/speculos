@@ -1,5 +1,7 @@
 #pragma once
 
+#include <openssl/bn.h>
+
 typedef struct {
   BIGNUM *x;
   BIGNUM *y;

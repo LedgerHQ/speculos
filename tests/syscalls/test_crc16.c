@@ -4,7 +4,7 @@
 
 #include <cmocka.h>
 
-#include "bolos/cx_crc.h"
+#include "bolos/cx.h"
 
 void test_crc16(void **state __attribute__((unused)))
 {

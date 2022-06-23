@@ -4,7 +4,6 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
-#include "cx_blake2.h"
 #include "cx_utils.h"
 
 union cx_u {

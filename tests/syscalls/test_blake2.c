@@ -4,7 +4,7 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
-#include "bolos/cx_blake2.h"
+#include "bolos/cx.h"
 #include "nist_cavp.h"
 #include "utils.h"
 

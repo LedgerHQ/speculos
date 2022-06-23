@@ -9,11 +9,6 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
-#include "cx_curve25519.h"
-#include "cx_ec.h"
-#include "cx_ed25519.h"
-#include "cx_hash.h"
-#include "cx_rng_rfc6979.h"
 #include "cx_utils.h"
 #include "emulate.h"
 

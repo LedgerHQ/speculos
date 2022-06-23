@@ -3,13 +3,6 @@
 #include <stdint.h>
 
 #define CX_AES_BLOCK_SIZE 16
-#define CX_MASK_SIGCRYPT  (3u << 1u)
-#define CX_ENCRYPT        (2u << 1u)
-#define CX_DECRYPT        (0u << 1u)
-#define CX_PAD_NONE       (0u << 3u)
-#define CX_MASK_CHAIN     (7u << 6u)
-#define CX_CHAIN_ECB      (0u << 6u)
-#define CX_CHAIN_CBC      (1u << 6u)
 
 struct cx_aes_key_s {
   unsigned int size;

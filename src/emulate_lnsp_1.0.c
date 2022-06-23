@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include "bolos/bagl.h"
-#include "bolos/cx_aes.h"
+#include "bolos/cx.h"
 #include "bolos/cxlib.h"
 #include "bolos/endorsement.h"
 #include "emulate.h"

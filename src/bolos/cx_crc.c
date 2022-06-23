@@ -1,5 +1,6 @@
-#include "cx_crc.h"
 #include <stdint.h>
+
+#include "cx.h"
 
 #define cx_crc16_update sys_cx_crc16_update
 

@@ -1,5 +1,12 @@
 #pragma once
 
+typedef union {
+  cx_hash_t header;
+  cx_sha256_t sha256;
+  cx_sha512_t sha512;
+  cx_ripemd160_t ripemd160;
+} cx_hash_for_hmac_ctx;
+
 /**
  * HMAC context.
  */

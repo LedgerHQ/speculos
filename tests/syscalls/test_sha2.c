@@ -11,7 +11,6 @@
 #include "utils.h"
 
 #include "bolos/cx.h"
-#include "bolos/cx_hash.h"
 #include "emulate.h"
 
 void test_sha256_short_msg(void **state __attribute__((unused)))
