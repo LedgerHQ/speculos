@@ -199,6 +199,8 @@ cx_err_t sys_cx_bn_next_prime(const cx_bn_t bn_x);
 
 // cx_ecdomain.c
 int cx_nid_from_curve(cx_curve_t curve);
+EC_GROUP *cx_group_from_nid_and_curve(int nid, cx_curve_t cid);
+EC_GROUP *cx_create_generic_curve(cx_curve_t cid);
 const cx_curve_domain_t *cx_ecdomain(cx_curve_t curve);
 cx_err_t sys_cx_ecdomain_parameters_length(cx_curve_t curve, size_t *length);
 cx_err_t sys_cx_ecdomain_size(cx_curve_t curve, size_t *length);
