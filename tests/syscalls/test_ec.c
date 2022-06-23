@@ -8,7 +8,6 @@
 #include <cmocka.h>
 
 #include "bolos/cx.h"
-#include "bolos/cx_ec.h"
 #include "utils.h"
 
 static uint8_t const C_ED25519_G[] = {

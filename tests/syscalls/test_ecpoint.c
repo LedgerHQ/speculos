@@ -10,7 +10,6 @@
 #define _SDK_2_0_
 
 #include "bolos/cx.h"
-#include "bolos/cx_ec.h"
 #include "bolos/cxlib.h"
 #include "utils.h"
 

@@ -1,16 +1,5 @@
 #pragma once
 
-#include "cx_hash.h"
-
-#define CX_MASK_EC               (7 << 12)
-#define CX_ECDH_POINT            (1 << 12)
-#define CX_ECDH_X                (2 << 12)
-#define CX_ECSCHNORR_ISO14888_XY (3 << 12)
-#define CX_ECSCHNORR_ISO14888_X  (4 << 12)
-#define CX_ECSCHNORR_BSI03111    (5 << 12)
-#define CX_ECSCHNORR_LIBSECP     (6 << 12)
-#define CX_ECSCHNORR_Z           (7 << 12)
-
 #ifndef _SDK_2_0_
 /** List of supported elliptic curves */
 enum cx_curve_e {

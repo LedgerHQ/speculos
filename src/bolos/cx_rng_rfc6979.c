@@ -3,10 +3,6 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
-#include "cx_hash.h"
-#include "cx_hmac.h"
-#include "cx_math.h"
-#include "cx_rng_rfc6979.h"
 
 /* ----------------------------------------------------------------------- */
 /* Convert an arbitrary bits string to BE int of r_len bits                */

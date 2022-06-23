@@ -6,8 +6,7 @@
 #include <openssl/bn.h>
 #include <openssl/ec.h>
 
-#include "cx_ec.h"
-#include "cx_ed25519.h"
+#include "cx.h"
 #include "cx_utils.h"
 
 static const char *constant_q = "5789604461865809771178549250434395392663499233"

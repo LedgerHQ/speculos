@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /* for cx_curve_t */
-#include "cx_ec.h"
+#include "cx.h"
 
 #define HDW_NORMAL         0
 #define HDW_ED25519_SLIP10 1

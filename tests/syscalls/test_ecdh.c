@@ -11,7 +11,6 @@
 #include "utils.h"
 
 #include "bolos/cx.h"
-#include "bolos/cx_ec.h"
 #include "emulate.h"
 
 #define cx_ecfp_init_private_key sys_cx_ecfp_init_private_key

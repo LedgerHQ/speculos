@@ -3,7 +3,7 @@
 
 #include "emulate.h"
 
-#include "bolos/cx_aes.h"
+#include "bolos/cx.h"
 #include "bolos_syscalls_1.5.h"
 
 int emulate_1_5(unsigned long syscall, unsigned long *parameters,

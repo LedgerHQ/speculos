@@ -7,7 +7,7 @@
 
 #include "utils.h"
 
-#include "bolos/cx_math.h"
+#include "bolos/cx.h"
 #include "emulate.h"
 
 static const uint8_t a[] = {

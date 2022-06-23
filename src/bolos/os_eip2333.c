@@ -3,11 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cx_ec.h"
-#include "cx_hash.h"
-#include "cx_hkdf.h"
-#include "cx_hmac.h"
-#include "cx_math.h"
+#include "cx.h"
 #include "emulate.h"
 #include "exception.h"
 #include "os_bip32.h"

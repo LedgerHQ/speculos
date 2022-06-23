@@ -3,7 +3,7 @@
 #include <sys/types.h>
 
 #include "bolos/exception.h"
-#include "cx_hash.h"
+#include "cx.h"
 #include "cx_utils.h"
 
 /** RAM overlaid to NES RAM under ST */

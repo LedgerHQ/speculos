@@ -14,8 +14,6 @@
 */
 #pragma once
 
-#include "cx_hash.h"
-
 /* clang-format off */
 
 //#include <stddef.h>

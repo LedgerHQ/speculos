@@ -1,6 +1,5 @@
 #pragma once
 
-#include "cx_hmac.h"
 #include <stddef.h>
 #include <stdint.h>
 

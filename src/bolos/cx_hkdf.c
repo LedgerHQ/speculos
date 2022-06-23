@@ -1,7 +1,6 @@
-#include "cx_hkdf.h"
-#include "cx_hash.h"
-#include "cx_hmac.h"
 #include <string.h>
+
+#include "cx.h"
 
 // HMAC-Based Key Kerivation Function defined at
 // https://tools.ietf.org/html/rfc5869 Used to implement the EIP-2333 for

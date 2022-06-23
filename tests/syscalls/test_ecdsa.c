@@ -10,8 +10,6 @@
 #include <cmocka.h>
 
 #include "bolos/cx.h"
-#include "bolos/cx_ec.h"
-#include "bolos/cx_hash.h"
 #include "emulate.h"
 #include "utils.h"
 

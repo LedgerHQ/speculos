@@ -2,11 +2,6 @@
 #include <stdio.h>
 
 #include "bolos/cx.h"
-#include "bolos/cx_aes.h"
-#include "bolos/cx_ec.h"
-#include "bolos/cx_hash.h"
-#include "bolos/cx_hmac.h"
-#include "bolos/cx_math.h"
 #include "bolos/cx_utils.h"
 #include "bolos/endorsement.h"
 #include "emulate.h"
