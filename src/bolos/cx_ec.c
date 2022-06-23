@@ -868,6 +868,10 @@ static cx_curve_weierstrass_t const C_cx_BrainpoolP512t1 = {
 
 };
 
+/* ------------------------------------------------------------------------ */
+/* ---                        BLS12_381                                 --- */
+/* ------------------------------------------------------------------------ */
+
 #define BLS12_381_SIZE_u8 48
 static uint8_t const C_cx_BLS12_381_G1_a[BLS12_381_SIZE_u8] = { 0 };
 static uint8_t const C_cx_BLS12_381_G1_b[BLS12_381_SIZE_u8] = {
