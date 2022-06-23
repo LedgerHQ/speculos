@@ -1467,7 +1467,7 @@ int cx_nid_from_curve(cx_curve_t curve)
     nid = NID_brainpoolP512t1;
     break;
   case CX_CURVE_Stark256:
-    nid = NID_GENERIC;
+    nid = NID_undef;
     break;
 #if 0
   case CX_CURVE_SECP521R1:
@@ -1480,6 +1480,81 @@ int cx_nid_from_curve(cx_curve_t curve)
     break;
   }
   return nid;
+}
+
+EC_GROUP *cx_group_from_nid_and_curve(int nid, cx_curve_t cid)
+{
+  EC_GROUP *group = NULL;
+  /* create a generic curve if generic nid */
+  if (nid != NID_undef) {
+    group = EC_GROUP_new_by_curve_name(nid);
+  } else {
+    group = cx_create_generic_curve(cid);
+  }
+  return group;
+}
+
+EC_GROUP *cx_create_generic_curve(cx_curve_t cid)
+{
+  /* Get curve domain to init the EC_GROUP */
+  const cx_curve_domain_t *domain;
+  if (NULL == (domain = cx_ecdomain(cid))) {
+    errx(1, "error when getting the curve domain");
+    goto error;
+  }
+
+  BN_CTX *ctx;
+  EC_GROUP *curve = NULL;
+  BIGNUM *a, *b, *p, *order, *x, *y;
+  EC_POINT *generator;
+
+  /* Set up the BN_CTX  */
+  if (NULL == (ctx = BN_CTX_new())) {
+    errx(1, "error when setting up the BN CTX");
+    goto error;
+  }
+
+  /* Set up the values for the various parameters */
+  if ((NULL == (a = BN_bin2bn(domain->a, domain->length, NULL))) ||
+      (NULL == (b = BN_bin2bn(domain->b, domain->length, NULL))) ||
+      (NULL == (p = BN_bin2bn(domain->p, domain->length, NULL))) ||
+      (NULL == (order = BN_bin2bn(domain->n, domain->length, NULL))) ||
+      (NULL == (x = BN_bin2bn(domain->Gx, domain->length, NULL))) ||
+      (NULL == (y = BN_bin2bn(domain->Gy, domain->length, NULL)))) {
+    errx(1, "error when setting up the BN CTX parameters");
+    goto error;
+  }
+
+  /* Create the curve */
+  if (NULL == (curve = EC_GROUP_new_curve_GFp(p, a, b, ctx))) {
+    errx(1, "error when creating the curve");
+    goto error;
+  }
+
+  /* Create the generator */
+  if ((NULL == (generator = EC_POINT_new(curve))) ||
+      (1 != EC_POINT_set_affine_coordinates_GFp(curve, generator, x, y, ctx))) {
+    errx(1, "error when creating the generator");
+    goto error;
+  }
+
+  /* Set the generator and the order */
+  if (1 != EC_GROUP_set_generator(curve, generator, order, NULL)) {
+    errx(1, "error when setting up the generator and the order");
+    goto error;
+  }
+
+error:
+  EC_POINT_free(generator);
+  BN_free(y);
+  BN_free(x);
+  BN_free(order);
+  BN_free(p);
+  BN_free(b);
+  BN_free(a);
+  BN_CTX_free(ctx);
+
+  return curve;
 }
 
 const cx_curve_domain_t *cx_ecdomain(cx_curve_t curve)
