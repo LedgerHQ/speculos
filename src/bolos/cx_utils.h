@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <unistd.h>
 
+#if UINTPTR_MAX == UINT64_MAX
+#define NATIVE_64BITS
+#endif
+
 #ifndef NATIVE_64BITS // NO 64BITS
 /** 64bits types, native or by-hands, depending on target and/or compiler
  * support.
