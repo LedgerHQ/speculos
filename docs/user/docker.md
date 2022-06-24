@@ -6,6 +6,12 @@ sort: 2
 
 ## How to use the Docker image
 
+Make sure you have a [PAT Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token) associated with your Github account and copy the token value. Log in to GHCR with the following command and use the token when prompted for the password:
+
+```shell
+docker login ghcr.io -u yourgithubusername
+```
+
 A docker image is available on [GitHub Packages](https://ghcr.io/ledgerhq/speculos). Pull the latest image:
 
 ```shell
