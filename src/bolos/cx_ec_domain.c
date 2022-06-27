@@ -1496,17 +1496,17 @@ EC_GROUP *cx_group_from_nid_and_curve(int nid, cx_curve_t cid)
 
 EC_GROUP *cx_create_generic_curve(cx_curve_t cid)
 {
+  BN_CTX *ctx;
+  EC_GROUP *curve = NULL;
+  BIGNUM *a, *b, *p, *order, *x, *y;
+  EC_POINT *generator;
+
   /* Get curve domain to init the EC_GROUP */
   const cx_curve_domain_t *domain;
   if (NULL == (domain = cx_ecdomain(cid))) {
     errx(1, "error when getting the curve domain");
     goto error;
   }
-
-  BN_CTX *ctx;
-  EC_GROUP *curve = NULL;
-  BIGNUM *a, *b, *p, *order, *x, *y;
-  EC_POINT *generator;
 
   /* Set up the BN_CTX  */
   if (NULL == (ctx = BN_CTX_new())) {
