@@ -5,3 +5,5 @@
 // Integers are in big-endian form
 int scalarmult_curve25519(uint8_t out[32], const uint8_t scalar[32],
                           const uint8_t point[32]);
+void public_from_private_curve25519(uint8_t out_public_value[32],
+                                    const uint8_t private_key[32]);

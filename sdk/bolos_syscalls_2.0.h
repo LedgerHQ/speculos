@@ -86,6 +86,7 @@
 #define SYSCALL_cx_ecpoint_cmp_ID_IN 0x6000fbc5UL
 #define SYSCALL_cx_ecpoint_is_on_curve_ID_IN 0x6000fcc5UL
 #define SYSCALL_cx_ecpoint_is_at_infinity_ID_IN 0x60014babUL
+#define SYSCALL_cx_ecpoint_x25519_ID_IN 0x60001b3dUL
 #define SYSCALL_cx_crc32_hw_ID_IN 0x60010271UL
 #define SYSCALL_cx_get_random_bytes_ID_IN 0x60010775
 #define SYSCALL_cx_trng_get_random_data_ID_IN 0x60010676UL
