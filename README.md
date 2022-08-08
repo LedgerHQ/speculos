@@ -64,4 +64,4 @@ Speculos is not part of Ledger bug bounty program.
 
 For a smooth and quick integration:
 - Follow the developers documentation on the [Developer Portal](https://developers.ledger.com/docs/nano-app/introduction/) and 
-- Go on Discord to chat with developer support and the developer community. See you there! If you are new to Ledger OP3N Discord server [click here](), otherwise directly join [the Nano App channel](https://discord.com/channels/885256081289379850/907623554542080070).
+- [Go on Discord](https://developers.ledger.com/discord-pro/) to chat with developer support and the developer community.
