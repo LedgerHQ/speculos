@@ -56,7 +56,7 @@ setup(
         "construct>=2.10.56,<3.0.0",
         "flask>=2.0.0,<3.0.0",
         "flask-restful>=0.3.9,<1.0",
-        "jsonschema>=3.2.0,<4.0.0",
+        "jsonschema>=3.2.0,<4.6.0",
         "mnemonic>=0.19,<1.0",
         "pillow>=8.0.0,<10.0.0",
         "pyelftools>=0.27,<1.0",
