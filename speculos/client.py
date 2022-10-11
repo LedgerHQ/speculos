@@ -51,11 +51,16 @@ def split_apdu(data: bytes) -> Tuple[bytes, int]:
     return data[:-2], status
 
 
-def screenshot_equal(path1: str, path2: str) -> bool:
+def screenshot_equal(path1: str, path2: str, left: int = 0, upper: int = 0, right: int = 0, lower: int = 0) -> bool:
     """Compare two images and return True if they are equal."""
 
     with Image.open(path1) as img1:
         with Image.open(path2) as img2:
+            if any([left, upper, right, lower]):
+                img1_w, img1_h = img1.size
+                img2_w, img2_h = img2.size
+                img1 = img1.crop((left, upper, img1_w - right, img1_h - lower))
+                img2 = img2.crop((left, upper, img2_w - right, img2_h - lower))
             diff_img = ImageChops.difference(img1, img2)
     return diff_img.getbbox() is None
 
