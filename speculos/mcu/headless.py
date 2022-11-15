@@ -66,3 +66,6 @@ class HeadlessPaintWidget(FrameBuffer):
             self.vnc.redraw(self.pixels)
 
         self.screenshot_update_pixels()
+
+    def update_screenshot(self):
+        return self.screenshot_update_pixels()
