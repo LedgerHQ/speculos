@@ -32,13 +32,17 @@ source ${gdbinit}
 EOF
     fi
     cat >>/tmp/x.gdb<<EOF
+define connect
 set architecture arm
+set osabi GNU/Linux
 target remote 127.0.0.1:1234
 handle SIGILL nostop pass noprint
 add-symbol-file "${launcher_path}" ${launcher_text_addr}
 add-symbol-file "${app}" 0x40000000
 b *0x40000000
 c
+end
+connect
 EOF
     "${GDB}" -q -nh -x /tmp/x.gdb
 }
