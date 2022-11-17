@@ -13,6 +13,7 @@ class EventsBroadcaster:
 
     def __init__(self):
         self.clients = []
+        self.screen_content = []
         self.events = []
         self.condition = threading.Condition()
         self.logger = logging.getLogger("events")
@@ -27,6 +28,12 @@ class EventsBroadcaster:
 
     def broadcast(self, event):
         self.logger.debug(f"events: broadcasting {event} to ({len(self.clients)}) client(s)")
+        if self.screen_content:
+            y_trigger = self.screen_content[-1]["y"] + 10
+            if event["y"] <= y_trigger:
+                # Reset screen content
+                self.screen_content = []
+        self.screen_content.append(event)
         self.events.append(event)
         for client in self.clients:
             client.send_screen_event(event)
@@ -68,6 +75,7 @@ class Events(AppResource):
         self._broadcaster = automation_server
         self.parser = reqparse.RequestParser()
         self.parser.add_argument("stream", type=inputs.boolean, default=False, location='values')
+        self.parser.add_argument("screencontent", type=inputs.boolean, default=False, location='values')
         super().__init__(*args, **kwargs)
 
     def get(self):
@@ -76,6 +84,8 @@ class Events(AppResource):
             client = EventClient(self._broadcaster)
             self._broadcaster.add_client(client)
             return Response(stream_with_context(client.generate()), content_type="text/event-stream")
+        elif args.screencontent:
+            return {"events": self._broadcaster.screen_content}, 200
         else:
             return {"events": self._broadcaster.events}, 200
 

@@ -82,6 +82,10 @@ class Api:
             self.stream.close()
         self.stream = None
 
+    def get_screen_content(self) -> dict :
+        resp = requests.get(f"{self.api_url}/events?screencontent=true")
+        return resp.json()
+    
     def get_next_event(self) -> dict:
         """
         A subset of the event stream format is recognized by this function and the event is expected to be encoded in
