@@ -64,6 +64,9 @@ class PaintWidget(QWidget):
     def take_screenshot(self):
         return self.fb.take_screenshot()
 
+    def update_screenshot(self):
+        return self.fb.screenshot_update_pixels()
+
 
 class App(QMainWindow):
     def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
