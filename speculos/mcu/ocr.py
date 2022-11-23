@@ -8,7 +8,7 @@ import string
 from .automation import TextEvent
 from . import bagl_font
 
-MIN_WORD_CONFIDENCE_LVL = 70 #percent
+MIN_WORD_CONFIDENCE_LVL = 0 #percent
 NEW_LINE_THRESHOLD = 10 #pixels
 
 BitMap = bytes
