@@ -50,10 +50,18 @@ def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
         text = elf.get_section_by_name('.text')
+        for seg in elf.iter_segments():
+            if seg['p_type'] != 'PT_LOAD':
+                continue
+            if seg.section_in_segment(text):
+                text_seg = seg
+                break;
+        else:
+            raise RuntimeError("No program header with text section!")
         symtab = elf.get_section_by_name('.symtab')
         bss = elf.get_section_by_name('.bss')
-        sh_offset = text['sh_offset']
-        sh_size = text['sh_size']
+        sh_offset = text_seg['p_offset']
+        sh_size = text_seg['p_filesz']
         stack = bss['sh_addr']
         sym_estack = symtab.get_symbol_by_name('_estack')
         if sym_estack is None:
