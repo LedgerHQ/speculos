@@ -55,7 +55,7 @@ def get_elf_infos(app_path):
                 continue
             if seg.section_in_segment(text):
                 text_seg = seg
-                break;
+                break
         else:
             raise RuntimeError("No program header with text section!")
         symtab = elf.get_section_by_name('.symtab')
