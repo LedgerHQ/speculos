@@ -255,6 +255,8 @@ def main(prog=None):
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument('--force-full-ocr', action='store_true',
+                       help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
 
     if prog:
         parser.prog = prog
@@ -416,7 +418,8 @@ def main(prog=None):
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
-    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
+    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
+                                       args.keymap, zoom, x, y, args.force_full_ocr)
     server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 

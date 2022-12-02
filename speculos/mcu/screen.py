@@ -198,7 +198,7 @@ class Screen(Display):
         if display.model != "stax":
             self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
         else:
-            self.nbgl = nbgl.NBGL(app.m, MODELS[display.model].screen_size)
+            self.nbgl = nbgl.NBGL(app.m, MODELS[display.model].screen_size, display.force_full_ocr)
         self.seph = server.seph
 
     def klass_can_read(self, klass, s):
