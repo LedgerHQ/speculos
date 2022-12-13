@@ -6,6 +6,9 @@ import json
 import logging
 import socketserver
 import threading
+from typing import List
+from dataclasses import asdict
+from .automation import TextEvent
 
 
 class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
@@ -24,10 +27,10 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def remove_client(self, client):
         self.clients.remove(client)
 
-    def broadcast(self, event):
+    def broadcast(self, event: TextEvent):
         """Broadcast an event to each connected client."""
 
-        self.logger.debug(f"broadcast {event} to {self.clients}")
+        self.logger.debug(f"broadcast {asdict(event)} to {self.clients}")
         for client in self.clients:
             client.send_screen_event(event)
 
@@ -36,7 +39,7 @@ class AutomationClient(socketserver.BaseRequestHandler):
     def setup(self):
         self.logger = logging.getLogger("automation")
         self.condition = threading.Condition()
-        self.events = []
+        self.events: List[TextEvent] = []
         self.logger.debug(f"new client from {self.client_address}")
         self.server.add_client(self)
 
@@ -48,7 +51,7 @@ class AutomationClient(socketserver.BaseRequestHandler):
 
             while self.events:
                 event = self.events.pop(0)
-                data = json.dumps(event).encode()
+                data = json.dumps(asdict(event)).encode()
                 try:
                     self.request.sendall(data + b"\n")
                 except BrokenPipeError:

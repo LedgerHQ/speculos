@@ -131,7 +131,7 @@ def find_char_from_bitmap(bitmap: BitMap):
 
 class NanoXOCR:
     def __init__(self):
-        self.events = []
+        self.events: List[TextEvent] = []
 
     def analyze_bitmap(self, data: bytes):
         if data[0] != 0:

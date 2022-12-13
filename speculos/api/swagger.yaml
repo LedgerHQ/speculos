@@ -87,7 +87,7 @@ paths:
         schema:
           type: boolean
           default: false
-      - name: "screencontent"
+      - name: "currentscreenonly"
         description: "Only return the events of the current screen"
         in: query
         required: false

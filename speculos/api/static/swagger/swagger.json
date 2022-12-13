@@ -216,7 +216,7 @@
             }
           },
           {
-            "name": "screencontent",
+            "name": "currentscreenonly",
             "in": "query",
             "description": "Only return the events of the current screen",
             "required": false,
