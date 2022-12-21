@@ -87,6 +87,13 @@ paths:
         schema:
           type: boolean
           default: false
+      - name: "currentscreenonly"
+        description: "Only return the events of the current screen"
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           description: "List of events separated by line-returns"

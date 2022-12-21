@@ -1,14 +1,15 @@
 from collections import namedtuple
-from dataclasses import asdict
 import logging
 import sys
 import time
 import threading
 from enum import IntEnum
+from typing import List
 
 from . import usb
 from .nanox_ocr import NanoXOCR
 from .readerror import ReadError, WriteError
+from .automation import TextEvent
 
 
 class SephTag(IntEnum):
@@ -145,7 +146,7 @@ class SeProxyHal:
         self.printf_queue = ''
         self.automation = automation
         self.automation_server = automation_server
-        self.events = []
+        self.events: List[TextEvent] = []
 
         self.status_event = threading.Event()
         self.packet_thread = PacketThread(self.s, self.status_event)
@@ -188,9 +189,9 @@ class SeProxyHal:
         except BrokenPipeError:
             raise WriteError("Broken pipe, failed to send data to the app")
 
-    def apply_automation_helper(self, event):
+    def apply_automation_helper(self, event: TextEvent):
         if self.automation_server:
-            self.automation_server.broadcast(asdict(event))
+            self.automation_server.broadcast(event)
 
         if self.automation:
             actions = self.automation.get_actions(event.text, event.x, event.y)
