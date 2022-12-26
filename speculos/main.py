@@ -17,6 +17,7 @@ import socket
 import sys
 import threading
 
+from distutils.spawn import find_executable
 import pkg_resources
 
 from .api import ApiRunner, EventsBroadcaster
@@ -212,6 +213,11 @@ def setup_logging(args):
 
 
 def main(prog=None):
+    if not find_executable("tesseract"):
+        error_message = "tesseract-ocr is not found and is required to run Speculos.\n"
+        error_message += "Please run `sudo apt install tesseract-ocr`"
+        raise RuntimeError(error_message)
+
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
