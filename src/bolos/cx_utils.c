@@ -233,7 +233,11 @@ int sys_cx_math_next_prime(uint8_t *buf, unsigned int len)
       errx(1, "BN_add_word");
     }
 
+#if OPENSSL_VERSION_MAJOR >= 3
+    ret = BN_check_prime(p, ctx, NULL);
+#else
     ret = BN_is_prime_ex(p, 20, ctx, NULL);
+#endif
   } while (ret == 0);
 
   if (ret == -1) {
