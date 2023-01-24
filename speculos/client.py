@@ -167,7 +167,7 @@ class SpeculosInstance:
 
     def _wait_until_ready(self) -> None:
         connected = False
-        for i in range(0, 20):
+        for i in range(0, 50):
             try:
                 s = socket.create_connection(("127.0.0.1", self.port))
                 connected = True
