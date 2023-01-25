@@ -27,7 +27,7 @@ sudo apt install libvncserver-dev
 ### speculos
 
 ```shell
-cmake -Bbuild -H.
+cmake -B build/
 make -C build/
 ```
 
@@ -38,7 +38,7 @@ built. Further invocations of `make` skip this step.
 The following command line can be used for a debug build:
 
 ```shell
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
+cmake -B build/ -DCMAKE_BUILD_TYPE=Debug
 ```
 
 ### VNC support (optional)
@@ -46,5 +46,5 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
 Pass the `WITH_VNC` option to CMake:
 
 ```shell
-cmake -Bbuild -H. -DWITH_VNC=1
+cmake -B build/ -DWITH_VNC=1
 ```
