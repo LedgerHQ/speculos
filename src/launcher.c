@@ -24,14 +24,6 @@
 #define GIT_REVISION "00000000"
 #endif
 
-typedef enum {
-  MODEL_NANO_S,
-  MODEL_NANO_SP,
-  MODEL_NANO_X,
-  MODEL_BLUE,
-  MODEL_COUNT
-} hw_model_t;
-
 struct elf_info_s {
   unsigned long load_offset;
   unsigned long load_size;
@@ -66,14 +58,14 @@ static MODEL_SDK sdkmap[SDK_COUNT] = {
   { MODEL_NANO_SP, "1.0.3" }
 };
 
-static char *model_name[MODEL_COUNT] = { "nanos", "nanosp", "nanox", "blue" };
-
 static struct memory_s memory;
 static struct app_s apps[MAX_APP];
 static unsigned int napp;
 static void *extra_rampage_addr;
 static size_t extra_rampage_size;
-sdk_version_t sdk_version;
+
+sdk_version_t sdk_version = SDK_COUNT;
+hw_model_t hw_model = MODEL_COUNT;
 
 static struct app_s *current_app;
 
@@ -329,7 +321,7 @@ error:
   return NULL;
 }
 
-static int load_cxlib(hw_model_t model, char *cxlib_args)
+static int load_cxlib(char *cxlib_args)
 {
   char *cxlib_path = strdup(cxlib_args);
   uint32_t sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load;
@@ -358,7 +350,7 @@ static int load_cxlib(hw_model_t model, char *cxlib_args)
   }
 
   // Map CXRAM on non NanoS devices
-  if (model != MODEL_NANO_S) {
+  if (hw_model != MODEL_NANO_S) {
     if (mmap((void *)cx_ram_load, cx_ram_size, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
       warn("mmap cxram");
@@ -480,15 +472,22 @@ static int load_apps(int argc, char *argv[])
   return 0;
 }
 
-static sdk_version_t str2sdkver(hw_model_t model, char *arg)
+static sdk_version_t apilevelstr2sdkver(const char *api_level_arg)
+{
+  if (strcmp("1", api_level_arg) == 0) {
+    return SDK_API_LEVEL_1;
+  } else {
+    return SDK_COUNT;
+  }
+}
+
+static sdk_version_t sdkstr2sdkver(const char *sdk_arg)
 {
   sdk_version_t version;
 
   for (version = 0; version < SDK_COUNT; version++) {
-    if (sdkmap[version].model == model &&
-        strcmp(sdkmap[version].sdk, arg) == 0) {
-      fprintf(stderr, "[*] using SDK version %s on %s\n", sdkmap[version].sdk,
-              model_name[model]);
+    if (sdkmap[version].model == hw_model &&
+        strcmp(sdkmap[version].sdk, sdk_arg) == 0) {
       break;
     }
   }
@@ -499,41 +498,45 @@ static sdk_version_t str2sdkver(hw_model_t model, char *arg)
 static void usage(char *argv0)
 {
   fprintf(stderr,
-          "Usage: %s [-t] [-r <rampage:ramsize> -k <sdk_version>] <app.elf> "
+          "Usage: %s [-t] [-r <rampage:ramsize> -k <sdk_version> -a "
+          "<api_level>] <app.elf> "
           "[libname:lib.elf:0x1000:0x9fc0:0x20001800:0x1800 ...]\n",
           argv0);
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
                         ted. Currently supports \"nanos\", \"nanosp\", \"nanox\" and \"blue\".\n\
-  -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n");
+  -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n\
+  -a <api_level>:       A string representing the SDK api level to be used, like \"1\".\n");
   exit(EXIT_FAILURE);
 }
 
 int main(int argc, char *argv[])
 {
   char *cxlib_path = NULL;
-  hw_model_t model;
+
   int opt;
 
   trace_syscalls = false;
-  // Nano S with SDK 2.0 by default:
-  sdk_version = SDK_NANO_S_2_0;
-  model = MODEL_NANO_S;
-  char *sdk = sdkmap[SDK_NANO_S_2_0].sdk;
+  char *model_str = NULL;
+  char *sdk = NULL;
+  char *api_level = NULL;
 
   extra_rampage_addr = NULL;
   extra_rampage_size = 0;
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:")) != -1) {
     switch (opt) {
     case 'c':
       cxlib_path = optarg;
       break;
     case 'k':
       sdk = optarg;
+      break;
+    case 'a':
+      api_level = optarg;
       break;
     case 't':
       trace_syscalls = true;
@@ -545,14 +548,15 @@ int main(int argc, char *argv[])
       }
       break;
     case 'm':
+      model_str = optarg;
       if (strcmp(optarg, "nanos") == 0) {
-        model = MODEL_NANO_S;
+        hw_model = MODEL_NANO_S;
       } else if (strcmp(optarg, "nanox") == 0) {
-        model = MODEL_NANO_X;
+        hw_model = MODEL_NANO_X;
       } else if (strcmp(optarg, "blue") == 0) {
-        model = MODEL_BLUE;
+        hw_model = MODEL_BLUE;
       } else if (strcmp(optarg, "nanosp") == 0) {
-        model = MODEL_NANO_SP;
+        hw_model = MODEL_NANO_SP;
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
@@ -567,13 +571,25 @@ int main(int argc, char *argv[])
     usage(argv[0]);
   }
 
-  sdk_version = str2sdkver(model, sdk);
-
-  if (sdk_version == SDK_COUNT) {
-    errx(1, "invalid SDK version");
+  if (hw_model == MODEL_COUNT) {
+    errx(1, "invalid model");
   }
 
-  switch (model) {
+  if (api_level != NULL) {
+    sdk_version = apilevelstr2sdkver(api_level);
+    if (sdk_version == SDK_COUNT) {
+      errx(1, "invalid SDK api_level: %s", api_level);
+    }
+  } else {
+    sdk_version = sdkstr2sdkver(sdk);
+    if (sdk_version == SDK_COUNT) {
+      errx(1, "invalid SDK version: %s", sdk);
+    }
+  }
+
+  fprintf(stderr, "[*] using SDK version %u on %s\n", sdk_version, model_str);
+
+  switch (hw_model) {
   case MODEL_NANO_S:
     if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_NANO_S_1_6 &&
         sdk_version != SDK_NANO_S_2_0 && sdk_version != SDK_NANO_S_2_1) {
@@ -582,7 +598,7 @@ int main(int argc, char *argv[])
     break;
   case MODEL_NANO_X:
     if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
-        sdk_version != SDK_NANO_X_2_0_2) {
+        sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -592,7 +608,8 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_NANO_SP:
-    if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3) {
+    if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
+        sdk_version != SDK_API_LEVEL_1) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
@@ -610,8 +627,9 @@ int main(int argc, char *argv[])
 
   if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
       sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
-      sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3) {
-    if (load_cxlib(model, cxlib_path) != 0) {
+      sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3 ||
+      sdk_version == SDK_API_LEVEL_1) {
+    if (load_cxlib(cxlib_path) != 0) {
       return 1;
     }
   }
