@@ -46,6 +46,28 @@ def set_pdeath(sig):
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
 
+ELF_METADATA_SECTIONS = [
+    "target",
+    "app_name",
+    "app_version",
+    "api_level"
+]
+
+
+def get_elf_ledger_metadata(app_path):
+    with open(app_path, 'rb') as fp:
+        elf = ELFFile(fp)
+        metadata = {}
+        for section_name in ELF_METADATA_SECTIONS:
+            section = elf.get_section_by_name(f"ledger.{section_name}")
+            if section:
+                metadata[section_name] = section.data().decode("utf-8").strip()
+                if section_name == "target":
+                    if metadata[section_name] == "nanos2":
+                        metadata[section_name] = "nanosp"
+    return metadata
+
+
 def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
@@ -93,17 +115,25 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     if args.trace:
         argv += ['-t']
 
-    if args.model is not None:
-        argv += ['-m', args.model]
+    argv += ['-m', args.model]
 
-    argv += ['-k', str(args.sdk)]
+    if args.apiLevel:
+        argv += ['-a', str(args.apiLevel)]
+    else:
+        argv += ['-k', str(args.sdk)]
 
-    # load cxlib only if available for the specified sdk
-    cxlib = pkg_resources.resource_filename(__name__, f"/cxlib/{args.model}-cx-{args.sdk}.elf")
+    # load cxlib only if available for the specified api level or sdk
+    if args.apiLevel:
+        cxlib_filepath = f"/cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
+    else:
+        cxlib_filepath = f"/cxlib/{args.model}-cx-{args.sdk}.elf"
+    cxlib = pkg_resources.resource_filename(__name__, cxlib_filepath)
     if os.path.exists(cxlib):
         sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
         cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
         argv += ['-c', cxlib_args]
+    else:
+        logger.warn(f"Cx lib {cxlib_filepath} not found")
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
@@ -183,11 +213,12 @@ def main(prog=None):
     parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce '
                                                                 'deterministic randomness')
     parser.add_argument('-k', '--sdk', type=str, help='SDK version')
+    parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
                         'Bitcoin:app/btc.elf) which can be called through os_lib_call')
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
                                                                          'can be specified multiple times')
-    parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
+    parser.add_argument('-m', '--model', choices=list(display.MODELS.keys()))
     parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. '
                                                 '0x123000:0x100). Supersedes the internal probing for such page.')
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: '
@@ -220,7 +251,37 @@ def main(prog=None):
     if prog:
         parser.prog = prog
     args = parser.parse_args()
-    args.model.lower()
+
+    if args.model:
+        args.model = args.model.lower()
+
+    # Init model and api_level if not specified from app elf metadata
+    app_path = getattr(args, 'app.elf')
+    metadata = get_elf_ledger_metadata(app_path)
+    if not args.model:
+        if "target" not in metadata:
+            logger.error("Device model not detected from elf. Then it must be specified")
+            sys.exit(1)
+        else:
+            args.model = metadata["target"]
+            logger.warn(f"Device model detected from metadata: {args.model}")
+
+    if not args.apiLevel:
+        if "api_level" in metadata:
+            args.apiLevel = metadata["api_level"]
+            logger.warn(f"Api level detected from metadata: {args.apiLevel}")
+
+    # Check model and api_level against all lib elf metadata
+    for path in [app_path] + [x.split(":")[1] for x in args.library]:
+        metadata = get_elf_ledger_metadata(path)
+
+        if args.model != metadata.get("target", args.model):
+            logger.error(f"Invalid model in {path}")
+            sys.exit(1)
+
+        if args.apiLevel != metadata.get("api_level", args.apiLevel):
+            logger.error(f"Invalid api_level in {path}")
+            sys.exit(1)
 
     setup_logging(args)
 
@@ -267,14 +328,22 @@ def main(prog=None):
     else:
         from .mcu.screen import QtScreen as Screen
 
-    if args.sdk is None:
+    if args.sdk and args.apiLevel:
+        logger.error("Either SDK version or api level should be specified")
+        sys.exit(1)
+
+    if args.apiLevel is None and args.sdk is None:
         default_sdk = {
             "nanos": "2.1",
             "nanox": "2.0.2",
             "blue": "blue-2.2.5",
-            "nanosp": "1.0"
+            "nanosp": "1.0.4"
         }
         args.sdk = default_sdk.get(args.model)
+
+    if args.model == "nanosp" and args.sdk == "1.0.4":
+        # NanoS+ 1.0.4 OS can be emulated as 1.0.3 OS
+        args.sdk = "1.0.3"
 
     api_enabled = (args.api_port != 0)
 

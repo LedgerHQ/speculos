@@ -6,16 +6,19 @@
 #include <stdio.h>
 
 #include "bolos/bagl.h"
-#include "bolos/cx.h"
+#include "bolos/cx_aes.h"
 #include "bolos/cxlib.h"
 #include "bolos/endorsement.h"
 #include "emulate.h"
 
-#include "bolos_syscalls_lnsp.h"
+#include "bolos_syscalls_api_level_1.h"
 
-int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
-                       unsigned long *ret, bool verbose)
+int emulate_sdk_api_level_1(unsigned long syscall, unsigned long *parameters,
+                            unsigned long *ret, bool verbose, hw_model_t model)
 {
+  (void)
+      model; // Will be necessary if syscall behaves differently between devices
+
   switch (syscall) {
     /* clang-format off */
   SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
@@ -315,9 +318,7 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
              unsigned char, index, unsigned char *, buffer);
 
   default:
-    fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
     break;
   }
-  /* retid is no longer used in SDK 2.0 */
   return 0;
 }

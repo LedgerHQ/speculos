@@ -147,7 +147,7 @@ jobs:
         options: -v ${{ github.workspace }}/apps/:/apps/
         run: |
           apt-get update && apt-get install -qy netcat
-          /speculos/speculos.py /apps/btc.elf --display=headless  --apdu-port 9999 &
+          /speculos/speculos.py /apps/btc.elf --model nanos --display=headless  --apdu-port 9999 &
           until `nc -w5 -z -v 127.0.0.1 9999`; do sleep 1; done;
 
   deploy_docker:
