@@ -8,8 +8,8 @@ import string
 from .automation import TextEvent
 from . import bagl_font
 
-MIN_WORD_CONFIDENCE_LVL = 0 #percent
-NEW_LINE_THRESHOLD = 10 #pixels
+MIN_WORD_CONFIDENCE_LVL = 0  # percent
+NEW_LINE_THRESHOLD = 10  # pixels
 
 BitMap = bytes
 BitVector = str  # a string of '1' and '0'
@@ -158,18 +158,19 @@ class OCR:
 
     def analyze_image(self, screen_size: (int, int), data: bytes):
         image = Image.frombytes("RGB", screen_size, data)
-        data = image_to_data(image,output_type=Output.DICT)
+        data = image_to_data(image, output_type=Output.DICT)
         new_text_has_been_added = False
         for item in range(len(data["text"])):
             if (data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
-                if new_text_has_been_added and self.events and data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD :
+                if new_text_has_been_added and self.events and \
+                   data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD:
                     self.events[-1].text += " "+data["text"][item]
                 else:
                     x = data["left"][item]
                     y = data["top"][item]
-                    self.events.append(TextEvent(data['text'][item], x, y))      
+                    self.events.append(TextEvent(data['text'][item], x, y))
                     new_text_has_been_added = True
-        
+
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()
         self.events = []
