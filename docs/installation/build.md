@@ -13,7 +13,9 @@ sudo apt install \
     cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
     python3-pyqt5 python3-construct python3-flask-restful python3-jsonschema \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
-    qemu-user-static
+    qemu-user-static tesseract-ocr libtesseract-dev
+
+pip install pytesseract
 ```
 
 For optional VNC support, please also install `libvncserver-dev`:

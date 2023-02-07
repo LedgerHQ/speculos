@@ -17,12 +17,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     libvncserver-dev \
     python3-pip \
     qemu-user-static \
+    tesseract-ocr \
+    libtesseract-dev \
     wget && \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/
 
 # There are issues with PYTHONHOME if using distro packages, use pip instead.
-RUN pip3 install construct flake8 flask flask_restful jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow requests
+RUN pip3 install construct flake8 flask flask_restful jsonschema mnemonic pycrypto pyelftools pbkdf2 pytest Pillow requests pytesseract
 
 # Create SHA256SUMS, download dependencies and verify their integrity
 RUN \

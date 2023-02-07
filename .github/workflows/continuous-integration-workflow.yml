@@ -103,6 +103,7 @@ jobs:
     # to be cleanly upgrade Python packages.
     - name: Build Speculos python package
       run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
         if [ -e dist ] ; then
           echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
           exit 1
@@ -147,7 +148,7 @@ jobs:
         options: -v ${{ github.workspace }}/apps/:/apps/
         run: |
           apt-get update && apt-get install -qy netcat
-          /speculos/speculos.py /apps/btc.elf --display=headless  --apdu-port 9999 &
+          /speculos/speculos.py /apps/btc.elf --model nanos --display=headless  --apdu-port 9999 &
           until `nc -w5 -z -v 127.0.0.1 9999`; do sleep 1; done;
 
   deploy_docker:

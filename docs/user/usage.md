@@ -89,3 +89,12 @@ Launch the Bitcoin Testnet app, which requires the Bitcoin app:
 ```shell
 ./speculos.py ./apps/btc-test.elf -l Bitcoin:./apps/btc.elf
 ```
+
+## OCR
+
+OCR is available for NanoX with built in character recognition.
+
+Stax makes use of the Tessseract library for OCR, with known issues for detecting inverted text. 
+
+Launching Speculos with `--force-full-ocr` flag forces all text to be written in black over a white background,
+having an visible effect on the display but solving the latter issue.

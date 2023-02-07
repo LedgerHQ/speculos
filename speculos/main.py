@@ -17,6 +17,7 @@ import socket
 import sys
 import threading
 
+from distutils.spawn import find_executable
 import pkg_resources
 
 from .api import ApiRunner, EventsBroadcaster
@@ -44,6 +45,28 @@ def set_pdeath(sig):
     PR_SET_PDEATHSIG = 1
     libc = ctypes.cdll.LoadLibrary('libc.so.6')
     libc.prctl(PR_SET_PDEATHSIG, sig)
+
+
+ELF_METADATA_SECTIONS = [
+    "target",
+    "app_name",
+    "app_version",
+    "api_level"
+]
+
+
+def get_elf_ledger_metadata(app_path):
+    with open(app_path, 'rb') as fp:
+        elf = ELFFile(fp)
+        metadata = {}
+        for section_name in ELF_METADATA_SECTIONS:
+            section = elf.get_section_by_name(f"ledger.{section_name}")
+            if section:
+                metadata[section_name] = section.data().decode("utf-8").strip()
+                if section_name == "target":
+                    if metadata[section_name] == "nanos2":
+                        metadata[section_name] = "nanosp"
+    return metadata
 
 
 def get_elf_infos(app_path):
@@ -93,17 +116,33 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     if args.trace:
         argv += ['-t']
 
-    if args.model is not None:
-        argv += ['-m', args.model]
+    argv += ['-m', args.model]
 
-    argv += ['-k', str(args.sdk)]
+    if args.apiLevel:
+        argv += ['-a', str(args.apiLevel)]
+    else:
+        argv += ['-k', str(args.sdk)]
 
-    # load cxlib only if available for the specified sdk
-    cxlib = pkg_resources.resource_filename(__name__, f"/cxlib/{args.model}-cx-{args.sdk}.elf")
+    # load cxlib only if available for the specified api level or sdk
+    if args.apiLevel:
+        cxlib_filepath = f"/cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
+    else:
+        cxlib_filepath = f"/cxlib/{args.model}-cx-{args.sdk}.elf"
+    cxlib = pkg_resources.resource_filename(__name__, cxlib_filepath)
     if os.path.exists(cxlib):
         sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
         cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
         argv += ['-c', cxlib_args]
+    else:
+        logger.warn(f"Cx lib {cxlib_filepath} not found")
+
+    if args.model == "stax":
+        fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
+        if os.path.exists(fonts):
+            argv += ['-f', fonts]
+        else:
+            logger.warn(f"Fonts {fonts_filepath} not found")
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
@@ -174,6 +213,11 @@ def setup_logging(args):
 
 
 def main(prog=None):
+    if not find_executable("tesseract"):
+        error_message = "tesseract-ocr is not found and is required to run Speculos.\n"
+        error_message += "Please run `sudo apt install tesseract-ocr`"
+        raise RuntimeError(error_message)
+
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
@@ -183,11 +227,12 @@ def main(prog=None):
     parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce '
                                                                 'deterministic randomness')
     parser.add_argument('-k', '--sdk', type=str, help='SDK version')
+    parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
                         'Bitcoin:app/btc.elf) which can be called through os_lib_call')
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
                                                                          'can be specified multiple times')
-    parser.add_argument('-m', '--model', default='nanos', choices=list(display.MODELS.keys()))
+    parser.add_argument('-m', '--model', choices=list(display.MODELS.keys()))
     parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. '
                                                 '0x123000:0x100). Supersedes the internal probing for such page.')
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: '
@@ -216,11 +261,52 @@ def main(prog=None):
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument('--force-full-ocr', action='store_true',
+                       help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
 
     if prog:
         parser.prog = prog
     args = parser.parse_args()
-    args.model.lower()
+
+    if args.model:
+        args.model = args.model.lower()
+
+    # Init model and api_level if not specified from app elf metadata
+    app_path = getattr(args, 'app.elf')
+    metadata = get_elf_ledger_metadata(app_path)
+    if not args.model:
+        if "target" not in metadata:
+            logger.error("Device model not detected from elf. Then it must be specified")
+            sys.exit(1)
+        else:
+            args.model = metadata["target"]
+            logger.warn(f"Device model detected from metadata: {args.model}")
+
+    if not args.apiLevel:
+        if "api_level" in metadata:
+            args.apiLevel = metadata["api_level"]
+            logger.warn(f"Api level detected from metadata: {args.apiLevel}")
+
+    # Check args.apiLevel, 0 is an invalid value
+    if args.apiLevel == 0:
+        logger.error(f"Invalid api_level {args.apiLevel}")
+        sys.exit(1)
+
+    # Check model and api_level against all lib elf metadata
+    for path in [app_path] + [x.split(":")[1] for x in args.library]:
+        metadata = get_elf_ledger_metadata(path)
+
+        elf_model = metadata.get("target", args.model)
+        if args.model != elf_model:
+            logger.error(f"Invalid model in {path} ({elf_model} vs {args.model})")
+            sys.exit(1)
+
+        elf_api_level = metadata.get("api_level", 0)
+        # Check args.apiLevel against elf api level. If elf api level == 0 (SDK master
+        # reserved value) ignore it.
+        if elf_api_level != 0 and args.apiLevel != elf_api_level:
+            logger.error(f"Invalid api_level in {path} ({elf_api_level} vs {args.apiLevel})")
+            sys.exit(1)
 
     setup_logging(args)
 
@@ -267,14 +353,22 @@ def main(prog=None):
     else:
         from .mcu.screen import QtScreen as Screen
 
-    if args.sdk is None:
+    if args.sdk and args.apiLevel:
+        logger.error("Either SDK version or api level should be specified")
+        sys.exit(1)
+
+    if args.apiLevel is None and args.sdk is None:
         default_sdk = {
             "nanos": "2.1",
             "nanox": "2.0.2",
             "blue": "blue-2.2.5",
-            "nanosp": "1.0"
+            "nanosp": "1.0.4"
         }
         args.sdk = default_sdk.get(args.model)
+
+    if args.model == "nanosp" and args.sdk == "1.0.4":
+        # NanoS+ 1.0.4 OS can be emulated as 1.0.3 OS
+        args.sdk = "1.0.3"
 
     api_enabled = (args.api_port != 0)
 
@@ -327,6 +421,7 @@ def main(prog=None):
             "nanox": 2,
             "nanosp": 2,
             "blue": 1,
+            "stax": 1,
         }
         zoom = default_zoom.get(args.model)
 
@@ -338,7 +433,8 @@ def main(prog=None):
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
-    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
+    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
+                                       args.keymap, zoom, x, y, args.force_full_ocr)
     server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 
