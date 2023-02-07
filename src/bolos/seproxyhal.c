@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "bolos/exception.h"
+#include "bolos/touch.h"
 #include "emulate.h"
 
 #define SEPROXYHAL_TAG_STATUS_MASK 0x60
@@ -87,10 +88,6 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
     last_tag = buffer[0];
     next_length = (buffer[1] << 8) | buffer[2];
     next_length += 3;
-
-    if (next_length > 300) {
-      THROW(INVALID_PARAMETER);
-    }
   } else {
     if (length > next_length) {
       THROW(INVALID_PARAMETER);
@@ -136,6 +133,8 @@ unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength,
   }
 
   status_sent = false;
+
+  catch_touch_info_from_seph(buffer, packet_size);
 
   return 3 + packet_size;
 }

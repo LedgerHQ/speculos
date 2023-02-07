@@ -124,8 +124,8 @@ class Api:
         with self.session.post(f"{self.api_url}/button/{button}", json=data) as response:
             check_status_code(response, f"/button/{button}")
 
-    def finger_touch(self, x: int, y: int) -> None:
-        data = {"action": "press-and-release", "x": x, "y": y}
+    def finger_touch(self, x: int, y: int, delay: float = 0.5) -> None:
+        data = {"action": "press-and-release", "x": x, "y": y, "delay": delay}
         with self.session.post(f"{self.api_url}/finger", json=data) as response:
             check_status_code(response, "/finger")
 

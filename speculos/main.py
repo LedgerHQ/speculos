@@ -17,6 +17,7 @@ import socket
 import sys
 import threading
 
+from distutils.spawn import find_executable
 import pkg_resources
 
 from .api import ApiRunner, EventsBroadcaster
@@ -135,6 +136,14 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         logger.warn(f"Cx lib {cxlib_filepath} not found")
 
+    if args.model == "stax":
+        fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
+        if os.path.exists(fonts):
+            argv += ['-f', fonts]
+        else:
+            logger.warn(f"Fonts {fonts_filepath} not found")
+
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
@@ -204,6 +213,11 @@ def setup_logging(args):
 
 
 def main(prog=None):
+    if not find_executable("tesseract"):
+        error_message = "tesseract-ocr is not found and is required to run Speculos.\n"
+        error_message += "Please run `sudo apt install tesseract-ocr`"
+        raise RuntimeError(error_message)
+
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
@@ -247,6 +261,8 @@ def main(prog=None):
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument('--force-full-ocr', action='store_true',
+                       help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
 
     if prog:
         parser.prog = prog
@@ -271,16 +287,25 @@ def main(prog=None):
             args.apiLevel = metadata["api_level"]
             logger.warn(f"Api level detected from metadata: {args.apiLevel}")
 
+    # Check args.apiLevel, 0 is an invalid value
+    if args.apiLevel == 0:
+        logger.error(f"Invalid api_level {args.apiLevel}")
+        sys.exit(1)
+
     # Check model and api_level against all lib elf metadata
     for path in [app_path] + [x.split(":")[1] for x in args.library]:
         metadata = get_elf_ledger_metadata(path)
 
-        if args.model != metadata.get("target", args.model):
-            logger.error(f"Invalid model in {path}")
+        elf_model = metadata.get("target", args.model)
+        if args.model != elf_model:
+            logger.error(f"Invalid model in {path} ({elf_model} vs {args.model})")
             sys.exit(1)
 
-        if args.apiLevel != metadata.get("api_level", args.apiLevel):
-            logger.error(f"Invalid api_level in {path}")
+        elf_api_level = metadata.get("api_level", 0)
+        # Check args.apiLevel against elf api level. If elf api level == 0 (SDK master
+        # reserved value) ignore it.
+        if elf_api_level != 0 and args.apiLevel != elf_api_level:
+            logger.error(f"Invalid api_level in {path} ({elf_api_level} vs {args.apiLevel})")
             sys.exit(1)
 
     setup_logging(args)
@@ -396,6 +421,7 @@ def main(prog=None):
             "nanox": 2,
             "nanosp": 2,
             "blue": 1,
+            "stax": 1,
         }
         zoom = default_zoom.get(args.model)
 
@@ -407,7 +433,8 @@ def main(prog=None):
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
-    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
+    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
+                                       args.keymap, zoom, x, y, args.force_full_ocr)
     server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 

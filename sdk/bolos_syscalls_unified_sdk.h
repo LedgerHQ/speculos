@@ -165,3 +165,11 @@
 #define SYSCALL_bagl_hal_draw_rect_ID_IN                              0x0500007d
 #define SYSCALL_io_button_read_ID_IN                                  0x0000008f
 #define SYSCALL_os_seph_serial_ID_IN                                  0x0200006d
+
+#define SYSCALL_nbgl_front_draw_rect_ID_IN                            0x01fa0000
+#define SYSCALL_nbgl_front_draw_horizontal_line_ID_IN                 0x03fa0001
+#define SYSCALL_nbgl_front_draw_img_ID_IN                             0x04fa0002
+#define SYSCALL_nbgl_front_refresh_area_ID_IN                         0x02fa0003
+#define SYSCALL_nbgl_front_draw_img_file_ID_IN                        0x05fa0004
+#define SYSCALL_touch_get_last_info_ID_IN                             0x01fa000b
+#define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
