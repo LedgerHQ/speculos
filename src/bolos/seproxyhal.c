@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "bolos/exception.h"
+#include "bolos/touch.h"
 #include "emulate.h"
 
 #define SEPROXYHAL_TAG_STATUS_MASK 0x60
@@ -106,15 +107,6 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
 
 unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length)
     __attribute__((weak, alias("sys_io_seproxyhal_spi_send")));
-
-/**
- * Implemented in the emulate stax source file.
- * This function catches the touch infos that are
- * transmit though seph.
- * The caught infos can be returned by the touch_get_last_info syscall.
-
- */
-void catch_touch_info_from_seph(uint8_t *buffer, uint16_t size);
 
 /* XXX: use flags */
 unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength,

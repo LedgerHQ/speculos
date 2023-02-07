@@ -53,8 +53,9 @@ int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters,
                        unsigned long *ret, bool verbose);
 int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
                        unsigned long *ret, bool verbose);
-int emulate_sdk_api_level_1(unsigned long syscall, unsigned long *parameters,
-                            unsigned long *ret, bool verbose, hw_model_t model);
+int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,
+                        unsigned long *ret, bool verbose, sdk_version_t version,
+                        hw_model_t model);
 
 unsigned long sys_os_version(uint8_t *buffer, unsigned int len);
 unsigned int sys_os_serial(unsigned char *serial, unsigned int maxlength);
