@@ -30,7 +30,7 @@ make -C build/ test ARGS='-V -R test_bip32'
 
 In order to build with code coverage instrumentation, the CMake configuration supports `CODE_COVERAGE` macro:
 ```shell
-cmake -Bbuild -H. -DCODE_COVERAGE=ON
+cmake -B build/ -DCODE_COVERAGE=ON -S .
 make -C build/ clean
 make -C build/ all
 ```
