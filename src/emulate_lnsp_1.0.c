@@ -315,7 +315,7 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
              unsigned char, index, unsigned char *, buffer);
 
   default:
-    fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
+    emulate_common(syscall, parameters, ret, verbose);
     break;
   }
   /* retid is no longer used in SDK 2.0 */
