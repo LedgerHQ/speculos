@@ -302,7 +302,7 @@ def main(prog=None):
             logger.warn(f"Api level detected from metadata: {args.apiLevel}")
 
     # Check args.apiLevel, 0 is an invalid value
-    if args.apiLevel == 0:
+    if args.apiLevel == "0":
         logger.error(f"Invalid api_level {args.apiLevel}")
         sys.exit(1)
 
@@ -315,10 +315,10 @@ def main(prog=None):
             logger.error(f"Invalid model in {path} ({elf_model} vs {args.model})")
             sys.exit(1)
 
-        elf_api_level = metadata.get("api_level", 0)
+        elf_api_level = metadata.get("api_level", "0")
         # Check args.apiLevel against elf api level. If elf api level == 0 (SDK master
         # reserved value) ignore it.
-        if elf_api_level != 0 and args.apiLevel != elf_api_level:
+        if elf_api_level != "0" and args.apiLevel != elf_api_level:
             logger.error(f"Invalid api_level in {path} ({elf_api_level} vs {args.apiLevel})")
             sys.exit(1)
 
