@@ -152,6 +152,7 @@
 #define SYSCALL_os_deny_protected_flash_ID_IN 0x60009134UL
 #define SYSCALL_os_allow_protected_ram_ID_IN 0x60009269UL
 #define SYSCALL_os_deny_protected_ram_ID_IN 0x600093e9UL
+#define SYSCALL_screen_clear_ID_IN 0x600079f4UL
 #define SYSCALL_screen_update_ID_IN 0x60007af3UL
 #define SYSCALL_bagl_hal_draw_bitmap_within_rect_ID_IN 0x60007ca0UL
 #define SYSCALL_bagl_hal_draw_rect_ID_IN 0x60007da4UL
