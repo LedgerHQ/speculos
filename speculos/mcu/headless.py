@@ -17,7 +17,8 @@ class Headless(Display):
         if display.model != "stax":
             self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size)
         else:
-            self.nbgl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, display.force_full_ocr)
+            self.nbgl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, display.force_full_ocr,
+                                  display.disable_tesseract)
 
     def display_status(self, data):
         ret = self.bagl.display_status(data)
