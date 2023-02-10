@@ -36,6 +36,8 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
            unsigned int, width,
            unsigned int, height);
 
+  SYSCALL0(screen_clear);
+
   SYSCALL0(screen_update);
 
   SYSCALL0(get_api_level);
