@@ -12,7 +12,20 @@ typedef enum {
   SDK_BLUE_2_2_5,
   SDK_NANO_SP_1_0,
   SDK_NANO_SP_1_0_3,
+  SDK_API_LEVEL_1,
+  SDK_API_LEVEL_3,
   SDK_COUNT
 } sdk_version_t;
 
 extern sdk_version_t sdk_version;
+
+typedef enum {
+  MODEL_NANO_S,
+  MODEL_NANO_SP,
+  MODEL_NANO_X,
+  MODEL_BLUE,
+  MODEL_STAX,
+  MODEL_COUNT
+} hw_model_t;
+
+extern hw_model_t hw_model;

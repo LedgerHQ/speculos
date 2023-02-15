@@ -2,13 +2,15 @@
 
 name: Continuous Integration
 
-# Controls when the action will run. Triggers the workflow on push or pull
-# request events but only for the master branch
+# Controls when the action will run. Triggers the workflow on pull request events,
+# and also push events but only for the develop or master branches
 on:
+  workflow_dispatch:
   push:
-    branches: [ master ]
+    branches:
+      - master
+      - develop
   pull_request:
-    branches: [ master ]
 
 jobs:
 
@@ -103,11 +105,12 @@ jobs:
     # to be cleanly upgrade Python packages.
     - name: Build Speculos python package
       run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
         if [ -e dist ] ; then
           echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
           exit 1
         fi
-        sed -i 's;docs/screenshot-api-nanos-btc\.png;https://raw.githubusercontent.com/LedgerHQ/speculos/master/docs/screenshot-api-nanos-btc.png;' README.md
+        sed -i 's;docs/screenshot-api-nanos-btc\.png;https://raw.githubusercontent.com/LedgerHQ/speculos/develop/docs/screenshot-api-nanos-btc.png;' README.md
         ./tools/update_setup_version_from_git.sh
         python3 -m venv venv-build
         ./venv-build/bin/pip install --upgrade pip build twine
@@ -117,7 +120,7 @@ jobs:
     # TEST_PYPI_API_TOKEN is an API token created on
     # https://test.pypi.org/manage/account/#api-tokens with restriction to speculos project
     - name: Publish Python package to test.pypi.org
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/develop'
       run: |
         ./venv-build/bin/python -m twine upload --repository testpypi dist/*
       env:
@@ -147,13 +150,13 @@ jobs:
         options: -v ${{ github.workspace }}/apps/:/apps/
         run: |
           apt-get update && apt-get install -qy netcat
-          /speculos/speculos.py /apps/btc.elf --display=headless  --apdu-port 9999 &
+          /speculos/speculos.py /apps/btc.elf --model nanos --display=headless  --apdu-port 9999 &
           until `nc -w5 -z -v 127.0.0.1 9999`; do sleep 1; done;
 
   deploy_docker:
     name: Build and Upload the Speculos docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     needs: [package_and_test_docker, package_python]
     steps:
     - name: Clone

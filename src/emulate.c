@@ -10,7 +10,8 @@
 #include "bolos_syscalls_1.5.h"
 
 int emulate(unsigned long syscall, unsigned long *parameters,
-            unsigned long *ret, bool verbose, sdk_version_t version)
+            unsigned long *ret, bool verbose, sdk_version_t version,
+            hw_model_t model)
 {
   int retid = 0;
   switch (version) {
@@ -36,6 +37,11 @@ int emulate(unsigned long syscall, unsigned long *parameters,
     break;
   case SDK_BLUE_2_2_5:
     retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
+    break;
+  case SDK_API_LEVEL_1:
+  case SDK_API_LEVEL_3:
+    retid =
+        emulate_unified_sdk(syscall, parameters, ret, verbose, version, model);
     break;
   default:
     errx(1, "Unsupported SDK version %u", version);

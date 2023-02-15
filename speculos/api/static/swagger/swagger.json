@@ -214,6 +214,18 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "currentscreenonly",
+            "in": "query",
+            "description": "Only return the events of the current screen",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {

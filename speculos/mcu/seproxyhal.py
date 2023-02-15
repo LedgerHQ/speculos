@@ -1,14 +1,15 @@
 from collections import namedtuple
-from dataclasses import asdict
 import logging
 import sys
 import time
 import threading
 from enum import IntEnum
+from typing import List
 
 from . import usb
-from .nanox_ocr import NanoXOCR
+from .ocr import OCR
 from .readerror import ReadError, WriteError
+from .automation import TextEvent
 
 
 class SephTag(IntEnum):
@@ -27,6 +28,8 @@ class SephTag(IntEnum):
 
     REQUEST_STATUS = 0x52
     RAPDU = 0x53
+    PLAY_TUNE = 0x56
+
     PRINTC_STATUS = 0x5f
 
     GENERAL_STATUS = 0x60
@@ -145,7 +148,7 @@ class SeProxyHal:
         self.printf_queue = ''
         self.automation = automation
         self.automation_server = automation_server
-        self.events = []
+        self.events: List[TextEvent] = []
 
         self.status_event = threading.Event()
         self.packet_thread = PacketThread(self.s, self.status_event)
@@ -158,7 +161,7 @@ class SeProxyHal:
         self.ticker_thread.start()
         self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
 
-        self.nanox_ocr = NanoXOCR()
+        self.ocr = OCR()
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks = []
@@ -188,9 +191,9 @@ class SeProxyHal:
         except BrokenPipeError:
             raise WriteError("Broken pipe, failed to send data to the app")
 
-    def apply_automation_helper(self, event):
+    def apply_automation_helper(self, event: TextEvent):
         if self.automation_server:
-            self.automation_server.broadcast(asdict(event))
+            self.automation_server.broadcast(event)
 
         if self.automation:
             actions = self.automation.get_actions(event.text, event.x, event.y)
@@ -247,9 +250,11 @@ class SeProxyHal:
 
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
-                    if screen.screen_update():
+                    if screen.model != "stax" and screen.screen_update():
                         if screen.model in ["nanox", "nanosp"]:
-                            self.events += self.nanox_ocr.get_events()
+                            self.events += self.ocr.get_events()
+                    elif screen.model == "stax":
+                        self.events += self.ocr.get_events()
 
                     # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
                     # screen to be updated before broadcasting the events.
@@ -267,7 +272,7 @@ class SeProxyHal:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
                 if screen.model in ["nanox", "nanosp"]:
-                    self.nanox_ocr.analyze_bitmap(data)
+                    self.ocr.analyze_bitmap(data)
                 # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
                 #
                 # io_seproxyhal_spi_recv() accepts any packet from the MCU after
@@ -291,7 +296,22 @@ class SeProxyHal:
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
+            elif tag == 0x6a:
+                screen.nbgl.hal_draw_rect(data)
+            elif tag == 0x6b:
+                screen.nbgl.hal_refresh(data)
 
+                if not screen.nbgl.disable_tesseract:
+                    screen.nbgl.m.update_screenshot()
+                    screen_size, image_data = screen.nbgl.m.take_screenshot()
+                    self.ocr.analyze_image(screen_size, image_data)
+
+            elif tag == 0x6c:
+                screen.nbgl.hal_draw_line(data)
+            elif tag == 0x6d:
+                screen.nbgl.hal_draw_image(data)
+            elif tag == 0x6e:
+                screen.nbgl.hal_draw_image_file(data)
             else:
                 self.logger.error(f"unknown tag: {tag:#x}")
                 sys.exit(0)
@@ -330,6 +350,9 @@ class SeProxyHal:
 
         elif tag == SephTag.REQUEST_STATUS:
             # Ignore calls to io_seproxyhal_request_mcu_status()
+            pass
+
+        elif tag == SephTag.PLAY_TUNE:
             pass
 
         else:

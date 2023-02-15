@@ -10,7 +10,8 @@ from .vnc import VNC
 
 Server = Union[ApduServer, FakeButton, FakeFinger, SeProxyHal, VNC]
 
-DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size x y")
+DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size x y force_full_ocr, \
+        disable_tesseract")
 ServerArgs = namedtuple("ServerArgs", "apdu apirun button finger seph vnc")
 
 Model = namedtuple('Model', 'name screen_size box_position box_size')
@@ -19,6 +20,7 @@ MODELS = {
     'nanox': Model('Nano X', (128, 64), (5, 5), (10, 10)),
     'nanosp': Model('Nano SP', (128, 64), (5, 5), (10, 10)),
     'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
+    'stax': Model('Stax', (400, 672), (13, 13), (26, 26)),
 }
 
 COLORS = {
@@ -62,6 +64,7 @@ class FrameBuffer(ABC):
         "nanos": 0x00fffb,
         "nanox": 0xdddddd,
         "nanosp": 0xdddddd,
+        "stax": 0xdddddd,
     }
 
     def __init__(self, model):
@@ -72,8 +75,9 @@ class FrameBuffer(ABC):
     def draw_point(self, x, y, color):
         # There are only 2 colors on the Nano S and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
-        if color != 0x000000:
-            color = FrameBuffer.COLORS.get(self.model, color)
+        if self.model != 'stax':
+            if color != 0x000000:
+                color = FrameBuffer.COLORS.get(self.model, color)
         self.pixels[(x, y)] = color
 
     def screenshot_update_pixels(self):
@@ -89,6 +93,8 @@ class Display(ABC):
         self.apdu = server.apdu
         self.seph = server.seph
         self.model = display.model
+        self.force_full_ocr = display.force_full_ocr
+        self.disable_tesseract = display.disable_tesseract
         self.rendering = display.rendering
 
     @abstractmethod

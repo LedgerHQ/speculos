@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSocketNotifier, QSettings
+from PyQt5.QtCore import Qt, QSocketNotifier, QSettings, QRect
 
 from . import bagl
+from . import nbgl
 from .display import Display, DisplayArgs, FrameBuffer, COLORS, MODELS, ServerArgs
 from .readerror import ReadError
 
@@ -40,8 +41,11 @@ class PaintWidget(QWidget):
                 self.mPixmap.height() * self.pixel_size)
         qp.drawPixmap(0, 0, copied_pixmap)
 
-    def update(self) -> bool:
-        super().update()
+    def update(self, x=None, y=None, w=None, h=None) -> bool:
+        if x and y and w and h:
+            super().update(QRect(x, y, w, h))
+        else:
+            super().update()
         return self.fb.pixels != {}
 
     def _redraw(self, qp):
@@ -59,6 +63,9 @@ class PaintWidget(QWidget):
 
     def take_screenshot(self):
         return self.fb.take_screenshot()
+
+    def update_screenshot(self):
+        return self.fb.screenshot_update_pixels()
 
 
 class App(QMainWindow):
@@ -155,6 +162,7 @@ class App(QMainWindow):
         x, y = self._get_x_y()
         if x >= 0 and x < self.width and y >= 0 and y < self.height:
             self.seph.handle_finger(x, y, True)
+
         QApplication.setOverrideCursor(Qt.DragMoveCursor)
 
     def mouseReleaseEvent(self, event):
@@ -187,7 +195,11 @@ class Screen(Display):
         self.app = app
         super().__init__(display, server)
         self._init_notifiers(server)
-        self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
+        if display.model != "stax":
+            self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
+        else:
+            self.nbgl = nbgl.NBGL(app.m, MODELS[display.model].screen_size, display.force_full_ocr,
+                                  display.disable_tesseract)
         self.seph = server.seph
 
     def klass_can_read(self, klass, s):

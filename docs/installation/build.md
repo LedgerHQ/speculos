@@ -13,7 +13,9 @@ sudo apt install \
     cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
     python3-pyqt5 python3-construct python3-flask-restful python3-jsonschema \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
-    qemu-user-static
+    qemu-user-static tesseract-ocr libtesseract-dev
+
+pip install pytesseract
 ```
 
 For optional VNC support, please also install `libvncserver-dev`:
@@ -27,7 +29,7 @@ sudo apt install libvncserver-dev
 ### speculos
 
 ```shell
-cmake -Bbuild -H.
+cmake -B build/ -S .
 make -C build/
 ```
 
@@ -38,7 +40,7 @@ built. Further invocations of `make` skip this step.
 The following command line can be used for a debug build:
 
 ```shell
-cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
+cmake -B build/ -DCMAKE_BUILD_TYPE=Debug -S .
 ```
 
 ### VNC support (optional)
@@ -46,5 +48,5 @@ cmake -Bbuild -DCMAKE_BUILD_TYPE=Debug -H.
 Pass the `WITH_VNC` option to CMake:
 
 ```shell
-cmake -Bbuild -H. -DWITH_VNC=1
+cmake -B build/ -DWITH_VNC=1 -S .
 ```

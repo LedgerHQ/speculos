@@ -1,5 +1,6 @@
 import binascii
 import logging
+from typing import List
 from collections import namedtuple
 from construct import Aligned, Struct, Int8ul, Int16ul, Int32ul, Padded
 
@@ -472,7 +473,15 @@ class Bagl:
                              context,
                              context_encoding)
 
-    def _display_bagl_labeline(self, component, text, halignment, valignment, baseline, char_height, strwidth, type_):
+    def _display_bagl_labeline(self,
+                               component,
+                               text,
+                               halignment,
+                               valignment,
+                               baseline,
+                               char_height,
+                               strwidth,
+                               type_) -> List[TextEvent]:
         if component.fill == BAGL_FILL:
             y = component.y
             height = component.height
@@ -484,7 +493,7 @@ class Bagl:
                                y, component.width - (halignment + strwidth), height)
 
         if len(text) == 0:
-            return
+            return []
 
         # XXX
         context_encoding = 0
@@ -550,7 +559,7 @@ class Bagl:
 
         return (halignment, valignment, baseline, char_height, strwidth)
 
-    def display_status(self, data):
+    def display_status(self, data) -> List[TextEvent]:
         component = bagl_component_t.parse(data)
         context = data[bagl_component_t.sizeof():]
         context_encoding = 0  # XXX
@@ -559,7 +568,7 @@ class Bagl:
         ret = self._display_get_alignment(component, context, context_encoding)
         (halignment, valignment, baseline, char_height, strwidth) = ret
 
-        ret = None
+        ret = []
         type_ = component.type & (~BAGL_TYPE_FLAGS_MASK)
         if type_ == BAGL_NONE:
             # TODO

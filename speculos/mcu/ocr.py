@@ -1,10 +1,15 @@
 from typing import List, Mapping
 from dataclasses import dataclass
+from PIL import Image
+from pytesseract import image_to_data, Output
 import functools
 import string
 
 from .automation import TextEvent
 from . import bagl_font
+
+MIN_WORD_CONFIDENCE_LVL = 0  # percent
+NEW_LINE_THRESHOLD = 10  # pixels
 
 BitMap = bytes
 BitVector = str  # a string of '1' and '0'
@@ -129,9 +134,9 @@ def find_char_from_bitmap(bitmap: BitMap):
             return char
 
 
-class NanoXOCR:
+class OCR:
     def __init__(self):
-        self.events = []
+        self.events: List[TextEvent] = []
 
     def analyze_bitmap(self, data: bytes):
         if data[0] != 0:
@@ -150,6 +155,21 @@ class NanoXOCR:
             else:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y))
+
+    def analyze_image(self, screen_size: (int, int), data: bytes):
+        image = Image.frombytes("RGB", screen_size, data)
+        data = image_to_data(image, output_type=Output.DICT)
+        new_text_has_been_added = False
+        for item in range(len(data["text"])):
+            if (data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
+                if new_text_has_been_added and self.events and \
+                   data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD:
+                    self.events[-1].text += " "+data["text"][item]
+                else:
+                    x = data["left"][item]
+                    y = data["top"][item]
+                    self.events.append(TextEvent(data['text'][item], x, y))
+                    new_text_has_been_added = True
 
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()

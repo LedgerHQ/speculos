@@ -14,7 +14,7 @@ be found here in the
 Usage example:
 
 ```shell
-./speculos.py apps/btc.elf
+./speculos.py apps/btc.elf --model nanos
 # ... and open a browser on http://127.0.0.1:5000
 ```
 

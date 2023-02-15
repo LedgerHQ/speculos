@@ -36,6 +36,8 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
            unsigned int, width,
            unsigned int, height);
 
+  SYSCALL0(screen_clear);
+
   SYSCALL0(screen_update);
 
   SYSCALL0(get_api_level);
@@ -315,6 +317,7 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
              unsigned char, index, unsigned char *, buffer);
 
   default:
+    emulate_common(syscall, parameters, ret, verbose);
     break;
   }
   /* retid is no longer used in SDK 2.0 */

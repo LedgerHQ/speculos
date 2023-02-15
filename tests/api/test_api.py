@@ -111,6 +111,16 @@ class TestApi:
                         event = get_next_event(stream)
                         assert re.match(text, event["text"])
 
+            texts = [
+                '{"events": [{"text": "Bitcoin", "x": 41, "y": 3}, {"text": "is ready", "x": 41, "y": 17}]}\n',
+                '{"events": [{"text": "Version", "x": 43, "y": 3}, {"text": "2.0.1", "x": 52, "y": 17}]}\n',
+                '{"events": [{"text": "About", "x": 47, "y": 19}]}\n'
+            ]
+            for text in texts:
+                with r.get(f"{API_URL}/events?currentscreenonly=true") as response:
+                    assert response.content.decode("utf-8") == text
+                TestApi.press_button("right")
+
             with r.get(f"{API_URL}/events") as response:
                 assert json.loads(response.content)
 
