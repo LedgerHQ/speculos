@@ -10,7 +10,8 @@ from .vnc import VNC
 
 Server = Union[ApduServer, FakeButton, FakeFinger, SeProxyHal, VNC]
 
-DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size x y force_full_ocr")
+DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size x y force_full_ocr, \
+        disable_tesseract")
 ServerArgs = namedtuple("ServerArgs", "apdu apirun button finger seph vnc")
 
 Model = namedtuple('Model', 'name screen_size box_position box_size')
@@ -93,6 +94,7 @@ class Display(ABC):
         self.seph = server.seph
         self.model = display.model
         self.force_full_ocr = display.force_full_ocr
+        self.disable_tesseract = display.disable_tesseract
         self.rendering = display.rendering
 
     @abstractmethod

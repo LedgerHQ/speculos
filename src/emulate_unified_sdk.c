@@ -49,6 +49,8 @@ int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
              unsigned int, width,
              unsigned int, height);
 
+    SYSCALL0(screen_clear);
+
     SYSCALL0(screen_update);
 
   /* clang-format on */

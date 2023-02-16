@@ -104,6 +104,8 @@ int emulate_1_2(unsigned long syscall, unsigned long *parameters,
 
   SYSCALL1i(os_ux, "(%p)", bolos_ux_params_t *, params, os_ux_1_2);
 
+  SYSCALL0(screen_clear);
+
   SYSCALL0(screen_update);
 
   SYSCALL8(cx_aes_iv, "(%p, 0x%x, %p, %u, %p, %u, %p, %u)",

@@ -73,10 +73,18 @@ def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
         text = elf.get_section_by_name('.text')
+        for seg in elf.iter_segments():
+            if seg['p_type'] != 'PT_LOAD':
+                continue
+            if seg.section_in_segment(text):
+                text_seg = seg
+                break
+        else:
+            raise RuntimeError("No program header with text section!")
         symtab = elf.get_section_by_name('.symtab')
         bss = elf.get_section_by_name('.bss')
-        sh_offset = text['sh_offset']
-        sh_size = text['sh_size']
+        sh_offset = text_seg['p_offset']
+        sh_size = text_seg['p_filesz']
         stack = bss['sh_addr']
         sym_estack = symtab.get_symbol_by_name('_estack')
         if sym_estack is None:
@@ -213,10 +221,15 @@ def setup_logging(args):
 
 
 def main(prog=None):
+    disable_tesseract = False
     if not find_executable("tesseract"):
-        error_message = "tesseract-ocr is not found and is required to run Speculos.\n"
-        error_message += "Please run `sudo apt install tesseract-ocr`"
-        raise RuntimeError(error_message)
+        disable_tesseract = True
+        warning_message = "\n\n\n!****************************************************************!\n"
+        warning_message += "tesseract-ocr is not found and is required to run Speculos with ocr.\n"
+        warning_message += "Please run `sudo apt install tesseract-ocr`\n"
+        warning_message += "Speculos will continue without tesseract-ocr enabled\n"
+        warning_message += "!****************************************************************!\n\n\n"
+        logger.warn(warning_message)
 
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
@@ -229,7 +242,8 @@ def main(prog=None):
     parser.add_argument('-k', '--sdk', type=str, help='SDK version')
     parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
-                        'Bitcoin:app/btc.elf) which can be called through os_lib_call')
+                        'Bitcoin:app/btc.elf) which can be called through os_lib_call'
+                        'You can also only pass the lib elf path if the lib name is included in the metadata')
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
                                                                          'can be specified multiple times')
     parser.add_argument('-m', '--model', choices=list(display.MODELS.keys()))
@@ -263,6 +277,7 @@ def main(prog=None):
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
     group.add_argument('--force-full-ocr', action='store_true',
                        help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
+    group.add_argument('--disable-tesseract', action='store_true', help='Disable tesseract OCR: only for stax')
 
     if prog:
         parser.prog = prog
@@ -288,9 +303,36 @@ def main(prog=None):
             logger.warn(f"Api level detected from metadata: {args.apiLevel}")
 
     # Check args.apiLevel, 0 is an invalid value
-    if args.apiLevel == 0:
+    if args.apiLevel == "0":
         logger.error(f"Invalid api_level {args.apiLevel}")
         sys.exit(1)
+
+    # Retrieve lib app_name if available and check it against argument now optional
+    libs = []
+    for lib_arg in args.library:
+        if ":" in lib_arg:
+            lib_name, lib_path = lib_arg.split(":")
+        else:
+            lib_name = None
+            lib_path = lib_arg
+
+        metadata = get_elf_ledger_metadata(lib_path)
+        elf_lib_name = metadata.get("app_name", None)
+
+        if lib_name is None:
+            if elf_lib_name is None:
+                logger.error("Lib name not detected from elf. Then it must be specified")
+                sys.exit(1)
+            else:
+                logger.warn(f"Lib name detected from metadata: {elf_lib_name}")
+                lib_name = elf_lib_name
+        else:
+            if elf_lib_name is not None and elf_lib_name != lib_name:
+                logger.error(f"Invalid lib name in {lib_path} ({elf_lib_name} vs {lib_name})")
+                sys.exit(1)
+
+        libs.append(f"{lib_name}:{lib_path}")
+    args.library = libs
 
     # Check model and api_level against all lib elf metadata
     for path in [app_path] + [x.split(":")[1] for x in args.library]:
@@ -301,10 +343,10 @@ def main(prog=None):
             logger.error(f"Invalid model in {path} ({elf_model} vs {args.model})")
             sys.exit(1)
 
-        elf_api_level = metadata.get("api_level", 0)
+        elf_api_level = metadata.get("api_level", "0")
         # Check args.apiLevel against elf api level. If elf api level == 0 (SDK master
         # reserved value) ignore it.
-        if elf_api_level != 0 and args.apiLevel != elf_api_level:
+        if elf_api_level != "0" and args.apiLevel != elf_api_level:
             logger.error(f"Invalid api_level in {path} ({elf_api_level} vs {args.apiLevel})")
             sys.exit(1)
 
@@ -433,8 +475,12 @@ def main(prog=None):
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
+    if disable_tesseract:
+        args.disable_tesseract = True
+
     display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
-                                       args.keymap, zoom, x, y, args.force_full_ocr)
+                                       args.keymap, zoom, x, y, args.force_full_ocr,
+                                       args.disable_tesseract)
     server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 

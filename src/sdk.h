@@ -13,6 +13,7 @@ typedef enum {
   SDK_NANO_SP_1_0,
   SDK_NANO_SP_1_0_3,
   SDK_API_LEVEL_1,
+  SDK_API_LEVEL_3,
   SDK_COUNT
 } sdk_version_t;
 
