@@ -242,7 +242,8 @@ def main(prog=None):
     parser.add_argument('-k', '--sdk', type=str, help='SDK version')
     parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
-                        'Bitcoin:app/btc.elf) which can be called through os_lib_call')
+                        'Bitcoin:app/btc.elf) which can be called through os_lib_call'
+                        'You can also only pass the lib elf path if the lib name is included in the metadata')
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
                                                                          'can be specified multiple times')
     parser.add_argument('-m', '--model', choices=list(display.MODELS.keys()))
@@ -305,6 +306,33 @@ def main(prog=None):
     if args.apiLevel == "0":
         logger.error(f"Invalid api_level {args.apiLevel}")
         sys.exit(1)
+
+    # Retrieve lib app_name if available and check it against argument now optional
+    libs = []
+    for lib_arg in args.library:
+        if ":" in lib_arg:
+            lib_name, lib_path = lib_arg.split(":")
+        else:
+            lib_name = None
+            lib_path = lib_arg
+
+        metadata = get_elf_ledger_metadata(lib_path)
+        elf_lib_name = metadata.get("app_name", None)
+
+        if lib_name is None:
+            if elf_lib_name is None:
+                logger.error("Lib name not detected from elf. Then it must be specified")
+                sys.exit(1)
+            else:
+                logger.warn(f"Lib name detected from metadata: {elf_lib_name}")
+                lib_name = elf_lib_name
+        else:
+            if elf_lib_name is not None and elf_lib_name != lib_name:
+                logger.error(f"Invalid lib name in {lib_path} ({elf_lib_name} vs {lib_name})")
+                sys.exit(1)
+
+        libs.append(f"{lib_name}:{lib_path}")
+    args.library = libs
 
     # Check model and api_level against all lib elf metadata
     for path in [app_path] + [x.split(":")[1] for x in args.library]:
