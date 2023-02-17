@@ -1,7 +1,8 @@
 from typing import List, Mapping
 from dataclasses import dataclass
-from PIL import Image
+from PIL import Image, ImageOps
 from pytesseract import image_to_data, Output
+from enum import Enum
 import functools
 import string
 
@@ -22,6 +23,9 @@ __FONT_MAP = {}
 
 DISPLAY_CHARS = string.ascii_letters + string.digits + string.punctuation
 
+class OCR_Mode(Enum):
+    NORMAL = 1
+    INVERT = 2 # Invert colors of whole picture.
 
 def cache_font(f):
     __font_char_cache = {}
@@ -156,8 +160,10 @@ class OCR:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y))
 
-    def analyze_image(self, screen_size: (int, int), data: bytes):
+    def analyze_image(self, screen_size: (int, int), data: bytes, mode: OCR_Mode = OCR_Mode.NORMAL):
         image = Image.frombytes("RGB", screen_size, data)
+        if mode == OCR_Mode.INVERT:
+            image = ImageOps.invert(image)
         data = image_to_data(image, output_type=Output.DICT)
         new_text_has_been_added = False
         for item in range(len(data["text"])):

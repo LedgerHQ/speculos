@@ -66,10 +66,11 @@ DrawState = namedtuple('DrawState', 'x y width height colors bpp xx yy')
 
 
 class Bagl:
-    def __init__(self, m, size):
+    def __init__(self, m, size, legacy_ocr):
         self.m = m
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
         self.draw_state = DrawState(0, 0, 0, 0, [], 0, 0, 0)
+        self.legacy_ocr = legacy_ocr
         self.logger = logging.getLogger("bagl")
 
     def refresh(self) -> bool:

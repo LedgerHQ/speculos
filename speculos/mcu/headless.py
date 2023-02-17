@@ -15,7 +15,7 @@ class Headless(Display):
 
         self.m = HeadlessPaintWidget(self, self.model, server.vnc)
         if display.model != "stax":
-            self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size)
+            self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size, display.legacy_ocr)
         else:
             self.nbgl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, display.force_full_ocr,
                                   display.disable_tesseract)

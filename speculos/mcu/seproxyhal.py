@@ -7,7 +7,7 @@ from enum import IntEnum
 from typing import List
 
 from . import usb
-from .ocr import OCR
+from .ocr import OCR, OCR_Mode
 from .readerror import ReadError, WriteError
 from .automation import TextEvent
 
@@ -251,6 +251,10 @@ class SeProxyHal:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
                     if screen.model != "stax" and screen.screen_update():
                         if screen.model in ["nanox", "nanosp"]:
+                            if not screen.bagl.legacy_ocr:
+                                screen.bagl.m.update_screenshot()
+                                screen_size, image_data = screen.bagl.m.take_screenshot()
+                                self.ocr.analyze_image(screen_size, image_data, OCR_Mode.INVERT)
                             self.events += self.ocr.get_events()
                     elif screen.model == "stax":
                         self.events += self.ocr.get_events()
@@ -270,7 +274,7 @@ class SeProxyHal:
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
-                if screen.model in ["nanox", "nanosp"]:
+                if screen.model in ["nanox", "nanosp"] and screen.bagl.legacy_ocr:
                     self.ocr.analyze_bitmap(data)
                 # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
                 #
