@@ -2,7 +2,6 @@ from typing import List, Mapping
 from dataclasses import dataclass
 from PIL import Image, ImageOps
 from pytesseract import image_to_data, Output
-from enum import Enum
 import functools
 import string
 import cv2
@@ -11,12 +10,25 @@ import numpy as np
 from .automation import TextEvent
 from . import bagl_font
 
+# Tesseract OCR parameters
 MIN_WORD_CONFIDENCE_LVL = 0  # percent
 NEW_LINE_THRESHOLD = 10  # pixels
-BOX_MIN_HEIGHT = 50 # pixels
-BOX_MIN_WIDTH = 100 # pixels
-# Black background mean pixel value threshold
-BB_MEAN_PIXEL_VAL_THRESHOLD = 50
+# Image pre-processing parameters
+# Used for Stax
+# Box minimum width and height for inversion.
+STAX_BOX_MIN_HEIGHT = 50  # pixels
+STAX_BOX_MIN_WIDTH = 100  # pixels
+# Used for Nano X, Nano SP
+# Image upscale factor.
+NANO_IMAGE_UPSCALE_FACTOR = 2
+# Aspect ratio threshold for non-text areas removal.
+NANO_NON_TEXT_AREA_AR = 1.8
+# Minimum non-text area dimension.
+NANO_NON_TEXT_AREA_MIN = 5 * 5
+# Margin around non-text areas when filling
+# rectangle to hide them.
+NANO_NON_TEXT_AREA_MARGIN = 2
+
 
 BitMap = bytes
 BitVector = str  # a string of '1' and '0'
@@ -29,10 +41,6 @@ __FONT_MAP = {}
 
 DISPLAY_CHARS = string.ascii_letters + string.digits + string.punctuation
 
-class OCR_Mode(Enum):
-    NORMAL = 1
-    INVERT = 2 # Invert colors of whole picture.
-    BOX_INVERT = 3 # Find box shapes and invert their colors.
 
 def cache_font(f):
     __font_char_cache = {}
@@ -167,33 +175,65 @@ class OCR:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y))
 
-    def _detect_and_invert_box_shapes(self, image: Image):
+    def _nano_remove_non_text_areas(self, image: Image) -> Image:
+        array = np.array(image)
+        # Convert the image to grayscale
+        gray = cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
+        # Apply some gaussian blur
+        gray = cv2.GaussianBlur(gray, (7, 1), 0)
+        # Apply thresholding to binarize the image
+        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        # Dilate the image to connect nearby text regions
+        kernel_dilation = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
+        dilation = cv2.dilate(thresh, kernel_dilation, iterations=2)
+        # Apply some erosion for more accurate contour detection
+        kernel_erosion = np.ones((7, 7), np.uint8)
+        erosion = cv2.erode(dilation, kernel_erosion, iterations=1)
+        # Find contours in the image
+        contours, hierarchy = cv2.findContours(erosion, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Remove non-text areas based on aspect ratio
+        m = NANO_NON_TEXT_AREA_MARGIN
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            ar = w / float(h)
+            area = w * h
+            # Fill white rectangles over non-text areas.
+            if ar < NANO_NON_TEXT_AREA_AR and area > NANO_NON_TEXT_AREA_MIN:
+                cv2.rectangle(array, (x - m, y - m), (x + w + m, y + h + m), (255, 255, 255), -1)
+        return Image.fromarray(array)
+
+    def _stax_detect_and_invert_box_shapes(self, image: Image) -> Image:
         screen_width, _ = image.size
         array = np.array(image)
+        # Convert the image to grayscale
         img = cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
+        # Apply thresholding to binarize the image
         thresh = cv2.threshold(img, 60, 255, cv2.THRESH_BINARY)[1]
-        contours, _ = cv2.findContours(thresh, 1, 2) # detect boxes
-        for cnt in contours:
-            x,y,w,h = cv2.boundingRect(cnt)
-            # Only keep areas big enough but not as big as the screen.
-            if w>BOX_MIN_WIDTH and h>BOX_MIN_HEIGHT and w<screen_width:
-                # Only keep areas with black background.
-                if np.mean(img[y:y+h, x:x+w]) < BB_MEAN_PIXEL_VAL_THRESHOLD:
-                    row1=y+1
-                    row2=y+h-1
-                    col1=x
-                    col2=x+w
-                    subset = array[row1:row2, col1:col2]
-                    subset = 255 - subset # invert subset
-                    array[row1:row2, col1:col2] = subset
+        # Find contours (boxes) in the image
+        contours, _ = cv2.findContours(thresh, 1, 2)
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            if w > STAX_BOX_MIN_WIDTH and h > STAX_BOX_MIN_HEIGHT and w < screen_width:
+                row1 = y + 1
+                row2 = y + h - 1
+                col1 = x
+                col2 = x + w
+                subset = array[row1:row2, col1:col2]
+                # Invert subset (box)
+                subset = 255 - subset
+                array[row1:row2, col1:col2] = subset
         return Image.fromarray(array)
-        
-    def analyze_image(self, screen_size: (int, int), data: bytes, mode: OCR_Mode = OCR_Mode.NORMAL):
+
+    def analyze_image(self, screen_size: (int, int), data: bytes, device: string):
         image = Image.frombytes("RGB", screen_size, data)
-        if mode == OCR_Mode.INVERT:
+        w, h = image.size
+        # Apply image pre-processing for better OCR accuracy.
+        if device in ["nanox", "nanosp"]:
             image = ImageOps.invert(image)
-        elif mode == OCR_Mode.BOX_INVERT:
-            image = self._detect_and_invert_box_shapes(image)
+            image = image.resize((w*NANO_IMAGE_UPSCALE_FACTOR, h*NANO_IMAGE_UPSCALE_FACTOR))
+            image = self._nano_remove_non_text_areas(image)
+        elif device == "stax":
+            image = self._stax_detect_and_invert_box_shapes(image)
         data = image_to_data(image, output_type=Output.DICT)
         new_text_has_been_added = False
         for item in range(len(data["text"])):

@@ -276,7 +276,8 @@ def main(prog=None):
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
     group.add_argument('--legacy-ocr', action='store_true',
-                       help='Use legacy font maps OCR (only for Nano X & Nano SP). Faster but can have some character detection issues.')
+                       help='Use legacy font maps OCR (only for Nano X & Nano SP).'
+                       'Faster but can have some character detection issues.')
     group.add_argument('--disable-tesseract', action='store_true', help='Disable tesseract OCR: only for stax')
 
     if prog:

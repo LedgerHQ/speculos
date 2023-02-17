@@ -7,7 +7,7 @@ from enum import IntEnum
 from typing import List
 
 from . import usb
-from .ocr import OCR, OCR_Mode
+from .ocr import OCR
 from .readerror import ReadError, WriteError
 from .automation import TextEvent
 
@@ -254,7 +254,7 @@ class SeProxyHal:
                             if not screen.bagl.legacy_ocr:
                                 screen.bagl.m.update_screenshot()
                                 screen_size, image_data = screen.bagl.m.take_screenshot()
-                                self.ocr.analyze_image(screen_size, image_data, OCR_Mode.INVERT)
+                                self.ocr.analyze_image(screen_size, image_data, screen.model)
                             self.events += self.ocr.get_events()
                     elif screen.model == "stax":
                         self.events += self.ocr.get_events()
@@ -307,7 +307,7 @@ class SeProxyHal:
                 if not screen.nbgl.disable_tesseract:
                     screen.nbgl.m.update_screenshot()
                     screen_size, image_data = screen.nbgl.m.take_screenshot()
-                    self.ocr.analyze_image(screen_size, image_data, OCR_Mode.BOX_INVERT)
+                    self.ocr.analyze_image(screen_size, image_data, screen.model)
 
             elif tag == 0x6c:
                 screen.nbgl.hal_draw_line(data)
