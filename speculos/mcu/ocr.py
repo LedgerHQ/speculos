@@ -15,6 +15,8 @@ MIN_WORD_CONFIDENCE_LVL = 0  # percent
 NEW_LINE_THRESHOLD = 10  # pixels
 BOX_MIN_HEIGHT = 50 # pixels
 BOX_MIN_WIDTH = 100 # pixels
+# Black background mean pixel value threshold
+BB_MEAN_PIXEL_VAL_THRESHOLD = 50
 
 BitMap = bytes
 BitVector = str  # a string of '1' and '0'
@@ -30,7 +32,7 @@ DISPLAY_CHARS = string.ascii_letters + string.digits + string.punctuation
 class OCR_Mode(Enum):
     NORMAL = 1
     INVERT = 2 # Invert colors of whole picture.
-    BOX_INVERT = 3 # Find box shapes and invert their colors
+    BOX_INVERT = 3 # Find box shapes and invert their colors.
 
 def cache_font(f):
     __font_char_cache = {}
@@ -173,14 +175,17 @@ class OCR:
         contours, _ = cv2.findContours(thresh, 1, 2) # detect boxes
         for cnt in contours:
             x,y,w,h = cv2.boundingRect(cnt)
+            # Only keep areas big enough but not as big as the screen.
             if w>BOX_MIN_WIDTH and h>BOX_MIN_HEIGHT and w<screen_width:
-                row1=y+1
-                row2=y+h-1
-                col1=x
-                col2=x+w
-                subset = array[row1:row2, col1:col2]
-                subset = 255 - subset # invert subset
-                array[row1:row2, col1:col2] = subset
+                # Only keep areas with black background.
+                if np.mean(img[y:y+h, x:x+w]) < BB_MEAN_PIXEL_VAL_THRESHOLD:
+                    row1=y+1
+                    row2=y+h-1
+                    col1=x
+                    col2=x+w
+                    subset = array[row1:row2, col1:col2]
+                    subset = 255 - subset # invert subset
+                    array[row1:row2, col1:col2] = subset
         return Image.fromarray(array)
         
     def analyze_image(self, screen_size: (int, int), data: bytes, mode: OCR_Mode = OCR_Mode.NORMAL):
