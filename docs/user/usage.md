@@ -90,11 +90,20 @@ Launch the Bitcoin Testnet app, which requires the Bitcoin app:
 ./speculos.py ./apps/btc-test.elf -l Bitcoin:./apps/btc.elf
 ```
 
-## OCR
+## Optical Character Recognition
 
-OCR is available for NanoX with built in character recognition.
+Optical Character Recognition (OCR) allows to detect text displayed on the device's screen.
+The detected text is then available as "events" (cf. Speculos REST API documentation).
 
-Stax makes use of the Tessseract library for OCR, with known issues for detecting inverted text. 
+### Nano X, Nano SP
 
-Launching Speculos with `--force-full-ocr` flag forces all text to be written in black over a white background,
-having an visible effect on the display but solving the latter issue.
+Two modes are available :
+
+* Legacy (with `--legacy-ocr` command line argument) : uses font bitmaps to detect
+  text. Fast but can result in some characters not being detected.
+* Default : uses the [Tesseract](https://github.com/tesseract-ocr/tesseract) engine.
+  Slower but recognizes text without the need for font bitmaps.
+
+### Stax
+
+Stax makes use of the Tessseract library for OCR by default.
