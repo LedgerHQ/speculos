@@ -275,8 +275,6 @@ def main(prog=None):
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
-    group.add_argument('--force-full-ocr', action='store_true',
-                       help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
     group.add_argument('--legacy-ocr', action='store_true',
                        help='Use legacy font maps OCR (only for Nano X & Nano SP). Faster but can have some character detection issues.')
     group.add_argument('--disable-tesseract', action='store_true', help='Disable tesseract OCR: only for stax')
@@ -488,7 +486,7 @@ def main(prog=None):
         args.disable_tesseract = True
 
     display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
-                                       args.keymap, zoom, x, y, args.force_full_ocr, args.legacy_ocr,
+                                       args.keymap, zoom, x, y, args.legacy_ocr,
                                        args.disable_tesseract)
     server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)

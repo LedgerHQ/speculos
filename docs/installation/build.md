@@ -15,7 +15,7 @@ sudo apt install \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
     qemu-user-static tesseract-ocr libtesseract-dev
 
-pip install pytesseract
+pip install pytesseract opencv-python-headless numpy
 ```
 
 For optional VNC support, please also install `libvncserver-dev`:

@@ -5,12 +5,16 @@ from pytesseract import image_to_data, Output
 from enum import Enum
 import functools
 import string
+import cv2
+import numpy as np
 
 from .automation import TextEvent
 from . import bagl_font
 
 MIN_WORD_CONFIDENCE_LVL = 0  # percent
 NEW_LINE_THRESHOLD = 10  # pixels
+BOX_MIN_HEIGHT = 50 # pixels
+BOX_MIN_WIDTH = 100 # pixels
 
 BitMap = bytes
 BitVector = str  # a string of '1' and '0'
@@ -26,6 +30,7 @@ DISPLAY_CHARS = string.ascii_letters + string.digits + string.punctuation
 class OCR_Mode(Enum):
     NORMAL = 1
     INVERT = 2 # Invert colors of whole picture.
+    BOX_INVERT = 3 # Find box shapes and invert their colors
 
 def cache_font(f):
     __font_char_cache = {}
@@ -160,10 +165,30 @@ class OCR:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y))
 
+    def _detect_and_invert_box_shapes(self, image: Image):
+        screen_width, _ = image.size
+        array = np.array(image)
+        img = cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
+        thresh = cv2.threshold(img, 60, 255, cv2.THRESH_BINARY)[1]
+        contours, _ = cv2.findContours(thresh, 1, 2) # detect boxes
+        for cnt in contours:
+            x,y,w,h = cv2.boundingRect(cnt)
+            if w>BOX_MIN_WIDTH and h>BOX_MIN_HEIGHT and w<screen_width:
+                row1=y+1
+                row2=y+h-1
+                col1=x
+                col2=x+w
+                subset = array[row1:row2, col1:col2]
+                subset = 255 - subset # invert subset
+                array[row1:row2, col1:col2] = subset
+        return Image.fromarray(array)
+        
     def analyze_image(self, screen_size: (int, int), data: bytes, mode: OCR_Mode = OCR_Mode.NORMAL):
         image = Image.frombytes("RGB", screen_size, data)
         if mode == OCR_Mode.INVERT:
             image = ImageOps.invert(image)
+        elif mode == OCR_Mode.BOX_INVERT:
+            image = self._detect_and_invert_box_shapes(image)
         data = image_to_data(image, output_type=Output.DICT)
         new_text_has_been_added = False
         for item in range(len(data["text"])):

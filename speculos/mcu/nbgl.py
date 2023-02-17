@@ -29,11 +29,10 @@ class NBGL:
         if bpp == 4:
             return color * 0x111111
 
-    def __init__(self, m, size, force_full_ocr, disable_tesseract):
+    def __init__(self, m, size, disable_tesseract):
         self.m = m
         # front screen dimension
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
-        self.force_full_ocr = force_full_ocr
         self.disable_tesseract = disable_tesseract
 
     def __assert_area(self, area):
@@ -46,9 +45,6 @@ class NBGL:
 
     def hal_draw_rect(self, data):
         area = nbgl_area_t.parse(data)
-        if self.force_full_ocr:
-            # We need all text shown in black with white background
-            area.color = 3
 
         self.__assert_area(area)
         for x in range(area.x0, area.x0+area.width):
@@ -117,15 +113,6 @@ class NBGL:
         buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof()+buffer_size]
         transformation = data[nbgl_area_t.sizeof()+buffer_size]
         color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
-
-        if self.force_full_ocr:
-            # Avoid white on black text
-            if (bpp == 4) and (color_map == NbglColor.WHITE) and (area.color == NbglColor.BLACK):
-                area.color = NbglColor.WHITE
-                color_map = NbglColor.BLACK
-            elif bpp != 4 and color_map == 3:
-                area.color = NbglColor.WHITE
-                color_map = 0
 
         if transformation == 0:
             x = area.x0 + area.width - 1

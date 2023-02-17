@@ -307,7 +307,7 @@ class SeProxyHal:
                 if not screen.nbgl.disable_tesseract:
                     screen.nbgl.m.update_screenshot()
                     screen_size, image_data = screen.nbgl.m.take_screenshot()
-                    self.ocr.analyze_image(screen_size, image_data)
+                    self.ocr.analyze_image(screen_size, image_data, OCR_Mode.BOX_INVERT)
 
             elif tag == 0x6c:
                 screen.nbgl.hal_draw_line(data)

@@ -24,7 +24,7 @@ COPY --from=builder /speculos/speculos/resources/ /speculos/speculos/resources/
 
 RUN pip install --upgrade pip pipenv
 RUN pipenv install --deploy --system
-RUN pip install pytesseract
+RUN pip install pytesseract opencv-python-headless numpy
 
 
 RUN apt-get update && apt-get install -qy \
