@@ -134,6 +134,8 @@ cx_err_t cx_mpi_mod_pow(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *e,
                         const cx_mpi_t *n);
 cx_err_t cx_mpi_is_prime(cx_mpi_t *x, bool *prime);
 cx_err_t cx_mpi_next_prime(cx_mpi_t *x);
+void cx_mpi_reverse(cx_mpi_t *x, uint32_t nbytes);
+void cx_mpi_swap(cx_mpi_t *a, cx_mpi_t *b, const int c);
 
 // cx_bn.c
 bool sys_cx_bn_is_locked(void);
@@ -230,6 +232,9 @@ cx_err_t cx_weierstrass_recover_y(cx_mpi_ecpoint_t *P, uint32_t sign);
 // cx_montgomery.c
 cx_err_t cx_montgomery_recover_y(cx_mpi_ecpoint_t *P, uint32_t sign);
 
+cx_err_t cx_montgomery_mul_coordinate(cx_curve_t curve, cx_mpi_t *u_coordinate,
+                                      const uint8_t *scalar, size_t scalar_len);
+
 // cx_ecpoint.c
 cx_err_t cx_mpi_ecpoint_from_ecpoint(cx_mpi_ecpoint_t *P,
                                      const cx_ecpoint_t *Q);
@@ -275,3 +280,7 @@ cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P,
                                     bool *is_on_curve);
 cx_err_t sys_cx_ecpoint_is_at_infinity(const cx_ecpoint_t *ec_P,
                                        bool *is_infinite);
+cx_err_t sys_cx_ecpoint_x25519(const cx_bn_t bn_u, const uint8_t *k,
+                               size_t k_len);
+cx_err_t sys_cx_ecpoint_x448(const cx_bn_t bn_u, const uint8_t *k,
+                             size_t k_len);
