@@ -299,6 +299,16 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
              void *, ec_P,
              bool *, is_on_curve);
 
+    SYSCALL3(cx_ecpoint_x25519, "(%u, %p, %u)",
+             uint32_t,  bn_u,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL3(cx_ecpoint_x448, "(%u, %p, %u)",
+             uint32_t,  bn_u,
+             uint8_t *, k,
+             size_t,    k_len);
+
     SYSCALL0(cx_bn_is_locked);
 
     SYSCALL2(cx_bn_lock, "(%u %u)",

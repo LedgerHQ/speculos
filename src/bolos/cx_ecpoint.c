@@ -637,3 +637,54 @@ cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool *is_on_curve)
 end:
   return error;
 }
+
+cx_err_t sys_cx_ecpoint_x25519(const cx_bn_t bn_u, const uint8_t *k,
+                               size_t k_len)
+{
+  uint8_t *u_bytes;
+  int nbytes;
+  cx_mpi_t *u;
+  cx_err_t error;
+
+  CX_CHECK(cx_bn_to_mpi(bn_u, &u));
+  nbytes = cx_mpi_nbytes(u);
+  u_bytes = malloc(nbytes);
+
+  if (u_bytes == NULL) {
+    return CX_MEMORY_FULL;
+  }
+  if (BN_bn2binpad(u, u_bytes, nbytes) != -1) {
+    cx_montgomery_mul_coordinate(CX_CURVE_Curve25519, u, k, k_len);
+  } else {
+    error = CX_INTERNAL_ERROR;
+  }
+  free(u_bytes);
+
+end:
+  return error;
+}
+
+cx_err_t sys_cx_ecpoint_x448(const cx_bn_t bn_u, const uint8_t *k, size_t k_len)
+{
+  uint8_t *u_bytes;
+  int nbytes;
+  cx_mpi_t *u;
+  cx_err_t error;
+
+  CX_CHECK(cx_bn_to_mpi(bn_u, &u));
+  nbytes = cx_mpi_nbytes(u);
+  u_bytes = malloc(nbytes);
+
+  if (u_bytes == NULL) {
+    return CX_MEMORY_FULL;
+  }
+  if (BN_bn2binpad(u, u_bytes, nbytes) != -1) {
+    cx_montgomery_mul_coordinate(CX_CURVE_Curve448, u, k, k_len);
+  } else {
+    error = CX_INTERNAL_ERROR;
+  }
+  free(u_bytes);
+
+end:
+  return error;
+}
