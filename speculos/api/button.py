@@ -26,6 +26,10 @@ class Button(SephResource):
             self.seph.handle_wait(delay)
             for b in buttons[button]:
                 self.seph.handle_button(b, False)
+            # Some app tests rely on this delay to make sure the screen is updated
+            # and the app is ready to process next button press.
+            # This is dangerous but we keep it as is to not break everything.
+            self.seph.handle_wait(delay)
         else:
             for b in buttons[button]:
                 self.seph.handle_button(b, action == "press")
