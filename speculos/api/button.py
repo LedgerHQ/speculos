@@ -1,4 +1,3 @@
-import time
 import jsonschema
 from flask import request
 
@@ -19,13 +18,16 @@ class Button(SephResource):
         button = request.base_url.split("/")[-1]
         buttons = {"left": [1], "right": [2], "both": [1, 2]}
         action = args["action"]
-        actions = {"press": [True], "release": [False], "press-and-release": [True, False]}
         delay = args.get("delay", 0.1)
 
-        for a in actions[action]:
+        if action == "press-and-release":
             for b in buttons[button]:
-                self.seph.handle_button(b, a)
-            if action == "press-and-release":
-                time.sleep(delay)
+                self.seph.handle_button(b, True)
+            self.seph.handle_wait(delay)
+            for b in buttons[button]:
+                self.seph.handle_button(b, False)
+        else:
+            for b in buttons[button]:
+                self.seph.handle_button(b, action == "press")
 
         return {}, 200
