@@ -19,16 +19,19 @@ NEW_LINE_THRESHOLD = 10  # pixels
 STAX_BOX_MIN_HEIGHT = 50  # pixels
 STAX_BOX_MIN_WIDTH = 100  # pixels
 # Used for Nano X, Nano SP
+# Image crop (left and right) margin.
+NANO_IMAGE_CROP_MARGIN = 6  # pixels
 # Image upscale factor.
 NANO_IMAGE_UPSCALE_FACTOR = 2
 # Aspect ratio threshold for non-text areas removal.
-NANO_NON_TEXT_AREA_AR = 1.8
+NANO_NON_TEXT_AREA_AR = 1.9
 # Minimum non-text area dimension.
 NANO_NON_TEXT_AREA_MIN = 5 * 5
 # Margin around non-text areas when filling
 # rectangle to hide them.
-NANO_NON_TEXT_AREA_MARGIN = 2
+NANO_NON_TEXT_AREA_MARGIN = 2  # pixels
 
+idx=0
 
 BitMap = bytes
 BitVector = str  # a string of '1' and '0'
@@ -180,14 +183,14 @@ class OCR:
         # Convert the image to grayscale
         gray = cv2.cvtColor(array, cv2.COLOR_BGR2GRAY)
         # Apply some gaussian blur
-        gray = cv2.GaussianBlur(gray, (7, 1), 0)
+        gray = cv2.GaussianBlur(gray, (9, 1), 0)
         # Apply thresholding to binarize the image
         _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
         # Dilate the image to connect nearby text regions
         kernel_dilation = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
         dilation = cv2.dilate(thresh, kernel_dilation, iterations=2)
         # Apply some erosion for more accurate contour detection
-        kernel_erosion = np.ones((7, 7), np.uint8)
+        kernel_erosion = np.ones((5, 5), np.uint8)
         erosion = cv2.erode(dilation, kernel_erosion, iterations=1)
         # Find contours in the image
         contours, hierarchy = cv2.findContours(erosion, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -226,15 +229,23 @@ class OCR:
 
     def analyze_image(self, screen_size: (int, int), data: bytes, device: string):
         image = Image.frombytes("RGB", screen_size, data)
-        w, h = image.size
         # Apply image pre-processing for better OCR accuracy.
+        global idx
+        idx+=1
         if device in ["nanox", "nanosp"]:
+            w, h = image.size
+            c = NANO_IMAGE_CROP_MARGIN
+            s = NANO_IMAGE_UPSCALE_FACTOR
             image = ImageOps.invert(image)
-            image = image.resize((w*NANO_IMAGE_UPSCALE_FACTOR, h*NANO_IMAGE_UPSCALE_FACTOR))
+            image = image.crop((c, 0, w - c, h))
+            image = image.resize((w * s, h * s))
+            # image.save(f"flowerbefore{idx}.png")
             image = self._nano_remove_non_text_areas(image)
+            # image.save(f"flower{idx}.png")
+            data = image_to_data(image, output_type=Output.DICT, lang="nano_font")
         elif device == "stax":
             image = self._stax_detect_and_invert_box_shapes(image)
-        data = image_to_data(image, output_type=Output.DICT)
+            data = image_to_data(image, output_type=Output.DICT)
         new_text_has_been_added = False
         for item in range(len(data["text"])):
             if (data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
