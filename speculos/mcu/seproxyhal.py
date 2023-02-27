@@ -55,16 +55,8 @@ def ticker(add_tick):
     There is no need to prevent clock drift.
     """
 
-    logger = logging.getLogger("seproxyhal.ticker")
-    flood = False
-
     while True:
-        if not add_tick():
-            if not flood:
-                logger.warn("skipping ticker events (expected within a debugger)")
-                flood = True
-        else:
-            flood = False
+        add_tick()
         time.sleep(TICKER_DELAY)
 
 
@@ -79,6 +71,7 @@ class PacketThread(threading.Thread):
         self.status_event = status_event
         self.logger = logging.getLogger("seproxyhal.packet")
         self.stop = False
+        self.ticks_count = 0
 
     def _send_packet(self, tag, data=b''):
         """Send a packet to the app."""
@@ -117,7 +110,7 @@ class PacketThread(threading.Thread):
         # Don't add too many ticker packets to the queue. For instance, the app
         # might be stuck if a breakpoint is hit within a debugger. It avoids
         # flooding the app on resume.
-        if self.queue.count(self.TICKER_PACKET) > 10:
+        if self.queue.count(self.TICKER_PACKET) >= 1:
             return False
 
         self.queue_packet(SephTag.TICKER_EVENT)
@@ -138,7 +131,13 @@ class PacketThread(threading.Thread):
             tag, data = self.queue.pop(0)
             self._send_packet(tag, data)
 
+            if tag == SephTag.TICKER_EVENT:
+                self.ticks_count += 1
+
         self.logger.debug("exiting")
+
+    def get_processed_ticks_count(self):
+        return self.ticks_count
 
 
 class SeProxyHal:
@@ -378,6 +377,12 @@ class SeProxyHal:
         packet += y.to_bytes(2, 'big')
 
         self.packet_thread.queue_packet(SephTag.FINGER_EVENT, packet)
+
+    def handle_wait(self, delay):
+        '''Wait for a specified delay, taking account real time seen by the app.'''
+        start = self.packet_thread.get_processed_ticks_count()
+        while (self.packet_thread.get_processed_ticks_count() - start) * TICKER_DELAY < delay:
+            time.sleep(TICKER_DELAY)
 
     def to_app(self, packet):
         '''
