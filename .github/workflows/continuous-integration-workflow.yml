@@ -130,28 +130,12 @@ jobs:
 
   package_and_test_docker:
     name: Build and test the Speculos docker
-    runs-on: ubuntu-latest
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
-    steps:
-    - name: Clone
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Build the Speculos docker
-      uses: docker/build-push-action@v1
-      with:
-        push: false
-        tags: test
-    - name: Run and test Speculos docker
-      uses: addnab/docker-run-action@v3
-      with:
-        image: ledgerhq/speculos:test
-        options: -v ${{ github.workspace }}/apps/:/apps/
-        run: |
-          apt-get update && apt-get install -qy netcat
-          /speculos/speculos.py /apps/btc.elf --model nanos --display=headless  --apdu-port 9999 &
-          until `nc -w5 -z -v 127.0.0.1 9999`; do sleep 1; done;
+    uses: ./.github/workflows/reusable_ragger_tests_latest_speculos.yml
+    with:
+      app_repository: LedgerHQ/app-boilerplate
+      app_branch_name: master
+      test_dir: tests
+      speculos_app_branch_name: ${{ github.ref }}
 
   deploy_docker:
     name: Build and Upload the Speculos docker
