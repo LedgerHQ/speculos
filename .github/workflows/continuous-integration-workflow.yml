@@ -125,7 +125,16 @@ jobs:
         ./venv-build/bin/python -m twine upload --repository testpypi dist/*
       env:
         TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PUBLIC_API_TOKEN }}
+        TWINE_NON_INTERACTIVE: 1
+
+    - name: Publish Python package to pypi.org
+      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'  && contains(github.event.head_commit.message, 'release')
+      run: |
+        ./venv-build/bin/python -m twine upload dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN }}
         TWINE_NON_INTERACTIVE: 1
 
   package_and_test_docker:
