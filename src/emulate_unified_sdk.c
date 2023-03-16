@@ -718,6 +718,16 @@ int emulate_syscall_endorsement(unsigned long syscall,
            size_t,    dataLength,
            uint8_t *, signature);
 
+  SYSCALL3(os_endorsement_get_public_key_new, "(%d, %p, %p)",
+           uint8_t,   index,
+           uint8_t *, buffer,
+           uint8_t *, length);
+
+  SYSCALL3(os_endorsement_get_public_key_certificate_new, "(%d, %p, %p)",
+           unsigned char,   index,
+           unsigned char *, buffer,
+           unsigned char *, length)
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;
