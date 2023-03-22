@@ -102,6 +102,8 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
     SYSCALL1(nbgl_get_font, "%u",
              unsigned int, fontId);
 
+    SYSCALL0(nbgl_screen_reinit);
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;
@@ -146,6 +148,7 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
 
   switch (syscall) {
     /* clang-format off */
+    SYSCALL0(get_api_level);
 
     SYSCALL2(cx_get_random_bytes, "(%p %u)",
              uint8_t *, buffer,

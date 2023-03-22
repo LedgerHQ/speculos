@@ -34,3 +34,5 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
                                            uint8_t *optional_uzlib_work_buffer);
 
 unsigned long sys_nbgl_get_font(unsigned int fontId);
+
+unsigned long sys_nbgl_screen_reinit(void);

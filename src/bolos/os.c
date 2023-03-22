@@ -7,6 +7,7 @@
 
 #define OS_SETTING_PLANEMODE_OLD 5
 #define OS_SETTING_PLANEMODE_NEW 6
+#define OS_SETTING_SOUND         9
 
 #define BOLOS_TAG_APPNAME    0x01
 #define BOLOS_TAG_APPVERSION 0x02
@@ -43,14 +44,22 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
                                  uint8_t *UNUSED(value), size_t UNUSED(maxlen))
 {
   // Since Nano X SDK 2.0 & Nano S SDK 2.1, OS_SETTING_PLANEMODE is 6!
-  if (sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
-      sdk_version == SDK_NANO_S_2_1) {
+  if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_S_1_5 ||
+      sdk_version == SDK_NANO_S_1_6 || sdk_version == SDK_NANO_S_2_0 ||
+      sdk_version == SDK_BLUE_1_5 || sdk_version == SDK_BLUE_2_2_5 ||
+      sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3) {
+    if (setting_id == OS_SETTING_PLANEMODE_OLD) {
+      return 1;
+    }
+  } else {
     if (setting_id == OS_SETTING_PLANEMODE_NEW) {
       return 1;
     }
-  } else if (setting_id == OS_SETTING_PLANEMODE_OLD) {
-    return 1;
+    if (hw_model == MODEL_STAX && setting_id == OS_SETTING_SOUND) {
+      return 0xff;
+    }
   }
+
   fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
 
   return 0;
