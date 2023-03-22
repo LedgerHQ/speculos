@@ -60,7 +60,10 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
                                                   uint8_t *buffer,
                                                   size_t length)
 {
-  char *name, *p, *str, *version;
+  const char *name;
+  const char *version;
+  const char *str;
+  char *str_dup = NULL;
 
   if (length < 1) {
     return 0;
@@ -70,12 +73,19 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
   version = "1.33.7";
 
   str = getenv("SPECULOS_APPNAME");
-  if (str != NULL && (str = strdup(str)) != NULL) {
-    p = strstr(str, ":");
-    if (p != NULL) {
-      *p = '\x00';
-      name = str;
-      version = p + 1;
+  if (str == NULL) {
+    str = getenv("SPECULOS_DETECTED_APPNAME");
+  }
+
+  if (str != NULL) {
+    str_dup = strdup(str);
+    if (str_dup != NULL) {
+      char *p = strstr(str_dup, ":");
+      if (p != NULL) {
+        *p = '\x00';
+        name = str_dup;
+        version = p + 1;
+      }
     }
   }
 
@@ -94,7 +104,10 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
   }
 
   buffer[length] = '\x00';
-  free(str);
+
+  if (str_dup != NULL) {
+    free(str_dup);
+  }
 
   return length;
 }
