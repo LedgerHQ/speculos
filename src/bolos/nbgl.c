@@ -124,3 +124,8 @@ unsigned long sys_nbgl_get_font(unsigned int fontId)
     return *((unsigned int *)(FONTS_ARRAY_ADDR + (4 * fontId)));
   }
 }
+
+unsigned long sys_nbgl_screen_reinit(void)
+{
+  return 0;
+}

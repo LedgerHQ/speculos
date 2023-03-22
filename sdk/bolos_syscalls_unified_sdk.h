@@ -173,3 +173,4 @@
 #define SYSCALL_nbgl_front_draw_img_file_ID_IN                        0x05fa0004
 #define SYSCALL_touch_get_last_info_ID_IN                             0x01fa000b
 #define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
+#define SYSCALL_nbgl_screen_reinit_ID_IN                              0x00fa000d
