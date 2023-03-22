@@ -146,6 +146,7 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
 
   switch (syscall) {
     /* clang-format off */
+    SYSCALL0(get_api_level);
 
     SYSCALL2(cx_get_random_bytes, "(%p %u)",
              uint8_t *, buffer,
