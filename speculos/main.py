@@ -307,6 +307,13 @@ def main(prog=None):
         logger.error(f"Invalid api_level {args.apiLevel}")
         sys.exit(1)
 
+    # Set SPECULOS_DETECTED_APPNAME env variable for proper emulation.
+    # See sys_os_registry_get_current_app_tag() for corresponding usage.
+    app_name = metadata.get("app_name")
+    app_version = metadata.get("app_version")
+    if app_name and app_version:
+        os.environ["SPECULOS_DETECTED_APPNAME"] = f"{app_name}:{app_version}"
+
     # Retrieve lib app_name if available and check it against argument now optional
     libs = []
     for lib_arg in args.library:
