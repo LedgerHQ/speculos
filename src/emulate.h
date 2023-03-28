@@ -239,6 +239,20 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     break;                                                                     \
   }
 
+#define SYSCALL3i(_name, _fmt, _type0, _arg0, _type1, _arg1, _type2, _arg2,    \
+                  _funcname)                                                   \
+  case SYSCALL_##_name##_ID_IN: {                                              \
+    _type0 _arg0 = (_type0)parameters[0];                                      \
+    _type1 _arg1 = (_type1)parameters[1];                                      \
+    _type2 _arg2 = (_type2)parameters[2];                                      \
+    print_syscall(#_name "" _fmt, (_type0)_arg0, (_type1)_arg1,                \
+                  (_type2)_arg2);                                              \
+    *ret = sys_##_funcname(_arg0, _arg1, _arg2);                               \
+    print_ret(*ret);                                                           \
+    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
+    break;                                                                     \
+  }
+
 #define SYSCALL4(_name, _fmt, _type0, _arg0, _type1, _arg1, _type2, _arg2,     \
                  _type3, _arg3)                                                \
   case SYSCALL_##_name##_ID_IN: {                                              \

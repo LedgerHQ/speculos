@@ -705,28 +705,22 @@ int emulate_syscall_endorsement(unsigned long syscall,
   SYSCALL1(os_endorsement_get_code_hash, "(%p)",
            uint8_t *, buffer);
 
-  SYSCALL2(os_endorsement_get_public_key, "(%d, %p)",
-           uint8_t,   index,
-           uint8_t *, buffer);
-
-  SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
-           unsigned char,   index,
-           unsigned char *, buffer);
-
   SYSCALL3(os_endorsement_key1_sign_data, "(%p, %u, %p)",
            uint8_t *, data,
            size_t,    dataLength,
            uint8_t *, signature);
 
-  SYSCALL3(os_endorsement_get_public_key_new, "(%d, %p, %p)",
+  SYSCALL3i(os_endorsement_get_public_key, "(%d, %p, %p)",
            uint8_t,   index,
            uint8_t *, buffer,
-           uint8_t *, length);
+           uint8_t *, length,
+           os_endorsement_get_public_key_new);
 
-  SYSCALL3(os_endorsement_get_public_key_certificate_new, "(%d, %p, %p)",
+  SYSCALL3i(os_endorsement_get_public_key_certificate, "(%d, %p, %p)",
            unsigned char,   index,
            unsigned char *, buffer,
-           unsigned char *, length)
+           unsigned char *, length,
+           os_endorsement_get_public_key_certificate_new);
 
   /* clang-format on */
   default:
