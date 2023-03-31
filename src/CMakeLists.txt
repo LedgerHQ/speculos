@@ -29,6 +29,7 @@ add_library(emu
         bolos/cxlib.c
         bolos/bagl.c
         bolos/nbgl.c
+        bolos/nbgl_rle.c
         bolos/touch.c
         bolos/endorsement.c
         bolos/seproxyhal.c

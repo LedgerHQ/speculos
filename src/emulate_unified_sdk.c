@@ -104,6 +104,12 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
 
     SYSCALL0(nbgl_screen_reinit);
 
+    SYSCALL4(nbgl_front_draw_img_rle, "%p, %p, %u, %u",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             unsigned int,     buffer_len,
+             color_t,          fore_color);
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;
