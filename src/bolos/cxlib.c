@@ -28,10 +28,8 @@ cx_err_t sys_cx_trng_get_random_data(void *buffer, size_t len)
 
 uint32_t sys_cx_crc32_hw(const void *buf, size_t len)
 {
-  // Not a true CRC32, but we don't really need one, here.
   uint32_t crc;
-  crc = sys_cx_crc16_update(0, buf, len);
-  crc |= ((uint32_t)sys_cx_crc16_update((unsigned short)crc, buf, len)) << 16;
+  crc = sys_cx_crc32_update(0xFFFFFFFF, buf, len);
 
   return crc;
 }
