@@ -52,7 +52,8 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
 {
   uint8_t header[3];
   uint8_t bpp = 1 << area->bpp;
-  uint32_t buffer_len = (area->width * area->height * bpp) / 8;
+  uint32_t nb_pixs = (area->width * area->height * bpp);
+  uint32_t buffer_len = (nb_pixs / 8) + ((nb_pixs % 8) > 0);
   size_t len = sizeof(nbgl_area_t) + buffer_len + 2;
 
   header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE;
