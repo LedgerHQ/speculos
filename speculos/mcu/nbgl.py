@@ -112,7 +112,8 @@ class NBGL:
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
-        buffer_size = int((area.width * area.height * bpp) / 8)
+        bit_size = (area.width * area.height * bpp)
+        buffer_size = (bit_size // 8) + ((bit_size % 8) > 0)
         buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof()+buffer_size]
         transformation = data[nbgl_area_t.sizeof()+buffer_size]
         color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
