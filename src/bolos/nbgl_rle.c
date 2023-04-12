@@ -1,4 +1,5 @@
 #include "nbgl_rle.h"
+#include <stdio.h>
 #include <string.h>
 
 // Write nb_pix 4BPP pixels of the same color to the display
@@ -119,14 +120,10 @@ static uint32_t handle_4bpp_copy(uint8_t *bytes_in, uint32_t bytes_in_len,
  * @return
  */
 
-void nbgl_uncompress_rle_4bpp(nbgl_area_t *area, uint8_t *buffer,
-                              uint32_t buffer_len, uint8_t *out_buffer,
-                              uint32_t out_buffer_len)
+static void nbgl_uncompress_rle_4bpp(nbgl_area_t *area, uint8_t *buffer,
+                                     uint32_t buffer_len, uint8_t *out_buffer,
+                                     uint32_t out_buffer_len)
 {
-  if (area->bpp != NBGL_BPP_4) {
-    return;
-  }
-
   uint32_t max_pix_cnt = (area->width * area->height);
 
   if (max_pix_cnt * 2 > out_buffer_len) {
@@ -159,5 +156,85 @@ void nbgl_uncompress_rle_4bpp(nbgl_area_t *area, uint8_t *buffer,
 
   if ((pix_cnt % 2) != 0) {
     out_buffer[(pix_cnt) / 2] = remaining;
+  }
+}
+
+/**
+ * @brief Uncompress a 1BPP RLE buffer
+ *
+ * 1BPP RLE Encoder:
+ *
+ * compressed bytes contains ZZZZOOOO nibbles, with
+ * - ZZZZ: number of consecutives zeros (from 0 to 15)
+ * - OOOO: number of consecutives ones (from 0 to 15)
+ *
+ * @param area
+ * @param buffer buffer of RLE-encoded data
+ * @param buffer_len length of buffer
+ * @param out_buffer output buffer
+ * @param out_buffer_len length of output buffer
+ * @return
+ */
+
+static void nbgl_uncompress_rle_1bpp(nbgl_area_t *area, uint8_t *buffer,
+                                     uint32_t buffer_len, uint8_t *out_buffer,
+                                     uint32_t out_buffer_len)
+{
+  size_t index = 0;
+  size_t nb_zeros = 0;
+  size_t nb_ones = 0;
+  uint8_t pixels = 0;
+  size_t nb_pixels = 0;
+  size_t remaining_pixels = area->width * area->height;
+
+  memset(out_buffer, 0, out_buffer_len);
+
+  while (remaining_pixels > 0 && (index < buffer_len || nb_zeros || nb_ones)) {
+
+    // Reload nb_zeros & nb_ones if needed
+    while (!nb_zeros && !nb_ones && index < buffer_len) {
+      uint8_t byte = buffer[index++];
+      nb_ones = byte & 0x0F;
+      nb_zeros = byte >> 4;
+    }
+    // Get next pixel
+    pixels <<= 1;
+    if (nb_zeros) {
+      --nb_zeros;
+      // Next line do nothing, just kept for clarity
+      pixels |= 0; // Add a 0 in bit 0
+    } else if (nb_ones) {
+      --nb_ones;
+      pixels |= 1; // Add a 1 in bit 0
+    }
+    ++nb_pixels;
+    if (nb_pixels == 8) {
+      *out_buffer++ = pixels;
+      remaining_pixels -= 8;
+      nb_pixels -= 8;
+    }
+  }
+
+  // Is there some remaining pixels to store?
+  if (nb_pixels) {
+    // Put the remaining pixels on MSB
+    pixels <<= 8 - nb_pixels;
+    *out_buffer++ = pixels;
+  }
+}
+
+void nbgl_uncompress_rle(nbgl_area_t *area, uint8_t *buffer,
+                         uint32_t buffer_len, uint8_t *out_buffer,
+                         uint32_t out_buffer_len)
+{
+  switch (area->bpp) {
+  case NBGL_BPP_4:
+    nbgl_uncompress_rle_4bpp(area, buffer, buffer_len, out_buffer,
+                             out_buffer_len);
+    break;
+  case NBGL_BPP_1:
+    nbgl_uncompress_rle_1bpp(area, buffer, buffer_len, out_buffer,
+                             out_buffer_len);
+    break;
   }
 }
