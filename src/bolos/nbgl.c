@@ -140,15 +140,11 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
                                           color_t fore_color)
 {
   // Uncompress input buffer
-  nbgl_uncompress_rle_4bpp(area, buffer, buffer_len, fore_color,
-                           uncompress_rle_buffer,
+  nbgl_uncompress_rle_4bpp(area, buffer, buffer_len, uncompress_rle_buffer,
                            sizeof(uncompress_rle_buffer));
 
   // Now send it as if it was a 4BPP uncompressed image
-  color_t background_color = area->backgroundColor;
-  area->backgroundColor = WHITE;
   sys_nbgl_front_draw_img(area, uncompress_rle_buffer, NO_TRANSFORMATION,
-                          BLACK);
-  area->backgroundColor = background_color;
+                          fore_color);
   return 0;
 }
