@@ -140,10 +140,10 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
                                           color_t fore_color)
 {
   // Uncompress input buffer
-  nbgl_uncompress_rle_4bpp(area, buffer, buffer_len, uncompress_rle_buffer,
-                           sizeof(uncompress_rle_buffer));
+  nbgl_uncompress_rle(area, buffer, buffer_len, uncompress_rle_buffer,
+                      sizeof(uncompress_rle_buffer));
 
-  // Now send it as if it was a 4BPP uncompressed image
+  // Now send it as if it was an uncompressed image
   sys_nbgl_front_draw_img(area, uncompress_rle_buffer, NO_TRANSFORMATION,
                           fore_color);
   return 0;
