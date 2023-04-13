@@ -118,10 +118,14 @@ class NBGL:
         transformation = data[nbgl_area_t.sizeof()+buffer_size]
         color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
 
-        if self.force_full_ocr and color_map == 3:
-            # We need all text shown in black with white background
-            area.color = 3
-            color_map = 0
+        if self.force_full_ocr:
+            # Avoid white on black text
+            if (bpp == 4) and (color_map == NbglColor.WHITE) and (area.color == NbglColor.BLACK):
+                area.color = NbglColor.WHITE
+                color_map = NbglColor.BLACK
+            elif bpp != 4 and color_map == 3:
+                area.color = NbglColor.WHITE
+                color_map = 0
 
         if transformation == 0:
             x = area.x0 + area.width - 1
