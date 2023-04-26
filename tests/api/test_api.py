@@ -4,6 +4,7 @@ import pkg_resources
 import pytest
 import re
 import requests
+import time
 from collections import namedtuple
 
 from speculos.client import SpeculosClient
@@ -93,6 +94,9 @@ class TestApi:
             assert isinstance(event, dict)
             return event
 
+        def get_current_screen_content(session):
+            return session.get(f"{API_URL}/events?currentscreenonly=true").content.decode("utf-8")
+
         with requests.Session() as r:
             with r.get(f"{API_URL}/events?stream=true", stream=True) as stream:
                 assert stream.status_code == 200
@@ -117,9 +121,13 @@ class TestApi:
                 '{"events": [{"text": "About", "x": 47, "y": 19}]}\n'
             ]
             for text in texts:
-                with r.get(f"{API_URL}/events?currentscreenonly=true") as response:
-                    assert response.content.decode("utf-8") == text
+                content = get_current_screen_content(r)
+                assert content == text
                 TestApi.press_button("right")
+
+                # Wait for the screen to be updated and parsed
+                while content == get_current_screen_content(r):
+                    time.sleep(1)
 
             with r.get(f"{API_URL}/events") as response:
                 assert json.loads(response.content)

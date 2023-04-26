@@ -106,8 +106,8 @@
 #define SYSCALL_os_perso_derive_node_with_seed_key_ID_IN              0x080000a6
 #define SYSCALL_os_perso_derive_eip2333_ID_IN                         0x040000a7
 #define SYSCALL_os_endorsement_get_code_hash_ID_IN                    0x01000055
-#define SYSCALL_os_endorsement_get_public_key_ID_IN                   0x02000056
-#define SYSCALL_os_endorsement_get_public_key_certificate_ID_IN       0x02000057
+#define SYSCALL_os_endorsement_get_public_key_ID_IN                   0x03000056
+#define SYSCALL_os_endorsement_get_public_key_certificate_ID_IN       0x03000057
 #define SYSCALL_os_endorsement_key1_get_app_secret_ID_IN              0x01000058
 #define SYSCALL_os_endorsement_key1_sign_data_ID_IN                   0x03000059
 #define SYSCALL_os_endorsement_key2_derive_sign_data_ID_IN            0x0300005a
@@ -173,3 +173,5 @@
 #define SYSCALL_nbgl_front_draw_img_file_ID_IN                        0x05fa0004
 #define SYSCALL_touch_get_last_info_ID_IN                             0x01fa000b
 #define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
+#define SYSCALL_nbgl_screen_reinit_ID_IN                              0x00fa000d
+#define SYSCALL_nbgl_front_draw_img_rle_ID_IN                         0x00fa000e

@@ -1,0 +1,82 @@
+name: Functional tests using Ragger and latest speculos
+
+on:
+  workflow_call:
+    inputs:
+      app_repository:
+        required: false
+        default: ${{ github.repository }}
+        type: string
+      app_branch_name:
+        required: false
+        default: ${{ github.ref }}
+        type: string
+      test_dir:
+        required: true
+        type: string
+      speculos_app_branch_name:
+        required: false
+        default: develop
+        type: string
+
+jobs:
+  build_application:
+    name: Build application using the reusable workflow
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_build.yml@v1
+    with:
+      app_repository: ${{ inputs.app_repository }}
+      app_branch_name: ${{ inputs.app_branch_name }}
+      upload_app_binaries_artifact: "compiled_app_binaries"
+
+  ragger_tests:
+    name: Functional tests with Ragger
+    runs-on: ubuntu-latest
+    container:
+      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - device: nanos
+          - device: nanox
+          - device: nanosp
+          - device: stax
+    steps:
+    - name: Clone
+      uses: actions/checkout@v3
+      with:
+          repository: ledgerHQ/speculos
+          ref: ${{ inputs.speculos_app_branch_name }}
+          submodules: recursive
+          fetch-depth: 0
+
+    - name: Build the Speculos docker
+      uses: docker/build-push-action@v1
+      with:
+          push: false
+          tags: test
+
+    - name: Clone
+      uses: actions/checkout@v3
+      with:
+          repository: ${{ inputs.app_repository }}
+          ref: ${{ inputs.app_branch_name }}
+          path: app
+          submodules: recursive
+          fetch-depth: 0
+
+    - name: Download app binaries
+      uses: actions/download-artifact@v3
+      with:
+        name: "compiled_app_binaries"
+        path: ${{ github.workspace }}/app/build
+
+    - name: Run and test Speculos docker
+      uses: addnab/docker-run-action@v3
+      with:
+        image: ledgerhq/speculos:test
+        options: -v ${{ github.workspace }}/app:/app
+        run: |
+            apt-get update && apt-get install -y gcc
+            pip install --extra-index-url https://test.pypi.org/simple/ -r /app/${{ inputs.test_dir }}/requirements.txt
+            pytest /app/${{ inputs.test_dir }}/ --tb=short -v --device ${{ matrix.device }}

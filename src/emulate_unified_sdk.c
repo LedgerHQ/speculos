@@ -102,6 +102,14 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
     SYSCALL1(nbgl_get_font, "%u",
              unsigned int, fontId);
 
+    SYSCALL0(nbgl_screen_reinit);
+
+    SYSCALL4(nbgl_front_draw_img_rle, "%p, %p, %u, %u",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             unsigned int,     buffer_len,
+             color_t,          fore_color);
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;
@@ -146,6 +154,7 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
 
   switch (syscall) {
     /* clang-format off */
+    SYSCALL0(get_api_level);
 
     SYSCALL2(cx_get_random_bytes, "(%p %u)",
              uint8_t *, buffer,
@@ -298,6 +307,16 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
     SYSCALL2(cx_ecpoint_is_on_curve, "(%p, %p)",
              void *, ec_P,
              bool *, is_on_curve);
+
+    SYSCALL3(cx_ecpoint_x25519, "(%u, %p, %u)",
+             uint32_t,  bn_u,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL3(cx_ecpoint_x448, "(%u, %p, %u)",
+             uint32_t,  bn_u,
+             uint8_t *, k,
+             size_t,    k_len);
 
     SYSCALL0(cx_bn_is_locked);
 
@@ -692,18 +711,22 @@ int emulate_syscall_endorsement(unsigned long syscall,
   SYSCALL1(os_endorsement_get_code_hash, "(%p)",
            uint8_t *, buffer);
 
-  SYSCALL2(os_endorsement_get_public_key, "(%d, %p)",
-           uint8_t,   index,
-           uint8_t *, buffer);
-
-  SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
-           unsigned char,   index,
-           unsigned char *, buffer);
-
   SYSCALL3(os_endorsement_key1_sign_data, "(%p, %u, %p)",
            uint8_t *, data,
            size_t,    dataLength,
            uint8_t *, signature);
+
+  SYSCALL3i(os_endorsement_get_public_key, "(%d, %p, %p)",
+           uint8_t,   index,
+           uint8_t *, buffer,
+           uint8_t *, length,
+           os_endorsement_get_public_key_new);
+
+  SYSCALL3i(os_endorsement_get_public_key_certificate, "(%d, %p, %p)",
+           unsigned char,   index,
+           unsigned char *, buffer,
+           unsigned char *, length,
+           os_endorsement_get_public_key_certificate_new);
 
   /* clang-format on */
   default:

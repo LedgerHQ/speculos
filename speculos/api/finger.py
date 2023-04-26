@@ -1,4 +1,3 @@
-import time
 import jsonschema
 from flask import request
 
@@ -17,12 +16,13 @@ class Finger(SephResource):
             return {"error": f"{e}"}, 400
 
         action = args["action"]
-        actions = {"press": [True], "release": [False], "press-and-release": [True, False]}
         delay = args.get("delay", 0.1)
 
-        for a in actions[action]:
-            self.seph.handle_finger(args["x"], args["y"], a)
-            if action == "press-and-release":
-                time.sleep(delay)
+        if action == "press-and-release":
+            self.seph.handle_finger(args["x"], args["y"], True)
+            self.seph.handle_wait(delay)
+            self.seph.handle_finger(args["x"], args["y"], False)
+        else:
+            self.seph.handle_finger(args["x"], args["y"], action == "press")
 
         return {}, 200

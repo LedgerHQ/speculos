@@ -1,5 +1,14 @@
 from construct import Struct, Int8ul, Int16ul
+from enum import IntEnum
 import gzip
+
+
+class NbglColor(IntEnum):
+    BLACK = 0,
+    DARK_GRAY = 1,
+    LIGHT_GRAY = 2,
+    WHITE = 3
+
 
 nbgl_area_t = Struct(
     "x0" / Int16ul,
@@ -71,6 +80,23 @@ class NBGL:
         # #define GET_COLOR_MAP(__map__,__col__) ((__map__>>(__col__*2))&0x3)
         return NBGL.to_screen_color((color_map >> (color*2)) & 0x3, bpp)
 
+    def get_4bpp_color_from_color_index(index, front_color, back_color):
+        COLOR_MAPS_4BPP = {
+            # Black on white
+            (NbglColor.BLACK, NbglColor.WHITE): [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            # White on black
+            (NbglColor.WHITE, NbglColor.BLACK): [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+            # Dark gray on white
+            (NbglColor.DARK_GRAY, NbglColor.WHITE): [5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 11, 12, 13, 14, 15],
+            # Light gray on white
+            (NbglColor.LIGHT_GRAY, NbglColor.WHITE): [10, 10, 11, 11, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15, 15],
+            # Light gray on black
+            (NbglColor.LIGHT_GRAY, NbglColor.BLACK): [10, 9, 8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0]
+        }
+
+        mapped_index = COLOR_MAPS_4BPP[(NbglColor(front_color), NbglColor(back_color))][index]
+        return NBGL.to_screen_color(mapped_index, 4)
+
     def nbgl_bpp_to_read_bpp(abpp):
         if abpp == 0:
             bpp = 1
@@ -86,15 +112,20 @@ class NBGL:
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
-        buffer_size = int((area.width * area.height * bpp) / 8)
+        bit_size = (area.width * area.height * bpp)
+        buffer_size = (bit_size // 8) + ((bit_size % 8) > 0)
         buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof()+buffer_size]
         transformation = data[nbgl_area_t.sizeof()+buffer_size]
-        color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]
+        color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
 
-        if self.force_full_ocr and color_map == 3:
-            # We need all text shown in black with white background
-            area.color = 3
-            color_map = 0
+        if self.force_full_ocr:
+            # Avoid white on black text
+            if (bpp == 4) and (color_map == NbglColor.WHITE) and (area.color == NbglColor.BLACK):
+                area.color = NbglColor.WHITE
+                color_map = NbglColor.BLACK
+            elif bpp != 4 and color_map == 3:
+                area.color = NbglColor.WHITE
+                color_map = 0
 
         if transformation == 0:
             x = area.x0 + area.width - 1
@@ -134,6 +165,8 @@ class NBGL:
                 nib = (byte >> (8-bit_step-i)) & mask
                 if color_map and bpp < 4:
                     pixel_color = NBGL.get_color_from_color_map(nib, color_map, bpp)
+                elif bpp == 4:
+                    pixel_color = NBGL.get_4bpp_color_from_color_index(nib, color_map, area.color)
                 else:
                     pixel_color = NBGL.to_screen_color(nib, bpp)
 

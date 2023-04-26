@@ -1166,3 +1166,26 @@ cx_err_t cx_mpi_next_prime(cx_mpi_t *x)
 
   return error;
 }
+
+#define MAX_BYTE_LEN 128
+void cx_mpi_reverse(cx_mpi_t *x, uint32_t nbytes)
+{
+  uint8_t buf[MAX_BYTE_LEN];
+  uint8_t rev[MAX_BYTE_LEN];
+  uint32_t i;
+
+  cx_mpi_export(x, buf, nbytes);
+  cx_mpi_set_u32(x, 0);
+
+  for (i = 0; i < nbytes; i++) {
+    rev[nbytes - 1 - i] = buf[i];
+  }
+  cx_mpi_init(x, rev, nbytes);
+}
+
+void cx_mpi_swap(cx_mpi_t *a, cx_mpi_t *b, const int c)
+{
+  if (c) {
+    BN_swap(a, b);
+  }
+}

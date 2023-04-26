@@ -4,6 +4,7 @@
 
 #include "emulate.h"
 #include "nbgl.h"
+#include "nbgl_rle.h"
 
 #define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0x6A
 #define SEPROXYHAL_TAG_NBGL_REFRESH         0x6B
@@ -50,7 +51,9 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
                                       nbgl_color_map_t colorMap)
 {
   uint8_t header[3];
-  uint32_t buffer_len = (area->width * area->height * (area->bpp + 1)) / 8;
+  uint8_t bpp = 1 << area->bpp;
+  uint32_t nb_pixs = (area->width * area->height * bpp);
+  uint32_t buffer_len = (nb_pixs / 8) + ((nb_pixs % 8) > 0);
   size_t len = sizeof(nbgl_area_t) + buffer_len + 2;
 
   header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE;
@@ -116,11 +119,33 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
 }
 
 #define FONTS_ARRAY_ADDR 0x00805000
+#define NB_FONTS         7
 unsigned long sys_nbgl_get_font(unsigned int fontId)
 {
-  if (fontId >= 4) {
+  if (fontId >= NB_FONTS) {
     return 0;
   } else {
     return *((unsigned int *)(FONTS_ARRAY_ADDR + (4 * fontId)));
   }
+}
+
+unsigned long sys_nbgl_screen_reinit(void)
+{
+  return 0;
+}
+
+uint8_t uncompress_rle_buffer[SCREEN_HEIGHT * SCREEN_WIDTH / 2];
+
+unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
+                                          uint32_t buffer_len,
+                                          color_t fore_color)
+{
+  // Uncompress input buffer
+  nbgl_uncompress_rle(area, buffer, buffer_len, uncompress_rle_buffer,
+                      sizeof(uncompress_rle_buffer));
+
+  // Now send it as if it was an uncompressed image
+  sys_nbgl_front_draw_img(area, uncompress_rle_buffer, NO_TRANSFORMATION,
+                          fore_color);
+  return 0;
 }
