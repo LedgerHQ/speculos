@@ -915,18 +915,18 @@ static uint8_t const C_cx_BLS12_381_G1_Gy[BLS12_381_SIZE_u8] = {
 // The cofactor of BLS12-381 0x396c8c005555e1568c00aaab0000aaab
 // does not fit.
 #define C_cx_BLS12_381_G1_h 1
-cx_curve_weierstrass_t const C_cx_BLS12_381_G1 = { CX_CURVE_BLS12_381_G1,
-                                                   381,
-                                                   48,
-                                                   C_cx_BLS12_381_G1_p,
-                                                   C_cx_BLS12_381_G1_Hp,
-                                                   C_cx_BLS12_381_G1_Gx,
-                                                   C_cx_BLS12_381_G1_Gy,
-                                                   C_cx_BLS12_381_G1_n,
-                                                   C_cx_BLS12_381_G1_Hn,
-                                                   C_cx_BLS12_381_G1_h,
-                                                   C_cx_BLS12_381_G1_a,
-                                                   C_cx_BLS12_381_G1_b };
+static cx_curve_weierstrass_t const C_cx_BLS12_381_G1 = { CX_CURVE_BLS12_381_G1,
+                                                          381,
+                                                          48,
+                                                          C_cx_BLS12_381_G1_p,
+                                                          C_cx_BLS12_381_G1_Hp,
+                                                          C_cx_BLS12_381_G1_Gx,
+                                                          C_cx_BLS12_381_G1_Gy,
+                                                          C_cx_BLS12_381_G1_n,
+                                                          C_cx_BLS12_381_G1_Hn,
+                                                          C_cx_BLS12_381_G1_h,
+                                                          C_cx_BLS12_381_G1_a,
+                                                          C_cx_BLS12_381_G1_b };
 
 static unsigned char const C_cx_Ed25519_a[] = {
   0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,

@@ -515,7 +515,34 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
              bool *,   ptr);
 
     SYSCALL1(cx_bn_next_prime, "(%u)",
-             uint32_t, a)
+             uint32_t, a);
+
+    SYSCALL10(cx_bls12381_key_gen, "(%u, %p, %u, %p, %u, %p, %u, %p, %p, %u)",
+              uint8_t, mode,
+              uint8_t *, secret,
+              size_t, secret_len,
+              uint8_t *, salt,
+              size_t, salt_len,
+              uint8_t *, key_info,
+              size_t, key_info_len,
+              void *, private_key,
+              uint8_t *, public_key,
+              size_t, public_key_len);
+
+    SYSCALL6(cx_hash_to_field, "(%p, %u, %p, %u, %p, %u)",
+             uint8_t *, msg,
+             size_t, msg_len,
+             uint8_t *, dst,
+             size_t, dst_len,
+             uint8_t *, hash,
+             size_t, hash_len);
+
+    SYSCALL5(ox_bls12381_sign, "(%p, %p, %u, %p, %u)",
+             cx_ecfp_384_private_key_t *, key,
+             uint8_t *, msg,
+             size_t, msg_len,
+             uint8_t *, sign,
+             size_t, sign_len);
 
   /* clang-format on */
   default:

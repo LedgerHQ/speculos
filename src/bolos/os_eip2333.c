@@ -4,24 +4,14 @@
 #include <stdlib.h>
 
 #include "cx.h"
+#include "cx_utils.h"
 #include "emulate.h"
 #include "exception.h"
 #include "os_bip32.h"
 
 #define MAX_SEED_SIZE          64
 #define CX_SHA256_SIZE         32
-#define CX_HKDF_MOD_R_CEIL     48
 #define CX_EIP2333_SEED_LENGTH 65
-#define KEY_LENGTH             32
-#define LAMPORT_KEY_LENGTH     (KEY_LENGTH + 1)
-
-static inline void U4BE_ENCODE(uint8_t *buf, size_t off, uint32_t value)
-{
-  buf[off + 0] = (value >> 24) & 0xFF;
-  buf[off + 1] = (value >> 16) & 0xFF;
-  buf[off + 2] = (value >> 8) & 0xFF;
-  buf[off + 3] = value & 0xFF;
-}
 
 // -------------------- EIP-2333 key generation for BLS12-381 curves
 // ------------------------- https://eips.ethereum.org/EIPS/eip-2333 This
@@ -90,53 +80,6 @@ static void cx_parent_sk_to_lamport_pk(const unsigned char *parent_sk,
               32);
 }
 
-// Hash 32 random bytes into the subgroup of the BLS12-381 privates keys
-// Input: ikm = a secret octet string >= 256 bits: ikm = ikm || I2OSP(0, 1)
-//        ikm_len = ikm length
-//        key_info = an optional string: key_info = key_info || I2OSP(L, 2)
-//        key_info_len = key_info length
-// Output: sk = the secret key, an integer s.t 0 <= sk < r, r is the subgroup
-// order
-// 1. salt = "BLS-SIG-KEYGEN-SALT-"
-// 2. SK = 0
-// 3. while SK == 0:
-// 4.     salt = SHA256(salt)
-// 5.     PRK = HKDF-Extract(salt, IKM || I2OSP(0, 1))
-// 6.     OKM = HKDF-Expand(PRK, key_info || I2OSP(L, 2), L)
-// 7.     SK = OS2IP(OKM) mod r
-// 8. return SK
-
-static void cx_hkdf_mod_r(const unsigned char *ikm, unsigned int ikm_len,
-                          unsigned char *key_info, unsigned int key_info_len,
-                          unsigned char *sk)
-{
-  unsigned char prk[CX_SHA256_SIZE];
-  unsigned char okm[CX_HKDF_MOD_R_CEIL];
-  unsigned char HKDF_MOD_R_SALT[] = { 'B', 'L', 'S', '-', 'S', 'I', 'G',
-                                      '-', 'K', 'E', 'Y', 'G', 'E', 'N',
-                                      '-', 'S', 'A', 'L', 'T', '-' };
-  const cx_curve_domain_t *domain;
-  unsigned char salt[CX_SHA256_SIZE];
-  unsigned int salt_len;
-  unsigned char used_salt[CX_SHA256_SIZE];
-
-  domain = cx_ecfp_get_domain(CX_CURVE_BLS12_381_G1);
-  memcpy(used_salt, HKDF_MOD_R_SALT, sizeof(HKDF_MOD_R_SALT));
-  salt_len = sizeof(HKDF_MOD_R_SALT);
-  memset(sk, 0, KEY_LENGTH);
-
-  while (cx_math_is_zero(sk, KEY_LENGTH)) {
-    sys_cx_hash_sha256(used_salt, salt_len, salt, CX_SHA256_SIZE);
-    cx_hkdf_extract(CX_SHA256, ikm, ikm_len, salt, CX_SHA256_SIZE, prk);
-    spec_cx_hkdf_expand(CX_SHA256, prk, CX_SHA256_SIZE, key_info, key_info_len,
-                        okm, CX_HKDF_MOD_R_CEIL);
-    cx_math_mod(okm, CX_HKDF_MOD_R_CEIL, domain->n, CX_HKDF_MOD_R_CEIL);
-    memcpy(sk, okm + (CX_HKDF_MOD_R_CEIL - KEY_LENGTH), KEY_LENGTH);
-    salt_len = sizeof(salt);
-    memcpy(used_salt, salt, salt_len);
-  }
-}
-
 // Derive the secret key of the master node
 // Input: seed = the source of entropy for the entire tree (at least 256 bits)
 //        seed_len = the seed length
@@ -150,7 +93,7 @@ static void cx_derive_master_sk(const unsigned char *seed,
 
   memcpy(seed_intern, seed, seed_len);
   seed_intern[seed_len] = 0;
-  cx_hkdf_mod_r(seed_intern, seed_len + 1, key_info, 2, sk);
+  cx_hkdf_mod_r(seed_intern, seed_len + 1, NULL, 0, key_info, 2, sk);
 }
 
 // Derive the secret key of the child node
@@ -177,7 +120,7 @@ static int cx_derive_child_sk(const unsigned char *parent_sk,
     lamport_pk[KEY_LENGTH] = 0;
     info[0] = 0x00;
     info[1] = 0x30;
-    cx_hkdf_mod_r(lamport_pk, 33, info, 2, child_sk);
+    cx_hkdf_mod_r(lamport_pk, 33, NULL, 0, info, 2, child_sk);
   }
 
   return 0;

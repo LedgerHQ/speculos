@@ -107,3 +107,7 @@ void le2be(uint8_t *v, size_t len);
 int sys_cx_math_next_prime(uint8_t *buf, unsigned int len);
 
 int get_path(const char *str_, unsigned int *path, int max_path_len);
+
+void U2BE_ENCODE(uint8_t *buf, size_t off, uint32_t value);
+void U4BE_ENCODE(uint8_t *buf, size_t off, uint32_t value);
+void cx_memxor(uint8_t *buf1, const uint8_t *buf2, size_t len);

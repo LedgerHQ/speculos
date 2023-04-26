@@ -177,3 +177,8 @@
 #define SYSCALL_nbgl_screen_reinit_ID_IN                              0x00fa000d
 #define SYSCALL_nbgl_front_draw_img_rle_legacy_ID_IN                  0x00fa000e // API levels 7-8-9
 #define SYSCALL_nbgl_front_draw_img_rle_ID_IN                         0x04fa0010
+
+#define SYSCALL_ox_bls12381_sign_ID_IN                                0x05000103
+#define SYSCALL_cx_hash_to_field_ID_IN                                0x06000104
+#define SYSCALL_cx_bls12381_aggregate_ID_IN                           0x05000105
+#define SYSCALL_cx_bls12381_key_gen_ID_IN                             0x03000108

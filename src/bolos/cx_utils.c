@@ -290,3 +290,25 @@ int get_path(const char *str_, unsigned int *path, int max_path_len)
 
   return path_len;
 }
+
+void U2BE_ENCODE(uint8_t *buf, size_t off, uint32_t value)
+{
+  buf[off + 0] = (value >> 8) & 0xFF;
+  buf[off + 1] = value & 0xFF;
+}
+
+void U4BE_ENCODE(uint8_t *buf, size_t off, uint32_t value)
+{
+  buf[off + 0] = (value >> 24) & 0xFF;
+  buf[off + 1] = (value >> 16) & 0xFF;
+  buf[off + 2] = (value >> 8) & 0xFF;
+  buf[off + 3] = value & 0xFF;
+}
+
+void cx_memxor(uint8_t *buf1, const uint8_t *buf2, size_t len)
+{
+  size_t i;
+  for (i = 0; i < len; i++) {
+    buf1[i] ^= buf2[i];
+  }
+}

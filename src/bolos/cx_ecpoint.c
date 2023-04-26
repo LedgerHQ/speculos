@@ -299,7 +299,8 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
   case CX_CURVE_BrainPoolP384R1:
   case CX_CURVE_BrainPoolP384T1:
   case CX_CURVE_BrainPoolP512R1:
-  case CX_CURVE_BrainPoolP512T1: {
+  case CX_CURVE_BrainPoolP512T1:
+  case CX_CURVE_BLS12_381_G1: {
     if (cx_weierstrass_mult(ec_P->curve, Qx, Qy, P.x, P.y, e) != 1) {
       error = CX_INTERNAL_ERROR;
       goto cleanup;

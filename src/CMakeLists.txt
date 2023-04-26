@@ -6,6 +6,9 @@ add_library(emu
         bolos/cx_aes.c
         bolos/cx_aes_sdk2.c
         bolos/cx_blake2b.c
+        bolos/cx_bls.c
+        bolos/cx_bls_fp2.c
+        bolos/cx_bls_g2.c
         bolos/cx_bn.c
         bolos/cx_curve25519.c
         bolos/cx_crc.c

@@ -91,6 +91,17 @@ else()
     BUILD_IN_SOURCE 1
   )
 
+  ExternalProject_Add(
+    blst
+    GIT_REPOSITORY git@github.com:supranational/blst.git
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND sh build.sh CC=arm-linux-gnueabihf-gcc
+    INSTALL_COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/blst-prefix/src/blst/libblst.a ${INSTALL_DIR}/lib/
+    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/blst-prefix/src/blst/bindings/blst.h ${INSTALL_DIR}/include/
+    COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/blst-prefix/src/blst/bindings/blst_aux.h ${INSTALL_DIR}/include/
+    BUILD_IN_SOURCE 1
+  )
+
   if (BUILD_TESTING)
     set(CMOCKA_CMAKE_ARGS
       -DWITH_STATIC_LIB=true
@@ -119,7 +130,7 @@ endif()
 include_directories(${INSTALL_DIR}/include)
 link_directories(${INSTALL_DIR}/lib)
 
-link_libraries(ssl crypto dl)
+link_libraries(ssl crypto dl blst)
 
 add_subdirectory(src)
 
