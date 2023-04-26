@@ -43,6 +43,7 @@ int emulate(unsigned long syscall, unsigned long *parameters,
   case SDK_API_LEVEL_5:
   case SDK_API_LEVEL_7:
   case SDK_API_LEVEL_8:
+  case SDK_API_LEVEL_9:
     retid =
         emulate_unified_sdk(syscall, parameters, ret, verbose, version, model);
     break;
