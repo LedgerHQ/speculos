@@ -69,7 +69,7 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
   return 0;
 }
 
-unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area)
+unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area)
 {
   uint8_t header[3];
   size_t len = sizeof(nbgl_area_t);
@@ -82,6 +82,13 @@ unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area)
   sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
 
   return 0;
+}
+
+unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area,
+                                          nbgl_post_refresh_t post_refresh)
+{
+  (void)post_refresh;
+  return sys_nbgl_front_refresh_area_legacy(area);
 }
 
 unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
@@ -148,4 +155,12 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
   sys_nbgl_front_draw_img(area, uncompress_rle_buffer, NO_TRANSFORMATION,
                           fore_color);
   return 0;
+}
+
+unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
+                                                 uint8_t *buffer,
+                                                 uint32_t buffer_len,
+                                                 color_t fore_color)
+{
+  return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len, fore_color);
 }

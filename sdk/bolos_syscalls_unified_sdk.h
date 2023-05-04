@@ -169,9 +169,11 @@
 #define SYSCALL_nbgl_front_draw_rect_ID_IN                            0x01fa0000
 #define SYSCALL_nbgl_front_draw_horizontal_line_ID_IN                 0x03fa0001
 #define SYSCALL_nbgl_front_draw_img_ID_IN                             0x04fa0002
-#define SYSCALL_nbgl_front_refresh_area_ID_IN                         0x02fa0003
+#define SYSCALL_nbgl_front_refresh_area_legacy_ID_IN     	          0x02fa0003 // API levels 6-7-8-9
+#define SYSCALL_nbgl_front_refresh_area_ID_IN                         0x03fa0003
 #define SYSCALL_nbgl_front_draw_img_file_ID_IN                        0x05fa0004
 #define SYSCALL_touch_get_last_info_ID_IN                             0x01fa000b
 #define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
 #define SYSCALL_nbgl_screen_reinit_ID_IN                              0x00fa000d
-#define SYSCALL_nbgl_front_draw_img_rle_ID_IN                         0x00fa000e
+#define SYSCALL_nbgl_front_draw_img_rle_legacy_ID_IN                  0x00fa000e // API levels 7-8-9
+#define SYSCALL_nbgl_front_draw_img_rle_ID_IN                         0x04fa0010
