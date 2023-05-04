@@ -88,6 +88,19 @@ typedef struct __attribute__((__packed__)) nbgl_area_s {
   uint8_t bpp;             ///< bits per pixel for this area
 } nbgl_area_t;
 
+/**
+ * @brief Available post-refresh power modes
+ *
+ * - Power off after a refresh allows to save power
+ * - Keep the screen powered on after a refresh allows to
+ *   achieve a faster following refresh.
+ */
+typedef enum nbgl_post_refresh_t {
+  POST_REFRESH_FORCE_POWER_OFF,  ///< Force screen power off after refresh
+  POST_REFRESH_FORCE_POWER_ON,   ///< Force screen power on after refresh
+  POST_REFRESH_KEEP_POWER_STATE, ///< Keep screen power state after refresh
+} nbgl_post_refresh_t;
+
 typedef enum { BLACK = 0, DARK_GRAY, LIGHT_GRAY, WHITE } color_t;
 
 unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area);
@@ -100,7 +113,10 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
                                       nbgl_transformation_t transformation,
                                       nbgl_color_map_t colorMap);
 
-unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area);
+unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area);
+
+unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area,
+                                          nbgl_post_refresh_t post_refresh);
 
 unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
                                            nbgl_color_map_t colorMap,
@@ -113,3 +129,8 @@ unsigned long sys_nbgl_screen_reinit(void);
 unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
                                           uint32_t buffer_len,
                                           color_t fore_color);
+
+unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
+                                                 uint8_t *buffer,
+                                                 uint32_t buffer_len,
+                                                 color_t fore_color);
