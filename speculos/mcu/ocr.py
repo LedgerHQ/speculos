@@ -2,6 +2,7 @@ from typing import List, Mapping
 from dataclasses import dataclass
 from PIL import Image, ImageOps
 from pytesseract import image_to_data, Output
+from pathlib import Path
 import functools
 import string
 import cv2
@@ -19,6 +20,7 @@ NEW_LINE_THRESHOLD = 10  # pixels
 STAX_BOX_MIN_HEIGHT = 50  # pixels
 STAX_BOX_MIN_WIDTH = 100  # pixels
 # Used for Nano X, Nano SP
+NANO_TESS_MODEL="nano-font-ocr"
 # Image crop (left and right) margin.
 NANO_IMAGE_CROP_MARGIN = 6  # pixels
 # Image upscale factor.
@@ -239,10 +241,10 @@ class OCR:
             image = ImageOps.invert(image)
             image = image.crop((c, 0, w - c, h))
             image = image.resize((w * s, h * s))
-            # image.save(f"flowerbefore{idx}.png")
             image = self._nano_remove_non_text_areas(image)
-            # image.save(f"flower{idx}.png")
-            data = image_to_data(image, output_type=Output.DICT, lang="nano_font")
+            tessdata_dir_config = f"--tessdata-dir {Path(__file__).parent.resolve()}/resources"
+            # Perform OCR using the model trained with https://github.com/LedgerHQ/app-tess-train
+            data = image_to_data(image, output_type=Output.DICT, lang=NANO_TESS_MODEL, config=tessdata_dir_config)
         elif device == "stax":
             image = self._stax_detect_and_invert_box_shapes(image)
             data = image_to_data(image, output_type=Output.DICT)
