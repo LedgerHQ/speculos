@@ -14,23 +14,19 @@ on:
 jobs:
 
   linter:
-    name: Linter on C & Python code
+    name: Linter on C code
     runs-on: ubuntu-latest
     steps:
     - name: Clone
       uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - name: Python dependency
-      run: pip install flake8
     - name: Lint C code
-      uses: DoozyX/clang-format-lint-action@v0.13
+      uses: DoozyX/clang-format-lint-action@v0.16.1
       with:
         source: 'src tests'
         extensions: 'c,h'
         clangFormatVersion: 11
-    - name: Lint Python code
-      run: find . -type f -name '*.py' -exec flake8 --max-line-length=120 '{}' '+'
 
   misspell:
     name: Check misspellings
@@ -41,7 +37,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Check misspellings
-      uses: codespell-project/actions-codespell@de089481bd65b71b4d02e34ffb3566b6d189333e
+      uses: codespell-project/actions-codespell@v1
       with:
         builtin: clear,rare
         check_filenames: true
