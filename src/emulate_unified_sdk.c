@@ -544,6 +544,13 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
              uint8_t *, sign,
              size_t, sign_len);
 
+    SYSCALL5(cx_bls12381_aggregate, "(%p, %u, %d, %p, %u)",
+             uint8_t *, in,
+             size_t, in_len,
+             bool, first,
+             uint8_t *, agg_sign,
+             size_t, sign_len);
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;

@@ -209,3 +209,36 @@ cx_err_t sys_ox_bls12381_sign(const cx_ecfp_384_private_key_t *key,
 
   return CX_OK;
 }
+
+cx_err_t sys_cx_bls12381_aggregate(const uint8_t *in, size_t in_len, bool first,
+                                   uint8_t *aggregated_signature,
+                                   size_t signature_len)
+{
+  blst_p2_affine in_point, previous_point;
+  blst_p2 p2_in, p2_previous, p2_out;
+
+  if (0 == in_len) {
+    return CX_INVALID_PARAMETER;
+  }
+  if (BLS_COMPRESSED_SIG_LEN != signature_len) {
+    return CX_INVALID_PARAMETER;
+  }
+
+  if (BLST_SUCCESS != blst_p2_uncompress(&in_point, in)) {
+    return CX_INTERNAL_ERROR;
+  }
+  if (first) {
+    blst_p2_affine_compress(aggregated_signature, &in_point);
+    return CX_OK;
+  }
+  blst_p2_from_affine(&p2_in, &in_point);
+  if (BLST_SUCCESS !=
+      blst_p2_uncompress(&previous_point, aggregated_signature)) {
+    return CX_INTERNAL_ERROR;
+  }
+  blst_p2_from_affine(&p2_previous, &previous_point);
+  blst_p2_add_or_double(&p2_out, &p2_in, &p2_previous);
+  blst_p2_compress(aggregated_signature, &p2_out);
+
+  return CX_OK;
+}
