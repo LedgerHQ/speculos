@@ -4,7 +4,7 @@ import sys
 import time
 import threading
 from enum import IntEnum
-from typing import List
+from typing import List, Callable
 
 from . import usb
 from .ocr import OCR
@@ -48,23 +48,58 @@ RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
 RENDER_METHOD = RenderMethods(0, 1)
 
 
-def ticker(add_tick):
-    """
-    Function ran in a thread to trigger a tick at a periodic interval.
+class TimeTickerDaemon(threading.Thread):
+    def __init__(self, add_tick, *args, **kwargs):
+        super(TimeTickerDaemon, self).__init__(name="time_ticker", daemon=True)
+        self.pause: bool = False
+        self.resume: threading.Condition = threading.Condition()
+        self.add_tick: Callable = add_tick
 
-    There is no need to prevent clock drift.
-    """
+        """
+        Initializes the Ticker Daemon
+        The goal of this daemon is to emulate the time spent in the application by sending it
+        ticker events at a regular interval TICKER_DELAY.
+        This daemon can be paused and resumed through it's API to stop the flow of time in the MCU
 
-    while True:
-        add_tick()
-        time.sleep(TICKER_DELAY)
+        :param add_tick: The callback function to add a Ticker Event to the packet manager
+        :type add_tick: Backend
+        """
+
+    def pause_emulated_time(self):
+        """
+        Pause time emulation done by the daemon, no ticker event will be sent until resume
+        """
+        self.pause = True
+
+    def resume_emulated_time(self):
+        """
+        Resume time emulation done by the daemon, no ticker event will be sent until resume
+        """
+        self.pause = False
+        with self.resume:
+            self.resume.notify()
+
+    def _wait_if_time_paused(self):
+        """
+        Internal function to handle the pause
+        """
+        while self.pause:
+            with self.resume:
+                self.resume.wait()
+
+    def run(self):
+        """
+        Main thread function
+        """
+        while True:
+            self._wait_if_time_paused()
+            self.add_tick()
+            time.sleep(TICKER_DELAY)
 
 
-class PacketThread(threading.Thread):
-    TICKER_PACKET = (SephTag.TICKER_EVENT, b'')
-
+class PacketDaemon(threading.Thread):
     def __init__(self, s, status_event, *args, **kwargs):
-        super(PacketThread, self).__init__(name="packet", daemon=True)
+        super(PacketDaemon, self).__init__(name="packet", daemon=True)
         self.s = s
         self.queue_condition = threading.Condition()
         self.queue = []
@@ -107,11 +142,12 @@ class PacketThread(threading.Thread):
     def add_tick(self):
         """Add a ticker event to the queue."""
 
-        # Don't add too many ticker packets to the queue. For instance, the app
-        # might be stuck if a breakpoint is hit within a debugger. It avoids
-        # flooding the app on resume.
-        if self.queue.count(self.TICKER_PACKET) >= 1:
-            return False
+        # Drop ticker packet if one is already present in the queue.
+        # For instance, the app might be stuck if a breakpoint is hit within a debugger.
+        # It avoids flooding the app on resume.
+        for tag, _ in self.queue:
+            if tag == SephTag.TICKER_EVENT:
+                return False
 
         self.queue_packet(SephTag.TICKER_EVENT)
         return True
@@ -150,14 +186,12 @@ class SeProxyHal:
         self.events: List[TextEvent] = []
 
         self.status_event = threading.Event()
-        self.packet_thread = PacketThread(self.s, self.status_event)
+        self.packet_thread = PacketDaemon(self.s, self.status_event)
         self.packet_thread.start()
 
-        self.ticker_thread = threading.Thread(name="ticker",
-                                              target=ticker,
-                                              args=(self.packet_thread.add_tick,),
-                                              daemon=True)
+        self.ticker_thread = TimeTickerDaemon(self.packet_thread.add_tick)
         self.ticker_thread.start()
+
         self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
 
         self.ocr = OCR()
@@ -271,7 +305,10 @@ class SeProxyHal:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
                 if screen.model in ["nanox", "nanosp"]:
+                    # Pause flow of time while the OCR is running
+                    self.ticker_thread.pause_emulated_time()
                     self.ocr.analyze_bitmap(data)
+                    self.ticker_thread.resume_emulated_time()
                 # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
                 #
                 # io_seproxyhal_spi_recv() accepts any packet from the MCU after
@@ -301,9 +338,12 @@ class SeProxyHal:
                 screen.nbgl.hal_refresh(data)
 
                 if not screen.nbgl.disable_tesseract:
+                    # Pause flow of time while the OCR is running
+                    self.ticker_thread.pause_emulated_time()
                     screen.nbgl.m.update_screenshot()
                     screen_size, image_data = screen.nbgl.m.take_screenshot()
                     self.ocr.analyze_image(screen_size, image_data)
+                    self.ticker_thread.resume_emulated_time()
 
             elif tag == 0x6c:
                 screen.nbgl.hal_draw_line(data)
