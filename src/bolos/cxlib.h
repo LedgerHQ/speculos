@@ -296,3 +296,6 @@ cx_err_t sys_cx_hash_to_field(const uint8_t *msg, size_t msg_len,
 cx_err_t sys_ox_bls12381_sign(const cx_ecfp_384_private_key_t *key,
                               uint8_t *message, size_t message_len,
                               uint8_t *signature, size_t signature_len);
+cx_err_t sys_cx_bls12381_aggregate(const uint8_t *in, size_t in_len, bool first,
+                                   uint8_t *aggregated_signature,
+                                   size_t signature_len);
