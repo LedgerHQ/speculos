@@ -20,7 +20,7 @@ on:
         type: string
 
 jobs:
-  build_application:
+  build_applications:
     name: Build application using the reusable workflow
     uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_build.yml@v1
     with:
@@ -28,11 +28,39 @@ jobs:
       app_branch_name: ${{ inputs.app_branch_name }}
       upload_app_binaries_artifact: "compiled_app_binaries"
 
+  build_docker_image:
+    name: Build Speculos Docker image
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - name: Clone
+      uses: actions/checkout@v3
+      with:
+          ref: ${{ inputs.speculos_app_branch_name }}
+          submodules: recursive
+          fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build the Speculos docker
+      uses: docker/build-push-action@v4
+      with:
+        push: false
+        tags: ledgerhq/speculos:test
+        context: .
+        outputs: type=docker,dest=/tmp/speculos_image.tar
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: speculos_image
+        path: /tmp/speculos_image.tar
+
   ragger_tests:
     name: Functional tests with Ragger
     runs-on: ubuntu-latest
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+    needs: [build_docker_image, build_applications]
     strategy:
       fail-fast: false
       matrix:
@@ -50,12 +78,6 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-    - name: Build the Speculos docker
-      uses: docker/build-push-action@v1
-      with:
-          push: false
-          tags: test
-
     - name: Clone
       uses: actions/checkout@v3
       with:
@@ -64,6 +86,20 @@ jobs:
           path: app
           submodules: recursive
           fetch-depth: 0
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Download artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: speculos_image
+        path: /tmp
+
+    - name: Load image
+      run: |
+        docker load --input /tmp/speculos_image.tar
+        docker image ls -a
 
     - name: Download app binaries
       uses: actions/download-artifact@v3
