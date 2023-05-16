@@ -48,7 +48,7 @@ setup(
     version="0.1.0",
     url="https://github.com/LedgerHQ/speculos",
     python_requires=">=3.6.0",
-    description="Ledger Blue and Nano S/X application emulator",
+    description="Ledger Blue, Stax and Nano S/S+/X application emulator",
     long_description=pathlib.Path("README.md").read_text(),
     long_description_content_type="text/markdown",
     packages=find_packages(),

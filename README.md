@@ -5,7 +5,7 @@
 
 ![screenshot btc nano s](docs/screenshot-api-nanos-btc.png)
 
-The goal of this project is to emulate Ledger Nano S, Nano X and Blue apps on
+The goal of this project is to emulate Ledger Nano S/S+, Nano X, Blue and Stax apps on
 standard desktop computers, without any hardware device. More information can
 be found here in the
 [documentation website](https://ledgerhq.github.io/speculos) (or in the

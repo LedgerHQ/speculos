@@ -12,12 +12,13 @@ After having [installed the requirements and built](../installation/build.md) sp
 
 The docker image can also be used directly, as detailed in the specific [docker documentation page](docker.md).
 
-The Nano S is the default model; the Nano X and Blue can be specified on the
-command-line:
+With applications built by recent SDKs, Speculos can automatically detect the targeted device. Otherwise, the Nano S is the default; the Nano X, Nano S+, Stax and Blue can be specified on the command line:
 
 ```shell
 ./speculos.py --model nanox apps/nanox#btc#2.0.2#1c8db8da.elf
+./speculos.py --model nanosp apps/nanosp#btc#1.0.3#17bf7619.elf
 ./speculos.py --model blue --sdk 1.5 apps/blue#btc#1.5#00000000.elf
+./speculos.py --model stax apps/btc.elf.elf
 ```
 
 The last SDK version is automatically selected. However, a specific version
@@ -32,9 +33,9 @@ against the SDK `1.5` on the Nano S:
 Supported SDK values for each device are defined in [src/sdk.h](https://github.com/LedgerHQ/speculos/blob/master/src/sdk.h).
 You main choose the SDK using `-k`/`--sdk` argument:
 
-|     | Nano S             | Nano X          | Blue            |
-|-----|--------------------|-----------------|-----------------|
-| SDK | 1.5, 1.6, 2.0, 2.1 | 1.2, 2.0, 2.0.2 | 1.5, blue-2.2.5 |
+|     | Nano S             | Nano S+    | Nano X          | Blue            |
+|-----|--------------------|------------|-----------------|-----------------|
+| SDK | 1.5, 1.6, 2.0, 2.1 | 1.0, 1.0.3 | 1.2, 2.0, 2.0.2 | 1.5, blue-2.2.5 |
 
 For more options, pass the `-h` or `--help` flag.
 
