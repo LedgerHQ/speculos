@@ -2,10 +2,12 @@ from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt, QSocketNotifier, QSettings, QRect
+from typing import List, Optional, Union
 
+from speculos.abstractions import Display, DisplayArgs, IODevice, ServerArgs, TextEvent
 from . import bagl
 from . import nbgl
-from .display import Display, DisplayArgs, FrameBuffer, COLORS, MODELS, ServerArgs
+from .display import FrameBuffer, COLORS, MODELS
 from .readerror import ReadError
 
 BUTTON_LEFT = 1
@@ -41,7 +43,11 @@ class PaintWidget(QWidget):
                 self.mPixmap.height() * self.pixel_size)
         qp.drawPixmap(0, 0, copied_pixmap)
 
-    def update(self, x=None, y=None, w=None, h=None) -> bool:
+    def update(self,
+               x: Optional[int] = None,
+               y: Optional[int] = None,
+               w: Optional[int] = None,
+               h: Optional[int] = None) -> bool:
         if x and y and w and h:
             super().update(QRect(x, y, w, h))
         else:
@@ -77,11 +83,10 @@ class PaintWidget(QWidget):
 class App(QMainWindow):
     def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__()
-
         self.setWindowTitle('Ledger %s Emulator' % MODELS[display.model].name)
 
         self.seph = server.seph
-        self.width, self.height = MODELS[display.model].screen_size
+        self._width, self._height = MODELS[display.model].screen_size
         self.pixel_size = display.pixel_size
         self.box_position_x, self.box_position_y = MODELS[display.model].box_position
         box_size_x, box_size_y = MODELS[display.model].box_size
@@ -100,8 +105,8 @@ class App(QMainWindow):
             window_y = settings.value("window_y", current_screen_y + DEFAULT_WINDOW_Y, int)
         else:
             window_y = display.y
-        window_width = (self.width + box_size_x) * display.pixel_size
-        window_height = (self.height + box_size_y) * display.pixel_size
+        window_width = (self._width + box_size_x) * display.pixel_size
+        window_height = (self._height + box_size_y) * display.pixel_size
 
         # Be sure Window is FULLY visible in one of the available screens:
         window_is_visible = False
@@ -125,7 +130,7 @@ class App(QMainWindow):
         self.setGeometry(window_x, window_y, window_width, window_height)
         self.setFixedSize(window_width, window_height)
 
-        flags = Qt.FramelessWindowHint
+        flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.FramelessWindowHint
         if display.ontop:
             flags |= Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
@@ -138,22 +143,23 @@ class App(QMainWindow):
         # Add paint widget and paint
         self.m = PaintWidget(self, display.model, display.pixel_size, server.vnc)
         self.m.move(self.box_position_x * display.pixel_size, self.box_position_y * display.pixel_size)
-        self.m.resize(self.width * display.pixel_size, self.height * display.pixel_size)
+        self.m.resize(self._width * display.pixel_size, self._height * display.pixel_size)
 
-        self.screen = Screen(self, display, server)
+        self._screen = Screen(self, display, server)
 
         self.setWindowIcon(QIcon('mcu/icon.png'))
 
         self.show()
 
+
     def screen_update(self) -> bool:
-        return self.screen.screen_update()
+        return self._screen.screen_update()
 
     def keyPressEvent(self, event):
-        self.screen._key_event(event, True)
+        self._screen._key_event(event, True)
 
     def keyReleaseEvent(self, event):
-        self.screen._key_event(event, False)
+        self._screen._key_event(event, False)
 
     def _get_x_y(self):
         x = self.mouse_offset.x() // self.pixel_size - (self.box_position_x + 1)
@@ -166,14 +172,14 @@ class App(QMainWindow):
         self.mouse_offset = event.pos()
 
         x, y = self._get_x_y()
-        if x >= 0 and x < self.width and y >= 0 and y < self.height:
+        if x >= 0 and x < self._width and y >= 0 and y < self._height:
             self.seph.handle_finger(x, y, True)
 
         QApplication.setOverrideCursor(Qt.DragMoveCursor)
 
     def mouseReleaseEvent(self, event):
         x, y = self._get_x_y()
-        if x >= 0 and x < self.width and y >= 0 and y < self.height:
+        if x >= 0 and x < self._width and y >= 0 and y < self._height:
             self.seph.handle_finger(x, y, False)
         QApplication.restoreOverrideCursor()
 
@@ -208,7 +214,7 @@ class Screen(Display):
                                   display.disable_tesseract)
         self.seph = server.seph
 
-    def klass_can_read(self, klass, s):
+    def klass_can_read(self, klass, s) -> None:
         try:
             klass.can_read(s, self)
 
@@ -216,25 +222,23 @@ class Screen(Display):
         except ReadError:
             self.app.close()
 
-    def add_notifier(self, klass):
-        n = QSocketNotifier(klass.s.fileno(), QSocketNotifier.Read, self.app)
+    def add_notifier(self, klass: IODevice) -> None:
+        n = QSocketNotifier(klass.fileno, QSocketNotifier.Read, self.app)
         n.activated.connect(lambda s: self.klass_can_read(klass, s))
+        assert klass.fileno not in self.notifiers
+        self.notifiers[klass.fileno] = n
 
-        assert klass.s.fileno() not in self.notifiers
-        self.notifiers[klass.s.fileno()] = n
-
-    def enable_notifier(self, fd, enabled=True):
+    def enable_notifier(self, fd: int, enabled: bool = True) -> None:
         n = self.notifiers[fd]
         n.setEnabled(enabled)
 
-    def remove_notifier(self, fd):
+    def remove_notifier(self, fd: int) -> None:
         # just in case
         self.enable_notifier(fd, False)
-
         n = self.notifiers.pop(fd)
         n.disconnect()
 
-    def _key_event(self, event, pressed):
+    def _key_event(self, event, pressed) -> None:
         key = event.key()
         if key in [Qt.Key_Left, Qt.Key_Right]:
             buttons = {Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT}
@@ -246,19 +250,22 @@ class Screen(Display):
         elif key == Qt.Key_Q and not pressed:
             self.app.close()
 
-    def display_status(self, data):
+    def display_status(self, data) -> List[TextEvent]:
         ret = self.bagl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
         return ret
 
-    def display_raw_status(self, data):
+    def display_raw_status(self, data) -> None:
         self.bagl.display_raw_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
     def screen_update(self) -> bool:
         return self.bagl.refresh()
+
+    def run(self) -> None:
+        pass
 
 
 class QtScreen:

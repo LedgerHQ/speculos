@@ -21,13 +21,16 @@ nbgl_area_t = Struct(
 
 
 class NBGL:
-    def to_screen_color(color, bpp) -> int:
-        if bpp == 2:
-            return color * 0x555555
-        if bpp == 1:
-            return color * 0xFFFFFF
-        if bpp == 4:
-            return color * 0x111111
+
+    @staticmethod
+    def to_screen_color(color: int, bpp: int) -> int:
+        color_table = {
+            1: 0xFFFFFF,
+            2: 0x555555,
+            4: 0x111111
+        }
+        assert bpp in color_table, f"BPP should be in {color_table.keys()}, but is '{bpp}'"
+        return color * color_table[bpp]
 
     def __init__(self, m, size, force_full_ocr, disable_tesseract):
         self.m = m

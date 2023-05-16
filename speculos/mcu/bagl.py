@@ -4,9 +4,9 @@ from typing import List
 from collections import namedtuple
 from construct import Aligned, Struct, Int8ul, Int16ul, Int32ul, Padded
 
+from speculos.abstractions import TextEvent
 from . import bagl_font
 from . import bagl_glyph
-from .automation import TextEvent
 
 bagl_component_t = Aligned(4, Struct(
     "type" / Int8ul,
@@ -566,7 +566,7 @@ class Bagl:
 
         return (halignment, valignment, baseline, char_height, strwidth)
 
-    def display_status(self, data) -> List[TextEvent]:
+    def display_status(self, data: bytes) -> List[TextEvent]:
         component = bagl_component_t.parse(data)
         context = data[bagl_component_t.sizeof():]
         context_encoding = 0  # XXX

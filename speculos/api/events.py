@@ -6,18 +6,18 @@ from dataclasses import asdict
 from flask import stream_with_context, Response
 from flask_restful import inputs, reqparse
 
+from speculos.abstractions import BroadcastInterface, ObserverInterface, TextEvent
 from .restful import AppResource
-from ..mcu.automation import TextEvent
 
 # Approximative minimum vertical distance between two lines of text on the devices' screen.
 MIN_LINES_HEIGHT_DISTANCE = 10  # pixels
 
 
-class EventsBroadcaster:
+class EventsBroadcaster(BroadcastInterface):
     """This used to be the 'Automation Server'."""
 
-    def __init__(self):
-        self.clients = []
+    def __init__(self) -> None:
+        self.clients: List[ObserverInterface] = []
         self.screen_content: List[TextEvent] = []
         self.events: List[TextEvent] = []
         self.condition = threading.Condition()
@@ -51,7 +51,7 @@ class EventsBroadcaster:
             self.condition.notify_all()
 
 
-class EventClient:
+class EventClient(ObserverInterface):
     def __init__(self, broadcaster: EventsBroadcaster):
         self.events: List[TextEvent] = []
         self._broadcaster = broadcaster
@@ -74,7 +74,7 @@ class EventClient:
         finally:
             self._broadcaster.remove_client(self)
 
-    def send_screen_event(self, event):
+    def send_screen_event(self, event: TextEvent) -> None:
         self.events.append(event)
 
 

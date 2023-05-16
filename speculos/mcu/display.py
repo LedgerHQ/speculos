@@ -1,23 +1,17 @@
 import io
-from abc import ABC, abstractmethod
-from collections import namedtuple
-from typing import Dict, Union
+from abc import ABC
 from PIL import Image
+from typing import Dict, NamedTuple, Tuple
 
-from .apdu import ApduServer
-from .seproxyhal import SeProxyHal
-from .button_tcp import FakeButton
-from .finger_tcp import FakeFinger
-from .vnc import VNC
 
-Server = Union[ApduServer, FakeButton, FakeFinger, SeProxyHal, VNC]
+class Model(NamedTuple):
+    name: str
+    screen_size: Tuple[int, int]
+    box_position: Tuple[int, int]
+    box_size: Tuple[int, int]
 
-DisplayArgs = namedtuple("DisplayArgs", "color model ontop rendering keymap pixel_size x y force_full_ocr, \
-        disable_tesseract")
-ServerArgs = namedtuple("ServerArgs", "apdu apirun button finger seph vnc")
 
-Model = namedtuple('Model', 'name screen_size box_position box_size')
-MODELS = {
+MODELS: Dict[str, Model] = {
     'nanos': Model('Nano S', (128, 32), (20, 13), (100, 26)),
     'nanox': Model('Nano X', (128, 64), (5, 5), (10, 10)),
     'nanosp': Model('Nano SP', (128, 64), (5, 5), (10, 10)),
@@ -25,13 +19,13 @@ MODELS = {
     'stax': Model('Stax', (400, 672), (13, 13), (26, 26)),
 }
 
-COLORS = {
+
+COLORS: Dict[str, int] = {
     'LAGOON_BLUE': 0x7ebab5,
     'JADE_GREEN': 0xb9ceac,
     'FLAMINGO_PINK': 0xd8a0a6,
     'SAFFRON_YELLOW': 0xf6a950,
     'MATTE_BLACK': 0x111111,
-
     'CHARLOTTE_PINK': 0xff5555,
     'ARNAUD_GREEN': 0x79ff79,
     'SYLVE_CYAN': 0x29f3f3,
@@ -76,8 +70,8 @@ class FrameBuffer(ABC):
         "stax": 0xdddddd,
     }
 
-    def __init__(self, model):
-        self.pixels = {}
+    def __init__(self, model: str):
+        self.pixels: Dict[Tuple[int, int], int] = {}
         self._public_screenshot_value = b''
         self.current_screen_size = (0, 0)
         self.current_data = b''
@@ -88,7 +82,7 @@ class FrameBuffer(ABC):
         if self.model == "stax":
             self.update_public_screenshot()
 
-    def draw_point(self, x, y, color):
+    def draw_point(self, x: int, y: int, color: int) -> None:
         # There are only 2 colors on the Nano S and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
         if self.model != 'stax':
@@ -130,44 +124,3 @@ class FrameBuffer(ABC):
         # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
         screen_size, data = self.take_screenshot()
         return _screenshot_to_iobytes_value(screen_size, data)
-
-
-class Display(ABC):
-    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
-        self.notifiers: Dict[int, Server] = {}
-        self.apdu = server.apdu
-        self.seph = server.seph
-        self.model = display.model
-        self.force_full_ocr = display.force_full_ocr
-        self.disable_tesseract = display.disable_tesseract
-        self.rendering = display.rendering
-
-    @abstractmethod
-    def display_status(self, data):
-        pass
-
-    @abstractmethod
-    def display_raw_status(self, data):
-        pass
-
-    @abstractmethod
-    def screen_update(self) -> bool:
-        pass
-
-    def add_notifier(self, klass):
-        assert klass.s.fileno() not in self.notifiers
-        self.notifiers[klass.s.fileno()] = klass
-
-    def remove_notifier(self, fd):
-        self.notifiers.pop(fd)
-
-    def _init_notifiers(self, args: ServerArgs) -> None:
-        for klass in args._asdict().values():
-            if klass:
-                self.add_notifier(klass)
-
-    def forward_to_app(self, packet):
-        self.seph.to_app(packet)
-
-    def forward_to_apdu_client(self, packet):
-        self.apdu.forward_to_client(packet)

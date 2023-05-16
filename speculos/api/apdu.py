@@ -31,7 +31,7 @@ class APDUBridge:
                     self.response_condition.wait()
             yield json.dumps({"data": self.response.hex()}).encode()
 
-    def seph_apdu_callback(self, data: bytes):
+    def seph_apdu_callback(self, data: bytes) -> None:
         """
         Called by seph when data is transmitted by the SE. That data should
         be the response to a prior APDU request

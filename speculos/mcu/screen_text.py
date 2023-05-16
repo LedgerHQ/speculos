@@ -1,13 +1,15 @@
-import sys
-import select
 import curses
 import logging
 import os
-
-from . import bagl
-from .display import Display, DisplayArgs, FrameBuffer, MODELS, ServerArgs
-from .readerror import ReadError
+import select
+import sys
 import time
+from typing import Any, List
+
+from speculos.abstractions import Display, DisplayArgs, ServerArgs
+from . import bagl
+from .display import FrameBuffer, MODELS
+from .readerror import ReadError
 
 wait_time = 0.01
 
@@ -18,7 +20,7 @@ _TEXT_ = "\033[36;40m"
 _BORDER_ = "\033[30;1;40m"
 _RESET_COLOR = "\033[0m"
 
-M = [0]*16
+M: List = [0]*16
 M[0b0000] = ' '
 M[0b0001] = '\u2598'
 M[0b0010] = '\u259D'
@@ -121,29 +123,29 @@ class TextScreen(Display):
     def display_status(self, data):
         return self.bagl.display_status(data)
 
-    def display_raw_status(self, data):
+    def display_raw_status(self, data) -> None:
         self.bagl.display_raw_status(data)
 
     def screen_update(self) -> bool:
         return self.bagl.refresh()
 
-    def get_keypress(self):
+    def get_keypress(self) -> bool:
         key = self.m.stdscr.getch()
         if key == -1:
             return True
         elif key in self.ARROW_KEYS:
-            self.seph.handle_button(self.key2btn[key], 1)
+            self.seph.handle_button(self.key2btn[key], True)
             time.sleep(wait_time)
-            self.seph.handle_button(self.key2btn[key], 0)
+            self.seph.handle_button(self.key2btn[key], False)
             return True
         elif key == ord('q'):
             return False
         else:
             return True
 
-    def run(self):
+    def run(self) -> None:
         while True:
-            rlist = list(self.notifiers.keys())
+            rlist: List[Any] = list(self.notifiers.keys())
             if not rlist:
                 break
 

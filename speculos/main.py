@@ -7,19 +7,20 @@ Emulate the target app along the SE Proxy Hal server.
 import argparse
 import binascii
 import ctypes
-from elftools.elf.elffile import ELFFile
 import logging
-from mnemonic import mnemonic
 import os
 import re
 import signal
 import socket
 import sys
 import threading
-
-from distutils.spawn import find_executable
 import pkg_resources
+from distutils.spawn import find_executable
+from elftools.elf.elffile import ELFFile
+from mnemonic import mnemonic
+from typing import Optional, Type
 
+from speculos.abstractions import Display, DisplayArgs, ServerArgs, BroadcastInterface
 from .api import ApiRunner, EventsBroadcaster
 from .mcu import apdu as apdu_server
 from .mcu import automation
@@ -237,7 +238,7 @@ def setup_logging(args):
             sys.exit(1)
 
 
-def main(prog=None):
+def main(prog=None) -> int:
     disable_tesseract = False
     if not find_executable("tesseract"):
         disable_tesseract = True
@@ -412,11 +413,14 @@ def main(prog=None):
         logger.error("--vnc-password can only be used with --vnc-port")
         sys.exit(1)
 
+    Screen: Type[Display]
     if args.display == 'text':
         from .mcu.screen_text import TextScreen as Screen
     elif args.display == 'headless':
         from .mcu.headless import Headless as Screen
     else:
+        # TODO: QtScreen does not derive from Display so the `Screen` typing is wrong
+        #       There is still work to be done to clarify what the `Screen` interface should be here
         from .mcu.screen import QtScreen as Screen
 
     if args.sdk and args.apiLevel:
@@ -438,12 +442,13 @@ def main(prog=None):
 
     api_enabled = (args.api_port != 0)
 
-    automation_path = None
+    automation_path: Optional[automation.Automation] = None
     if args.automation:
+        # TODO: remove this condition and all associated code in next major version
         logger.warn("--automation is deprecated, please use the REST API instead")
         automation_path = automation.Automation(args.automation)
 
-    automation_server = None
+    automation_server: Optional[BroadcastInterface] = None
     if args.automation_port:
         logger.warn("--automation-port is deprecated, please use the REST API instead")
         if api_enabled:
@@ -500,20 +505,21 @@ def main(prog=None):
     if args.xy:
         x, y = (int(i) for i in args.xy.split('x'))
 
-    apirun = None
+    apirun: Optional[ApiRunner] = None
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
     if disable_tesseract:
         args.disable_tesseract = True
 
-    display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
-                                       args.keymap, zoom, x, y, args.force_full_ocr,
-                                       args.disable_tesseract)
-    server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
+    display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
+                               args.keymap, zoom, x, y, args.force_full_ocr,
+                               args.disable_tesseract)
+    server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 
-    if api_enabled:
+    if apirun is not None:
+        assert automation_server is not None
         apirun.start_server_thread(screen, seph, automation_server)
 
     screen.run()

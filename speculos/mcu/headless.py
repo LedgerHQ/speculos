@@ -1,9 +1,10 @@
 import select
 from typing import Optional
 
+from speculos.abstractions import Display, DisplayArgs, ServerArgs
 from . import bagl
 from . import nbgl
-from .display import Display, DisplayArgs, FrameBuffer, Model, MODELS, ServerArgs
+from .display import FrameBuffer, MODELS
 from .readerror import ReadError
 from .vnc import VNC
 
@@ -26,7 +27,7 @@ class Headless(Display):
             self.screen_update()    # Actually, this method doesn't work
         return ret
 
-    def display_raw_status(self, data):
+    def display_raw_status(self, data) -> None:
         self.bagl.display_raw_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
@@ -34,13 +35,13 @@ class Headless(Display):
     def screen_update(self) -> bool:
         return self.bagl.refresh()
 
-    def run(self):
+    def run(self) -> None:
         while True:
-            rlist = self.notifiers.keys()
-            if not rlist:
+            _rlist = self.notifiers.keys()
+            if not _rlist:
                 break
 
-            rlist, _, _ = select.select(rlist, [], [])
+            rlist, _, _ = select.select(_rlist, [], [])
             try:
                 for fd in rlist:
                     self.notifiers[fd].can_read(fd, self)
@@ -51,7 +52,7 @@ class Headless(Display):
 
 
 class HeadlessPaintWidget(FrameBuffer):
-    def __init__(self, parent: Headless, model: Model, vnc: Optional[VNC] = None) -> None:
+    def __init__(self, parent: Headless, model: str, vnc: Optional[VNC] = None) -> None:
         super().__init__(model)
         self.vnc = vnc
 

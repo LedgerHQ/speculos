@@ -9,10 +9,17 @@ import os
 import logging
 import subprocess
 import sys
+from typing import IO, Optional, Tuple
+
+from speculos.abstractions import Display, IODevice
 
 
-class VNC:
-    def __init__(self, port, screen_size, password=None, verbose=False):
+class VNC(IODevice):
+    def __init__(self,
+                 port: int,
+                 screen_size: Tuple[int, int],
+                 password: Optional[str] = None,
+                 verbose: bool = False):
         self.logger = logging.getLogger("vnc")
 
         width, height = screen_size
@@ -36,8 +43,10 @@ class VNC:
 
         self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-        # required by Screen.add_notifier
-        self.s = self.p.stdout
+    @property
+    def file(self) -> IO[bytes]:
+        assert self.p.stdout is not None
+        return self.p.stdout
 
     def redraw(self, pixels):
         '''The framebuffer was updated, forward everything to the VNC server.'''
@@ -60,15 +69,14 @@ class VNC:
         self.p.stdin.write(buf)
         self.p.stdin.flush()
 
-    def can_read(self, s, screen):
+    def can_read(self, s: int, screen: Display):
         '''Process a new keyboard or mouse event message from the VNC server.'''
 
-        assert s == self.s.fileno()
-        assert s == self.p.stdout.fileno()
+        assert s == self.fileno
 
         data = b''
         while len(data) != 6:
-            tmp = self.p.stdout.read(6 - len(data))
+            tmp = self.file.read(6 - len(data))
             if not tmp:
                 self.logger.info("connection with vnc stdout closed")
                 sys.exit(0)

@@ -1,17 +1,17 @@
-from collections import namedtuple
 import logging
 import sys
-import time
 import threading
-import socket
+import time
+from collections import namedtuple
 from enum import IntEnum
-from typing import List, Callable, Optional, Tuple
+from socket import socket
+from typing import Callable, List, Optional, Tuple
 
+from speculos.abstractions import BroadcastInterface, Display, IODevice, TextEvent
 from . import usb
+from .automation import Automation
 from .ocr import OCR
 from .readerror import ReadError
-from .automation import Automation, TextEvent
-from .automation_server import AutomationServer
 
 
 class SephTag(IntEnum):
@@ -119,9 +119,9 @@ class TimeTickerDaemon(threading.Thread):
 
 
 class SocketHelper(threading.Thread):
-    def __init__(self, s: socket.socket, status_event: threading.Event, *args, **kwargs):
+    def __init__(self, sock: socket, status_event: threading.Event, *args, **kwargs):
         super().__init__(name="packet", daemon=True)
-        self.s = s
+        self.socket = sock
         self.sending_lock = threading.Lock()
         self.queue_condition = threading.Condition()
         self.queue: List[Tuple[SephTag, bytes]] = []
@@ -135,7 +135,7 @@ class SocketHelper(threading.Thread):
         data = b''
         while size > 0:
             try:
-                tmp = self.s.recv(size)
+                tmp = self.socket.recv(size)
             except ConnectionResetError:
                 tmp = b''
 
@@ -166,11 +166,10 @@ class SocketHelper(threading.Thread):
 
         size: bytes = len(data).to_bytes(2, 'big')
         packet: bytes = tag.to_bytes(1, 'big') + size + data
-
         with self.sending_lock:
             self.logger.debug("send {}" .format(packet.hex()))
             try:
-                self.s.sendall(packet)
+                self.socket.sendall(packet)
             except BrokenPipeError:
                 self.stop = True
             except OSError:
@@ -236,15 +235,15 @@ class SocketHelper(threading.Thread):
         self.logger.debug("exiting")
 
 
-class SeProxyHal:
+class SeProxyHal(IODevice):
     def __init__(self,
-                 s: socket.socket,
+                 sock: socket,
                  automation: Optional[Automation] = None,
-                 automation_server: Optional[AutomationServer] = None,
+                 automation_server: Optional[BroadcastInterface] = None,
                  transport: str = 'hid',
-                 fonts_path: str = None,
-                 api_level=None):
-        self.s = s
+                 fonts_path: str = Optional[None],
+                 api_level: Optional[int] = None):
+        self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
         self.automation = automation
@@ -254,7 +253,7 @@ class SeProxyHal:
 
         self.status_event = threading.Event()
         self.status_event.set()
-        self.socket_helper = SocketHelper(self.s, self.status_event)
+        self.socket_helper = SocketHelper(self._socket, self.status_event)
         self.socket_helper.start()
 
         self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick)
@@ -265,7 +264,11 @@ class SeProxyHal:
         self.ocr = OCR(fonts_path, api_level)
 
         # A list of callback methods when an APDU response is received
-        self.apdu_callbacks: List[Callable] = []
+        self.apdu_callbacks: List[Callable[[bytes], None]] = []
+
+    @property
+    def file(self):
+        return self._socket
 
     def apply_automation_helper(self, event: TextEvent):
         if self.automation_server:
@@ -283,7 +286,7 @@ class SeProxyHal:
                 elif key == "setbool":
                     self.automation.set_bool(*args)
                 elif key == "exit":
-                    self.s.close()
+                    self.file.close()
                     sys.exit(0)
                 else:
                     assert False
@@ -293,18 +296,17 @@ class SeProxyHal:
             self.apply_automation_helper(event)
         self.events = []
 
-    def _close(self, s: socket.socket, screen):
-        screen.remove_notifier(self.s.fileno())
-        self.s.close()
+    def _close(self, _: int, screen: Display):
+        screen.remove_notifier(self.fileno)
+        self.file.close()
 
-    def can_read(self, s: socket.socket, screen):
+    def can_read(self, s: int, screen: Display):
         '''
         Handle packet sent by the app.
 
         This function is called thanks to a screen QSocketNotifier.
         '''
-
-        assert s == self.s.fileno()
+        assert s == self.fileno
 
         tag, size, data = self.socket_helper.read_packet()
         if data is None:

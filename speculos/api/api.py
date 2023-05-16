@@ -1,16 +1,17 @@
 import socket
 import threading
 import pkg_resources
-from typing import Dict, Optional
+from typing import Dict
 from flask import Flask
 from flask_restful import Api
 
-from ..mcu.readerror import ReadError
-from ..mcu.seproxyhal import SeProxyHal
+from speculos.abstractions import BroadcastInterface, Display, IODevice
+from speculos.mcu.readerror import ReadError
+from speculos.mcu.seproxyhal import SeProxyHal
 from .apdu import APDU
 from .automation import Automation
 from .button import Button
-from .events import Events, EventsBroadcaster
+from .events import Events
 from .finger import Finger
 from .screenshot import Screenshot
 from .swagger import Swagger
@@ -18,19 +19,23 @@ from .web_interface import WebInterface
 from .ticker import Ticker
 
 
-class ApiRunner:
-    """Run the Speculos API server, with a notification when it stops"""
+class ApiRunner(IODevice):
+    """Run the Speculos API server in a dedicated thread, with a notification when it stops"""
     def __init__(self, api_port: int) -> None:
-        self._app: Optional[Flask] = None
-        # self.s is used by Screen.add_notifier. Closing self._notify_exit
+        self._app: Flask
+        # self.sock is used by Screen.add_notifier. Closing self._notify_exit
         # signals it that the API is no longer running.
-        self.s: socket.socket
+        self.sock: socket.socket
         self._notify_exit: socket.socket
-        self.s, self._notify_exit = socket.socketpair()
+        self.sock, self._notify_exit = socket.socketpair()
         self.api_port: int = api_port
 
-    def can_read(self, s: int, screen) -> None:
-        assert s == self.s.fileno()
+    @property
+    def file(self):
+        return self.sock
+
+    def can_read(self, s: int, screen: Display) -> None:
+        assert s == self.fileno
         # Being able to read from the socket only happens when the API server exited.
         raise ReadError("API server exited")
 
@@ -47,7 +52,7 @@ class ApiRunner:
     def start_server_thread(self,
                             screen_,
                             seph_: SeProxyHal,
-                            automation_server: EventsBroadcaster) -> None:
+                            automation_server: BroadcastInterface) -> None:
         wrapper = ApiWrapper(screen_, seph_, automation_server)
         self._app = wrapper.app
         api_thread = threading.Thread(target=self._run, name="API-server", daemon=True)
@@ -55,7 +60,7 @@ class ApiRunner:
 
 
 class ApiWrapper:
-    def __init__(self, screen, seph: SeProxyHal, automation_server: EventsBroadcaster):
+    def __init__(self, screen, seph: SeProxyHal, automation_server: BroadcastInterface):
         self._screen = screen
         self._seph = seph
         self._set_app()

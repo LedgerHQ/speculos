@@ -8,10 +8,11 @@ import socketserver
 import threading
 from typing import List
 from dataclasses import asdict
-from .automation import TextEvent
+
+from speculos.abstractions import BroadcastInterface, TextEvent
 
 
-class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer, BroadcastInterface):
     daemon_threads = True
     allow_reuse_address = True
 
@@ -36,7 +37,9 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 
 class AutomationClient(socketserver.BaseRequestHandler):
-    def setup(self):
+
+    def setup(self) -> None:
+        self.server:  AutomationServer
         self.logger = logging.getLogger("automation")
         self.condition = threading.Condition()
         self.events: List[TextEvent] = []
@@ -61,7 +64,7 @@ class AutomationClient(socketserver.BaseRequestHandler):
         self.logger.debug("connection closed with client")
         self.server.remove_client(self)
 
-    def send_screen_event(self, event):
+    def send_screen_event(self, event: TextEvent) -> None:
         self.events.append(event)
         with self.condition:
             self.condition.notify()
