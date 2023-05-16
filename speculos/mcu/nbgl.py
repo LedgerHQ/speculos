@@ -82,16 +82,27 @@ class NBGL:
 
     def get_4bpp_color_from_color_index(index, front_color, back_color):
         COLOR_MAPS_4BPP = {
-            # Black on white
+            # Manually hardcoced color maps
             (NbglColor.BLACK, NbglColor.WHITE): [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
-            # White on black
             (NbglColor.WHITE, NbglColor.BLACK): [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-            # Dark gray on white
             (NbglColor.DARK_GRAY, NbglColor.WHITE): [5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 11, 12, 13, 14, 15],
-            # Light gray on white
             (NbglColor.LIGHT_GRAY, NbglColor.WHITE): [10, 10, 11, 11, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15, 15],
-            # Light gray on black
-            (NbglColor.LIGHT_GRAY, NbglColor.BLACK): [10, 9, 8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0]
+            (NbglColor.LIGHT_GRAY, NbglColor.BLACK): [10, 9, 8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0],
+            (NbglColor.DARK_GRAY, NbglColor.BLACK): [10, 9, 8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0],
+
+            # Default computed color maps
+            (NbglColor.BLACK, NbglColor.BLACK): [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            (NbglColor.BLACK, NbglColor.DARK_GRAY): [0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5],
+            (NbglColor.BLACK, NbglColor.LIGHT_GRAY): [0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10],
+            (NbglColor.DARK_GRAY, NbglColor.BLACK): [5, 5, 4, 4, 4, 3, 3, 3, 2, 2, 1, 1, 1, 0, 0, 0],
+            (NbglColor.DARK_GRAY, NbglColor.DARK_GRAY): [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
+            (NbglColor.DARK_GRAY, NbglColor.LIGHT_GRAY): [5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 9, 9, 9, 10, 10, 10],
+            (NbglColor.LIGHT_GRAY, NbglColor.DARK_GRAY): [10, 10, 9, 9, 9, 8, 8, 8, 7, 7, 6, 6, 6, 5, 5, 5],
+            (NbglColor.LIGHT_GRAY, NbglColor.LIGHT_GRAY):
+                [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+            (NbglColor.WHITE, NbglColor.DARK_GRAY): [15, 14, 13, 13, 12, 11, 11, 10, 9, 9, 8, 7, 7, 6, 5, 5],
+            (NbglColor.WHITE, NbglColor.LIGHT_GRAY): [15, 15, 14, 14, 14, 13, 13, 13, 12, 12, 11, 11, 11, 10, 10, 10],
+            (NbglColor.WHITE, NbglColor.WHITE): [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],
         }
 
         mapped_index = COLOR_MAPS_4BPP[(NbglColor(front_color), NbglColor(back_color))][index]
