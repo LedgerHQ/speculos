@@ -93,10 +93,16 @@ def get_elf_infos(app_path):
             logger.error('failed to find _estack/END_STACK symbol')
             sys.exit(1)
         estack = sym_estack[0]['st_value']
+
+        sym_code = symtab.get_symbol_by_name('_code')
+        code_start = sym_code[0]['st_value'] if sym_code else 0
+        sym_ecode = symtab.get_symbol_by_name('_ecode')
+        code_end = sym_ecode[0]['st_value'] if sym_ecode else 0
+
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size
+    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, code_start, code_end
 
 
 def get_cx_infos(app_path):
@@ -156,7 +162,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
-        load_offset, load_size, stack, stack_size, ram_addr, ram_size = get_elf_infos(lib_path)
+        load_offset, load_size, stack, stack_size, ram_addr, ram_size, code_start, code_end = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
@@ -164,7 +170,9 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
                 logger.error("different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
             extra_ram = arg
-        argv.append(f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}:{stack:#x}:{stack_size:#x}')
+        lib_arg = f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}'
+        lib_arg += f':{stack:#x}:{stack_size:#x}:{code_start:#x}:{code_end:#x}'
+        argv.append(lib_arg)
 
     if args.model == 'blue':
         if args.rampage:

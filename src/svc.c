@@ -252,11 +252,6 @@ int patch_svc(void *p, size_t size)
   unsigned char *addr, *end, *next;
   int ret;
 
-  if (mprotect(p, size, PROT_READ | PROT_WRITE) != 0) {
-    warn("mprotect(PROT_READ | PROT_WRITE)");
-    return -1;
-  }
-
   addr = p;
   end = addr + size;
   ret = 0;
@@ -285,11 +280,6 @@ int patch_svc(void *p, size_t size)
 
     addr = (unsigned char *)next + 2;
     n_svc_call++;
-  }
-
-  if (mprotect(p, size, PROT_READ | PROT_EXEC) != 0) {
-    warn("mprotect(PROT_READ | PROT_EXEC)");
-    return -1;
   }
 
   if (n_svc_call == 0) {

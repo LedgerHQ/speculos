@@ -15,6 +15,7 @@
 #include "emulate.h"
 #include "svc.h"
 
+#define TEXT_START    (0xc0de0000)
 #define LOAD_ADDR     ((void *)0x40000000)
 #define MAX_APP       16
 #define MAIN_APP_NAME "main"
@@ -29,6 +30,8 @@ struct elf_info_s {
   unsigned long load_size;
   unsigned long stack_addr;
   unsigned long stack_size;
+  unsigned long code_start;
+  unsigned long code_end;
 };
 
 struct app_s {
@@ -120,6 +123,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
   apps[napp].elf.stack_size = elf->stack_size;
+  apps[napp].elf.code_start = elf->code_start;
+  apps[napp].elf.code_end = elf->code_end;
 
   napp++;
 
@@ -166,9 +171,26 @@ int replace_current_code(struct app_s *app)
     return -1;
   }
 
-  if (patch_svc(memory.code, app->elf.load_size) != 0) {
+  uint32_t start = 0;
+  uint32_t code_length = app->elf.load_size;
+  if (app->elf.code_start != 0 && app->elf.code_end != 0) {
+    start = app->elf.code_start - TEXT_START;
+    code_length = app->elf.code_end - app->elf.code_start;
+  }
+
+  if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_WRITE) != 0) {
+    warn("could not update mprotect in rw mode for app");
+    _exit(1);
+  }
+
+  if (patch_svc(memory.code + start, code_length) != 0) {
     /* this should never happen, because the svc were already patched without
      * error during the first load */
+    _exit(1);
+  }
+
+  if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_EXEC) != 0) {
+    warn("could not update mprotect in rx mode for app");
     _exit(1);
   }
 
@@ -293,8 +315,26 @@ static void *load_app(char *name)
     }
   }
 
-  if (patch_svc(code, size) != 0) {
+  uint32_t start = 0;
+  uint32_t code_length = size;
+  if (app->elf.code_start && app->elf.code_end) {
+    start = app->elf.code_start - TEXT_START;
+    code_length = app->elf.code_end - app->elf.code_start;
+  }
+
+  if (mprotect(code, size, PROT_READ | PROT_WRITE) != 0) {
+    warn("could not update mprotect in rw mode for app");
     goto error;
+  }
+
+  if (patch_svc(code + start, code_length) != 0) {
+    warn("could not patch svcs in app code");
+    goto error;
+  }
+
+  if (mprotect(code, size, PROT_READ | PROT_EXEC) != 0) {
+    warn("could not update mprotect in rx mode for app");
+    _exit(1);
   }
 
   memory.code = code;
@@ -406,11 +446,21 @@ static int load_cxlib(char *cxlib_args)
     }
   }
 
+  if (mprotect(p, sh_size, PROT_READ | PROT_WRITE) != 0) {
+    warn("could not update mprotect in rw mode for cxlib");
+    return -1;
+  }
+
   if (patch_svc(p, sh_size) != 0) {
     if (munmap(p, sh_size) != 0) {
       warn("munmap");
     }
     close(fd);
+    return -1;
+  }
+
+  if (mprotect(p, sh_size, PROT_READ | PROT_EXEC) != 0) {
+    warn("could not update mprotect in rx mode for cxlib");
     return -1;
   }
 
@@ -487,10 +537,10 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
     err(1, "strdup");
   }
 
-  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx", libname, *filename,
-               &elf->load_offset, &elf->load_size, &elf->stack_addr,
-               &elf->stack_size);
-  if (ret != 6) {
+  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx", libname,
+               *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr,
+               &elf->stack_size, &elf->code_start, &elf->code_end);
+  if (ret != 8) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
