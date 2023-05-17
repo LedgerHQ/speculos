@@ -334,7 +334,7 @@ static void *load_app(char *name)
 
   if (mprotect(code, size, PROT_READ | PROT_EXEC) != 0) {
     warn("could not update mprotect in rx mode for app");
-    _exit(1);
+    goto error;
   }
 
   memory.code = code;
