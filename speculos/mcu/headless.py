@@ -1,7 +1,7 @@
 import select
-from typing import Optional
+from typing import List, Optional
 
-from speculos.abstractions import Display, DisplayArgs, ServerArgs
+from speculos.abstractions import Display, DisplayArgs, GraphicLibrary, ServerArgs
 from . import bagl
 from . import nbgl
 from .display import FrameBuffer, MODELS
@@ -14,26 +14,33 @@ class Headless(Display):
         super().__init__(display, server)
         self._init_notifiers(server)
 
-        self.m = HeadlessPaintWidget(self, self.model, server.vnc)
+        self.m = HeadlessPaintWidget(self.model, server.vnc)
+        self._gl: GraphicLibrary
         if display.model != "stax":
-            self.bagl = bagl.Bagl(self.m, MODELS[self.model].screen_size, display.model)
+            self._gl = bagl.Bagl(self.m, MODELS[self.model].screen_size, self.model)
         else:
-            self.nbgl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, display.force_full_ocr,
-                                  display.disable_tesseract)
+            self._gl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, self.model, display.force_full_ocr)
 
-    def display_status(self, data):
-        ret = self.bagl.display_status(data)
+    @property
+    def gl(self) -> GraphicLibrary:
+        return self._gl
+
+    def display_status(self, data: bytes) -> List[TextEvent]:
+        assert isinstance(self.gl, bagl.Bagl)
+        ret = self.gl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
         return ret
 
-    def display_raw_status(self, data) -> None:
-        self.bagl.display_raw_status(data)
+    def display_raw_status(self, data: bytes) -> None:
+        assert isinstance(self.gl, bagl.Bagl)
+        self.gl.display_raw_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
     def screen_update(self) -> bool:
-        return self.bagl.refresh()
+        assert isinstance(self.gl, bagl.Bagl)
+        return self.gl.refresh()
 
     def run(self) -> None:
         while True:
@@ -52,22 +59,22 @@ class Headless(Display):
 
 
 class HeadlessPaintWidget(FrameBuffer):
-    def __init__(self, parent: Headless, model: str, vnc: Optional[VNC] = None) -> None:
+    def __init__(self, model: str, vnc: Optional[VNC] = None):
         super().__init__(model)
         self.vnc = vnc
 
-    def update(self, x=None, y=None, w=None, h=None):
+    def update(self,
+               _0: Optional[int] = None,
+               _1: Optional[int] = None,
+               _2: Optional[int] = None,
+               _3: Optional[int] = None) -> bool:
         if self.pixels:
             self._redraw()
             self.pixels = {}
             return True
         return False
 
-    def _redraw(self):
+    def _redraw(self) -> None:
         if self.vnc:
             self.vnc.redraw(self.pixels)
-
-        self.screenshot_update_pixels()
-
-    def update_screenshot(self):
-        return self.screenshot_update_pixels()
+        self.update_screenshot()

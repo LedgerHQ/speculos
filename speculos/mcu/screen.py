@@ -1,14 +1,16 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPixmap
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt, QSocketNotifier, QSettings, QRect
+from PyQt5.QtGui import QIcon, QKeyEvent, QMouseEvent
+from PyQt5.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
+from PyQt5.sip import voidptr
 from typing import List, Optional, Union
 
-from speculos.abstractions import Display, DisplayArgs, IODevice, ServerArgs, TextEvent
+from speculos.abstractions import Display, DisplayArgs, GraphicLibrary, IODevice, ServerArgs, TextEvent
 from . import bagl
 from . import nbgl
 from .display import FrameBuffer, COLORS, MODELS
 from .readerror import ReadError
+from .vnc import VNC
 
 BUTTON_LEFT = 1
 BUTTON_RIGHT = 2
@@ -16,23 +18,23 @@ DEFAULT_WINDOW_X = 10
 DEFAULT_WINDOW_Y = 10
 
 
-class PaintWidget(QWidget):
-    def __init__(self, parent, model, pixel_size, vnc=None):
-        super().__init__(parent)
-        self.fb = FrameBuffer(model)
+class PaintWidget(FrameBuffer, QWidget):
+    def __init__(self, parent, model: str, pixel_size: int, vnc: Optional[VNC] = None):
+        QWidget.__init__(self, parent)
+        FrameBuffer.__init__(self, model)
         self.pixel_size = pixel_size
         self.mPixmap = QPixmap()
         self.vnc = vnc
 
-    def paintEvent(self, event):
-        if self.fb.pixels:
+    def paintEvent(self, event: QEvent):
+        if self.pixels:
             pixmap = QPixmap(self.size() / self.pixel_size)
             pixmap.fill(Qt.white)
             painter = QPainter(pixmap)
             painter.drawPixmap(0, 0, self.mPixmap)
             self._redraw(painter)
             self.mPixmap = pixmap
-            self.fb.pixels = {}
+            self.pixels = {}
 
         qp = QPainter(self)
         copied_pixmap = self.mPixmap
@@ -43,35 +45,26 @@ class PaintWidget(QWidget):
                 self.mPixmap.height() * self.pixel_size)
         qp.drawPixmap(0, 0, copied_pixmap)
 
-    def update(self,
+    def update(self,  # type: ignore[override]
                x: Optional[int] = None,
                y: Optional[int] = None,
                w: Optional[int] = None,
                h: Optional[int] = None) -> bool:
         if x and y and w and h:
-            super().update(QRect(x, y, w, h))
+            QWidget.update(self, QRect(x, y, w, h))
         else:
-            super().update()
-        return self.fb.pixels != {}
+            QWidget.update(self)
+        return self.pixels != {}
 
     def _redraw(self, qp):
-        for (x, y), color in self.fb.pixels.items():
+        for (x, y), color in self.pixels.items():
             qp.setPen(QColor.fromRgb(color))
             qp.drawPoint(x, y)
 
-        if self.vnc:
-            self.vnc.redraw(self.fb.pixels)
+        if self.vnc is not None:
+            self.vnc.redraw(self.pixels)
 
-        self.fb.screenshot_update_pixels()
-
-    def draw_point(self, x, y, color):
-        return self.fb.draw_point(x, y, color)
-
-    def take_screenshot(self):
-        return self.fb.take_screenshot()
-
-    def update_screenshot(self):
-        return self.fb.screenshot_update_pixels()
+        self.update_screenshot()
 
     def update_public_screenshot(self):
         return self.fb.update_public_screenshot()
@@ -141,9 +134,9 @@ class App(QMainWindow):
         self.setPalette(p)
 
         # Add paint widget and paint
-        self.m = PaintWidget(self, display.model, display.pixel_size, server.vnc)
-        self.m.move(self.box_position_x * display.pixel_size, self.box_position_y * display.pixel_size)
-        self.m.resize(self._width * display.pixel_size, self._height * display.pixel_size)
+        self.widget = PaintWidget(self, display.model, display.pixel_size, server.vnc)
+        self.widget.move(self.box_position_x * display.pixel_size, self.box_position_y * display.pixel_size)
+        self.widget.resize(self._width * display.pixel_size, self._height * display.pixel_size)
 
         self._screen = Screen(self, display, server)
 
@@ -151,14 +144,13 @@ class App(QMainWindow):
 
         self.show()
 
-
     def screen_update(self) -> bool:
         return self._screen.screen_update()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         self._screen._key_event(event, True)
 
-    def keyReleaseEvent(self, event):
+    def keyReleaseEvent(self, event: QKeyEvent):
         self._screen._key_event(event, False)
 
     def _get_x_y(self):
@@ -166,7 +158,7 @@ class App(QMainWindow):
         y = self.mouse_offset.y() // self.pixel_size - (self.box_position_y + 1)
         return x, y
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
         '''Get the mouse location.'''
 
         self.mouse_offset = event.pos()
@@ -177,13 +169,13 @@ class App(QMainWindow):
 
         QApplication.setOverrideCursor(Qt.DragMoveCursor)
 
-    def mouseReleaseEvent(self, event):
+    def mouseReleaseEvent(self, event: QMouseEvent):
         x, y = self._get_x_y()
         if x >= 0 and x < self._width and y >= 0 and y < self._height:
             self.seph.handle_finger(x, y, False)
         QApplication.restoreOverrideCursor()
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent):
         '''Move the window.'''
 
         x = event.globalX()
@@ -192,7 +184,7 @@ class App(QMainWindow):
         y_w = self.mouse_offset.y()
         self.move(x - x_w, y - y_w)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: QEvent):
         '''
         Called when the window is closed. We save the current window position to
         the settings file in order to restore it upon next speculos execution.
@@ -207,14 +199,20 @@ class Screen(Display):
         self.app = app
         super().__init__(display, server)
         self._init_notifiers(server)
+        self._gl: GraphicLibrary
         if display.model != "stax":
-            self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size, display.model)
+            self._gl = bagl.Bagl(app.widget, MODELS[display.model].screen_size, display.model)
         else:
-            self.nbgl = nbgl.NBGL(app.m, MODELS[display.model].screen_size, display.force_full_ocr,
-                                  display.disable_tesseract)
-        self.seph = server.seph
+            self._gl = nbgl.NBGL(app.widget,
+                                 MODELS[display.model].screen_size,
+                                 display.model,
+                                 display.force_full_ocr)
 
-    def klass_can_read(self, klass, s) -> None:
+    @property
+    def gl(self):
+        return self._gl
+
+    def klass_can_read(self, klass: IODevice, s: int) -> None:
         try:
             klass.can_read(s, self)
 
@@ -223,7 +221,7 @@ class Screen(Display):
             self.app.close()
 
     def add_notifier(self, klass: IODevice) -> None:
-        n = QSocketNotifier(klass.fileno, QSocketNotifier.Read, self.app)
+        n = QSocketNotifier(voidptr(klass.fileno), QSocketNotifier.Read, self.app)
         n.activated.connect(lambda s: self.klass_can_read(klass, s))
         assert klass.fileno not in self.notifiers
         self.notifiers[klass.fileno] = n
@@ -238,8 +236,8 @@ class Screen(Display):
         n = self.notifiers.pop(fd)
         n.disconnect()
 
-    def _key_event(self, event, pressed) -> None:
-        key = event.key()
+    def _key_event(self, event: QKeyEvent, pressed) -> None:
+        key = Qt.Key(event.key())
         if key in [Qt.Key_Left, Qt.Key_Right]:
             buttons = {Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT}
             # forward this event to seph
@@ -250,19 +248,21 @@ class Screen(Display):
         elif key == Qt.Key_Q and not pressed:
             self.app.close()
 
-    def display_status(self, data) -> List[TextEvent]:
-        ret = self.bagl.display_status(data)
+    def display_status(self, data: bytes) -> List[TextEvent]:
+        assert isinstance(self.gl, bagl.Bagl)
+        ret = self.gl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
         return ret
 
-    def display_raw_status(self, data) -> None:
-        self.bagl.display_raw_status(data)
+    def display_raw_status(self, data: bytes) -> None:
+        assert isinstance(self.gl, bagl.Bagl)
+        self.gl.display_raw_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
     def screen_update(self) -> bool:
-        return self.bagl.refresh()
+        return self.gl.refresh()
 
     def run(self) -> None:
         pass
@@ -272,7 +272,7 @@ class QtScreen:
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         self.app = QApplication([])
         self.app_widget = App(self.app, display, server)
-        self.m = self.app_widget.m
+        self.m = self.app_widget.widget
 
     def run(self):
         self.app.exec_()

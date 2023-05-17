@@ -3,7 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from socket import socket
-from typing import Any, Dict, IO, List, NamedTuple, Optional, Union
+from typing import Any, Dict, IO, List, NamedTuple, Optional, Tuple, Union
+
+from speculos.mcu.display import FrameBuffer
 
 # from speculos.mcu.apdu import ApduServer
 # from speculos.mcu.seproxyhal import SeProxyHal
@@ -82,15 +84,62 @@ class IODevice(ABC):
         pass
 
 
+class GraphicLibrary(ABC):
+
+    def __init__(self, fb: FrameBuffer, size: Tuple[int, int], model: str):
+        self._fb = fb
+        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
+        self.model = model
+
+    @property
+    def fb(self) -> FrameBuffer:
+        return self._fb
+
+    @abstractmethod
+    def refresh(self, data: bytes) -> bool:
+        pass
+
+    def update_screenshot(self) -> None:
+        self.fb.update_screenshot()
+
+    def take_screenshot(self) -> Tuple[Tuple[int, int], bytes]:
+        return self.fb.take_screenshot()
+
+
 class Display(ABC):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         self.notifiers: Dict[int, Any] = {}
-        self.apdu = server.apdu
-        self.seph = server.seph
-        self.model = display.model
-        self.force_full_ocr = display.force_full_ocr
-        self.disable_tesseract = display.disable_tesseract
-        self.rendering = display.rendering
+        self._server = server
+        self._display = display
+
+    @property
+    def apdu(self) -> Any:  # ApduServer:
+        return self._server.apdu
+
+    @property
+    def seph(self) -> Any:  # SeProxyHal:
+        return self._server.seph
+
+    @property
+    def model(self) -> str:
+        return self._display.model
+
+    @property
+    def force_full_ocr(self) -> bool:
+        return self._display.force_full_ocr
+
+    @property
+    def disable_tesseract(self) -> bool:
+        return self._display.disable_tesseract
+
+    @property
+    def rendering(self):
+        return self._display.rendering
+
+    @property
+    @abstractmethod
+    def gl(self) -> GraphicLibrary:
+        pass
 
     @abstractmethod
     def display_status(self, data: bytes) -> List[TextEvent]:

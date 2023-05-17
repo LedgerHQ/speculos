@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import Optional
 
 BAGL_FONT_ID_MASK = 0x0fff
 
@@ -3147,7 +3148,7 @@ FONTS = [
 ]
 
 
-def get(font_id):
+def get(font_id: int) -> Optional[Font]:
     font_id &= BAGL_FONT_ID_MASK
     for font in FONTS:
         if font.font_id == font_id:

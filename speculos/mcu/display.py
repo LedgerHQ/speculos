@@ -1,7 +1,6 @@
 import io
-from abc import ABC
 from PIL import Image
-from typing import Dict, NamedTuple, Tuple
+from typing import Dict, NamedTuple, Optional, Tuple
 
 
 class Model(NamedTuple):
@@ -40,29 +39,28 @@ def _screenshot_to_iobytes_value(screen_size, data):
 
 
 class Screenshot:
-    def __init__(self, screen_size):
-        self.pixels = {}
+    def __init__(self, screen_size: Tuple[int, int]):
+        self.pixels: Dict[Tuple[int, int], int] = {}
         self.width, self.height = screen_size
         for y in range(0, self.height):
             for x in range(0, self.width):
                 self.pixels[(x, y)] = 0x000000
 
-    def update(self, pixels):
+    def update(self, pixels: Dict[Tuple[int, int], int]) -> None:
         # Don't call update, replace the object instead
         self.pixels = {**self.pixels, **pixels}
 
-    def get_image(self):
+    def get_image(self) -> Tuple[Tuple[int, int], bytes]:
         # Get the pixels object once, as it may be replaced during the loop.
-        pixels = self.pixels
         data = bytearray(self.width * self.height * 3)
         for y in range(0, self.height):
             for x in range(0, self.width):
                 pos = 3 * (y * self.width + x)
-                data[pos:pos + 3] = pixels[(x, y)].to_bytes(3, "big")
+                data[pos:pos + 3] = self.pixels[(x, y)].to_bytes(3, "big")
         return (self.width, self.height), bytes(data)
 
 
-class FrameBuffer(ABC):
+class FrameBuffer:
     COLORS = {
         "nanos": 0x00fffb,
         "nanox": 0xdddddd,
@@ -94,17 +92,20 @@ class FrameBuffer(ABC):
         # Update the screenshot object with our current pixels content
         self.screenshot.update(self.pixels)
 
-    def take_screenshot(self):
+    def take_screenshot(self) -> Tuple[Tuple[int, int], bytes]:
         self.current_screen_size, self.current_data = self.screenshot.get_image()
         return self.current_screen_size, self.current_data
 
-    def update_public_screenshot(self):
+    def update_screenshot(self) -> None:
+        self.screenshot.update(self.pixels)
+
+    def update_public_screenshot(self) -> None:
         # Stax only
         # As we lazyly evaluate the published screenshot, we only flag the evaluation update as necessary
         self.recreate_public_screenshot = True
 
     @property
-    def public_screenshot_value(self):
+    def public_screenshot_value(self) -> bytes:
         # Stax only
         # Lazy calculation of the published screenshot, as it is a costly operation
         # and not necessary if no one tries to read the value
@@ -114,7 +115,7 @@ class FrameBuffer(ABC):
 
         return self._public_screenshot_value
 
-    def get_public_screenshot(self):
+    def get_public_screenshot(self) -> bytes:
         if self.model == "stax":
             # On Stax, we only make the screenshot public on the RESTFUL api when it is consistent with events
             # On top of this, take_screenshot is time consuming on stax, so we'll do as few as possible
@@ -124,3 +125,14 @@ class FrameBuffer(ABC):
         # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
         screen_size, data = self.take_screenshot()
         return _screenshot_to_iobytes_value(screen_size, data)
+
+    # Should be declared as an `@abstractmethod` (and also `class FrameBuffer(ABC):`), but in this
+    # case multiple inheritance in `screen.PaintWidget(FrameBuffer, QWidget)` will break, as both
+    # FrameBuffer and QWidget derive from a different metaclass, and Python cannot figure out which
+    # class builder to use.
+    def update(self,
+               x: Optional[int] = None,
+               y: Optional[int] = None,
+               w: Optional[int] = None,
+               h: Optional[int] = None) -> bool:
+        raise NotImplementedError()

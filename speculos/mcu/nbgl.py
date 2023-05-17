@@ -1,6 +1,11 @@
+import gzip
+import logging
 from construct import Struct, Int8ul, Int16ul
 from enum import IntEnum
-import gzip
+from typing import Tuple
+
+from speculos.abstractions import GraphicLibrary
+from .display import FrameBuffer
 
 
 class NbglColor(IntEnum):
@@ -20,7 +25,7 @@ nbgl_area_t = Struct(
 )
 
 
-class NBGL:
+class NBGL(GraphicLibrary):
 
     @staticmethod
     def to_screen_color(color: int, bpp: int) -> int:
@@ -32,14 +37,16 @@ class NBGL:
         assert bpp in color_table, f"BPP should be in {color_table.keys()}, but is '{bpp}'"
         return color * color_table[bpp]
 
-    def __init__(self, m, size, force_full_ocr, disable_tesseract):
-        self.m = m
-        # front screen dimension
-        self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
+    def __init__(self,
+                 fb: FrameBuffer,
+                 size: Tuple[int, int],
+                 model: str,
+                 force_full_ocr: bool):
+        super().__init__(fb, size, model)
         self.force_full_ocr = force_full_ocr
-        self.disable_tesseract = disable_tesseract
+        self.logger = logging.getLogger("NBGL")
 
-    def __assert_area(self, area):
+    def __assert_area(self, area) -> None:
         if area.y0 % 4 or area.height % 4:
             raise AssertionError("X(%d) or height(%d) not 4 aligned " % (area.y0, area.height))
         if area.x0 > self.SCREEN_WIDTH or (area.x0+area.width) > self.SCREEN_WIDTH:
@@ -47,7 +54,7 @@ class NBGL:
         if area.y0 > self.SCREEN_HEIGHT or (area.y0+area.height) > self.SCREEN_HEIGHT:
             raise AssertionError("top edge (%d) or bottom edge (%d) out of screen" % (area.y0, (area.y0 + area.height)))
 
-    def hal_draw_rect(self, data):
+    def hal_draw_rect(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data)
         if self.force_full_ocr:
             # We need all text shown in black with white background
@@ -56,15 +63,15 @@ class NBGL:
         self.__assert_area(area)
         for x in range(area.x0, area.x0+area.width):
             for y in range(area.y0, area.y0+area.height):
-                self.m.draw_point(x, y, NBGL.to_screen_color(area.color, 2))
+                self.fb.draw_point(x, y, NBGL.to_screen_color(area.color, 2))
         return
 
-    def hal_refresh(self, data):
+    def refresh(self, data: bytes) -> bool:
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
-        self.m.update(area.x0, area.y0, area.width, area.height)
+        return self.fb.update(area.x0, area.y0, area.width, area.height)
 
-    def hal_draw_line(self, data):
+    def hal_draw_line(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
         mask = data[-2]
@@ -75,14 +82,16 @@ class NBGL:
         for x in range(area.x0, area.x0+area.width):
             for y in range(area.y0, area.y0+area.height):
                 if (mask >> (y-area.y0)) & 0x1:
-                    self.m.draw_point(x, y, front_color)
+                    self.fb.draw_point(x, y, front_color)
                 else:
-                    self.m.draw_point(x, y, back_color)
+                    self.fb.draw_point(x, y, back_color)
 
+    @staticmethod
     def get_color_from_color_map(color, color_map, bpp):
         # #define GET_COLOR_MAP(__map__,__col__) ((__map__>>(__col__*2))&0x3)
         return NBGL.to_screen_color((color_map >> (color*2)) & 0x3, bpp)
 
+    @staticmethod
     def get_4bpp_color_from_color_index(index, front_color, back_color):
         COLOR_MAPS_4BPP = {
             # Manually hardcoced color maps
@@ -122,14 +131,14 @@ class NBGL:
             return 0
         return bpp
 
-    def hal_draw_image(self, data):
+    def hal_draw_image(self, data: bytes):
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
         bit_size = (area.width * area.height * bpp)
         buffer_size = (bit_size // 8) + ((bit_size % 8) > 0)
         buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof()+buffer_size]
-        transformation = data[nbgl_area_t.sizeof()+buffer_size]
+        transformation: int = data[nbgl_area_t.sizeof()+buffer_size]
         color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
 
         if self.force_full_ocr:
@@ -158,9 +167,8 @@ class NBGL:
             y = area.y0
         else:
             # error
-            print(transformation)
+            self.logger.error("Unknown transformation '%d'", transformation)
             exit(-2)
-            pass
 
         if bpp == 1:
             bit_step = 1
@@ -184,7 +192,7 @@ class NBGL:
                 else:
                     pixel_color = NBGL.to_screen_color(nib, bpp)
 
-                self.m.draw_point(x, y, pixel_color)
+                self.fb.draw_point(x, y, pixel_color)
 
                 if transformation == 0:
                     if y < area.y0 + area.height-1:

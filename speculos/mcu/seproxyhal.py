@@ -10,6 +10,7 @@ from typing import Callable, List, Optional, Tuple
 from speculos.abstractions import BroadcastInterface, Display, IODevice, TextEvent
 from . import usb
 from .automation import Automation
+from .nbgl import NBGL
 from .ocr import OCR
 from .readerror import ReadError
 
@@ -40,6 +41,12 @@ class SephTag(IntEnum):
     SCREEN_DISPLAY_STATUS = 0x65
     PRINTF_STATUS = 0x66
     SCREEN_DISPLAY_RAW_STATUS = 0x69
+
+    NBGL_DRAW_RECT = 0x6A
+    NBGL_REFRESH = 0x6B
+    NBGL_DRAW_LINE = 0x6C
+    NBGL_DRAW_IMAGE = 0x6D
+    NBGL_DRAW_IMAGE_FILE = 0x6E
 
     FINGER_EVENT_TOUCH = 0x01
     FINGER_EVENT_RELEASE = 0x02
