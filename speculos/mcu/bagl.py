@@ -4,10 +4,10 @@ from collections import namedtuple
 from construct import Aligned, Struct, Int8ul, Int16ul, Int32ul, Padded
 from typing import List, Optional, Tuple
 
+from speculos.observer import TextEvent
 from . import bagl_font
 from . import bagl_glyph
 from .display import FrameBuffer, GraphicLibrary
-from .struct import TextEvent
 
 bagl_component_t = Aligned(4, Struct(
     "type" / Int8ul,

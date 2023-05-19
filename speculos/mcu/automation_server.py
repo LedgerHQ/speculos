@@ -9,8 +9,7 @@ import threading
 from typing import List
 from dataclasses import asdict
 
-from speculos.observer import BroadcastInterface
-from .struct import TextEvent
+from speculos.observer import BroadcastInterface, ObserverInterface, TextEvent
 
 
 class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer, BroadcastInterface):
@@ -18,33 +17,26 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer, Broa
     allow_reuse_address = True
 
     def __init__(self, server_address, RequestHandlerClass, *args, **kwargs):
+        BroadcastInterface.__init__(self)
         socketserver.TCPServer.__init__(self, server_address, RequestHandlerClass)
-
         self.logger = logging.getLogger("automation")
-        self.clients = []
-
-    def add_client(self, client):
-        self.clients.append(client)
-
-    def remove_client(self, client):
-        self.clients.remove(client)
 
     def broadcast(self, event: TextEvent):
         """Broadcast an event to each connected client."""
 
-        self.logger.debug(f"broadcast {asdict(event)} to {self.clients}")
+        self.logger.debug("Broadcast %s to %s", asdict(event), self.clients)
         for client in self.clients:
             client.send_screen_event(event)
 
 
-class AutomationClient(socketserver.BaseRequestHandler):
+class AutomationClient(socketserver.BaseRequestHandler, ObserverInterface):
 
     def setup(self) -> None:
         self.server:  AutomationServer
         self.logger = logging.getLogger("automation")
         self.condition = threading.Condition()
         self.events: List[TextEvent] = []
-        self.logger.debug(f"new client from {self.client_address}")
+        self.logger.debug("New client from %s", self.client_address)
         self.server.add_client(self)
 
     def handle(self):
@@ -62,7 +54,7 @@ class AutomationClient(socketserver.BaseRequestHandler):
                     return
 
     def finish(self):
-        self.logger.debug("connection closed with client")
+        self.logger.debug("Connection closed with client %s", self)
         self.server.remove_client(self)
 
     def send_screen_event(self, event: TextEvent) -> None:

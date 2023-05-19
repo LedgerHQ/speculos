@@ -6,7 +6,8 @@ from PIL import Image
 from socket import socket
 from typing import Any, Dict, IO, List, Optional, Tuple, Union
 
-from .struct import DisplayArgs, MODELS, ServerArgs, TextEvent
+from speculos.observer import TextEvent
+from .struct import DisplayArgs, MODELS, ServerArgs
 
 
 class IODevice(ABC):

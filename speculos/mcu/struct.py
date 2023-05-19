@@ -47,10 +47,3 @@ class ServerArgs(NamedTuple):
     finger: Any  # Optional[FakeFinger]
     seph: Any  # SeProxyHal
     vnc: Any  # Optional[VNC]
-
-
-@dataclass
-class TextEvent:
-    text: str
-    x: int
-    y: int

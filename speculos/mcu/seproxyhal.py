@@ -7,14 +7,13 @@ from enum import IntEnum
 from socket import socket
 from typing import Callable, List, Optional, Tuple
 
-from speculos.observer import BroadcastInterface
+from speculos.observer import BroadcastInterface, TextEvent
 from . import usb
 from .automation import Automation
 from .display import Display, IODevice
 from .nbgl import NBGL
 from .ocr import OCR
 from .readerror import ReadError
-from .struct import TextEvent
 
 
 class SephTag(IntEnum):
