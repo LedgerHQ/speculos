@@ -9,7 +9,8 @@ import threading
 from typing import List
 from dataclasses import asdict
 
-from speculos.abstractions import BroadcastInterface, TextEvent
+from speculos.observer import BroadcastInterface
+from .struct import TextEvent
 
 
 class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer, BroadcastInterface):

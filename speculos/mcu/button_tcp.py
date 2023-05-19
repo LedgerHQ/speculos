@@ -14,7 +14,7 @@ import logging
 import socket
 import time
 
-from speculos.abstractions import Display, IODevice
+from .display import Display, IODevice
 
 
 class FakeButtonClient(IODevice):

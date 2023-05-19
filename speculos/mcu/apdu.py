@@ -12,7 +12,7 @@ import logging
 import socket
 from typing import Optional
 
-from speculos.abstractions import Display, IODevice
+from .display import IODevice, Display
 
 
 class ApduServer(IODevice):

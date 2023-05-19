@@ -5,11 +5,11 @@ from PyQt5.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
 from PyQt5.sip import voidptr
 from typing import List, Optional, Union
 
-from speculos.abstractions import Display, DisplayArgs, GraphicLibrary, IODevice, ServerArgs, TextEvent
 from . import bagl
 from . import nbgl
-from .display import FrameBuffer, COLORS, MODELS
+from .display import COLORS, Display, FrameBuffer, GraphicLibrary, IODevice
 from .readerror import ReadError
+from .struct import DisplayArgs, MODELS, ServerArgs, TextEvent
 from .vnc import VNC
 
 BUTTON_LEFT = 1

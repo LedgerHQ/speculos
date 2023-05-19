@@ -5,9 +5,10 @@ from typing import Dict
 from flask import Flask
 from flask_restful import Api
 
-from speculos.abstractions import BroadcastInterface, Display, IODevice
+from speculos.mcu.display import Display, IODevice
 from speculos.mcu.readerror import ReadError
 from speculos.mcu.seproxyhal import SeProxyHal
+from speculos.observer import BroadcastInterface
 from .apdu import APDU
 from .automation import Automation
 from .button import Button

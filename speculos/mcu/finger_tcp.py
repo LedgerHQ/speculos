@@ -13,7 +13,7 @@ import logging
 import socket
 from typing import List
 
-from speculos.abstractions import Display, IODevice
+from .display import Display, IODevice
 
 
 class FakeFingerClient(IODevice):

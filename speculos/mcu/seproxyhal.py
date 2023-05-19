@@ -7,12 +7,14 @@ from enum import IntEnum
 from socket import socket
 from typing import Callable, List, Optional, Tuple
 
-from speculos.abstractions import BroadcastInterface, Display, IODevice, TextEvent
+from speculos.observer import BroadcastInterface
 from . import usb
 from .automation import Automation
+from .display import Display, IODevice
 from .nbgl import NBGL
 from .ocr import OCR
 from .readerror import ReadError
+from .struct import TextEvent
 
 
 class SephTag(IntEnum):
@@ -248,7 +250,7 @@ class SeProxyHal(IODevice):
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: str = 'hid',
-                 fonts_path: str = Optional[None],
+                 fonts_path: Optional[str] = None,
                  api_level: Optional[int] = None):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
@@ -327,14 +329,14 @@ class SeProxyHal(IODevice):
                 if self.refreshed:
                     self.refreshed = False
 
-                    if not screen.nbgl.disable_tesseract:
+                    if not screen.disable_tesseract:
                         # Run the OCR
-                        screen.nbgl.m.update_screenshot()
-                        screen_size, image_data = screen.nbgl.m.take_screenshot()
+                        screen.gl.update_screenshot()
+                        screen_size, image_data = screen.gl.take_screenshot()
                         self.ocr.analyze_image(screen_size, image_data)
 
                     # Publish the new screenshot, we'll upload its associated events shortly
-                    screen.nbgl.m.update_public_screenshot()
+                    screen.gl.update_public_screenshot()
 
                 if screen.model != "stax" and screen.screen_update():
                     if screen.model in ["nanox", "nanosp"]:
@@ -422,23 +424,28 @@ class SeProxyHal(IODevice):
             pass
 
         elif tag == SephTag.NBGL_DRAW_RECT:
-            screen.nbgl.hal_draw_rect(data)
+            assert isinstance(screen.gl, NBGL)
+            screen.gl.hal_draw_rect(data)
 
         elif tag == SephTag.NBGL_REFRESH:
-            screen.nbgl.hal_refresh(data)
+            assert isinstance(screen.gl, NBGL)
+            screen.gl.refresh(data)
             # Stax only
             # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
             # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
             self.refreshed = True
 
         elif tag == SephTag.NBGL_DRAW_LINE:
-            screen.nbgl.hal_draw_line(data)
+            assert isinstance(screen.gl, NBGL)
+            screen.gl.hal_draw_line(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE:
-            screen.nbgl.hal_draw_image(data)
+            assert isinstance(screen.gl, NBGL)
+            screen.gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
-            screen.nbgl.hal_draw_image_file(data)
+            assert isinstance(screen.gl, NBGL)
+            screen.gl.hal_draw_image_file(data)
 
         else:
             self.logger.error(f"unknown tag: {tag:#x}")
@@ -495,6 +502,6 @@ class SeProxyHal(IODevice):
 
         if packet.startswith(b'RAW!') and len(packet) > 4:
             tag, packet = packet[4], packet[5:]
-            self.socket_helper.queue_packet(tag, packet)
+            self.socket_helper.queue_packet(SephTag(tag), packet)
         else:
             self.usb.xfer(packet)

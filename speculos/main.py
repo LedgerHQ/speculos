@@ -20,7 +20,6 @@ from elftools.elf.elffile import ELFFile
 from mnemonic import mnemonic
 from typing import Optional, Type
 
-from speculos.abstractions import Display, DisplayArgs, ServerArgs, BroadcastInterface
 from .api import ApiRunner, EventsBroadcaster
 from .mcu import apdu as apdu_server
 from .mcu import automation
@@ -29,7 +28,9 @@ from .mcu import seproxyhal
 from .mcu.automation_server import AutomationClient, AutomationServer
 from .mcu.button_tcp import FakeButton
 from .mcu.finger_tcp import FakeFinger
+from .mcu.struct import DisplayArgs, ServerArgs
 from .mcu.vnc import VNC
+from .observer import BroadcastInterface
 
 
 DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
@@ -413,13 +414,13 @@ def main(prog=None) -> int:
         logger.error("--vnc-password can only be used with --vnc-port")
         sys.exit(1)
 
-    Screen: Type[Display]
+    Screen: Type[display.Display]
     if args.display == 'text':
         from .mcu.screen_text import TextScreen as Screen
     elif args.display == 'headless':
         from .mcu.headless import Headless as Screen
     else:
-        # TODO: QtScreen does not derive from Display so the `Screen` typing is wrong
+        # TODO: QtScreen does not derive from display.Display so the `Screen` typing is wrong
         #       There is still work to be done to clarify what the `Screen` interface should be here
         from .mcu.screen import QtScreen as Screen
 
@@ -450,6 +451,7 @@ def main(prog=None) -> int:
 
     automation_server: Optional[BroadcastInterface] = None
     if args.automation_port:
+        # TODO: remove this condition and all associated code in next major version
         logger.warn("--automation-port is deprecated, please use the REST API instead")
         if api_enabled:
             logger.warn("--automation-port is incompatible with the the API server, disabling the latter")

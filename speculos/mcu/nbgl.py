@@ -4,8 +4,7 @@ from construct import Struct, Int8ul, Int16ul
 from enum import IntEnum
 from typing import Tuple
 
-from speculos.abstractions import GraphicLibrary
-from .display import FrameBuffer
+from .display import FrameBuffer, GraphicLibrary
 
 
 class NbglColor(IntEnum):

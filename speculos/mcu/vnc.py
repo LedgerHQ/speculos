@@ -11,7 +11,7 @@ import subprocess
 import sys
 from typing import IO, Optional, Tuple
 
-from speculos.abstractions import Display, IODevice
+from .display import Display, IODevice
 
 
 class VNC(IODevice):

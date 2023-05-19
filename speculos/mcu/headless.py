@@ -1,11 +1,12 @@
 import select
 from typing import List, Optional
 
-from speculos.abstractions import Display, DisplayArgs, GraphicLibrary, ServerArgs
+from speculos.observer import TextEvent
 from . import bagl
 from . import nbgl
-from .display import FrameBuffer, MODELS
+from .display import Display, FrameBuffer, GraphicLibrary, MODELS
 from .readerror import ReadError
+from .struct import DisplayArgs, ServerArgs
 from .vnc import VNC
 
 

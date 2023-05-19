@@ -8,8 +8,8 @@ from PIL import Image
 from pytesseract import image_to_data, Output
 from typing import List, Mapping, Tuple
 
-from speculos.abstractions import TextEvent
 from . import bagl_font
+from .struct import TextEvent
 
 MIN_WORD_CONFIDENCE_LVL = 0  # percent
 NEW_LINE_THRESHOLD = 10  # pixels

@@ -6,10 +6,10 @@ import sys
 import time
 from typing import Any, List
 
-from speculos.abstractions import Display, DisplayArgs, ServerArgs
 from . import bagl
-from .display import FrameBuffer, MODELS
+from .display import Display, FrameBuffer, MODELS
 from .readerror import ReadError
+from .struct import DisplayArgs, ServerArgs
 
 wait_time = 0.01
 

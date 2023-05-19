@@ -6,7 +6,8 @@ from dataclasses import asdict
 from flask import stream_with_context, Response
 from flask_restful import inputs, reqparse
 
-from speculos.abstractions import BroadcastInterface, ObserverInterface, TextEvent
+from speculos.mcu.struct import TextEvent
+from speculos.observer import BroadcastInterface, ObserverInterface
 from .restful import AppResource
 
 # Approximative minimum vertical distance between two lines of text on the devices' screen.
