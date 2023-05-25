@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Lint C code
@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Check misspellings
@@ -52,7 +52,7 @@ jobs:
       image: docker://ghcr.io/ledgerhq/speculos-builder:latest
     steps:
     - name: Clone
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Rebuild with code coverage instrumentation
@@ -85,7 +85,7 @@ jobs:
 
     steps:
     - name: Clone
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -110,7 +110,7 @@ jobs:
 
     steps:
     - name: Clone
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -192,7 +192,7 @@ jobs:
     needs: [build, coverage, package_and_test_docker]
     steps:
     - name: Clone
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Build and publish to GitHub Packages
