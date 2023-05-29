@@ -1,16 +1,17 @@
-# Build speculos and run tests using GitHub Actions
+name: Continuous Integration & Deployment
 
-name: Continuous Integration
-
-# Controls when the action will run. Triggers the workflow on pull request events,
-# and also push events but only for the develop or master branches
 on:
   workflow_dispatch:
   push:
+    tags:
+      - '*'
     branches:
       - master
       - develop
   pull_request:
+    branches:
+      - master
+      - develop
 
 jobs:
 
@@ -117,24 +118,49 @@ jobs:
         ./venv-build/bin/python -m build
         ./venv-build/bin/python -m twine check dist/*
 
-    # TEST_PYPI_API_TOKEN is an API token created on
-    # https://test.pypi.org/manage/account/#api-tokens with restriction to speculos project
-    - name: Publish Python package to test.pypi.org
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    - name: Display current status
       run: |
-        ./venv-build/bin/python -m twine upload --repository testpypi dist/*
+        echo "Current status is:"
+        if [[ ${{ github.ref }} == "refs/tags/"* ]]; \
+        then \
+            echo "- Triggered from tag, will be deployed on pypi.org"; \
+        else \
+            echo "- Not triggered from tag, will be deployed on test.pypi.org"; \
+        fi
+        echo "- Tag version: ${{ env.TAG_VERSION }}"
+
+    - name: Check version against CHANGELOG
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        CHANGELOG_VERSION=$(grep -Po '(?<=## \[)(\d\.)+[^\]]' CHANGELOG.md | head -n 1)
+        if [ "${{ env.TAG_VERSION }}" == "${CHANGELOG_VERSION}" ]; \
+        then \
+            exit 0; \
+        else \
+            echo "Tag '${{ env.TAG_VERSION }}' and CHANGELOG '${CHANGELOG_VERSION}' versions mismatch!"; \
+            exit 1; \
+        fi
+
+    - name: Publish Python package on test.pypi.org
+      if: |
+        success() &&
+        github.event_name == 'push' &&
+        !startsWith(github.ref, 'refs/tags/')
+      run: python -m twine upload --repository testpypi dist/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PUBLIC_API_TOKEN }}
         TWINE_NON_INTERACTIVE: 1
 
-    - name: Publish Python package to pypi.org
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'  && contains(github.event.head_commit.message, 'release')
-      run: |
-        ./venv-build/bin/python -m twine upload dist/*
+    - name: Publish Python package on pypi.org
+      if: |
+        success() &&
+        github.event_name == 'push' &&
+        startsWith(github.ref, 'refs/tags/')
+      run: python -m twine upload dist/*
       env:
         TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
         TWINE_NON_INTERACTIVE: 1
 
   package_and_test_docker:
