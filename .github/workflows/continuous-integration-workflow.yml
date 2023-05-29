@@ -168,7 +168,7 @@ jobs:
         success() &&
         github.event_name == 'push' &&
         !startsWith(github.ref, 'refs/tags/')
-      run: python -m twine upload --repository testpypi dist/*
+      run: ./venv-build/bin/python -m twine upload --repository testpypi dist/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PUBLIC_API_TOKEN }}
@@ -179,7 +179,7 @@ jobs:
         success() &&
         github.event_name == 'push' &&
         startsWith(github.ref, 'refs/tags/')
-      run: python -m twine upload dist/*
+      run: ./venv-build/bin/python -m twine upload dist/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
