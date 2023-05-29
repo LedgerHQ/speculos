@@ -45,7 +45,6 @@ setup(
     name="speculos",
     author="Ledger",
     author_email="hello@ledger.fr",
-    version="0.1.0",
     url="https://github.com/LedgerHQ/speculos",
     python_requires=">=3.6.0",
     description="Ledger Blue, Stax and Nano S/S+/X application emulator",
@@ -70,7 +69,11 @@ setup(
             'pytest',
             'pytest-cov'
         ]},
-    setup_requires=["wheel"],
+    use_scm_version={
+        "write_to": "speculos/__version__.py",
+        "local_scheme": "no-local-version"
+    },
+    setup_requires=["wheel", "setuptools_scm"],
     entry_points={
         "console_scripts": [
             "speculos = speculos.main:main",
