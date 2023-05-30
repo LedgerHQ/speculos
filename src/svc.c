@@ -255,7 +255,7 @@ int patch_svc(void *p, size_t size)
   addr = p;
   end = addr + size;
   ret = 0;
-  while (addr < end - 2) {
+  while (addr <= end - 2) {
     next = memmem(addr, end - addr, "\x01\xdf", 2);
     if (next == NULL) {
       break;

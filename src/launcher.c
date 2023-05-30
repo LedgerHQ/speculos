@@ -15,7 +15,6 @@
 #include "emulate.h"
 #include "svc.h"
 
-#define TEXT_START    (0xc0de0000)
 #define LOAD_ADDR     ((void *)0x40000000)
 #define MAX_APP       16
 #define MAIN_APP_NAME "main"
@@ -30,8 +29,9 @@ struct elf_info_s {
   unsigned long load_size;
   unsigned long stack_addr;
   unsigned long stack_size;
-  unsigned long code_start;
-  unsigned long code_end;
+  unsigned long svc_call_addr;
+  unsigned long svc_cx_call_addr;
+  unsigned long text_load_addr;
 };
 
 struct app_s {
@@ -123,8 +123,9 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
   apps[napp].elf.stack_size = elf->stack_size;
-  apps[napp].elf.code_start = elf->code_start;
-  apps[napp].elf.code_end = elf->code_end;
+  apps[napp].elf.svc_call_addr = elf->svc_call_addr;
+  apps[napp].elf.svc_cx_call_addr = elf->svc_cx_call_addr;
+  apps[napp].elf.text_load_addr = elf->text_load_addr;
 
   napp++;
 
@@ -145,6 +146,25 @@ static void reset_memory(bool unload_data)
 struct app_s *get_current_app(void)
 {
   return current_app;
+}
+
+// On old versions of the SDK, functions SVC_Call and SVC_cx_call were inlined
+// In this case we can't look for the symbols in the elf to only patch the SVC_1
+// inside of these functions
+static bool is_svc_inlined(void)
+{
+  switch (sdk_version) {
+  case SDK_BLUE_1_5:
+  case SDK_BLUE_2_2_5:
+  case SDK_NANO_S_1_5:
+  case SDK_NANO_S_1_6:
+  case SDK_NANO_X_1_2:
+    return true;
+    break;
+  default:
+    return false;
+    break;
+  }
 }
 
 int replace_current_code(struct app_s *app)
@@ -171,22 +191,40 @@ int replace_current_code(struct app_s *app)
     return -1;
   }
 
-  uint32_t start = 0;
-  uint32_t code_length = app->elf.load_size;
-  if (app->elf.code_start != 0 && app->elf.code_end != 0) {
-    start = app->elf.code_start - TEXT_START;
-    code_length = app->elf.code_end - app->elf.code_start;
-  }
-
   if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_WRITE) != 0) {
     warn("could not update mprotect in rw mode for app");
     _exit(1);
   }
 
-  if (patch_svc(memory.code + start, code_length) != 0) {
-    /* this should never happen, because the svc were already patched without
-     * error during the first load */
-    _exit(1);
+  // If the syscall functions are not inlined and their symbols have been found
+  // in the elf file, patch the elf at this address to remove the SVC 1 call
+  if (!is_svc_inlined() &&
+      (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0)) {
+    if (app->elf.svc_call_addr != 0) {
+      uint32_t start = app->elf.svc_call_addr - app->elf.text_load_addr;
+
+      if (patch_svc(memory.code + start, 2) != 0) {
+        /* this should never happen, because the svc were already patched
+         * without error during the first load */
+        _exit(1);
+      }
+    }
+
+    if (app->elf.svc_cx_call_addr != 0) {
+      uint32_t start = app->elf.svc_cx_call_addr - app->elf.text_load_addr;
+
+      if (patch_svc(memory.code + start, 2) != 0) {
+        /* this should never happen, because the svc were already patched
+         * without error during the first load */
+        _exit(1);
+      }
+    }
+  } else {
+    if (patch_svc(memory.code, app->elf.load_size) != 0) {
+      /* this should never happen, because the svc were already patched
+       * without error during the first load */
+      _exit(1);
+    }
   }
 
   if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_EXEC) != 0) {
@@ -315,21 +353,34 @@ static void *load_app(char *name)
     }
   }
 
-  uint32_t start = 0;
-  uint32_t code_length = size;
-  if (app->elf.code_start && app->elf.code_end) {
-    start = app->elf.code_start - TEXT_START;
-    code_length = app->elf.code_end - app->elf.code_start;
-  }
-
   if (mprotect(code, size, PROT_READ | PROT_WRITE) != 0) {
     warn("could not update mprotect in rw mode for app");
     goto error;
   }
 
-  if (patch_svc(code + start, code_length) != 0) {
-    warn("could not patch svcs in app code");
-    goto error;
+  // If the syscall functions are not inlined and their symbols have been found
+  // in the elf file, patch the elf at this address to remove the SVC 1 call
+  if (!is_svc_inlined() &&
+      (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0)) {
+    if (app->elf.svc_call_addr != 0) {
+      uint32_t start = app->elf.svc_call_addr - app->elf.text_load_addr;
+
+      if (patch_svc(code + start, 2) != 0) {
+        goto error;
+      }
+    }
+
+    if (app->elf.svc_cx_call_addr != 0) {
+      uint32_t start = app->elf.svc_cx_call_addr - app->elf.text_load_addr;
+
+      if (patch_svc(code + start, 2) != 0) {
+        goto error;
+      }
+    }
+  } else {
+    if (patch_svc(code, app->elf.load_size) != 0) {
+      goto error;
+    }
   }
 
   if (mprotect(code, size, PROT_READ | PROT_EXEC) != 0) {
@@ -537,10 +588,11 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
     err(1, "strdup");
   }
 
-  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx", libname,
-               *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr,
-               &elf->stack_size, &elf->code_start, &elf->code_end);
-  if (ret != 8) {
+  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx",
+               libname, *filename, &elf->load_offset, &elf->load_size,
+               &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
+               &elf->svc_cx_call_addr, &elf->text_load_addr);
+  if (ret != 9) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
