@@ -94,15 +94,21 @@ def get_elf_infos(app_path):
             sys.exit(1)
         estack = sym_estack[0]['st_value']
 
-        sym_code = symtab.get_symbol_by_name('_code')
-        code_start = sym_code[0]['st_value'] if sym_code else 0
-        sym_ecode = symtab.get_symbol_by_name('_ecode')
-        code_end = sym_ecode[0]['st_value'] if sym_ecode else 0
+        # Look for the symbols SVC_Call and SVC_cx_call
+        # if they are found, save their addresses to patch them to replace the SYSCALL later
+        svc_call_addr = 0
+        svc_cx_call_addr = 0
+        svc_call_symbol = symtab.get_symbol_by_name("SVC_Call")
+        if svc_call_symbol is not None:
+            svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+        svc_cx_call_symbol = symtab.get_symbol_by_name("SVC_cx_call")
+        if svc_cx_call_symbol is not None:
+            svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
 
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, code_start, code_end
+    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, svc_call_addr, svc_cx_call_addr
 
 
 def get_cx_infos(app_path):
@@ -162,7 +168,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
-        load_offset, load_size, stack, stack_size, ram_addr, ram_size, code_start, code_end = get_elf_infos(lib_path)
+        load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
+            svc_call_address, svc_cx_call_address = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
@@ -171,7 +178,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
                 sys.exit(1)
             extra_ram = arg
         lib_arg = f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}'
-        lib_arg += f':{stack:#x}:{stack_size:#x}:{code_start:#x}:{code_end:#x}'
+        lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
+        lib_arg += f':{svc_cx_call_address:#x}'
         argv.append(lib_arg)
 
     if args.model == 'blue':

@@ -15,7 +15,9 @@
 #include "emulate.h"
 #include "svc.h"
 
-#define TEXT_START    (0xc0de0000)
+#define TEXT_START     (0xc0de0000)
+#define LNS_TEXT_START (0xc0d00000)
+
 #define LOAD_ADDR     ((void *)0x40000000)
 #define MAX_APP       16
 #define MAIN_APP_NAME "main"
@@ -30,8 +32,8 @@ struct elf_info_s {
   unsigned long load_size;
   unsigned long stack_addr;
   unsigned long stack_size;
-  unsigned long code_start;
-  unsigned long code_end;
+  unsigned long svc_call_addr;
+  unsigned long svc_cx_call_addr;
 };
 
 struct app_s {
@@ -123,8 +125,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
   apps[napp].elf.stack_size = elf->stack_size;
-  apps[napp].elf.code_start = elf->code_start;
-  apps[napp].elf.code_end = elf->code_end;
+  apps[napp].elf.svc_call_addr = elf->svc_call_addr;
+  apps[napp].elf.svc_cx_call_addr = elf->svc_cx_call_addr;
 
   napp++;
 
@@ -171,22 +173,45 @@ int replace_current_code(struct app_s *app)
     return -1;
   }
 
-  uint32_t start = 0;
-  uint32_t code_length = app->elf.load_size;
-  if (app->elf.code_start != 0 && app->elf.code_end != 0) {
-    start = app->elf.code_start - TEXT_START;
-    code_length = app->elf.code_end - app->elf.code_start;
-  }
-
   if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_WRITE) != 0) {
     warn("could not update mprotect in rw mode for app");
     _exit(1);
   }
 
-  if (patch_svc(memory.code + start, code_length) != 0) {
-    /* this should never happen, because the svc were already patched without
-     * error during the first load */
-    _exit(1);
+  uint32_t text_start = ((hw_model == MODEL_NANO_S) || (hw_model == MODEL_BLUE))
+                            ? LNS_TEXT_START
+                            : TEXT_START;
+
+  // If svc_call_addr or svc_cx_call_addr are defined (non 0),
+  // patch the elf at this address to remove the SYSCALL
+  if (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0) {
+    if (app->elf.svc_call_addr != 0) {
+      uint32_t start = app->elf.svc_call_addr - text_start;
+      uint32_t code_length = 2;
+
+      if (patch_svc(memory.code + start, code_length) != 0) {
+        /* this should never happen, because the svc were already patched
+         * without error during the first load */
+        _exit(1);
+      }
+    }
+
+    if (app->elf.svc_cx_call_addr != 0) {
+      uint32_t start = app->elf.svc_cx_call_addr - text_start;
+      uint32_t code_length = 2;
+
+      if (patch_svc(memory.code + start, code_length) != 0) {
+        /* this should never happen, because the svc were already patched
+         * without error during the first load */
+        _exit(1);
+      }
+    }
+  } else {
+    if (patch_svc(memory.code, app->elf.load_size) != 0) {
+      /* this should never happen, because the svc were already patched
+       * without error during the first load */
+      _exit(1);
+    }
   }
 
   if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_EXEC) != 0) {
@@ -315,21 +340,37 @@ static void *load_app(char *name)
     }
   }
 
-  uint32_t start = 0;
-  uint32_t code_length = size;
-  if (app->elf.code_start && app->elf.code_end) {
-    start = app->elf.code_start - TEXT_START;
-    code_length = app->elf.code_end - app->elf.code_start;
-  }
-
   if (mprotect(code, size, PROT_READ | PROT_WRITE) != 0) {
     warn("could not update mprotect in rw mode for app");
     goto error;
   }
 
-  if (patch_svc(code + start, code_length) != 0) {
-    warn("could not patch svcs in app code");
-    goto error;
+  uint32_t text_start = ((hw_model == MODEL_NANO_S) || (hw_model == MODEL_BLUE))
+                            ? LNS_TEXT_START
+                            : TEXT_START;
+
+  if (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0) {
+    if (app->elf.svc_call_addr != 0) {
+      uint32_t start = app->elf.svc_call_addr - text_start;
+      uint32_t code_length = 2;
+
+      if (patch_svc(code + start, code_length) != 0) {
+        goto error;
+      }
+    }
+
+    if (app->elf.svc_cx_call_addr != 0) {
+      uint32_t start = app->elf.svc_cx_call_addr - text_start;
+      uint32_t code_length = 2;
+
+      if (patch_svc(code + start, code_length) != 0) {
+        goto error;
+      }
+    }
+  } else {
+    if (patch_svc(code, app->elf.load_size) != 0) {
+      goto error;
+    }
   }
 
   if (mprotect(code, size, PROT_READ | PROT_EXEC) != 0) {
@@ -539,7 +580,7 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
 
   ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx", libname,
                *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr,
-               &elf->stack_size, &elf->code_start, &elf->code_end);
+               &elf->stack_size, &elf->svc_call_addr, &elf->svc_cx_call_addr);
   if (ret != 8) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
