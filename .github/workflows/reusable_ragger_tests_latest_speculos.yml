@@ -16,7 +16,7 @@ on:
         type: string
       speculos_app_branch_name:
         required: false
-        default: develop
+        default: master
         type: string
 
 jobs:
