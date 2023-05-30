@@ -3,13 +3,15 @@ import logging
 import sys
 import time
 import threading
+import socket
 from enum import IntEnum
-from typing import List
+from typing import List, Callable, Optional, Tuple
 
 from . import usb
 from .ocr import OCR
 from .readerror import ReadError, WriteError
-from .automation import TextEvent
+from .automation import Automation, TextEvent
+from .automation_server import AutomationServer
 
 
 class SephTag(IntEnum):
@@ -48,36 +50,70 @@ RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
 RENDER_METHOD = RenderMethods(0, 1)
 
 
-def ticker(add_tick):
-    """
-    Function ran in a thread to trigger a tick at a periodic interval.
+class TimeTickerDaemon(threading.Thread):
+    def __init__(self, add_tick: Callable, *args, **kwargs):
+        """
+        Initializes the Ticker Daemon
+        The goal of this daemon is to emulate the time spent in the application by sending it
+        ticker events at a regular interval TICKER_DELAY.
+        This daemon can be paused and resumed through its API to stop the flow of time in the MCU
 
-    There is no need to prevent clock drift.
-    """
+        :param add_tick: The callback function to add a Ticker Event to the packet manager
+        :type add_tick: Backend
+        """
+        super().__init__(name="time_ticker", daemon=True)
+        self._paused = False
+        self._resume_cond = threading.Condition()
+        self.add_tick = add_tick
 
-    while True:
-        add_tick()
-        time.sleep(TICKER_DELAY)
+    def pause(self):
+        """
+        Pause time emulation done by the daemon, no ticker event will be sent until resume
+        """
+        self._paused = True
+
+    def resume(self):
+        """
+        Resume time emulation done by the daemon, no ticker event will be sent until resume
+        """
+        self._paused = False
+        with self._resume_cond:
+            self._resume_cond.notify()
+
+    def _wait_if_time_paused(self):
+        """
+        Internal function to handle the pause
+        """
+        while self._paused:
+            with self._resume_cond:
+                self._resume_cond.wait()
+
+    def run(self):
+        """
+        Main thread function
+        """
+        while True:
+            self._wait_if_time_paused()
+            self.add_tick()
+            time.sleep(TICKER_DELAY)
 
 
-class PacketThread(threading.Thread):
-    TICKER_PACKET = (SephTag.TICKER_EVENT, b'')
-
-    def __init__(self, s, status_event, *args, **kwargs):
-        super(PacketThread, self).__init__(name="packet", daemon=True)
+class PacketDaemon(threading.Thread):
+    def __init__(self, s: socket.socket, status_event: threading.Event, *args, **kwargs):
+        super().__init__(name="packet", daemon=True)
         self.s = s
         self.queue_condition = threading.Condition()
-        self.queue = []
+        self.queue: List[Tuple[SephTag, bytes]] = []
         self.status_event = status_event
         self.logger = logging.getLogger("seproxyhal.packet")
         self.stop = False
         self.ticks_count = 0
 
-    def _send_packet(self, tag, data=b''):
+    def _send_packet(self, tag: SephTag, data: bytes = b''):
         """Send a packet to the app."""
 
-        size = len(data).to_bytes(2, 'big')
-        packet = tag.to_bytes(1, 'big') + size + data
+        size: bytes = len(data).to_bytes(2, 'big')
+        packet: bytes = tag.to_bytes(1, 'big') + size + data
         self.logger.debug("send {}" .format(packet.hex()))
         try:
             self.s.sendall(packet)
@@ -86,7 +122,7 @@ class PacketThread(threading.Thread):
         except OSError:
             self.stop = True
 
-    def queue_packet(self, tag, data=b'', priority=False):
+    def queue_packet(self, tag: SephTag, data: bytes = b'', priority: bool = False):
         """
         Append a packet to the queue of packets to be sent.
 
@@ -107,11 +143,12 @@ class PacketThread(threading.Thread):
     def add_tick(self):
         """Add a ticker event to the queue."""
 
-        # Don't add too many ticker packets to the queue. For instance, the app
-        # might be stuck if a breakpoint is hit within a debugger. It avoids
-        # flooding the app on resume.
-        if self.queue.count(self.TICKER_PACKET) >= 1:
-            return False
+        # Drop ticker packet if one is already present in the queue.
+        # For instance, the app might be stuck if a breakpoint is hit within a debugger.
+        # It avoids flooding the app on resume.
+        for tag, _ in self.queue:
+            if tag == SephTag.TICKER_EVENT:
+                return False
 
         self.queue_packet(SephTag.TICKER_EVENT)
         return True
@@ -141,7 +178,11 @@ class PacketThread(threading.Thread):
 
 
 class SeProxyHal:
-    def __init__(self, s, automation=None, automation_server=None, transport='hid'):
+    def __init__(self,
+                 s: socket.socket,
+                 automation: Optional[Automation] = None,
+                 automation_server: Optional[AutomationServer] = None,
+                 transport: str = 'hid'):
         self.s = s
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -150,22 +191,20 @@ class SeProxyHal:
         self.events: List[TextEvent] = []
 
         self.status_event = threading.Event()
-        self.packet_thread = PacketThread(self.s, self.status_event)
+        self.packet_thread = PacketDaemon(self.s, self.status_event)
         self.packet_thread.start()
 
-        self.ticker_thread = threading.Thread(name="ticker",
-                                              target=ticker,
-                                              args=(self.packet_thread.add_tick,),
-                                              daemon=True)
-        self.ticker_thread.start()
+        self.time_ticker_thread = TimeTickerDaemon(self.packet_thread.add_tick)
+        self.time_ticker_thread.start()
+
         self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
 
         self.ocr = OCR()
 
         # A list of callback methods when an APDU response is received
-        self.apdu_callbacks = []
+        self.apdu_callbacks: List[Callable] = []
 
-    def _recvall(self, size):
+    def _recvall(self, size: int):
         data = b''
         while size > 0:
             try:
@@ -180,7 +219,7 @@ class SeProxyHal:
             size -= len(tmp)
         return data
 
-    def _send_packet(self, tag, data=b''):
+    def _send_packet(self, tag: SephTag, data: bytes = b''):
         '''Send packet to the app.'''
 
         size = len(data).to_bytes(2, 'big')
@@ -216,11 +255,11 @@ class SeProxyHal:
             self.apply_automation_helper(event)
         self.events = []
 
-    def _close(self, s, screen):
+    def _close(self, s: socket.socket, screen):
         screen.remove_notifier(self.s.fileno())
         self.s.close()
 
-    def can_read(self, s, screen):
+    def can_read(self, s: socket.socket, screen):
         '''
         Handle packet sent by the app.
 
@@ -271,7 +310,10 @@ class SeProxyHal:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
                 screen.display_raw_status(data)
                 if screen.model in ["nanox", "nanosp"]:
+                    # Pause flow of time while the OCR is running
+                    self.time_ticker_thread.pause()
                     self.ocr.analyze_bitmap(data)
+                    self.time_ticker_thread.resume()
                 # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
                 #
                 # io_seproxyhal_spi_recv() accepts any packet from the MCU after
@@ -301,9 +343,12 @@ class SeProxyHal:
                 screen.nbgl.hal_refresh(data)
 
                 if not screen.nbgl.disable_tesseract:
+                    # Pause flow of time while the OCR is running
+                    self.time_ticker_thread.pause()
                     screen.nbgl.m.update_screenshot()
                     screen_size, image_data = screen.nbgl.m.take_screenshot()
                     self.ocr.analyze_image(screen_size, image_data)
+                    self.time_ticker_thread.resume()
 
             elif tag == 0x6c:
                 screen.nbgl.hal_draw_line(data)
@@ -358,7 +403,7 @@ class SeProxyHal:
             self.logger.error(f"unknown tag: {tag:#x}")
             sys.exit(0)
 
-    def handle_button(self, button, pressed):
+    def handle_button(self, button: int, pressed: bool):
         '''Forward button press/release from the GUI to the app.'''
 
         if pressed:
@@ -366,7 +411,7 @@ class SeProxyHal:
         else:
             self.packet_thread.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
 
-    def handle_finger(self, x, y, pressed):
+    def handle_finger(self, x: int, y: int, pressed: bool):
         '''Forward finger press/release from the GUI to the app.'''
 
         if pressed:
@@ -378,13 +423,13 @@ class SeProxyHal:
 
         self.packet_thread.queue_packet(SephTag.FINGER_EVENT, packet)
 
-    def handle_wait(self, delay):
+    def handle_wait(self, delay: float):
         '''Wait for a specified delay, taking account real time seen by the app.'''
         start = self.packet_thread.get_processed_ticks_count()
         while (self.packet_thread.get_processed_ticks_count() - start) * TICKER_DELAY < delay:
             time.sleep(TICKER_DELAY)
 
-    def to_app(self, packet):
+    def to_app(self, packet: bytes):
         '''
         Forward raw APDU to the app.
 

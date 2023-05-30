@@ -1,16 +1,17 @@
-# Build speculos and run tests using GitHub Actions
+name: Continuous Integration & Deployment
 
-name: Continuous Integration
-
-# Controls when the action will run. Triggers the workflow on pull request events,
-# and also push events but only for the develop or master branches
 on:
   workflow_dispatch:
   push:
+    tags:
+      - '*'
     branches:
       - master
       - develop
   pull_request:
+    branches:
+      - master
+      - develop
 
 jobs:
 
@@ -49,6 +50,33 @@ jobs:
         ignore_words_file: .codespell-ignore
         skip: ./speculos/api/static/swagger/swagger-ui.css,./speculos/api/static/swagger/swagger-ui-bundle.js,./speculos/api/static/swagger/swagger-ui-standalone-preset.js
 
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    needs: [linter, misspell]
+    container:
+      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+    steps:
+    - name: Clone
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Rebuild with code coverage instrumentation
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
+        RNG_SEED: 0
+      run: |
+        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
+        make -C build clean
+        make -C build
+        make -C build test
+        python3 -m pip install pytest-cov
+        python3 -m pytest --cov=speculos --cov-report=xml
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        name: codecov-speculos
+
   build:
     name: Clone, build, test
     runs-on: ubuntu-latest
@@ -83,8 +111,6 @@ jobs:
     name: Build and deploy Speculos Python Package
     runs-on: ubuntu-latest
     needs: [build, coverage]
-    # Use https://ghcr.io/ledgerhq/speculos-builder which has all the required
-    # dependencies
     container:
       image: docker://ghcr.io/ledgerhq/speculos-builder:latest
 
@@ -99,10 +125,8 @@ jobs:
         python3 -m venv venv-test
         ./venv-test/bin/pip install .
         ./venv-test/bin/speculos --help
+        echo "TAG_VERSION=$(python -c 'from speculos import __version__; print(__version__)')" >> "$GITHUB_ENV"
 
-    # Use commands from https://packaging.python.org/tutorials/packaging-projects/
-    # to build the Speculos package, but using a dedicated virtual environment
-    # to be cleanly upgrade Python packages.
     - name: Build Speculos python package
       run: |
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -110,31 +134,50 @@ jobs:
           echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
           exit 1
         fi
-        sed -i 's;docs/screenshot-api-nanos-btc\.png;https://raw.githubusercontent.com/LedgerHQ/speculos/develop/docs/screenshot-api-nanos-btc.png;' README.md
-        ./tools/update_setup_version_from_git.sh
         python3 -m venv venv-build
         ./venv-build/bin/pip install --upgrade pip build twine
         ./venv-build/bin/python -m build
         ./venv-build/bin/python -m twine check dist/*
 
-    # TEST_PYPI_API_TOKEN is an API token created on
-    # https://test.pypi.org/manage/account/#api-tokens with restriction to speculos project
-    - name: Publish Python package to test.pypi.org
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    - name: Display current status
+      shell: bash
       run: |
-        ./venv-build/bin/python -m twine upload --repository testpypi dist/*
+        echo "Current status is:"
+        if [[ ${{ github.ref }} == "refs/tags/"* ]]; \
+        then \
+            echo "- Triggered from tag, will be deployed on pypi.org"; \
+        else \
+            echo "- Not triggered from tag, will be deployed on test.pypi.org"; \
+        fi
+        echo "- Tag version: ${{ env.TAG_VERSION }}"
+
+    - name: Check version against CHANGELOG
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      run: |
+        CHANGELOG_VERSION=$(grep -Po '(?<=## \[)(\d\.)+[^\]]' CHANGELOG.md | head -n 1)
+        if [ "${{ env.TAG_VERSION }}" == "${CHANGELOG_VERSION}" ]; \
+        then \
+            exit 0; \
+        else \
+            echo "Tag '${{ env.TAG_VERSION }}' and CHANGELOG '${CHANGELOG_VERSION}' versions mismatch!"; \
+            exit 1; \
+        fi
+
+    - name: Publish Python package on pypi.org
+      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      run: ./venv-build/bin/python -m twine upload dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
+        TWINE_NON_INTERACTIVE: 1
+
+    - name: Publish Python package on test.pypi.org
+      if: success() && github.event_name == 'push'
+      run: ./venv-build/bin/python -m twine upload --repository testpypi dist/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PUBLIC_API_TOKEN }}
-        TWINE_NON_INTERACTIVE: 1
-
-    - name: Publish Python package to pypi.org
-      if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'  && contains(github.event.head_commit.message, 'release')
-      run: |
-        ./venv-build/bin/python -m twine upload dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN }}
         TWINE_NON_INTERACTIVE: 1
 
   package_and_test_docker:
@@ -149,8 +192,10 @@ jobs:
   deploy_docker:
     name: Build and Upload the Speculos docker
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-    needs: [package_and_test_docker, package_python]
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
+    needs: [build, coverage, package_and_test_docker]
     steps:
     - name: Clone
       uses: actions/checkout@v2
@@ -165,30 +210,3 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
         tag_with_sha: true
         tags: latest
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    needs: [linter, misspell]
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
-    steps:
-    - name: Clone
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Rebuild with code coverage instrumentation
-      env:
-        CTEST_OUTPUT_ON_FAILURE: 1
-        RNG_SEED: 0
-      run: |
-        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
-        make -C build clean
-        make -C build
-        make -C build test
-        python3 -m pip install pytest-cov
-        python3 -m pytest --cov=speculos --cov-report=xml
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        name: codecov-speculos

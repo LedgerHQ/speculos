@@ -162,7 +162,8 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
              sdk_version == SDK_NANO_SP_1_0_3 ||
              sdk_version == SDK_API_LEVEL_1 || sdk_version == SDK_API_LEVEL_3 ||
              sdk_version == SDK_API_LEVEL_5 || sdk_version == SDK_API_LEVEL_7 ||
-             sdk_version == SDK_API_LEVEL_8 || sdk_version == SDK_API_LEVEL_9) {
+             sdk_version == SDK_API_LEVEL_8 || sdk_version == SDK_API_LEVEL_9 ||
+             sdk_version == SDK_API_LEVEL_10) {
     context->uc_mcontext.arm_r0 = ret;
     context->uc_mcontext.arm_r1 = 0;
   } else {
@@ -251,11 +252,6 @@ int patch_svc(void *p, size_t size)
   unsigned char *addr, *end, *next;
   int ret;
 
-  if (mprotect(p, size, PROT_READ | PROT_WRITE) != 0) {
-    warn("mprotect(PROT_READ | PROT_WRITE)");
-    return -1;
-  }
-
   addr = p;
   end = addr + size;
   ret = 0;
@@ -284,11 +280,6 @@ int patch_svc(void *p, size_t size)
 
     addr = (unsigned char *)next + 2;
     n_svc_call++;
-  }
-
-  if (mprotect(p, size, PROT_READ | PROT_EXEC) != 0) {
-    warn("mprotect(PROT_READ | PROT_EXEC)");
-    return -1;
   }
 
   if (n_svc_call == 0) {

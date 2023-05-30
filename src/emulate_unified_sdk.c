@@ -79,8 +79,12 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
     SYSCALL1(nbgl_front_draw_rect, "%p",
              nbgl_area_t *, area);
 
-    SYSCALL1(nbgl_front_refresh_area, "%p",
+    SYSCALL1(nbgl_front_refresh_area_legacy, "%p",
              nbgl_area_t *, area);
+
+    SYSCALL2(nbgl_front_refresh_area, "%p, %u",
+             nbgl_area_t *, area,
+             nbgl_post_refresh_t, post_refresh);
 
     SYSCALL3(nbgl_front_draw_horizontal_line, "%p, %d, %d",
              nbgl_area_t *, area,
@@ -103,6 +107,12 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
              unsigned int, fontId);
 
     SYSCALL0(nbgl_screen_reinit);
+
+    SYSCALL4(nbgl_front_draw_img_rle_legacy, "%p, %p, %u, %u",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             unsigned int,     buffer_len,
+             color_t,          fore_color);
 
     SYSCALL4(nbgl_front_draw_img_rle, "%p, %p, %u, %u",
              nbgl_area_t *,    area,
