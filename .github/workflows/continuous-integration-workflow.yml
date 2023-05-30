@@ -134,7 +134,6 @@ jobs:
           echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
           exit 1
         fi
-        sed -i 's;docs/screenshot-api-nanos-btc\.png;https://raw.githubusercontent.com/LedgerHQ/speculos/develop/docs/screenshot-api-nanos-btc.png;' README.md
         python3 -m venv venv-build
         ./venv-build/bin/pip install --upgrade pip build twine
         ./venv-build/bin/python -m build
