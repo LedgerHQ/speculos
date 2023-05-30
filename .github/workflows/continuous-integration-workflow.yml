@@ -164,20 +164,20 @@ jobs:
             exit 1; \
         fi
 
-    - name: Publish Python package on test.pypi.org
-      if: success() && github.event_name == 'push'
-      run: ./venv-build/bin/python -m twine upload --repository testpypi dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PUBLIC_API_TOKEN }}
-        TWINE_NON_INTERACTIVE: 1
-
     - name: Publish Python package on pypi.org
       if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
       run: ./venv-build/bin/python -m twine upload dist/*
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
+        TWINE_NON_INTERACTIVE: 1
+
+    - name: Publish Python package on test.pypi.org
+      if: success() && github.event_name == 'push'
+      run: ./venv-build/bin/python -m twine upload --repository testpypi dist/*
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_PUBLIC_API_TOKEN }}
         TWINE_NON_INTERACTIVE: 1
 
   package_and_test_docker:
@@ -195,7 +195,7 @@ jobs:
     if: |
       github.event_name == 'push' &&
       (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
-    needs: [package_and_test_docker, package_python]
+    needs: [build, coverage, package_and_test_docker]
     steps:
     - name: Clone
       uses: actions/checkout@v2
