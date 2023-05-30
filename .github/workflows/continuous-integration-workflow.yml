@@ -141,6 +141,7 @@ jobs:
         ./venv-build/bin/python -m twine check dist/*
 
     - name: Display current status
+      shell: bash
       run: |
         echo "Current status is:"
         if [[ ${{ github.ref }} == "refs/tags/"* ]]; \
@@ -153,6 +154,7 @@ jobs:
 
     - name: Check version against CHANGELOG
       if: startsWith(github.ref, 'refs/tags/')
+      shell: bash
       run: |
         CHANGELOG_VERSION=$(grep -Po '(?<=## \[)(\d\.)+[^\]]' CHANGELOG.md | head -n 1)
         if [ "${{ env.TAG_VERSION }}" == "${CHANGELOG_VERSION}" ]; \
