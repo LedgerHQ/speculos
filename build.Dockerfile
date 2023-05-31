@@ -9,6 +9,7 @@ ENV LANG C.UTF-8
 RUN export DEBIAN_FRONTEND=noninteractive && \
   apt-get update && \
   apt-get install -qy \
+    unzip \
     cmake \
     curl \
     gcc-arm-linux-gnueabihf \
@@ -33,7 +34,8 @@ RUN \
   wget --quiet https://www.openssl.org/source/openssl-1.1.1k.tar.gz && \
   wget --quiet https://cmocka.org/files/1.1/cmocka-1.1.5.tar.xz && \
   sha256sum --check SHA256SUMS && \
-  rm SHA256SUMS
+  rm SHA256SUMS && \
+  wget --quiet https://github.com/supranational/blst/archive/refs/heads/master.zip
 
 # Build dependencies and install them in /install
 RUN mkdir install && \
@@ -52,5 +54,14 @@ RUN mkdir cmocka && \
   make install && \
   cd .. && \
   rm -r cmocka/ cmocka-1.1.5/ cmocka-1.1.5.tar.xz
+
+RUN unzip master.zip && \
+  cd blst-master && \
+  sh build.sh CC=arm-linux-gnueabihf-gcc && \
+  cp libblst.a ../install/lib/ && \
+  cp bindings/blst.h ../install/include/ && \
+  cp bindings/blst_aux.h ../install/include/ && \
+  cd .. && \
+  rm -r blst-master/ master.zip
 
 CMD ["/bin/bash"]
