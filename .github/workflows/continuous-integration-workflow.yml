@@ -7,11 +7,9 @@ on:
       - '*'
     branches:
       - master
-      - develop
   pull_request:
     branches:
       - master
-      - develop
 
 jobs:
 
@@ -194,7 +192,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'push' &&
-      (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/tags/'))
+      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     needs: [build, coverage, package_and_test_docker]
     steps:
     - name: Clone
