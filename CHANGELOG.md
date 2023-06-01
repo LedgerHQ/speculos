@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2023-06-01
+
+### Changed
+- docker: Add blst library to the docker image
+- launcher: If Speculos is able to determine the location of the SVC_Call and SVC_cx_call symbols in
+            the application elf, it will only try to patch `svc 1` inside the functions.
+
 ## [0.2.1] - 2023-05-30
 
 ### Fixed
