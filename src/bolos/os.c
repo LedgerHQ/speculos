@@ -147,7 +147,7 @@ unsigned long sys_os_lib_call(unsigned long *call_parameters)
   /* map lib code and jump to main */
   run_lib(libname, &call_parameters[1]);
 
-  /* never reached */
+  /* Value should not be used */
   return 0xdeadbeef;
 }
 
