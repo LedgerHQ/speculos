@@ -16,8 +16,8 @@
 void cx_bls_fp2_from_bendian(blst_fp2 *ret, uint8_t c0[48], uint8_t c1[48]);
 void cx_bls_bendian_from_fp2(uint8_t c0[48], uint8_t c1[48], blst_fp2 *a);
 
-void cx_bls_fp2_conditionnal_move(blst_fp2 *ret, blst_fp2 *a, blst_fp2 *b,
-                                  bool choice);
+void cx_bls_fp2_conditional_move(blst_fp2 *ret, blst_fp2 *a, blst_fp2 *b,
+                                 bool choice);
 void cx_bls_fp2_copy(blst_fp2 *ret, blst_fp2 *a);
 void cx_bls_fp2_set_one(blst_fp2 *a);
 bool cx_bls_fp2_is_zero(blst_fp2 *a);

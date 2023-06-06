@@ -86,7 +86,8 @@ static cx_err_t cx_expand_message_xmd(const uint8_t *msg, size_t msg_len,
   uint8_t tmp[33];
   uint32_t bi_len = CX_SHA256_SIZE;
   uint32_t offset = 0;
-  cx_sha256_t hash;
+  cx_sha256_t sha256_hash;
+  cx_hash_ctx *hash = (cx_hash_ctx *)&sha256_hash;
 
   if (ell > 255) {
     return CX_INVALID_PARAMETER;
@@ -95,30 +96,30 @@ static cx_err_t cx_expand_message_xmd(const uint8_t *msg, size_t msg_len,
     return CX_INVALID_PARAMETER;
   }
   memset(out, 0, SHA256_BLOCK_SIZE);
-  spec_cx_hash_init((cx_hash_ctx *)&hash, CX_SHA256);
-  spec_cx_hash_update((cx_hash_ctx *)&hash, out, SHA256_BLOCK_SIZE);
-  spec_cx_hash_update((cx_hash_ctx *)&hash, msg, msg_len);
+  spec_cx_hash_init(hash, CX_SHA256);
+  spec_cx_hash_update(hash, out, SHA256_BLOCK_SIZE);
+  spec_cx_hash_update(hash, msg, msg_len);
   U2BE_ENCODE(lib_str, 0, *out_len);
   lib_str[2] = 0x0;
-  spec_cx_hash_update((cx_hash_ctx *)&hash, lib_str, sizeof(lib_str));
-  spec_cx_hash_update((cx_hash_ctx *)&hash, dst,
+  spec_cx_hash_update(hash, lib_str, sizeof(lib_str));
+  spec_cx_hash_update(hash, dst,
                       dst_len); // dst = DST || I2OSP(dst_len, 1)
-  spec_cx_hash_final((cx_hash_ctx *)&hash, b0);
+  spec_cx_hash_final(hash, b0);
   memcpy(tmp, b0, bi_len);
   tmp[bi_len] = 0x1;
-  spec_cx_hash_init((cx_hash_ctx *)&hash, CX_SHA256);
-  spec_cx_hash_update((cx_hash_ctx *)&hash, tmp, bi_len + 1);
-  spec_cx_hash_update((cx_hash_ctx *)&hash, dst, dst_len);
-  spec_cx_hash_final((cx_hash_ctx *)&hash, out);
+  spec_cx_hash_init(hash, CX_SHA256);
+  spec_cx_hash_update(hash, tmp, bi_len + 1);
+  spec_cx_hash_update(hash, dst, dst_len);
+  spec_cx_hash_final(hash, out);
   for (uint32_t i = 2; i <= ell; i++) {
     memcpy(tmp, out + offset, bi_len);
     cx_memxor(tmp, b0, bi_len);
     tmp[bi_len] = (uint8_t)i;
-    spec_cx_hash_init((cx_hash_ctx *)&hash, CX_SHA256);
-    spec_cx_hash_update((cx_hash_ctx *)&hash, tmp, bi_len + 1);
-    spec_cx_hash_update((cx_hash_ctx *)&hash, dst, dst_len);
+    spec_cx_hash_init(hash, CX_SHA256);
+    spec_cx_hash_update(hash, tmp, bi_len + 1);
+    spec_cx_hash_update(hash, dst, dst_len);
     offset += bi_len;
-    spec_cx_hash_final((cx_hash_ctx *)&hash, out + offset);
+    spec_cx_hash_final(hash, out + offset);
   }
 
   return CX_OK;

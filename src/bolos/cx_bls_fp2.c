@@ -135,8 +135,8 @@ bool cx_bls_fp2_is_zero(blst_fp2 *a)
   return res;
 }
 
-void cx_bls_fp2_conditionnal_move(blst_fp2 *ret, blst_fp2 *a, blst_fp2 *b,
-                                  bool choice)
+void cx_bls_fp2_conditional_move(blst_fp2 *ret, blst_fp2 *a, blst_fp2 *b,
+                                 bool choice)
 {
   // No need for a constant time implementation
   if (choice) {
@@ -192,7 +192,7 @@ void cx_bls_fp2_pow(blst_fp2 *ret, blst_fp2 *a, uint8_t *exp, size_t exp_len)
   }
 }
 
-/* Returns true and ret = sqrt(u/v) is (u/v) is square in GF(p²)
+/* Returns true and ret = sqrt(u/v) if (u/v) is square in GF(p²)
  *  Otherwise returns false and ret = sqrt(Z * (u/v))
  *  https://datatracker.ietf.org/doc/html/draft-irtf-cfrg-hash-to-curve-16#name-sqrt_ratio-subroutines
  */
@@ -217,9 +217,9 @@ bool cx_bls_fp2_sqrt_ratio(blst_fp2 *ret, blst_fp2 *u, blst_fp2 *v)
   blst_fp2_mul(&tv2, &tv3, &c7);
   blst_fp2_mul(&tv5, &tv4, &tv1);
   cx_bls_fp2_copy(&tv3_tmp, &tv3);
-  cx_bls_fp2_conditionnal_move(&tv3, &tv2, &tv3_tmp, is_qr);
+  cx_bls_fp2_conditional_move(&tv3, &tv2, &tv3_tmp, is_qr);
   cx_bls_fp2_copy(&tv4_tmp, &tv4);
-  cx_bls_fp2_conditionnal_move(&tv4, &tv5, &tv4_tmp, is_qr);
+  cx_bls_fp2_conditional_move(&tv4, &tv5, &tv4_tmp, is_qr);
   blst_fp2_sqr(&tv5, &tv4);
   e1 = cx_bls_fp2_is_one(&tv5);
   blst_fp2_mul(&tv2, &tv3, &tv1);
@@ -227,12 +227,12 @@ bool cx_bls_fp2_sqrt_ratio(blst_fp2 *ret, blst_fp2 *u, blst_fp2 *v)
   blst_fp2_sqr(&tv1, &tv4_tmp);
   blst_fp2_mul(&tv5, &tv4, &tv1);
   cx_bls_fp2_copy(&tv4_tmp, &tv3);
-  cx_bls_fp2_conditionnal_move(&tv3, &tv2, &tv4_tmp, e1);
+  cx_bls_fp2_conditional_move(&tv3, &tv2, &tv4_tmp, e1);
   cx_bls_fp2_copy(&tv4_tmp, &tv4);
-  cx_bls_fp2_conditionnal_move(&tv4, &tv5, &tv4_tmp, e1);
+  cx_bls_fp2_conditional_move(&tv4, &tv5, &tv4_tmp, e1);
   e1 = cx_bls_fp2_is_one(&tv4);
   blst_fp2_mul(&tv2, &tv3, &tv1);
-  cx_bls_fp2_conditionnal_move(ret, &tv2, &tv3, e1);
+  cx_bls_fp2_conditional_move(ret, &tv2, &tv3, e1);
   // No need to calculate tv4 = CMOV(tv5, tv4, e1)
   // as only tv3 is returned
 
