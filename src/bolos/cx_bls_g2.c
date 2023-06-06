@@ -1,7 +1,7 @@
 /**
  * @file cx_bls_g2.c
  * @brief BLS12-381 G2 operations.
- *        This file is base on BLST API and implements the missing
+ *        This file is based on BLST API and implements the missing
  *        curve operations on G2.
  * @date 2023-05-09
  *
@@ -255,7 +255,7 @@ void cx_bls_g2_map_to_curve_simple_swu(blst_p2_affine *point, blst_fp2 *u)
   blst_fp2_mul(&tv3, &b, &tv3_tmp);
   blst_fp2_cneg(&tv2_tmp, &tv2, true);
   is_zero = cx_bls_fp2_is_zero(&tv2);
-  cx_bls_fp2_conditionnal_move(&tv4_tmp, &z, &tv2_tmp, !is_zero);
+  cx_bls_fp2_conditional_move(&tv4_tmp, &z, &tv2_tmp, !is_zero);
   cx_bls_fp2_from_bendian(&a, SSWU_ELLP_A[0], SSWU_ELLP_A[1]);
   blst_fp2_mul(&tv4, &a, &tv4_tmp);
   blst_fp2_sqr(&tv2, &tv3);
@@ -272,12 +272,12 @@ void cx_bls_g2_map_to_curve_simple_swu(blst_p2_affine *point, blst_fp2 *u)
   is_gx1_square = cx_bls_fp2_sqrt_ratio(&y1, &tv2, &tv6);
   blst_fp2_mul(&tv1_tmp, &tv1, u);
   blst_fp2_mul(&point->y, &tv1_tmp, &y1);
-  cx_bls_fp2_conditionnal_move(&point->x, &x, &tv3, is_gx1_square);
+  cx_bls_fp2_conditional_move(&point->x, &x, &tv3, is_gx1_square);
   cx_bls_fp2_copy(&x, &point->x);
-  cx_bls_fp2_conditionnal_move(&y, &point->y, &y1, is_gx1_square);
+  cx_bls_fp2_conditional_move(&y, &point->y, &y1, is_gx1_square);
   e1 = (cx_bls_fp2_sgn0(u) == cx_bls_fp2_sgn0(&y));
   blst_fp2_cneg(&tv1_tmp, &y, true);
-  cx_bls_fp2_conditionnal_move(&point->y, &tv1_tmp, &y, e1);
+  cx_bls_fp2_conditional_move(&point->y, &tv1_tmp, &y, e1);
   blst_fp2_inverse(&tv4_tmp, &tv4);
   blst_fp2_mul(&point->x, &x, &tv4_tmp);
 }
