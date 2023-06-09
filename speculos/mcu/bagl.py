@@ -99,8 +99,12 @@ class Bagl:
             xx, yy = restore
 
         bitmap = list(bitmap)
-        while bitmap:
-            ch = bitmap.pop(0)
+        while bitmap or yy < requested_yh:
+            if bitmap:
+                ch = bitmap.pop(0)
+            else:
+                # Transparent pixels was optimized out of bitmap
+                ch = 0
             for i in range(0, 8, bpp):
                 if xx >= 0 and xx < self.SCREEN_WIDTH and yy >= 0 and yy < self.SCREEN_HEIGHT:
                     pixel_color_index = (ch >> i) & pixel_mask
