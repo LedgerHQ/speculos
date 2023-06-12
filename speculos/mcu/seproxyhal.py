@@ -116,6 +116,36 @@ class SocketHelper(threading.Thread):
         self.stop = False
         self.ticks_count = 0
 
+    def _recvall(self, size: int):
+        data = b''
+        while size > 0:
+            try:
+                tmp = self.s.recv(size)
+            except ConnectionResetError:
+                tmp = b''
+
+            if len(tmp) == 0:
+                self.logger.debug("fd closed")
+                return None
+            data += tmp
+            size -= len(tmp)
+        return data
+
+    def read_packet(self):
+        data = self._recvall(3)
+        if data is None:
+            return None, None, None
+
+        tag = data[0]
+        size = int.from_bytes(data[1:3], 'big')
+
+        data = self._recvall(size)
+        if data is None:
+            return None, None, None
+        assert len(data) == size
+
+        return tag, size, data
+
     def _send_packet(self, tag: SephTag, data: bytes = b''):
         """Send a packet to the app."""
 
@@ -214,21 +244,6 @@ class SeProxyHal:
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable] = []
 
-    def _recvall(self, size: int):
-        data = b''
-        while size > 0:
-            try:
-                tmp = self.s.recv(size)
-            except ConnectionResetError:
-                tmp = b''
-
-            if len(tmp) == 0:
-                self.logger.debug("fd closed")
-                return None
-            data += tmp
-            size -= len(tmp)
-        return data
-
     def apply_automation_helper(self, event: TextEvent):
         if self.automation_server:
             self.automation_server.broadcast(event)
@@ -268,19 +283,10 @@ class SeProxyHal:
 
         assert s == self.s.fileno()
 
-        data = self._recvall(3)
+        tag, size, data = self.socket_helper.read_packet()
         if data is None:
             self._close(s, screen)
             raise ReadError("fd closed")
-
-        tag = data[0]
-        size = int.from_bytes(data[1:3], 'big')
-
-        data = self._recvall(size)
-        if data is None:
-            self._close(s, screen)
-            raise ReadError("fd closed")
-        assert len(data) == size
 
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
