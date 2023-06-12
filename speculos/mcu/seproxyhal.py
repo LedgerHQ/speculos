@@ -9,7 +9,7 @@ from typing import List, Callable, Optional, Tuple
 
 from . import usb
 from .ocr import OCR
-from .readerror import ReadError, WriteError
+from .readerror import ReadError
 from .automation import Automation, TextEvent
 from .automation_server import AutomationServer
 
@@ -228,16 +228,6 @@ class SeProxyHal:
             data += tmp
             size -= len(tmp)
         return data
-
-    def _send_packet(self, tag: SephTag, data: bytes = b''):
-        '''Send packet to the app.'''
-
-        size = len(data).to_bytes(2, 'big')
-        packet = tag.to_bytes(1, 'big') + size + data
-        try:
-            self.s.sendall(packet)
-        except BrokenPipeError:
-            raise WriteError("Broken pipe, failed to send data to the app")
 
     def apply_automation_helper(self, event: TextEvent):
         if self.automation_server:
