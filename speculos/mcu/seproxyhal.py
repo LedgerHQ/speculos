@@ -302,7 +302,7 @@ class SeProxyHal:
                             self.ocr.analyze_image(screen_size, image_data)
 
                             # Publish the new screenshot, we'll upload its associated events shortly
-                            screen.nbgl.m.publish_screenshot()
+                            screen.nbgl.m.update_public_screenshot()
 
                             # OCR is finished, resume time
                             self.time_ticker_thread.resume()

@@ -67,11 +67,11 @@ class PaintWidget(QWidget):
     def update_screenshot(self):
         return self.fb.screenshot_update_pixels()
 
-    def publish_screenshot(self):
-        return self.fb.publish_screenshot()
+    def update_public_screenshot(self):
+        return self.fb.update_public_screenshot()
 
-    def take_published_screenshot(self):
-        return self.fb.take_published_screenshot()
+    def get_public_screenshot(self):
+        return self.fb.get_public_screenshot()
 
 
 class App(QMainWindow):

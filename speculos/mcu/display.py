@@ -82,7 +82,7 @@ class FrameBuffer(ABC):
         self.screenshot = Screenshot(MODELS[model].screen_size)
         # Init published content now, don't wait for the first request
         if self.model == "stax":
-            self.publish_screenshot()
+            self.update_public_screenshot()
 
     def draw_point(self, x, y, color):
         # There are only 2 colors on the Nano S and the Nano X but the one
@@ -93,40 +93,38 @@ class FrameBuffer(ABC):
         self.pixels[(x, y)] = color
 
     def screenshot_update_pixels(self):
-        # Someone tampered our self.pixels content.. update the screenshot to reflect it
-        # NANO only
+        # Update the screenshot object with our current pixels content
         self.screenshot.update(self.pixels)
 
     def take_screenshot(self):
         self.current_screen_size, self.current_data = self.screenshot.get_image()
         return self.current_screen_size, self.current_data
 
+    def update_public_screenshot(self):
+        # Stax only
+        # As we lazyly evaluate the published screenshot, we only flag the evaluation update as necessary
+        self.recreate_public_screenshot = True
+
     @property
-    def published_screenshot_value(self):
+    def public_screenshot_value(self):
+        # Stax only
         # Lazy calculation of the published screenshot, as it is a costly operation
         # and not necessary if no one tries to read the value
-        if self.recreate_iobytes:
-            self.recreate_iobytes = False
-            self._published_screenshot_value = _screenshot_to_iobytes_value(self.current_screen_size, self.current_data)
+        if self.recreate_public_screenshot:
+            self.recreate_public_screenshot = False
+            self._public_screenshot_value = _screenshot_to_iobytes_value(self.current_screen_size, self.current_data)
 
-        return self._published_screenshot_value
+        return self._public_screenshot_value
 
-    def publish_screenshot(self):
+    def get_public_screenshot(self):
         if self.model == "stax":
-            self.recreate_iobytes = True
-        else:
-            # Never called
-            pass
-
-    def take_published_screenshot(self):
-        # On Stax, we only make the screenshot public on the RESTFUL api when it is consistent
-        # On top of this, take_screenshot is time consuming on stax, so we'll do as few as possible
-        # We return the value calculated last time publish_screenshot was called
-        if self.model == "stax":
-            return self.published_screenshot_value
+            # On Stax, we only make the screenshot public on the RESTFUL api when it is consistent with events
+            # On top of this, take_screenshot is time consuming on stax, so we'll do as few as possible
+            # We return the value calculated last time update_public_screenshot was called
+            return self.public_screenshot_value
         else:
             # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
-            # So we publish the raw current content every time. It's ok as take_screenshot is fast
+            # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
             screen_size, data = self.take_screenshot()
             return _screenshot_to_iobytes_value(screen_size, data)
 
