@@ -182,7 +182,8 @@ class SeProxyHal:
                  s: socket.socket,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[AutomationServer] = None,
-                 transport: str = 'hid'):
+                 transport: str = 'hid',
+                 api_level = None):
         self.s = s
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -199,7 +200,7 @@ class SeProxyHal:
 
         self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
 
-        self.ocr = OCR()
+        self.ocr = OCR(api_level)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable] = []

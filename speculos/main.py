@@ -462,8 +462,12 @@ def main(prog=None):
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
-    seph = seproxyhal.SeProxyHal(s2, automation=automation_path, automation_server=automation_server,
-                                 transport=args.usb)
+    seph = seproxyhal.SeProxyHal(
+        s2,
+        automation=automation_path,
+        automation_server=automation_server,
+        transport=args.usb,
+        api_level=args.apiLevel)
 
     button = None
     if args.button_port:
