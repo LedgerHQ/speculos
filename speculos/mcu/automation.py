@@ -12,6 +12,8 @@ class TextEvent:
     text: str
     x: int
     y: int
+    w: int
+    h: int
 
 
 class Automation:
