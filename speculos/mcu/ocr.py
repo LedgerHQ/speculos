@@ -2,7 +2,10 @@ from typing import List, Mapping
 from dataclasses import dataclass
 from PIL import Image
 from pytesseract import image_to_data, Output
+import base64
 import functools
+import json
+import os
 import string
 
 from .automation import TextEvent
@@ -82,6 +85,40 @@ def display_char(font: bagl_font.Font, char: str) -> None:
     print("\n".join(split_bytes(char.bitmap, font.bpp * char.char.char_width)))
 
 
+def get_json_font(json_name: str) -> Mapping[Char, BitMapChar]:
+    # If no json filename was provided, just return
+    if json_name is None:
+        return None
+
+    # Add the fonts path (JSON files are in speculos/fonts)
+    json_name = os.path.join(OCR.fonts_path, json_name)
+    # Add api level information and file extension
+    json_name += f"-api-level-{OCR.api_level}.json"
+
+    # Read the JSON file if we found one
+    font_info = []
+    if os.path.exists(json_name):
+        with open(json_name, "r") as json_file:
+            font_info = json.load(json_file, strict=False)
+            font_info = font_info[0]
+            # Deserialize bitmap
+            bitmap = base64.b64decode(font_info['bitmap'])
+            # Build BitMapChar
+            font_map = {}
+            for character in font_info['bagl_font_character']:
+                char = character['char']
+                offset = character['bitmap_offset']
+                count = character['bitmap_byte_count']
+                # Add this entry in font_map
+                font_map[chr(char)] = BitMapChar(
+                    char,
+                    bytes(bitmap[offset:(offset + count)]),
+                )
+            return font_map
+
+    return None
+
+
 def get_font_map(font: bagl_font.Font):
     if font.font_id not in __FONT_MAP:
         __FONT_MAP[font.font_id] = _get_font_map(font)
@@ -89,6 +126,11 @@ def get_font_map(font: bagl_font.Font):
 
 
 def _get_font_map(font: bagl_font.Font) -> Mapping[Char, BitMapChar]:
+    # Do we have a JSON file containing all the information we want?
+    json_font = get_json_font(font.font_name)
+    if json_font is not None:
+        return json_font
+
     font_map = {}
     for ord_char, font_char in zip(
         range(font.first_char, font.last_char), font.characters
@@ -120,13 +162,8 @@ def find_char_from_bitmap(bitmap: BitMap):
     for font in bagl_font.FONTS:
         font_map = get_font_map(font)
         for character_value, bitmap_struct in font_map.items():
-            if bitmap_struct.bitmap.startswith(bitmap):
-                # sometimes (but not always) the bitmap being passed is shortened
-                # by one '\x00' byte, not matching the exact bitmap
-                # provided in the font. Hence the 'residual' computation
-                residual_bytes: bytes = bitmap_struct.bitmap[len(bitmap):]
-                if all(b == 0 for b in residual_bytes):
-                    all_values.append(character_value)
+            if bitmap_struct.bitmap == bitmap:
+                all_values.append(character_value)
         if all_values:
             char = max([x for x in all_values])
             if char == "\x80":
@@ -135,8 +172,17 @@ def find_char_from_bitmap(bitmap: BitMap):
 
 
 class OCR:
-    def __init__(self):
+
+    api_level = 0
+    fonts_path = ""
+
+    def __init__(self, fonts_path=None, api_level=None):
         self.events: List[TextEvent] = []
+        # Save fonts path & the API_LEVEL in a class variable
+        if fonts_path is not None:
+            OCR.fonts_path = fonts_path
+        if api_level is not None:
+            OCR.api_level = int(api_level)
 
     def analyze_bitmap(self, data: bytes):
         if data[0] != 0:
@@ -144,17 +190,43 @@ class OCR:
 
         x = int.from_bytes(data[1:3], byteorder="big", signed=True)
         y = int.from_bytes(data[3:5], byteorder="big", signed=True)
+        w = int.from_bytes(data[5:7], byteorder="big", signed=True)
+        h = int.from_bytes(data[7:9], byteorder="big", signed=True)
         bpp = int.from_bytes(data[9:10], byteorder="big")
         color_size = 4 * (1 << bpp)
         bitmap = data[10+color_size:]
 
-        char = find_char_from_bitmap(bitmap)
+        # h may no reflect the real char height: use number of lines displayed
+        h = (len(bitmap) * 8) // w
+        if (len(bitmap) * 8) % w:
+            h += 1
+
+        # Space is now encoded as an empty character (no 'space' wasted :)
+        if len(bitmap) == 0:
+            char = ' '
+        else:
+            char = find_char_from_bitmap(bitmap)
         if char:
-            if self.events and y <= self.events[-1].y:
+            if self.events and y <= (self.events[-1].y + self.events[-1].h):
+                # Add this character to previous event
                 self.events[-1].text += char
+                # Update w for all chars in self.events[-1]
+                x2 = x + w - 1
+                self.events[-1].w = x2 - self.events[-1].x + 1
+                # Update y & h, if needed, for all chars in self.events[-1]
+                y1 = y
+                if y1 > self.events[-1].y:
+                    # Keep the lowest Y in Y1
+                    y1 = self.events[-1].y
+                y2 = y + h - 1
+                if y2 < (self.events[-1].y + self.events[-1].h):
+                    # Keep the highest Y in Y2
+                    y2 = self.events[-1].y + self.events[-1].h - 1
+                self.events[-1].y = y1
+                self.events[-1].h = y2 - y1 + 1
             else:
                 # create a new TextEvent if there are no events yet or if there is a new line
-                self.events.append(TextEvent(char, x, y))
+                self.events.append(TextEvent(char, x, y, w, h))
 
     def analyze_image(self, screen_size: (int, int), data: bytes):
         image = Image.frombytes("RGB", screen_size, data)
