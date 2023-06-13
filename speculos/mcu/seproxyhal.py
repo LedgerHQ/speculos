@@ -301,11 +301,11 @@ class SeProxyHal:
                             screen_size, image_data = screen.nbgl.m.take_screenshot()
                             self.ocr.analyze_image(screen_size, image_data)
 
-                            # OCR is finished, resume time
-                            self.time_ticker_thread.resume()
-
                             # Publish the new screenshot, we'll upload its associated events shortly
                             screen.nbgl.m.publish_screenshot()
+
+                            # OCR is finished, resume time
+                            self.time_ticker_thread.resume()
 
                     if screen.model != "stax" and screen.screen_update():
                         if screen.model in ["nanox", "nanosp"]:

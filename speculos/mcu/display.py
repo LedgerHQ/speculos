@@ -98,12 +98,22 @@ class FrameBuffer(ABC):
         self.screenshot.update(self.pixels)
 
     def take_screenshot(self):
-        return self.screenshot.get_image()
+        self.current_screen_size, self.current_data = self.screenshot.get_image()
+        return self.current_screen_size, self.current_data
+
+    @property
+    def published_screenshot_value(self):
+        # Lazy calculation of the published screenshot, as it is a costly operation
+        # and not necessary if no one tries to read the value
+        if self.recreate_iobytes:
+            self.recreate_iobytes = False
+            self._published_screenshot_value = _screenshot_to_iobytes_value(self.current_screen_size, self.current_data)
+
+        return self._published_screenshot_value
 
     def publish_screenshot(self):
         if self.model == "stax":
-            screen_size, data = self.take_screenshot()
-            self.published_screenshot_value = _screenshot_to_iobytes_value(screen_size, data)
+            self.recreate_iobytes = True
         else:
             # Never called
             pass
