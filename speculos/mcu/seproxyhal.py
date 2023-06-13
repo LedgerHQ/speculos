@@ -189,6 +189,7 @@ class SeProxyHal:
         self.automation = automation
         self.automation_server = automation_server
         self.events: List[TextEvent] = []
+        self.refreshed = False
 
         self.status_event = threading.Event()
         self.packet_thread = PacketDaemon(self.s, self.status_event)
@@ -288,6 +289,24 @@ class SeProxyHal:
 
             if tag == SephTag.GENERAL_STATUS:
                 if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
+                    if self.refreshed:
+                        self.refreshed = False
+
+                        if not screen.nbgl.disable_tesseract:
+                            # Pause flow of time while the OCR is running
+                            self.time_ticker_thread.pause()
+
+                            # Run the OCR
+                            screen.nbgl.m.update_screenshot()
+                            screen_size, image_data = screen.nbgl.m.take_screenshot()
+                            self.ocr.analyze_image(screen_size, image_data)
+
+                            # Publish the new screenshot, we'll upload its associated events shortly
+                            screen.nbgl.m.update_public_screenshot()
+
+                            # OCR is finished, resume time
+                            self.time_ticker_thread.resume()
+
                     if screen.model != "stax" and screen.screen_update():
                         if screen.model in ["nanox", "nanosp"]:
                             self.events += self.ocr.get_events()
@@ -341,14 +360,10 @@ class SeProxyHal:
                 screen.nbgl.hal_draw_rect(data)
             elif tag == 0x6b:
                 screen.nbgl.hal_refresh(data)
-
-                if not screen.nbgl.disable_tesseract:
-                    # Pause flow of time while the OCR is running
-                    self.time_ticker_thread.pause()
-                    screen.nbgl.m.update_screenshot()
-                    screen_size, image_data = screen.nbgl.m.take_screenshot()
-                    self.ocr.analyze_image(screen_size, image_data)
-                    self.time_ticker_thread.resume()
+                # Stax only
+                # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
+                # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
+                self.refreshed = True
 
             elif tag == 0x6c:
                 screen.nbgl.hal_draw_line(data)

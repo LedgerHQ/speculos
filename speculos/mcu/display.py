@@ -1,6 +1,8 @@
+import io
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import Dict, Union
+from PIL import Image
 
 from .apdu import ApduServer
 from .seproxyhal import SeProxyHal
@@ -34,6 +36,13 @@ COLORS = {
     'ARNAUD_GREEN': 0x79ff79,
     'SYLVE_CYAN': 0x29f3f3,
 }
+
+
+def _screenshot_to_iobytes_value(screen_size, data):
+    image = Image.frombytes("RGB", screen_size, data)
+    iobytes = io.BytesIO()
+    image.save(iobytes, format="PNG")
+    return iobytes.getvalue()
 
 
 class Screenshot:
@@ -71,6 +80,9 @@ class FrameBuffer(ABC):
         self.pixels = {}
         self.model = model
         self.screenshot = Screenshot(MODELS[model].screen_size)
+        # Init published content now, don't wait for the first request
+        if self.model == "stax":
+            self.update_public_screenshot()
 
     def draw_point(self, x, y, color):
         # There are only 2 colors on the Nano S and the Nano X but the one
@@ -81,10 +93,40 @@ class FrameBuffer(ABC):
         self.pixels[(x, y)] = color
 
     def screenshot_update_pixels(self):
+        # Update the screenshot object with our current pixels content
         self.screenshot.update(self.pixels)
 
     def take_screenshot(self):
-        return self.screenshot.get_image()
+        self.current_screen_size, self.current_data = self.screenshot.get_image()
+        return self.current_screen_size, self.current_data
+
+    def update_public_screenshot(self):
+        # Stax only
+        # As we lazyly evaluate the published screenshot, we only flag the evaluation update as necessary
+        self.recreate_public_screenshot = True
+
+    @property
+    def public_screenshot_value(self):
+        # Stax only
+        # Lazy calculation of the published screenshot, as it is a costly operation
+        # and not necessary if no one tries to read the value
+        if self.recreate_public_screenshot:
+            self.recreate_public_screenshot = False
+            self._public_screenshot_value = _screenshot_to_iobytes_value(self.current_screen_size, self.current_data)
+
+        return self._public_screenshot_value
+
+    def get_public_screenshot(self):
+        if self.model == "stax":
+            # On Stax, we only make the screenshot public on the RESTFUL api when it is consistent with events
+            # On top of this, take_screenshot is time consuming on stax, so we'll do as few as possible
+            # We return the value calculated last time update_public_screenshot was called
+            return self.public_screenshot_value
+        else:
+            # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
+            # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
+            screen_size, data = self.take_screenshot()
+            return _screenshot_to_iobytes_value(screen_size, data)
 
 
 class Display(ABC):

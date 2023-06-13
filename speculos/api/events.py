@@ -31,13 +31,18 @@ class EventsBroadcaster:
         self.logger.debug("events: client exited")
         self.clients.remove(client)
 
+    def clear_events(self):
+        self.logger.debug("Clearing events")
+        self.screen_content = []
+
     def broadcast(self, event: TextEvent):
-        self.logger.debug(f"events: broadcasting {asdict(event)} to ({len(self.clients)}) client(s)")
         if self.screen_content:
             # Reset screen content if new event is not below the last text line of
             # current screen. Event Y coordinate starts at the top of the screen.
             if event.y <= self.screen_content[-1].y + MIN_LINES_HEIGHT_DISTANCE:
-                self.screen_content = []
+                self.clear_events()
+
+        self.logger.debug("events: broadcasting %s to %d client(s)", asdict(event), len(self.clients))
         self.screen_content.append(event)
         self.events.append(event)
         for client in self.clients:
