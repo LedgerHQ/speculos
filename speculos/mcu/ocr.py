@@ -240,7 +240,8 @@ class OCR:
                 else:
                     x = data["left"][item]
                     y = data["top"][item]
-                    self.events.append(TextEvent(data['text'][item], x, y))
+                    w, h = screen_size
+                    self.events.append(TextEvent(data['text'][item], x, y, w, h))
                     new_text_has_been_added = True
 
     def get_events(self) -> List[TextEvent]:

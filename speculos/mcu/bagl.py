@@ -518,7 +518,9 @@ class Bagl:
                          text,
                          context_encoding)
 
-        return [TextEvent(text.decode("utf-8", "ignore"), component.x + halignment, y)]
+        return [TextEvent(text.decode("utf-8", "ignore"),
+                          component.x + halignment, y,
+                          component.width - halignment, component.height)]
 
     def _display_get_alignment(self, component, context, context_encoding):
         halignment = 0
