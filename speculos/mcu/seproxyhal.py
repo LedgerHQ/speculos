@@ -109,6 +109,7 @@ class SocketHelper(threading.Thread):
     def __init__(self, s: socket.socket, status_event: threading.Event, *args, **kwargs):
         super().__init__(name="packet", daemon=True)
         self.s = s
+        self.sending_lock = threading.Lock()
         self.queue_condition = threading.Condition()
         self.queue: List[Tuple[SephTag, bytes]] = []
         self.status_event = status_event
@@ -146,18 +147,20 @@ class SocketHelper(threading.Thread):
 
         return tag, size, data
 
-    def _send_packet(self, tag: SephTag, data: bytes = b''):
+    def send_packet(self, tag: SephTag, data: bytes = b''):
         """Send a packet to the app."""
 
         size: bytes = len(data).to_bytes(2, 'big')
         packet: bytes = tag.to_bytes(1, 'big') + size + data
-        self.logger.debug("send {}" .format(packet.hex()))
-        try:
-            self.s.sendall(packet)
-        except BrokenPipeError:
-            self.stop = True
-        except OSError:
-            self.stop = True
+
+        with self.sending_lock:
+            self.logger.debug("send {}" .format(packet.hex()))
+            try:
+                self.s.sendall(packet)
+            except BrokenPipeError:
+                self.stop = True
+            except OSError:
+                self.stop = True
 
     def queue_packet(self, tag: SephTag, data: bytes = b'', priority: bool = False):
         """
@@ -203,7 +206,7 @@ class SocketHelper(threading.Thread):
                     self.queue_condition.wait()
 
             tag, data = self.queue.pop(0)
-            self._send_packet(tag, data)
+            self.send_packet(tag, data)
 
             if tag == SephTag.TICKER_EVENT:
                 self.ticks_count += 1
