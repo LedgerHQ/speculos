@@ -43,6 +43,13 @@ class SephTag(IntEnum):
     FINGER_EVENT_TOUCH = 0x01
     FINGER_EVENT_RELEASE = 0x02
 
+    # Speculos only, defined in speculos/src/bolos/nbgl.c
+    NBGL_DRAW_RECT = 0xFA
+    NBGL_REFRESH = 0xFB
+    NBGL_DRAW_LINE = 0xFC
+    NBGL_DRAW_IMAGE = 0xFD
+    NBGL_DRAW_IMAGE_FILE = 0xFE
+
 
 TICKER_DELAY = 0.1
 
@@ -358,21 +365,7 @@ class SeProxyHal:
                 self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
-            elif tag == 0x6a:
-                screen.nbgl.hal_draw_rect(data)
-            elif tag == 0x6b:
-                screen.nbgl.hal_refresh(data)
-                # Stax only
-                # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
-                # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
-                self.refreshed = True
 
-            elif tag == 0x6c:
-                screen.nbgl.hal_draw_line(data)
-            elif tag == 0x6d:
-                screen.nbgl.hal_draw_image(data)
-            elif tag == 0x6e:
-                screen.nbgl.hal_draw_image_file(data)
             else:
                 self.logger.error(f"unknown tag: {tag:#x}")
                 sys.exit(0)
@@ -415,6 +408,25 @@ class SeProxyHal:
 
         elif tag == SephTag.PLAY_TUNE:
             pass
+
+        elif tag == SephTag.NBGL_DRAW_RECT:
+            screen.nbgl.hal_draw_rect(data)
+
+        elif tag == SephTag.NBGL_REFRESH:
+            screen.nbgl.hal_refresh(data)
+            # Stax only
+            # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
+            # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
+            self.refreshed = True
+
+        elif tag == SephTag.NBGL_DRAW_LINE:
+            screen.nbgl.hal_draw_line(data)
+
+        elif tag == SephTag.NBGL_DRAW_IMAGE:
+            screen.nbgl.hal_draw_image(data)
+
+        elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
+            screen.nbgl.hal_draw_image_file(data)
 
         else:
             self.logger.error(f"unknown tag: {tag:#x}")
