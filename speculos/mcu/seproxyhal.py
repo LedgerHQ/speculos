@@ -293,84 +293,73 @@ class SeProxyHal:
 
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
-        if tag & 0xf0 == SephTag.GENERAL_STATUS or tag == SephTag.PRINTC_STATUS:
+        if tag == SephTag.GENERAL_STATUS:
+            if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
+                if self.refreshed:
+                    self.refreshed = False
 
-            if tag == SephTag.GENERAL_STATUS:
-                if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
-                    if self.refreshed:
-                        self.refreshed = False
+                    if not screen.nbgl.disable_tesseract:
+                        # Pause flow of time while the OCR is running
+                        self.time_ticker_thread.pause()
 
-                        if not screen.nbgl.disable_tesseract:
-                            # Pause flow of time while the OCR is running
-                            self.time_ticker_thread.pause()
+                        # Run the OCR
+                        screen.nbgl.m.update_screenshot()
+                        screen_size, image_data = screen.nbgl.m.take_screenshot()
+                        self.ocr.analyze_image(screen_size, image_data)
 
-                            # Run the OCR
-                            screen.nbgl.m.update_screenshot()
-                            screen_size, image_data = screen.nbgl.m.take_screenshot()
-                            self.ocr.analyze_image(screen_size, image_data)
+                        # Publish the new screenshot, we'll upload its associated events shortly
+                        screen.nbgl.m.update_public_screenshot()
 
-                            # Publish the new screenshot, we'll upload its associated events shortly
-                            screen.nbgl.m.update_public_screenshot()
+                        # OCR is finished, resume time
+                        self.time_ticker_thread.resume()
 
-                            # OCR is finished, resume time
-                            self.time_ticker_thread.resume()
-
-                    if screen.model != "stax" and screen.screen_update():
-                        if screen.model in ["nanox", "nanosp"]:
-                            self.events += self.ocr.get_events()
-                    elif screen.model == "stax":
+                if screen.model != "stax" and screen.screen_update():
+                    if screen.model in ["nanox", "nanosp"]:
                         self.events += self.ocr.get_events()
+                elif screen.model == "stax":
+                    self.events += self.ocr.get_events()
 
-                    # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
-                    # screen to be updated before broadcasting the events.
-                    if self.events:
-                        self.apply_automation()
+                # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
+                # screen to be updated before broadcasting the events.
+                if self.events:
+                    self.apply_automation()
 
-            elif tag == SephTag.SCREEN_DISPLAY_STATUS:
-                self.logger.debug(f"DISPLAY_STATUS {data!r}")
-                events = screen.display_status(data)
-                if events:
-                    self.events += events
-                self.socket_helper.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
-
-            elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
-                self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
-                screen.display_raw_status(data)
-                if screen.model in ["nanox", "nanosp"]:
-                    # Pause flow of time while the OCR is running
-                    self.time_ticker_thread.pause()
-                    self.ocr.analyze_bitmap(data)
-                    self.time_ticker_thread.resume()
-                # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
-                #
-                # io_seproxyhal_spi_recv() accepts any packet from the MCU after
-                # having sent SCREEN_DISPLAY_RAW_STATUS. If some event (eg.
-                # TICKER_EVENT) is replied before DISPLAY_PROCESSED_EVENT, it
-                # will be silently ignored.
-                #
-                # A DISPLAY_PROCESSED_EVENT should be answered immediately,
-                # hence priority=True.
-                self.socket_helper.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
-                if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                    screen.screen_update()
-
-            elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
-                for b in [chr(b) for b in data]:
-                    if b == '\n':
-                        self.logger.info(f"printf: {self.printf_queue}")
-                        self.printf_queue = ''
-                    else:
-                        self.printf_queue += b
-                self.socket_helper.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
-                if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                    screen.screen_update()
+                # signal the sending thread that a status has been received
+                self.status_event.set()
 
             else:
-                self.logger.error(f"unknown tag: {tag:#x}")
+                self.logger.error(f"unknown subtag: {data[:2]!r}")
                 sys.exit(0)
 
-            # signal the sending thread that a status has been received
-            self.status_event.set()
+        elif tag == SephTag.SCREEN_DISPLAY_STATUS:
+            self.logger.debug(f"DISPLAY_STATUS {data!r}")
+            events = screen.display_status(data)
+            if events:
+                self.events += events
+            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+
+        elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
+            self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
+            screen.display_raw_status(data)
+            if screen.model in ["nanox", "nanosp"]:
+                # Pause flow of time while the OCR is running
+                self.time_ticker_thread.pause()
+                self.ocr.analyze_bitmap(data)
+                self.time_ticker_thread.resume()
+            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+            if screen.rendering == RENDER_METHOD.PROGRESSIVE:
+                screen.screen_update()
+
+        elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
+            for b in [chr(b) for b in data]:
+                if b == '\n':
+                    self.logger.info(f"printf: {self.printf_queue}")
+                    self.printf_queue = ''
+                else:
+                    self.printf_queue += b
+            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+            if screen.rendering == RENDER_METHOD.PROGRESSIVE:
+                screen.screen_update()
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)
