@@ -105,7 +105,7 @@ class TimeTickerDaemon(threading.Thread):
             time.sleep(TICKER_DELAY)
 
 
-class PacketDaemon(threading.Thread):
+class SocketHelper(threading.Thread):
     def __init__(self, s: socket.socket, status_event: threading.Event, *args, **kwargs):
         super().__init__(name="packet", daemon=True)
         self.s = s
@@ -201,13 +201,13 @@ class SeProxyHal:
         self.refreshed = False
 
         self.status_event = threading.Event()
-        self.packet_thread = PacketDaemon(self.s, self.status_event)
-        self.packet_thread.start()
+        self.socket_helper = SocketHelper(self.s, self.status_event)
+        self.socket_helper.start()
 
-        self.time_ticker_thread = TimeTickerDaemon(self.packet_thread.add_tick)
+        self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick)
         self.time_ticker_thread.start()
 
-        self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
+        self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
         self.ocr = OCR(fonts_path, api_level)
 
@@ -322,7 +322,7 @@ class SeProxyHal:
                 events = screen.display_status(data)
                 if events:
                     self.events += events
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
+                self.socket_helper.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
 
             elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
                 self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
@@ -341,7 +341,7 @@ class SeProxyHal:
                 #
                 # A DISPLAY_PROCESSED_EVENT should be answered immediately,
                 # hence priority=True.
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
+                self.socket_helper.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
@@ -352,7 +352,7 @@ class SeProxyHal:
                         self.printf_queue = ''
                     else:
                         self.printf_queue += b
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
+                self.socket_helper.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
                 if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                     screen.screen_update()
 
@@ -426,9 +426,9 @@ class SeProxyHal:
         '''Forward button press/release from the GUI to the app.'''
 
         if pressed:
-            self.packet_thread.queue_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
+            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
         else:
-            self.packet_thread.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
+            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
 
     def handle_finger(self, x: int, y: int, pressed: bool):
         '''Forward finger press/release from the GUI to the app.'''
@@ -440,12 +440,12 @@ class SeProxyHal:
         packet += x.to_bytes(2, 'big')
         packet += y.to_bytes(2, 'big')
 
-        self.packet_thread.queue_packet(SephTag.FINGER_EVENT, packet)
+        self.socket_helper.queue_packet(SephTag.FINGER_EVENT, packet)
 
     def handle_wait(self, delay: float):
         '''Wait for a specified delay, taking account real time seen by the app.'''
-        start = self.packet_thread.get_processed_ticks_count()
-        while (self.packet_thread.get_processed_ticks_count() - start) * TICKER_DELAY < delay:
+        start = self.socket_helper.get_processed_ticks_count()
+        while (self.socket_helper.get_processed_ticks_count() - start) * TICKER_DELAY < delay:
             time.sleep(TICKER_DELAY)
 
     def to_app(self, packet: bytes):
@@ -460,6 +460,6 @@ class SeProxyHal:
 
         if packet.startswith(b'RAW!') and len(packet) > 4:
             tag, packet = packet[4], packet[5:]
-            self.packet_thread.queue_packet(tag, packet)
+            self.socket_helper.queue_packet(tag, packet)
         else:
             self.usb.xfer(packet)
