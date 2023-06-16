@@ -21,6 +21,7 @@ typedef enum {
   SDK_API_LEVEL_8,
   SDK_API_LEVEL_9,
   SDK_API_LEVEL_10,
+  SDK_API_LEVEL_11,
   SDK_COUNT
 } sdk_version_t;
 
