@@ -117,6 +117,7 @@ class SocketHelper(threading.Thread):
         self.logger = logging.getLogger("seproxyhal.packet")
         self.stop = False
         self.ticks_count = 0
+        self.tick_requested = False
 
     def _recvall(self, size: int):
         data = b''
@@ -182,35 +183,38 @@ class SocketHelper(threading.Thread):
             self.queue_condition.notify()
 
     def add_tick(self):
-        """Add a ticker event to the queue."""
+        """Request sending of a ticker event to the app"""
+        self.tick_requested = True
 
-        # Drop ticker packet if one is already present in the queue.
-        # For instance, the app might be stuck if a breakpoint is hit within a debugger.
-        # It avoids flooding the app on resume.
-        for tag, _ in self.queue:
-            if tag == SephTag.TICKER_EVENT:
-                return False
-
-        self.queue_packet(SephTag.TICKER_EVENT)
-        return True
+        # notify this thread that a new event is available
+        with self.queue_condition:
+            self.queue_condition.notify()
 
     def run(self):
         while not self.stop:
+
+            # wait for a event in the queue or a tick to be available
+            with self.queue_condition:
+                while len(self.queue) == 0 and not self.tick_requested:
+                    self.queue_condition.wait()
+
             # wait for a status notification
             while not self.status_event.is_set():
                 self.status_event.wait()
             self.status_event.clear()
 
-            # wait for a packet to be available in the queue
-            with self.queue_condition:
-                while len(self.queue) == 0:
-                    self.queue_condition.wait()
+            if len(self.queue):
+                tag, data = self.queue.pop(0)
+            elif self.tick_requested:
+                tag, data = SephTag.TICKER_EVENT, b''
+            else:
+                raise RuntimeError("Unexpected state: no ticker nor event to send on socket")
 
-            tag, data = self.queue.pop(0)
             self.send_packet(tag, data)
 
             if tag == SephTag.TICKER_EVENT:
                 self.ticks_count += 1
+                self.tick_requested = False
 
         self.logger.debug("exiting")
 
@@ -300,9 +304,6 @@ class SeProxyHal:
                     self.refreshed = False
 
                     if not screen.nbgl.disable_tesseract:
-                        # Pause flow of time while the OCR is running
-                        self.time_ticker_thread.pause()
-
                         # Run the OCR
                         screen.nbgl.m.update_screenshot()
                         screen_size, image_data = screen.nbgl.m.take_screenshot()
@@ -310,9 +311,6 @@ class SeProxyHal:
 
                         # Publish the new screenshot, we'll upload its associated events shortly
                         screen.nbgl.m.update_public_screenshot()
-
-                        # OCR is finished, resume time
-                        self.time_ticker_thread.resume()
 
                 if screen.model != "stax" and screen.screen_update():
                     if screen.model in ["nanox", "nanosp"]:
@@ -343,10 +341,7 @@ class SeProxyHal:
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
             screen.display_raw_status(data)
             if screen.model in ["nanox", "nanosp"]:
-                # Pause flow of time while the OCR is running
-                self.time_ticker_thread.pause()
                 self.ocr.analyze_bitmap(data)
-                self.time_ticker_thread.resume()
             self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
             if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                 screen.screen_update()
