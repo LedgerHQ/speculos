@@ -81,6 +81,11 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
     return 0;
   }
 
+  if (sys_io_seproxyhal_spi_is_status_sent() && buffer &&
+      (buffer[0] == SEPROXYHAL_TAG_GENERAL_STATUS)) {
+    return 0;
+  }
+
   if (next_length == 0) {
     if (length < 3) {
       THROW(INVALID_PARAMETER);
