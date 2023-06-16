@@ -309,8 +309,8 @@ class SeProxyHal:
                         screen_size, image_data = screen.nbgl.m.take_screenshot()
                         self.ocr.analyze_image(screen_size, image_data)
 
-                        # Publish the new screenshot, we'll upload its associated events shortly
-                        screen.nbgl.m.update_public_screenshot()
+                    # Publish the new screenshot, we'll upload its associated events shortly
+                    screen.nbgl.m.update_public_screenshot()
 
                 if screen.model != "stax" and screen.screen_update():
                     if screen.model in ["nanox", "nanosp"]:
