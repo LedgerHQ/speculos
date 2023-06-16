@@ -15,6 +15,7 @@ from .finger import Finger
 from .screenshot import Screenshot
 from .swagger import Swagger
 from .web_interface import WebInterface
+from .ticker import Ticker
 
 
 class ApiRunner:
@@ -77,6 +78,8 @@ class ApiWrapper:
                                resource_class_kwargs=self._app_kwargs)
         self._api.add_resource(WebInterface, "/",
                                resource_class_kwargs=self._app_kwargs)
+        self._api.add_resource(Ticker, "/ticker/",
+                               resource_class_kwargs=self._seph_kwargs)
 
     def _set_app(self):
         static_folder = pkg_resources.resource_filename(__name__, "/static")

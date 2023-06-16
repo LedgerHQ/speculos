@@ -70,6 +70,7 @@ class TimeTickerDaemon(threading.Thread):
         :type add_tick: Backend
         """
         super().__init__(name="time_ticker", daemon=True)
+        self.paused = False
         self._paused = False
         self._resume_cond = threading.Condition()
         self.add_tick = add_tick
@@ -78,13 +79,18 @@ class TimeTickerDaemon(threading.Thread):
         """
         Pause time emulation done by the daemon, no ticker event will be sent until resume
         """
-        self._paused = True
+        self.paused = True
+
+        # Wait until the daemon is really paused before returning.
+        # To make sure last daemon tick has been sent and fully processed.
+        while not self._paused:
+            time.sleep(0.1)
 
     def resume(self):
         """
-        Resume time emulation done by the daemon, no ticker event will be sent until resume
+        Resume time emulation done by the daemon
         """
-        self._paused = False
+        self.paused = False
         with self._resume_cond:
             self._resume_cond.notify()
 
@@ -92,9 +98,11 @@ class TimeTickerDaemon(threading.Thread):
         """
         Internal function to handle the pause
         """
-        while self._paused:
+        while self.paused:
+            self._paused = True
             with self._resume_cond:
                 self._resume_cond.wait()
+        self._paused = False
 
     def run(self):
         """
@@ -182,13 +190,18 @@ class SocketHelper(threading.Thread):
         with self.queue_condition:
             self.queue_condition.notify()
 
-    def add_tick(self):
+    def add_tick(self, wait_fully_processed=False):
         """Request sending of a ticker event to the app"""
         self.tick_requested = True
 
         # notify this thread that a new event is available
         with self.queue_condition:
             self.queue_condition.notify()
+
+        if wait_fully_processed:
+            # Wait until the app have finished processing the tick
+            while self.tick_requested or self.queue or not self.status_event.is_set():
+                self.status_event.wait()
 
     def run(self):
         while not self.stop:
@@ -435,11 +448,24 @@ class SeProxyHal:
 
         self.socket_helper.queue_packet(SephTag.FINGER_EVENT, packet)
 
+    def handle_ticker_request(self, action):
+        if action == "pause":
+            self.time_ticker_thread.pause()
+        elif action == "resume":
+            self.time_ticker_thread.resume()
+        elif action == "single-step":
+            self.time_ticker_thread.add_tick(wait_fully_processed=True)
+
     def handle_wait(self, delay: float):
         '''Wait for a specified delay, taking account real time seen by the app.'''
-        start = self.socket_helper.get_processed_ticks_count()
-        while (self.socket_helper.get_processed_ticks_count() - start) * TICKER_DELAY < delay:
-            time.sleep(TICKER_DELAY)
+        expected_ticks = int(delay / TICKER_DELAY)
+        if not self.time_ticker_thread.paused:
+            start = self.socket_helper.get_processed_ticks_count()
+            while (self.socket_helper.get_processed_ticks_count() - start) < expected_ticks:
+                time.sleep(TICKER_DELAY)
+        else:
+            for _ in range(expected_ticks):
+                self.time_ticker_thread.add_tick(wait_fully_processed=True)
 
     def to_app(self, packet: bytes):
         '''
