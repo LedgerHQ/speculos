@@ -19,8 +19,6 @@ void test_mpi_rng(void **state __attribute__((unused)))
   cx_mpi_t *r, *n;
   int ret;
   cx_err_t error;
-  uint32_t i, j, rnd, value;
-  uint8_t buffer[64];
 
   // Those tests will check that cx_mpi_rng is working as expected:
   // cx_mpi_rng(r,n) => Generate a random value r in the range 0 < r < n.

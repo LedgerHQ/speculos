@@ -143,9 +143,9 @@ unsigned long sys_nbgl_screen_reinit(void)
 
 uint8_t uncompress_rle_buffer[SCREEN_HEIGHT * SCREEN_WIDTH / 2];
 
-unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
-                                          uint32_t buffer_len,
-                                          color_t fore_color)
+unsigned long sys_nbgl_front_draw_img_rle_10(nbgl_area_t *area, uint8_t *buffer,
+                                             uint32_t buffer_len,
+                                             color_t fore_color)
 {
   // Uncompress input buffer
   nbgl_uncompress_rle(area, buffer, buffer_len, uncompress_rle_buffer,
@@ -157,10 +157,20 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
   return 0;
 }
 
+unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
+                                          uint32_t buffer_len,
+                                          color_t fore_color, uint8_t nb_skipped_bytes)
+{
+  // As there is a memset on dst buffer, no need to handle nb_skipped_bytes
+  nb_skipped_bytes = nb_skipped_bytes;
+
+  return sys_nbgl_front_draw_img_rle_10(area, buffer, buffer_len, fore_color);
+}
+
 unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
                                                  uint8_t *buffer,
                                                  uint32_t buffer_len,
                                                  color_t fore_color)
 {
-  return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len, fore_color);
+  return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len, fore_color, 0);
 }

@@ -114,11 +114,18 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
              unsigned int,     buffer_len,
              color_t,          fore_color);
 
-    SYSCALL4(nbgl_front_draw_img_rle, "%p, %p, %u, %u",
+    SYSCALL4(nbgl_front_draw_img_rle_10, "%p, %p, %u, %u",
              nbgl_area_t *,    area,
              uint8_t *,        buffer,
              unsigned int,     buffer_len,
              color_t,          fore_color);
+
+    SYSCALL5(nbgl_front_draw_img_rle, "%p, %p, %u, %u, %u",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             unsigned int,     buffer_len,
+             color_t,          fore_color,
+             uint8_t,          nb_skipped_bytes);
 
   /* clang-format on */
   default:
