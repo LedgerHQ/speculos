@@ -7,7 +7,7 @@
 #include "bolos/touch.h"
 #include "emulate.h"
 
-#define SEPROXYHAL_TAG_STATUS_MASK 0x60
+#define SEPROXYHAL_TAG_GENERAL_STATUS 0x60
 
 static bool status_sent = false;
 static uint8_t last_tag;
@@ -97,8 +97,7 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
   ret = writeall(SEPH_FILENO, buffer, length);
 
   next_length -= length;
-  if (next_length == 0 &&
-      (last_tag & SEPROXYHAL_TAG_STATUS_MASK) == SEPROXYHAL_TAG_STATUS_MASK) {
+  if (next_length == 0 && last_tag == SEPROXYHAL_TAG_GENERAL_STATUS) {
     status_sent = true;
   }
 
