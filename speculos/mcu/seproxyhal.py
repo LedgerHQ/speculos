@@ -32,6 +32,7 @@ class SephTag(IntEnum):
     RAPDU = 0x53
     PLAY_TUNE = 0x56
 
+    DBG_SCREEN_DISPLAY_STATUS = 0x5e
     PRINTC_STATUS = 0x5f
 
     GENERAL_STATUS = 0x60
@@ -331,7 +332,7 @@ class SeProxyHal:
                 self.logger.error(f"unknown subtag: {data[:2]!r}")
                 sys.exit(0)
 
-        elif tag == SephTag.SCREEN_DISPLAY_STATUS:
+        elif tag == SephTag.SCREEN_DISPLAY_STATUS or tag == SephTag.DBG_SCREEN_DISPLAY_STATUS:
             self.logger.debug(f"DISPLAY_STATUS {data!r}")
             events = screen.display_status(data)
             if events:
