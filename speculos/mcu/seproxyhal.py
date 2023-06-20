@@ -231,9 +231,6 @@ class SocketHelper(threading.Thread):
 
         self.logger.debug("exiting")
 
-    def get_processed_ticks_count(self):
-        return self.ticks_count
-
 
 class SeProxyHal:
     def __init__(self,
@@ -460,8 +457,8 @@ class SeProxyHal:
         '''Wait for a specified delay, taking account real time seen by the app.'''
         expected_ticks = int(delay / TICKER_DELAY)
         if not self.time_ticker_thread.paused:
-            start = self.socket_helper.get_processed_ticks_count()
-            while (self.socket_helper.get_processed_ticks_count() - start) < expected_ticks:
+            start = self.socket_helper.ticks_count
+            while (self.socket_helper.ticks_count - start) < expected_ticks:
                 time.sleep(TICKER_DELAY)
         else:
             for _ in range(expected_ticks):
