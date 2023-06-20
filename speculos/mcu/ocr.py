@@ -173,6 +173,8 @@ def find_char_from_bitmap(bitmap: BitMap):
 
 class OCR:
 
+    # Maximum space for a letter to be considered part of the same word
+    MAX_BLANK_SPACE = 12
     api_level = 0
     fonts_path = ""
 
@@ -207,7 +209,13 @@ class OCR:
         else:
             char = find_char_from_bitmap(bitmap)
         if char:
-            if self.events and y <= (self.events[-1].y + self.events[-1].h):
+            if self.events:
+                x_diff = x - (self.events[-1].x + self.events[-1].w)
+                if x_diff < 0:
+                    x_diff = -x_diff
+            # if x_diff > MAX_BLANK_SPACE the char is not on same word
+            if self.events and y <= (self.events[-1].y + self.events[-1].h) \
+               and x_diff < OCR.MAX_BLANK_SPACE:
                 # Add this character to previous event
                 self.events[-1].text += char
                 # Update w for all chars in self.events[-1]
