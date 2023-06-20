@@ -1,5 +1,7 @@
 #include <err.h>
 #include <string.h>
+// TMP to be removed
+#include <stdio.h>
 
 #include "bagl.h"
 #include "emulate.h"
@@ -110,6 +112,9 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
   if (bitmap_length_bits % 8 != 0) {
     bitmap_length += 1;
   }
+  // TMP to be removed
+  fprintf(stdout, "\n\nInside sys_bagl_hal_draw_bitmap_within_rect, x=%d, y=%d, width=%u, height=%u,bitmap_length=%u, bitmap[0]=0x%02X, bitmap[1]=0x%02X\n",x, y, width, height, (unsigned int)bitmap_length, bitmap[0], bitmap[1]);
+
   size_t offset = 0;
   len = build_chunk(buf + size, &offset, sizeof(buf) - size, bitmap,
                     bitmap_length);
