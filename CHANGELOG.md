@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2023-06-21
+
+### Added
+- API: Add a ticker/ endpoint to allow control of the ticks sent to the app
+
+### Fixed
+- OCR: Fix OCR on NanoX and NanoSP based on API_LEVEL_5 and upper
+- Seproxyhal: Fix SeProxyHal emulation to match real devices behavior
+
 ## [0.2.4] - 2023-06-13
 
 ### Changed
