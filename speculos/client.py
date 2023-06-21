@@ -129,6 +129,11 @@ class Api:
         with self.session.post(f"{self.api_url}/finger", json=data) as response:
             check_status_code(response, "/finger")
 
+    def ticker_ctl(self, action: str) -> None:
+        data = {"action": action}
+        with self.session.post(f"{self.api_url}/ticker", json=data) as response:
+            check_status_code(response, "/ticker")
+
     def get_screenshot(self) -> bytes:
         with self.session.get(f"{self.api_url}/screenshot") as response:
             check_status_code(response, "/screenshot")

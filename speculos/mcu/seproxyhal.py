@@ -9,7 +9,7 @@ from typing import List, Callable, Optional, Tuple
 
 from . import usb
 from .ocr import OCR
-from .readerror import ReadError, WriteError
+from .readerror import ReadError
 from .automation import Automation, TextEvent
 from .automation_server import AutomationServer
 
@@ -32,6 +32,7 @@ class SephTag(IntEnum):
     RAPDU = 0x53
     PLAY_TUNE = 0x56
 
+    DBG_SCREEN_DISPLAY_STATUS = 0x5e
     PRINTC_STATUS = 0x5f
 
     GENERAL_STATUS = 0x60
@@ -42,6 +43,13 @@ class SephTag(IntEnum):
 
     FINGER_EVENT_TOUCH = 0x01
     FINGER_EVENT_RELEASE = 0x02
+
+    # Speculos only, defined in speculos/src/bolos/nbgl.c
+    NBGL_DRAW_RECT = 0xFA
+    NBGL_REFRESH = 0xFB
+    NBGL_DRAW_LINE = 0xFC
+    NBGL_DRAW_IMAGE = 0xFD
+    NBGL_DRAW_IMAGE_FILE = 0xFE
 
 
 TICKER_DELAY = 0.1
@@ -62,6 +70,7 @@ class TimeTickerDaemon(threading.Thread):
         :type add_tick: Backend
         """
         super().__init__(name="time_ticker", daemon=True)
+        self.paused = False
         self._paused = False
         self._resume_cond = threading.Condition()
         self.add_tick = add_tick
@@ -70,13 +79,18 @@ class TimeTickerDaemon(threading.Thread):
         """
         Pause time emulation done by the daemon, no ticker event will be sent until resume
         """
-        self._paused = True
+        self.paused = True
+
+        # Wait until the daemon is really paused before returning.
+        # To make sure last daemon tick has been sent and fully processed.
+        while not self._paused:
+            time.sleep(0.1)
 
     def resume(self):
         """
-        Resume time emulation done by the daemon, no ticker event will be sent until resume
+        Resume time emulation done by the daemon
         """
-        self._paused = False
+        self.paused = False
         with self._resume_cond:
             self._resume_cond.notify()
 
@@ -84,9 +98,11 @@ class TimeTickerDaemon(threading.Thread):
         """
         Internal function to handle the pause
         """
-        while self._paused:
+        while self.paused:
+            self._paused = True
             with self._resume_cond:
                 self._resume_cond.wait()
+        self._paused = False
 
     def run(self):
         """
@@ -98,29 +114,63 @@ class TimeTickerDaemon(threading.Thread):
             time.sleep(TICKER_DELAY)
 
 
-class PacketDaemon(threading.Thread):
+class SocketHelper(threading.Thread):
     def __init__(self, s: socket.socket, status_event: threading.Event, *args, **kwargs):
         super().__init__(name="packet", daemon=True)
         self.s = s
+        self.sending_lock = threading.Lock()
         self.queue_condition = threading.Condition()
         self.queue: List[Tuple[SephTag, bytes]] = []
         self.status_event = status_event
         self.logger = logging.getLogger("seproxyhal.packet")
         self.stop = False
         self.ticks_count = 0
+        self.tick_requested = False
 
-    def _send_packet(self, tag: SephTag, data: bytes = b''):
+    def _recvall(self, size: int):
+        data = b''
+        while size > 0:
+            try:
+                tmp = self.s.recv(size)
+            except ConnectionResetError:
+                tmp = b''
+
+            if len(tmp) == 0:
+                self.logger.debug("fd closed")
+                return None
+            data += tmp
+            size -= len(tmp)
+        return data
+
+    def read_packet(self):
+        data = self._recvall(3)
+        if data is None:
+            return None, None, None
+
+        tag = data[0]
+        size = int.from_bytes(data[1:3], 'big')
+
+        data = self._recvall(size)
+        if data is None:
+            return None, None, None
+        assert len(data) == size
+
+        return tag, size, data
+
+    def send_packet(self, tag: SephTag, data: bytes = b''):
         """Send a packet to the app."""
 
         size: bytes = len(data).to_bytes(2, 'big')
         packet: bytes = tag.to_bytes(1, 'big') + size + data
-        self.logger.debug("send {}" .format(packet.hex()))
-        try:
-            self.s.sendall(packet)
-        except BrokenPipeError:
-            self.stop = True
-        except OSError:
-            self.stop = True
+
+        with self.sending_lock:
+            self.logger.debug("send {}" .format(packet.hex()))
+            try:
+                self.s.sendall(packet)
+            except BrokenPipeError:
+                self.stop = True
+            except OSError:
+                self.stop = True
 
     def queue_packet(self, tag: SephTag, data: bytes = b'', priority: bool = False):
         """
@@ -140,41 +190,46 @@ class PacketDaemon(threading.Thread):
         with self.queue_condition:
             self.queue_condition.notify()
 
-    def add_tick(self):
-        """Add a ticker event to the queue."""
+    def add_tick(self, wait_fully_processed=False):
+        """Request sending of a ticker event to the app"""
+        self.tick_requested = True
 
-        # Drop ticker packet if one is already present in the queue.
-        # For instance, the app might be stuck if a breakpoint is hit within a debugger.
-        # It avoids flooding the app on resume.
-        for tag, _ in self.queue:
-            if tag == SephTag.TICKER_EVENT:
-                return False
+        # notify this thread that a new event is available
+        with self.queue_condition:
+            self.queue_condition.notify()
 
-        self.queue_packet(SephTag.TICKER_EVENT)
-        return True
+        if wait_fully_processed:
+            # Wait until the app have finished processing the tick
+            while self.tick_requested or self.queue or not self.status_event.is_set():
+                self.status_event.wait()
 
     def run(self):
         while not self.stop:
+
+            # wait for a event in the queue or a tick to be available
+            with self.queue_condition:
+                while len(self.queue) == 0 and not self.tick_requested:
+                    self.queue_condition.wait()
+
             # wait for a status notification
             while not self.status_event.is_set():
                 self.status_event.wait()
             self.status_event.clear()
 
-            # wait for a packet to be available in the queue
-            with self.queue_condition:
-                while len(self.queue) == 0:
-                    self.queue_condition.wait()
+            if len(self.queue):
+                tag, data = self.queue.pop(0)
+            elif self.tick_requested:
+                tag, data = SephTag.TICKER_EVENT, b''
+            else:
+                raise RuntimeError("Unexpected state: no ticker nor event to send on socket")
 
-            tag, data = self.queue.pop(0)
-            self._send_packet(tag, data)
+            self.send_packet(tag, data)
 
             if tag == SephTag.TICKER_EVENT:
                 self.ticks_count += 1
+                self.tick_requested = False
 
         self.logger.debug("exiting")
-
-    def get_processed_ticks_count(self):
-        return self.ticks_count
 
 
 class SeProxyHal:
@@ -194,43 +249,18 @@ class SeProxyHal:
         self.refreshed = False
 
         self.status_event = threading.Event()
-        self.packet_thread = PacketDaemon(self.s, self.status_event)
-        self.packet_thread.start()
+        self.socket_helper = SocketHelper(self.s, self.status_event)
+        self.socket_helper.start()
 
-        self.time_ticker_thread = TimeTickerDaemon(self.packet_thread.add_tick)
+        self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick)
         self.time_ticker_thread.start()
 
-        self.usb = usb.USB(self.packet_thread.queue_packet, transport=transport)
+        self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
         self.ocr = OCR(fonts_path, api_level)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable] = []
-
-    def _recvall(self, size: int):
-        data = b''
-        while size > 0:
-            try:
-                tmp = self.s.recv(size)
-            except ConnectionResetError:
-                tmp = b''
-
-            if len(tmp) == 0:
-                self.logger.debug("fd closed")
-                return None
-            data += tmp
-            size -= len(tmp)
-        return data
-
-    def _send_packet(self, tag: SephTag, data: bytes = b''):
-        '''Send packet to the app.'''
-
-        size = len(data).to_bytes(2, 'big')
-        packet = tag.to_bytes(1, 'big') + size + data
-        try:
-            self.s.sendall(packet)
-        except BrokenPipeError:
-            raise WriteError("Broken pipe, failed to send data to the app")
 
     def apply_automation_helper(self, event: TextEvent):
         if self.automation_server:
@@ -271,114 +301,70 @@ class SeProxyHal:
 
         assert s == self.s.fileno()
 
-        data = self._recvall(3)
+        tag, size, data = self.socket_helper.read_packet()
         if data is None:
             self._close(s, screen)
             raise ReadError("fd closed")
-
-        tag = data[0]
-        size = int.from_bytes(data[1:3], 'big')
-
-        data = self._recvall(size)
-        if data is None:
-            self._close(s, screen)
-            raise ReadError("fd closed")
-        assert len(data) == size
 
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
-        if tag & 0xf0 == SephTag.GENERAL_STATUS or tag == SephTag.PRINTC_STATUS:
+        if tag == SephTag.GENERAL_STATUS:
+            if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
+                if self.refreshed:
+                    self.refreshed = False
 
-            if tag == SephTag.GENERAL_STATUS:
-                if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
-                    if self.refreshed:
-                        self.refreshed = False
+                    if not screen.nbgl.disable_tesseract:
+                        # Run the OCR
+                        screen.nbgl.m.update_screenshot()
+                        screen_size, image_data = screen.nbgl.m.take_screenshot()
+                        self.ocr.analyze_image(screen_size, image_data)
 
-                        if not screen.nbgl.disable_tesseract:
-                            # Pause flow of time while the OCR is running
-                            self.time_ticker_thread.pause()
+                    # Publish the new screenshot, we'll upload its associated events shortly
+                    screen.nbgl.m.update_public_screenshot()
 
-                            # Run the OCR
-                            screen.nbgl.m.update_screenshot()
-                            screen_size, image_data = screen.nbgl.m.take_screenshot()
-                            self.ocr.analyze_image(screen_size, image_data)
-
-                            # Publish the new screenshot, we'll upload its associated events shortly
-                            screen.nbgl.m.update_public_screenshot()
-
-                            # OCR is finished, resume time
-                            self.time_ticker_thread.resume()
-
-                    if screen.model != "stax" and screen.screen_update():
-                        if screen.model in ["nanox", "nanosp"]:
-                            self.events += self.ocr.get_events()
-                    elif screen.model == "stax":
+                if screen.model != "stax" and screen.screen_update():
+                    if screen.model in ["nanox", "nanosp"]:
                         self.events += self.ocr.get_events()
+                elif screen.model == "stax":
+                    self.events += self.ocr.get_events()
 
-                    # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
-                    # screen to be updated before broadcasting the events.
-                    if self.events:
-                        self.apply_automation()
+                # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
+                # screen to be updated before broadcasting the events.
+                if self.events:
+                    self.apply_automation()
 
-            elif tag == SephTag.SCREEN_DISPLAY_STATUS:
-                self.logger.debug(f"DISPLAY_STATUS {data!r}")
-                events = screen.display_status(data)
-                if events:
-                    self.events += events
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
+                # signal the sending thread that a status has been received
+                self.status_event.set()
 
-            elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
-                self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
-                screen.display_raw_status(data)
-                if screen.model in ["nanox", "nanosp"]:
-                    # Pause flow of time while the OCR is running
-                    self.time_ticker_thread.pause()
-                    self.ocr.analyze_bitmap(data)
-                    self.time_ticker_thread.resume()
-                # https://github.com/LedgerHQ/nanos-secure-sdk/blob/1f2706941b68d897622f75407a868b60eb2be8d7/src/os_io_seproxyhal.c#L787
-                #
-                # io_seproxyhal_spi_recv() accepts any packet from the MCU after
-                # having sent SCREEN_DISPLAY_RAW_STATUS. If some event (eg.
-                # TICKER_EVENT) is replied before DISPLAY_PROCESSED_EVENT, it
-                # will be silently ignored.
-                #
-                # A DISPLAY_PROCESSED_EVENT should be answered immediately,
-                # hence priority=True.
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
-                if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                    screen.screen_update()
-
-            elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
-                for b in [chr(b) for b in data]:
-                    if b == '\n':
-                        self.logger.info(f"printf: {self.printf_queue}")
-                        self.printf_queue = ''
-                    else:
-                        self.printf_queue += b
-                self.packet_thread.queue_packet(SephTag.DISPLAY_PROCESSED_EVENT, priority=True)
-                if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                    screen.screen_update()
-            elif tag == 0x6a:
-                screen.nbgl.hal_draw_rect(data)
-            elif tag == 0x6b:
-                screen.nbgl.hal_refresh(data)
-                # Stax only
-                # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
-                # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
-                self.refreshed = True
-
-            elif tag == 0x6c:
-                screen.nbgl.hal_draw_line(data)
-            elif tag == 0x6d:
-                screen.nbgl.hal_draw_image(data)
-            elif tag == 0x6e:
-                screen.nbgl.hal_draw_image_file(data)
             else:
-                self.logger.error(f"unknown tag: {tag:#x}")
+                self.logger.error(f"unknown subtag: {data[:2]!r}")
                 sys.exit(0)
 
-            # signal the sending thread that a status has been received
-            self.status_event.set()
+        elif tag == SephTag.SCREEN_DISPLAY_STATUS or tag == SephTag.DBG_SCREEN_DISPLAY_STATUS:
+            self.logger.debug(f"DISPLAY_STATUS {data!r}")
+            events = screen.display_status(data)
+            if events:
+                self.events += events
+            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+
+        elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
+            self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
+            screen.display_raw_status(data)
+            if screen.model in ["nanox", "nanosp"]:
+                self.ocr.analyze_bitmap(data)
+            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+            if screen.rendering == RENDER_METHOD.PROGRESSIVE:
+                screen.screen_update()
+
+        elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
+            for b in [chr(b) for b in data]:
+                if b == '\n':
+                    self.logger.info(f"printf: {self.printf_queue}")
+                    self.printf_queue = ''
+                else:
+                    self.printf_queue += b
+            if screen.model in ["blue"]:
+                self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
         elif tag == SephTag.RAPDU:
             screen.forward_to_apdu_client(data)
@@ -416,6 +402,25 @@ class SeProxyHal:
         elif tag == SephTag.PLAY_TUNE:
             pass
 
+        elif tag == SephTag.NBGL_DRAW_RECT:
+            screen.nbgl.hal_draw_rect(data)
+
+        elif tag == SephTag.NBGL_REFRESH:
+            screen.nbgl.hal_refresh(data)
+            # Stax only
+            # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
+            # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
+            self.refreshed = True
+
+        elif tag == SephTag.NBGL_DRAW_LINE:
+            screen.nbgl.hal_draw_line(data)
+
+        elif tag == SephTag.NBGL_DRAW_IMAGE:
+            screen.nbgl.hal_draw_image(data)
+
+        elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
+            screen.nbgl.hal_draw_image_file(data)
+
         else:
             self.logger.error(f"unknown tag: {tag:#x}")
             sys.exit(0)
@@ -424,9 +429,9 @@ class SeProxyHal:
         '''Forward button press/release from the GUI to the app.'''
 
         if pressed:
-            self.packet_thread.queue_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
+            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
         else:
-            self.packet_thread.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
+            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
 
     def handle_finger(self, x: int, y: int, pressed: bool):
         '''Forward finger press/release from the GUI to the app.'''
@@ -438,13 +443,26 @@ class SeProxyHal:
         packet += x.to_bytes(2, 'big')
         packet += y.to_bytes(2, 'big')
 
-        self.packet_thread.queue_packet(SephTag.FINGER_EVENT, packet)
+        self.socket_helper.queue_packet(SephTag.FINGER_EVENT, packet)
+
+    def handle_ticker_request(self, action):
+        if action == "pause":
+            self.time_ticker_thread.pause()
+        elif action == "resume":
+            self.time_ticker_thread.resume()
+        elif action == "single-step":
+            self.time_ticker_thread.add_tick(wait_fully_processed=True)
 
     def handle_wait(self, delay: float):
         '''Wait for a specified delay, taking account real time seen by the app.'''
-        start = self.packet_thread.get_processed_ticks_count()
-        while (self.packet_thread.get_processed_ticks_count() - start) * TICKER_DELAY < delay:
-            time.sleep(TICKER_DELAY)
+        expected_ticks = int(delay / TICKER_DELAY)
+        if not self.time_ticker_thread.paused:
+            start = self.socket_helper.ticks_count
+            while (self.socket_helper.ticks_count - start) < expected_ticks:
+                time.sleep(TICKER_DELAY)
+        else:
+            for _ in range(expected_ticks):
+                self.time_ticker_thread.add_tick(wait_fully_processed=True)
 
     def to_app(self, packet: bytes):
         '''
@@ -458,6 +476,6 @@ class SeProxyHal:
 
         if packet.startswith(b'RAW!') and len(packet) > 4:
             tag, packet = packet[4], packet[5:]
-            self.packet_thread.queue_packet(tag, packet)
+            self.socket_helper.queue_packet(tag, packet)
         else:
             self.usb.xfer(packet)

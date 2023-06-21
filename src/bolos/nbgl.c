@@ -6,11 +6,11 @@
 #include "nbgl.h"
 #include "nbgl_rle.h"
 
-#define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0x6A
-#define SEPROXYHAL_TAG_NBGL_REFRESH         0x6B
-#define SEPROXYHAL_TAG_NBGL_DRAW_LINE       0x6C
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0x6D
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0x6E
+#define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0xFA
+#define SEPROXYHAL_TAG_NBGL_REFRESH         0xFB
+#define SEPROXYHAL_TAG_NBGL_DRAW_LINE       0xFC
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0xFD
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0xFE
 
 unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area)
 {
