@@ -44,6 +44,10 @@ class SephTag(IntEnum):
     FINGER_EVENT_TOUCH = 0x01
     FINGER_EVENT_RELEASE = 0x02
 
+    # Speculos only, defined in speculos/src/bolos/bagl.c
+    BAGL_DRAW_RECT = 0xF1
+    BAGL_DRAW_BITMAP = 0xF2
+
     # Speculos only, defined in speculos/src/bolos/nbgl.c
     NBGL_DRAW_RECT = 0xFA
     NBGL_REFRESH = 0xFB
@@ -340,19 +344,24 @@ class SeProxyHal:
                 self.logger.error(f"unknown subtag: {data[:2]!r}")
                 sys.exit(0)
 
-        elif tag == SephTag.SCREEN_DISPLAY_STATUS or tag == SephTag.DBG_SCREEN_DISPLAY_STATUS:
+        elif tag in [SephTag.SCREEN_DISPLAY_STATUS,
+                     SephTag.DBG_SCREEN_DISPLAY_STATUS,
+                     SephTag.BAGL_DRAW_RECT]:
             self.logger.debug(f"DISPLAY_STATUS {data!r}")
-            events = screen.display_status(data)
-            if events:
-                self.events += events
-            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+            if screen.model not in ["nanox", "nanosp"] or tag == SephTag.BAGL_DRAW_RECT:
+                events = screen.display_status(data)
+                if events:
+                    self.events += events
+            if tag != SephTag.BAGL_DRAW_RECT:
+                self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
-        elif tag == SephTag.SCREEN_DISPLAY_RAW_STATUS:
+        elif tag in [SephTag.SCREEN_DISPLAY_RAW_STATUS, SephTag.BAGL_DRAW_BITMAP]:
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
             screen.display_raw_status(data)
             if screen.model in ["nanox", "nanosp"]:
                 self.ocr.analyze_bitmap(data)
-            self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
+            if tag != SephTag.BAGL_DRAW_BITMAP:
+                self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
             if screen.rendering == RENDER_METHOD.PROGRESSIVE:
                 screen.screen_update()
 
