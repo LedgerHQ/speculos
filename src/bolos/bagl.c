@@ -4,10 +4,15 @@
 #include "bagl.h"
 #include "emulate.h"
 
-#define SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS           0x65
-#define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS       0x69
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START 0x00
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_CONT  0x01
+
+#define SEPROXYHAL_TAG_BAGL_DRAW_RECT   0xF1
+#define SEPROXYHAL_TAG_BAGL_DRAW_BITMAP 0xF2
+#define SEPROXYHAL_TAG_BAGL_DRAW_BITMAP_START                                  \
+  SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START
+#define SEPROXYHAL_TAG_BAGL_DRAW_BITMAP_CONT                                   \
+  SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_CONT
 
 #define BAGL_FILL      1
 #define BAGL_RECTANGLE 3
@@ -51,7 +56,7 @@ unsigned long sys_bagl_hal_draw_rect(unsigned int color, int x, int y,
 
   len = sizeof(c);
 
-  header[0] = SEPROXYHAL_TAG_SCREEN_DISPLAY_STATUS;
+  header[0] = SEPROXYHAL_TAG_BAGL_DRAW_RECT;
   header[1] = (len >> 8) & 0xff;
   header[2] = len & 0xff;
 
@@ -114,10 +119,10 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
   len = build_chunk(buf + size, &offset, sizeof(buf) - size, bitmap,
                     bitmap_length);
 
-  header[0] = SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS;
+  header[0] = SEPROXYHAL_TAG_BAGL_DRAW_BITMAP;
   header[1] = ((size + len + 1) >> 8) & 0xff;
   header[2] = (size + len + 1) & 0xff;
-  header[3] = SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START;
+  header[3] = SEPROXYHAL_TAG_BAGL_DRAW_BITMAP_START;
 
   sys_io_seph_send(header, sizeof(header));
   sys_io_seph_send(buf, size + len);
@@ -132,10 +137,10 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
     uint8_t tmp[64];
     sys_io_seproxyhal_spi_recv(tmp, sizeof(tmp), 0);
 
-    header[0] = SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS;
+    header[0] = SEPROXYHAL_TAG_BAGL_DRAW_BITMAP;
     header[1] = ((len + 1) >> 8) & 0xff;
     header[2] = (len + 1) & 0xff;
-    header[3] = SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_CONT;
+    header[3] = SEPROXYHAL_TAG_BAGL_DRAW_BITMAP_CONT;
 
     sys_io_seph_send(header, sizeof(header));
     sys_io_seph_send(buf, len);
