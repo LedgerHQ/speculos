@@ -253,6 +253,7 @@ class SeProxyHal:
         self.refreshed = False
 
         self.status_event = threading.Event()
+        self.status_event.set()
         self.socket_helper = SocketHelper(self.s, self.status_event)
         self.socket_helper.start()
 

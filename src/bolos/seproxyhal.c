@@ -7,9 +7,12 @@
 #include "bolos/touch.h"
 #include "emulate.h"
 
+// Only consider 0x6X tags as status one
+#define SEPROXYHAL_TAG_STATUS_MASK    0xF0
 #define SEPROXYHAL_TAG_GENERAL_STATUS 0x60
 
-static bool status_sent = false;
+static bool tx_status = true;
+static uint32_t rx_length = 0;
 static uint8_t last_tag;
 static size_t next_length;
 
@@ -67,7 +70,7 @@ static ssize_t writeall(int fd, const void *buf, size_t count)
 
 unsigned long sys_io_seproxyhal_spi_is_status_sent(void)
 {
-  return (unsigned long)status_sent;
+  return (unsigned long)tx_status;
 }
 
 unsigned long sys_io_seph_is_status_sent(void)
@@ -81,15 +84,17 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
     return 0;
   }
 
-  if (sys_io_seproxyhal_spi_is_status_sent() && buffer &&
-      (buffer[0] == SEPROXYHAL_TAG_GENERAL_STATUS)) {
-    return 0;
-  }
-
   if (next_length == 0) {
     if (length < 3) {
       THROW(INVALID_PARAMETER);
     }
+
+    if (sys_io_seproxyhal_spi_is_status_sent() && buffer &&
+        ((buffer[0] & SEPROXYHAL_TAG_STATUS_MASK) ==
+         SEPROXYHAL_TAG_GENERAL_STATUS)) {
+      return 0;
+    }
+
     last_tag = buffer[0];
     next_length = (buffer[1] << 8) | buffer[2];
     next_length += 3;
@@ -102,8 +107,10 @@ unsigned long sys_io_seproxyhal_spi_send(const uint8_t *buffer, uint16_t length)
   ret = writeall(SEPH_FILENO, buffer, length);
 
   next_length -= length;
-  if (next_length == 0 && last_tag == SEPROXYHAL_TAG_GENERAL_STATUS) {
-    status_sent = true;
+  if (next_length == 0 && ((last_tag & SEPROXYHAL_TAG_STATUS_MASK) ==
+                           SEPROXYHAL_TAG_GENERAL_STATUS)) {
+    tx_status = true;
+    rx_length = 0;
   }
 
   return ret;
@@ -118,6 +125,10 @@ unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength,
 {
   // fprintf(stderr, "[*] sys_io_seproxyhal_spi_recv(%p, %d, %d);\n", buffer,
   // maxlength, flags);
+
+  if (rx_length != 0) {
+    return rx_length;
+  }
 
   if (maxlength < 3) {
     errx(1, "invalid size given to sys_io_seproxyhal_spi_recv");
@@ -136,11 +147,12 @@ unsigned long sys_io_seproxyhal_spi_recv(uint8_t *buffer, uint16_t maxlength,
     _exit(1);
   }
 
-  status_sent = false;
+  tx_status = false;
+  rx_length = 3 + packet_size;
 
   catch_touch_info_from_seph(buffer, packet_size);
 
-  return 3 + packet_size;
+  return rx_length;
 }
 
 unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength,
