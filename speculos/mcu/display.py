@@ -78,6 +78,10 @@ class FrameBuffer(ABC):
 
     def __init__(self, model):
         self.pixels = {}
+        self._public_screenshot_value = b''
+        self.current_screen_size = (0, 0)
+        self.current_data = b''
+        self.recreate_public_screenshot = True
         self.model = model
         self.screenshot = Screenshot(MODELS[model].screen_size)
         # Init published content now, don't wait for the first request
@@ -122,11 +126,10 @@ class FrameBuffer(ABC):
             # On top of this, take_screenshot is time consuming on stax, so we'll do as few as possible
             # We return the value calculated last time update_public_screenshot was called
             return self.public_screenshot_value
-        else:
-            # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
-            # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
-            screen_size, data = self.take_screenshot()
-            return _screenshot_to_iobytes_value(screen_size, data)
+        # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
+        # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
+        screen_size, data = self.take_screenshot()
+        return _screenshot_to_iobytes_value(screen_size, data)
 
 
 class Display(ABC):
