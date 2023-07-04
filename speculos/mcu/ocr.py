@@ -6,7 +6,7 @@ import string
 from dataclasses import dataclass
 from PIL import Image
 from pytesseract import image_to_data, Output
-from typing import List, Mapping, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple
 
 from speculos.observer import TextEvent
 from . import bagl_font
@@ -85,7 +85,7 @@ def display_char(font: bagl_font.Font, char: str) -> None:
     print("\n".join(split_bytes(bm_char.bitmap, font.bpp * bm_char.char.char_width)))
 
 
-def get_json_font(json_name: str) -> Mapping[Char, BitMapChar]:
+def get_json_font(json_name: str) -> Optional[Mapping[Char, BitMapChar]]:
     # If no json filename was provided, just return
     if json_name is None:
         return None
@@ -100,12 +100,12 @@ def get_json_font(json_name: str) -> Mapping[Char, BitMapChar]:
     if os.path.exists(json_name):
         with open(json_name, "r") as json_file:
             font_info = json.load(json_file, strict=False)
-            font_info = font_info[0]
+            font_info_dict = font_info[0]
             # Deserialize bitmap
-            bitmap = base64.b64decode(font_info['bitmap'])
+            bitmap = base64.b64decode(font_info_dict['bitmap'])
             # Build BitMapChar
             font_map = {}
-            for character in font_info['bagl_font_character']:
+            for character in font_info_dict['bagl_font_character']:
                 char = character['char']
                 offset = character['bitmap_offset']
                 count = character['bitmap_byte_count']
@@ -194,7 +194,7 @@ class OCR:
     # Location of JSON fonts
     fonts_path = ""
     # To keep track of loaded JSON fonts
-    json_fonts = []
+    json_fonts: List[Dict] = []
     # Current API_LEVEL
     api_level = 0
 
