@@ -16,3 +16,4 @@ __version__.py
 *.pyc
 dist/
 *egg-info
+.coverage

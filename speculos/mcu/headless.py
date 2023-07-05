@@ -4,7 +4,7 @@ from typing import List, Optional
 from speculos.observer import TextEvent
 from . import bagl
 from . import nbgl
-from .display import Display, FrameBuffer, GraphicLibrary, MODELS
+from .display import Display, DisplayNotifier, FrameBuffer, GraphicLibrary, MODELS
 from .readerror import ReadError
 from .struct import DisplayArgs, ServerArgs
 from .vnc import VNC
@@ -13,7 +13,6 @@ from .vnc import VNC
 class Headless(Display):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
-        self._init_notifiers(server)
 
         self.m = HeadlessPaintWidget(self.model, server.vnc)
         self._gl: GraphicLibrary
@@ -43,21 +42,6 @@ class Headless(Display):
         assert isinstance(self.gl, bagl.Bagl)
         return self.gl.refresh()
 
-    def run(self) -> None:
-        while True:
-            _rlist = self.notifiers.keys()
-            if not _rlist:
-                break
-
-            rlist, _, _ = select.select(_rlist, [], [])
-            try:
-                for fd in rlist:
-                    self.notifiers[fd].can_read(fd, self)
-
-            # This exception occur when can_read have no more data available
-            except ReadError:
-                break
-
 
 class HeadlessPaintWidget(FrameBuffer):
     def __init__(self, model: str, vnc: Optional[VNC] = None):
@@ -79,3 +63,25 @@ class HeadlessPaintWidget(FrameBuffer):
         if self.vnc:
             self.vnc.redraw(self.pixels)
         self.update_screenshot()
+
+
+class HeadlessNotifier(DisplayNotifier):
+
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        super().__init__(display_args, server_args)
+        self._set_display_class(Headless)
+
+    def run(self) -> None:
+        while True:
+            _rlist = self.notifiers.keys()
+            if not _rlist:
+                break
+
+            rlist, _, _ = select.select(_rlist, [], [])
+            try:
+                for fd in rlist:
+                    self.notifiers[fd].can_read(fd, self)
+
+            # This exception occur when can_read have no more data available
+            except ReadError:
+                break

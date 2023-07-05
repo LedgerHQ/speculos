@@ -12,7 +12,7 @@ import logging
 import socket
 from typing import Optional
 
-from .display import IODevice, Display
+from .display import IODevice, DisplayNotifier
 
 
 class ApduServer(IODevice):
@@ -27,7 +27,7 @@ class ApduServer(IODevice):
     def file(self):
         return self.socket
 
-    def can_read(self, s: int, screen: Display):
+    def can_read(self, s: int, screen: DisplayNotifier):
         assert self.fileno == s
         c, _ = self.file.accept()
         self.client = ApduClient(c)

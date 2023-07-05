@@ -11,7 +11,7 @@ import subprocess
 import sys
 from typing import IO, Optional, Tuple
 
-from .display import Display, IODevice
+from .display import DisplayNotifier, IODevice
 
 
 class VNC(IODevice):
@@ -69,7 +69,7 @@ class VNC(IODevice):
         self.p.stdin.write(buf)
         self.p.stdin.flush()
 
-    def can_read(self, s: int, screen: Display):
+    def can_read(self, s: int, screen: DisplayNotifier):
         '''Process a new keyboard or mouse event message from the VNC server.'''
 
         assert s == self.fileno
@@ -87,11 +87,11 @@ class VNC(IODevice):
             x = int.from_bytes(data[0:2], 'little')
             y = int.from_bytes(data[2:4], 'little')
             pressed = (data[4] != 0x00)
-            screen.seph.handle_finger(x, y, pressed)
+            screen.display.seph.handle_finger(x, y, pressed)
         elif data[4] in [0x10, 0x11]:
             # keyboard
             button = data[0]
             pressed = (data[4] == 0x11)
-            screen.seph.handle_button(button, pressed)
+            screen.display.seph.handle_button(button, pressed)
         else:
             self.logger.error("invalid message from the VNC server")

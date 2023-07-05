@@ -10,7 +10,7 @@ from typing import Callable, List, Optional, Tuple
 from speculos.observer import BroadcastInterface, TextEvent
 from . import usb
 from .automation import Automation
-from .display import Display, IODevice
+from .display import DisplayNotifier, IODevice
 from .nbgl import NBGL
 from .ocr import OCR
 from .readerror import ReadError
@@ -298,11 +298,11 @@ class SeProxyHal(IODevice):
             self.apply_automation_helper(event)
         self.events = []
 
-    def _close(self, _: int, screen: Display):
-        screen.remove_notifier(self.fileno)
+    def _cleanup(self, notifier: DisplayNotifier):
+        notifier.remove_notifier(self.fileno)
         self.file.close()
 
-    def can_read(self, s: int, screen: Display):
+    def can_read(self, s: int, screen: DisplayNotifier):
         '''
         Handle packet sent by the app.
 
@@ -312,7 +312,7 @@ class SeProxyHal(IODevice):
 
         tag, size, data = self.socket_helper.read_packet()
         if data is None:
-            self._close(s, screen)
+            self._cleanup(screen)
             raise ReadError("fd closed")
 
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
@@ -322,19 +322,19 @@ class SeProxyHal(IODevice):
                 if self.refreshed:
                     self.refreshed = False
 
-                    if not screen.disable_tesseract:
+                    if not screen.display.disable_tesseract:
                         # Run the OCR
-                        screen.gl.update_screenshot()
-                        screen_size, image_data = screen.gl.take_screenshot()
+                        screen.display.gl.update_screenshot()
+                        screen_size, image_data = screen.display.gl.take_screenshot()
                         self.ocr.analyze_image(screen_size, image_data)
 
                     # Publish the new screenshot, we'll upload its associated events shortly
-                    screen.gl.update_public_screenshot()
+                    screen.display.gl.update_public_screenshot()
 
-                if screen.model != "stax" and screen.screen_update():
-                    if screen.model in ["nanox", "nanosp"]:
+                if screen.display.model != "stax" and screen.display.screen_update():
+                    if screen.display.model in ["nanox", "nanosp"]:
                         self.events += self.ocr.get_events()
-                elif screen.model == "stax":
+                elif screen.display.model == "stax":
                     self.events += self.ocr.get_events()
 
                 # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
@@ -353,8 +353,8 @@ class SeProxyHal(IODevice):
                      SephTag.DBG_SCREEN_DISPLAY_STATUS,
                      SephTag.BAGL_DRAW_RECT]:
             self.logger.debug(f"DISPLAY_STATUS {data!r}")
-            if screen.model not in ["nanox", "nanosp"] or tag == SephTag.BAGL_DRAW_RECT:
-                events = screen.display_status(data)
+            if screen.display.model not in ["nanox", "nanosp"] or tag == SephTag.BAGL_DRAW_RECT:
+                events = screen.display.display_status(data)
                 if events:
                     self.events += events
             if tag != SephTag.BAGL_DRAW_RECT:
@@ -362,13 +362,13 @@ class SeProxyHal(IODevice):
 
         elif tag in [SephTag.SCREEN_DISPLAY_RAW_STATUS, SephTag.BAGL_DRAW_BITMAP]:
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
-            screen.display_raw_status(data)
-            if screen.model in ["nanox", "nanosp"]:
+            screen.display.display_raw_status(data)
+            if screen.display.model in ["nanox", "nanosp"]:
                 self.ocr.analyze_bitmap(data)
             if tag != SephTag.BAGL_DRAW_BITMAP:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
-            if screen.rendering == RENDER_METHOD.PROGRESSIVE:
-                screen.screen_update()
+            if screen.display.rendering == RENDER_METHOD.PROGRESSIVE:
+                screen.display.screen_update()
 
         elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
             for b in [chr(b) for b in data]:
@@ -377,11 +377,11 @@ class SeProxyHal(IODevice):
                     self.printf_queue = ''
                 else:
                     self.printf_queue += b
-            if screen.model in ["blue"]:
+            if screen.display.model in ["blue"]:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
         elif tag == SephTag.RAPDU:
-            screen.forward_to_apdu_client(data)
+            screen.display.forward_to_apdu_client(data)
             for c in self.apdu_callbacks:
                 c(data)
 
@@ -393,7 +393,7 @@ class SeProxyHal(IODevice):
             if data:
                 for c in self.apdu_callbacks:
                     c(data)
-                screen.forward_to_apdu_client(data)
+                screen.display.forward_to_apdu_client(data)
 
         elif tag == SephTag.MCU:
             pass
@@ -406,7 +406,7 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.SE_POWER_OFF:
             self.logger.warn("received tag SE_POWER_OFF, exiting")
-            self._close(s, screen)
+            self._cleanup(screen)
             raise ReadError("SE_POWER_OFF")
 
         elif tag == SephTag.REQUEST_STATUS:
@@ -417,28 +417,28 @@ class SeProxyHal(IODevice):
             pass
 
         elif tag == SephTag.NBGL_DRAW_RECT:
-            assert isinstance(screen.gl, NBGL)
-            screen.gl.hal_draw_rect(data)
+            assert isinstance(screen.display.gl, NBGL)
+            screen.display.gl.hal_draw_rect(data)
 
         elif tag == SephTag.NBGL_REFRESH:
-            assert isinstance(screen.gl, NBGL)
-            screen.gl.refresh(data)
+            assert isinstance(screen.display.gl, NBGL)
+            screen.display.gl.refresh(data)
             # Stax only
             # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
             # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
             self.refreshed = True
 
         elif tag == SephTag.NBGL_DRAW_LINE:
-            assert isinstance(screen.gl, NBGL)
-            screen.gl.hal_draw_line(data)
+            assert isinstance(screen.display.gl, NBGL)
+            screen.display.gl.hal_draw_line(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE:
-            assert isinstance(screen.gl, NBGL)
-            screen.gl.hal_draw_image(data)
+            assert isinstance(screen.display.gl, NBGL)
+            screen.display.gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
-            assert isinstance(screen.gl, NBGL)
-            screen.gl.hal_draw_image_file(data)
+            assert isinstance(screen.display.gl, NBGL)
+            screen.display.gl.hal_draw_image_file(data)
 
         else:
             self.logger.error(f"unknown tag: {tag:#x}")

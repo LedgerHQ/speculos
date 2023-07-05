@@ -414,15 +414,13 @@ def main(prog=None) -> int:
         logger.error("--vnc-password can only be used with --vnc-port")
         sys.exit(1)
 
-    Screen: Type[display.Display]
+    ScreenNotifier: Type[display.DisplayNotifier]
     if args.display == 'text':
-        from .mcu.screen_text import TextScreen as Screen
+        from .mcu.screen_text import TextScreenNotifier as ScreenNotifier
     elif args.display == 'headless':
-        from .mcu.headless import Headless as Screen
+        from .mcu.headless import HeadlessNotifier as ScreenNotifier
     else:
-        # TODO: QtScreen does not derive from display.Display so the `Screen` typing is wrong
-        #       There is still work to be done to clarify what the `Screen` interface should be here
-        from .mcu.screen import QtScreen as Screen
+        from .mcu.screen import QtScreenNotifier as ScreenNotifier
 
     if args.sdk and args.apiLevel:
         logger.error("Either SDK version or api level should be specified")
@@ -518,13 +516,13 @@ def main(prog=None) -> int:
                                args.keymap, zoom, x, y, args.force_full_ocr,
                                args.disable_tesseract)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
-    screen = Screen(display_args, server_args)
+    screen_notifier = ScreenNotifier(display_args, server_args)
 
     if apirun is not None:
         assert automation_server is not None
-        apirun.start_server_thread(screen, seph, automation_server)
+        apirun.start_server_thread(screen_notifier, seph, automation_server)
 
-    screen.run()
+    screen_notifier.run()
 
     s2.close()
     _, status = os.waitpid(qemu_pid, 0)

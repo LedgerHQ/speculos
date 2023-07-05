@@ -22,7 +22,7 @@ class IODevice(ABC):
         return self.file.fileno()
 
     @abstractmethod
-    def can_read(self, s: int, screen: Display) -> None:
+    def can_read(self, s: int, screen: DisplayNotifier) -> None:
         pass
 
 
@@ -171,34 +171,33 @@ class GraphicLibrary(ABC):
 
 
 class Display(ABC):
-    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
-        self.notifiers: Dict[int, Any] = {}
-        self._server = server
-        self._display = display
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        self._server_args = server_args
+        self._display_args = display_args
 
     @property
     def apdu(self) -> Any:  # ApduServer:
-        return self._server.apdu
+        return self._server_args.apdu
 
     @property
     def seph(self) -> Any:  # SeProxyHal:
-        return self._server.seph
+        return self._server_args.seph
 
     @property
     def model(self) -> str:
-        return self._display.model
+        return self._display_args.model
 
     @property
     def force_full_ocr(self) -> bool:
-        return self._display.force_full_ocr
+        return self._display_args.force_full_ocr
 
     @property
     def disable_tesseract(self) -> bool:
-        return self._display.disable_tesseract
+        return self._display_args.disable_tesseract
 
     @property
     def rendering(self):
-        return self._display.rendering
+        return self._display_args.rendering
 
     @property
     @abstractmethod
@@ -217,24 +216,44 @@ class Display(ABC):
     def screen_update(self) -> bool:
         pass
 
-    @abstractmethod
-    def run(self) -> None:
-        pass
-
-    def add_notifier(self, klass: IODevice):
-        assert klass.fileno not in self.notifiers
-        self.notifiers[klass.fileno] = klass
-
-    def remove_notifier(self, fd: int):
-        self.notifiers.pop(fd)
-
-    def _init_notifiers(self, args: ServerArgs) -> None:
-        for klass in args._asdict().values():
-            if klass:
-                self.add_notifier(klass)
-
     def forward_to_app(self, packet: bytes):
         self.seph.to_app(packet)
 
     def forward_to_apdu_client(self, packet):
         self.apdu.forward_to_client(packet)
+
+
+class DisplayNotifier(ABC):
+
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        # TODO: this should be Dict[int, IODevice], but in QtScreen, it is
+        #       a QSocketNotifier, which has a completely different interface
+        #       and is not used in the same way in the mcu/screen.py module.
+        self.notifiers: Dict[int, Any] = {}
+        self._server_args = server_args
+        self._display_args = display_args
+        self._display: Display
+        self.__init_notifiers()
+
+    def _set_display_class(self, display_class: type):
+        self._display = display_class(self._display_args, self._server_args)
+
+    @property
+    def display(self) -> Display:
+        return self._display
+
+    def add_notifier(self, device: IODevice):
+        assert device.fileno not in self.notifiers
+        self.notifiers[device.fileno] = device
+
+    def remove_notifier(self, fd: int):
+        self.notifiers.pop(fd)
+
+    def __init_notifiers(self) -> None:
+        for device in self._server_args._asdict().values():
+            if device:
+                self.add_notifier(device)
+
+    @abstractmethod
+    def run(self) -> None:
+        pass

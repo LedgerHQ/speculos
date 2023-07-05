@@ -30,7 +30,7 @@ jobs:
       uses: actions/checkout@v3
     - run: pip install mypy types-requests types-setuptools PyQt5-stubs
     - name: Mypy type checking
-      run: mypy speculos || echo 0
+      run: mypy speculos
 
   bandit:
     name: Security checking

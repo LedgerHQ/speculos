@@ -13,7 +13,7 @@ import logging
 import socket
 from typing import List
 
-from .display import Display, IODevice
+from .display import DisplayNotifier, IODevice
 
 
 class FakeFingerClient(IODevice):
@@ -25,14 +25,14 @@ class FakeFingerClient(IODevice):
     def file(self):
         return self.socket
 
-    def _close(self, screen: Display):
+    def _cleanup(self, screen: DisplayNotifier):
         screen.remove_notifier(self.socket.fileno())
         self.logger.debug("connection closed with fake button client")
 
-    def can_read(self, sock: int, screen: Display):
+    def can_read(self, sock: int, screen: DisplayNotifier):
         packet = self.socket.recv(100)
         if packet == b'':
-            self._close(screen)
+            self._cleanup(screen)
             return
 
         _actions: List[str] = packet.decode("ascii").split(',')
@@ -43,7 +43,7 @@ class FakeFingerClient(IODevice):
             y = int(action[1])
             pressed = int(action[2])
             self.logger.debug(f"touch event on ({x},{y}) coordinates, {'pressed' if pressed else 'release'}")
-            screen.seph.handle_finger(x, y, pressed)
+            screen.display.seph.handle_finger(x, y, pressed)
 
 
 class FakeFinger(IODevice):
@@ -58,7 +58,7 @@ class FakeFinger(IODevice):
     def file(self):
         return self.socket
 
-    def can_read(self, s: int, screen: Display) -> None:
+    def can_read(self, s: int, screen: DisplayNotifier) -> None:
         c, addr = self.file.accept()
         self.logger.debug("New client from %s", addr)
         client = FakeFingerClient(c)

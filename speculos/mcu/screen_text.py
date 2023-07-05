@@ -7,7 +7,7 @@ import time
 from typing import Any, List
 
 from . import bagl
-from .display import Display, FrameBuffer, MODELS
+from .display import Display, DisplayNotifier, FrameBuffer, MODELS
 from .readerror import ReadError
 from .struct import DisplayArgs, ServerArgs
 
@@ -100,20 +100,18 @@ class TextWidget(FrameBuffer):
 
 
 class TextScreen(Display):
-    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
-        super().__init__(display, server)
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        super().__init__(display_args, server_args)
 
-        self.width, self.height = MODELS[display.model].screen_size
-        self.m = TextWidget(self, display.model)
-        if display.model != "stax":
-            self._gl = bagl.Bagl(self.m, MODELS[display.model].screen_size, display.model)
+        self.width, self.height = MODELS[display_args.model].screen_size
+        self.m = TextWidget(self, display_args.model)
+        if display_args.model != "stax":
+            self._gl = bagl.Bagl(self.m, MODELS[display_args.model].screen_size, display_args.model)
         else:
             raise NotImplementedError("This display can not emulate NBGL OS yet")
 
-        self._init_notifiers(server)
-
-        if display.keymap is not None:
-            self.ARROW_KEYS = list(map(ord, display.keymap))
+        if display_args.keymap is not None:
+            self.ARROW_KEYS = list(map(ord, display_args.keymap))
         else:
             self.ARROW_KEYS = [curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_DOWN]
 
@@ -150,6 +148,13 @@ class TextScreen(Display):
         else:
             return True
 
+
+class TextScreenNotifier(DisplayNotifier):
+
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        super().__init__(display_args, server_args)
+        self._set_display_class(TextScreen)
+
     def run(self) -> None:
         while True:
             rlist: List[Any] = list(self.notifiers.keys())
@@ -160,7 +165,8 @@ class TextScreen(Display):
             rlist, _, _ = select.select(rlist, [], [])
             if sys.stdin in rlist:
                 rlist.remove(sys.stdin)
-                if not self.get_keypress():
+                assert isinstance(self.display, TextScreen)
+                if not self.display.get_keypress():
                     break
             try:
                 for fd in rlist:

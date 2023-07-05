@@ -14,7 +14,7 @@ import logging
 import socket
 import time
 
-from .display import Display, IODevice
+from .display import DisplayNotifier, IODevice
 
 
 class FakeButtonClient(IODevice):
@@ -33,14 +33,14 @@ class FakeButtonClient(IODevice):
     def file(self):
         return self.socket
 
-    def _close(self, screen: Display):
+    def _cleanup(self, screen: DisplayNotifier):
         screen.remove_notifier(self.fileno)
         self.logger.debug("connection closed with fake button client")
 
-    def can_read(self, s: int, screen: Display):
+    def can_read(self, s: int, screen: DisplayNotifier):
         packet = self.file.recv(1)
         if packet == b'':
-            self._close(screen)
+            self._cleanup(screen)
             return
 
         for c in packet:
@@ -48,7 +48,7 @@ class FakeButtonClient(IODevice):
             if c in self.actions.keys():
                 key, pressed = self.actions[c]
                 self.logger.debug(f"button {key} release: {pressed}")
-                screen.seph.handle_button(key, pressed)
+                screen.display.seph.handle_button(key, pressed)
                 time.sleep(0.1)
             else:
                 self.logger.debug(f"ignoring byte {c!r}")
@@ -66,7 +66,7 @@ class FakeButton(IODevice):
     def file(self):
         return self.socket
 
-    def can_read(self, s: int, screen: Display):
+    def can_read(self, s: int, screen: DisplayNotifier):
         c, addr = self.file.accept()
         self.logger.debug("New client from %s", addr)
         client = FakeButtonClient(c)

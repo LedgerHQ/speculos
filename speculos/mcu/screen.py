@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
 from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon, QKeyEvent, QMouseEvent
@@ -8,7 +10,7 @@ from typing import List, Optional, Union
 from speculos.observer import TextEvent
 from . import bagl
 from . import nbgl
-from .display import COLORS, Display, FrameBuffer, GraphicLibrary, IODevice
+from .display import COLORS, Display, DisplayNotifier, FrameBuffer, GraphicLibrary, IODevice
 from .readerror import ReadError
 from .struct import DisplayArgs, MODELS, ServerArgs
 from .vnc import VNC
@@ -138,12 +140,12 @@ class App(QMainWindow):
         self.widget = PaintWidget(self, display.model, display.pixel_size, server.vnc)
         self.widget.move(self.box_position_x * display.pixel_size, self.box_position_y * display.pixel_size)
         self.widget.resize(self._width * display.pixel_size, self._height * display.pixel_size)
-
-        self._screen = Screen(self, display, server)
-
         self.setWindowIcon(QIcon('mcu/icon.png'))
-
         self.show()
+        self._screen: Screen
+
+    def set_screen(self, screen: Screen) -> None:
+        self._screen = screen
 
     def screen_update(self) -> bool:
         return self._screen.screen_update()
@@ -197,45 +199,25 @@ class App(QMainWindow):
 
 class Screen(Display):
     def __init__(self, app: App, display: DisplayArgs, server: ServerArgs) -> None:
-        self.app = app
         super().__init__(display, server)
-        self._init_notifiers(server)
+        self.app: App
+        self.m = self.app.widget
         self._gl: GraphicLibrary
-        if display.model != "stax":
-            self._gl = bagl.Bagl(app.widget, MODELS[display.model].screen_size, display.model)
+
+    def set_app(self, app: App) -> None:
+        self.app = app
+        model = self._display_args.model
+        if model != "stax":
+            self._gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
         else:
             self._gl = nbgl.NBGL(app.widget,
-                                 MODELS[display.model].screen_size,
-                                 display.model,
-                                 display.force_full_ocr)
+                                 MODELS[model].screen_size,
+                                 model,
+                                 self._display_args.force_full_ocr)
 
     @property
     def gl(self):
         return self._gl
-
-    def klass_can_read(self, klass: IODevice, s: int) -> None:
-        try:
-            klass.can_read(s, self)
-
-        # This exception occur when can_read have no more data available
-        except ReadError:
-            self.app.close()
-
-    def add_notifier(self, klass: IODevice) -> None:
-        n = QSocketNotifier(voidptr(klass.fileno), QSocketNotifier.Read, self.app)
-        n.activated.connect(lambda s: self.klass_can_read(klass, s))
-        assert klass.fileno not in self.notifiers
-        self.notifiers[klass.fileno] = n
-
-    def enable_notifier(self, fd: int, enabled: bool = True) -> None:
-        n = self.notifiers[fd]
-        n.setEnabled(enabled)
-
-    def remove_notifier(self, fd: int) -> None:
-        # just in case
-        self.enable_notifier(fd, False)
-        n = self.notifiers.pop(fd)
-        n.disconnect()
 
     def _key_event(self, event: QKeyEvent, pressed) -> None:
         key = Qt.Key(event.key())
@@ -265,16 +247,39 @@ class Screen(Display):
     def screen_update(self) -> bool:
         return self.gl.refresh()
 
-    def run(self) -> None:
-        pass
 
+class QtScreenNotifier(DisplayNotifier):
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        super().__init__(display_args, server_args)
+        self._set_display_class(Screen)
+        self._qapp = QApplication([])
+        self._app_widget = App(self._qapp, display_args, server_args)
+        assert isinstance(self.display, Screen)
+        self.display.set_app(self._app_widget)
 
-class QtScreen:
-    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
-        self.app = QApplication([])
-        self.app_widget = App(self.app, display, server)
-        self.m = self.app_widget.widget
+    def _can_read(self, device: IODevice, s: int) -> None:
+        try:
+            device.can_read(s, self)
+        # This exception occur when can_read have no more data available
+        except ReadError:
+            self._app_widget.close()
+
+    def add_notifier(self, device: IODevice) -> None:
+        n = QSocketNotifier(voidptr(device.fileno), QSocketNotifier.Read, self._qapp)
+        n.activated.connect(lambda s: self._can_read(device, s))
+        assert device.fileno not in self.notifiers
+        self.notifiers[device.fileno] = n
+
+    def enable_notifier(self, fd: int, enabled: bool = True) -> None:
+        n = self.notifiers[fd]
+        n.setEnabled(enabled)
+
+    def remove_notifier(self, fd: int) -> None:
+        # just in case
+        self.enable_notifier(fd, False)
+        n = self.notifiers.pop(fd)
+        n.disconnect()
 
     def run(self):
-        self.app.exec_()
-        self.app.quit()
+        self._qapp.exec_()
+        self._qapp.quit()
