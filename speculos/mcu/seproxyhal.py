@@ -245,7 +245,8 @@ class SeProxyHal(IODevice):
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: str = 'hid',
                  fonts_path: Optional[str] = None,
-                 api_level: Optional[int] = None):
+                 api_level: Optional[int] = None,
+                 model: Optional[str] = None):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -264,7 +265,7 @@ class SeProxyHal(IODevice):
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
-        self.ocr = OCR(fonts_path, api_level)
+        self.ocr = OCR(fonts_path, api_level, model)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable[[bytes], None]] = []
@@ -361,7 +362,7 @@ class SeProxyHal(IODevice):
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
             screen.display.display_raw_status(data)
             if screen.display.model in ["nanox", "nanosp"]:
-                self.ocr.analyze_bitmap(data)
+                self.ocr.analyze_bitmap_bagl(data)
             if tag != SephTag.BAGL_DRAW_BITMAP:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
             if screen.display.rendering == RENDER_METHOD.PROGRESSIVE:
@@ -434,8 +435,8 @@ class SeProxyHal(IODevice):
             screen.display.gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
-            self.ocr.analyze_bitmap(data)
-            screen.nbgl.hal_draw_image_rle(data)
+            self.ocr.analyze_bitmap_nbgl(data)
+            screen.display.gl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
             assert isinstance(screen.display.gl, NBGL)

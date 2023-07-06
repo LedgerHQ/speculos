@@ -240,7 +240,7 @@ def setup_logging(args):
 
 
 def main(prog=None) -> int:
-  
+
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
@@ -463,7 +463,8 @@ def main(prog=None) -> int:
         automation_server=automation_server,
         transport=args.usb,
         fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
-        api_level=args.apiLevel)
+        api_level=args.apiLevel,
+        model=args.model)
 
     button = None
     if args.button_port:

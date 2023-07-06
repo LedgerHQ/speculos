@@ -44,8 +44,7 @@ typedef struct {
 } bagl_font_character_t;
 '''
 
-Font = namedtuple(
-    "Font", "font_id font_name bpp char_height baseline_height char_kerning first_char last_char characters bitmap")
+Font = namedtuple("Font", "font_id bpp char_height baseline_height char_kerning first_char last_char characters bitmap")
 FontCharacter = namedtuple("FontCharacter", "char_width bitmap_byte_count bitmap_offset")
 
 bitmapLUCIDA_CONSOLE_6PT_8H = [
@@ -3062,89 +3061,29 @@ charactersOPEN_SANS_SEMIBOLD_11_16PX = [
 ]
 
 FONTS = [
-    Font(
-        BAGL_FONT_OPEN_SANS_REGULAR_11px,
-        "bagl_font_open_sans_regular_11px",
-        1, 12, 9, 0,
-        0x0020, 0x007F,
-        charactersOPEN_SANS_REGULAR_11PX,
-        bitmapOPEN_SANS_REGULAR_11PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_EXTRABOLD_11px,
-        "bagl_font_open_sans_extrabold_11px",
-        1, 12, 9, 0, 0x0020, 0x007F,
-        charactersOPEN_SANS_EXTRABOLD_11PX,
-        bitmapOPEN_SANS_EXTRABOLD_11PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_LIGHT_16px,
-        "bagl_font_open_sans_light_16px",
-        1, 18, 13, 0,
-        0x0020, 0x007F,
-        charactersOPEN_SANS_LIGHT_16PX,
-        bitmapOPEN_SANS_LIGHT_16PX),
-    Font(
-        BAGL_FONT_LUCIDA_CONSOLE_8PX,
-        None,
-        1, 8, 16, 0,
-        0x0020, 0x00ff,
-        charactersLUCIDA_CONSOLE_6PT_8H,
+    Font(BAGL_FONT_LUCIDA_CONSOLE_8PX, 1, 8, 16, 0, 0x0020, 0x00ff, charactersLUCIDA_CONSOLE_6PT_8H,
         bitmapLUCIDA_CONSOLE_6PT_8H),
-    Font(
-        BAGL_FONT_OPEN_SANS_LIGHT_16_22PX,
-        None,
-        4, 22, 16, 0,
-        0x0020, 0x007f,
-        charactersOPEN_SANS_LIGHT_16_22PX,
+    Font(BAGL_FONT_OPEN_SANS_LIGHT_16_22PX, 4, 22, 16, 0, 0x0020, 0x007f, charactersOPEN_SANS_LIGHT_16_22PX,
         bitmapOPEN_SANS_LIGHT_16_22PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_REGULAR_8_11PX,
-        None,
-        4, 11, 8, 0,
-        0x0020, 0x007f,
-        charactersOPEN_SANS_REGULAR_8_11PX,
+    Font(BAGL_FONT_OPEN_SANS_REGULAR_8_11PX, 4, 11, 8, 0, 0x0020, 0x007f, charactersOPEN_SANS_REGULAR_8_11PX,
         bitmapOPEN_SANS_REGULAR_8_11PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_REGULAR_10_13PX,
-        None,
-        4, 14, 10, 0,
-        0x0020, 0x007F,
-        charactersOPEN_SANS_REGULAR_10_13PX,
+    Font(BAGL_FONT_OPEN_SANS_REGULAR_10_13PX, 4, 14, 10, 0, 0x0020, 0x007F, charactersOPEN_SANS_REGULAR_10_13PX,
         bitmapOPEN_SANS_REGULAR_10_13PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_SEMIBOLD_10_13PX,
-        None,
-        4, 14, 10, 0,
-        0x0020, 0x007f,
-        charactersOPEN_SANS_SEMIBOLD_10_13PX,
+    Font(BAGL_FONT_OPEN_SANS_EXTRABOLD_11px, 1, 12, 9, 0, 0x0020, 0x007F, charactersOPEN_SANS_EXTRABOLD_11PX,
+         bitmapOPEN_SANS_EXTRABOLD_11PX),
+    Font(BAGL_FONT_OPEN_SANS_REGULAR_11px, 1, 12, 9, 0, 0x0020, 0x007F, charactersOPEN_SANS_REGULAR_11PX,
+         bitmapOPEN_SANS_REGULAR_11PX),
+    Font(BAGL_FONT_OPEN_SANS_LIGHT_16px, 1, 18, 13, 0, 0x0020, 0x007F, charactersOPEN_SANS_LIGHT_16PX,
+         bitmapOPEN_SANS_LIGHT_16PX),
+    Font(BAGL_FONT_OPEN_SANS_SEMIBOLD_10_13PX, 4, 14, 10, 0, 0x0020, 0x007f, charactersOPEN_SANS_SEMIBOLD_10_13PX,
         bitmapOPEN_SANS_SEMIBOLD_10_13PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_SEMIBOLD_8_11PX,
-        None,
-        4, 11, 8, 0,
-        0x0020, 0x007f,
-        charactersOPEN_SANS_SEMIBOLD_8_11PX,
+    Font(BAGL_FONT_OPEN_SANS_SEMIBOLD_8_11PX, 4, 11, 8, 0, 0x0020, 0x007f, charactersOPEN_SANS_SEMIBOLD_8_11PX,
         bitmapOPEN_SANS_SEMIBOLD_8_11PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_REGULAR_11_14PX,
-        None,
-        4, 16, 12, 0,
-        0x0020, 0x007f,
-        charactersOPEN_SANS_REGULAR_11_14PX,
+    Font(BAGL_FONT_OPEN_SANS_REGULAR_11_14PX, 4, 16, 12, 0, 0x0020, 0x007f, charactersOPEN_SANS_REGULAR_11_14PX,
         bitmapOPEN_SANS_REGULAR_11_14PX),
-    Font(
-        BAGL_FONT_OPEN_SANS_SEMIBOLD_11_16PX,
-        None,
-        4, 16, 12, 0,
-        0x0020, 0x007f,
-        charactersOPEN_SANS_SEMIBOLD_11_16PX,
+    Font(BAGL_FONT_OPEN_SANS_SEMIBOLD_11_16PX, 4, 16, 12, 0, 0x0020, 0x007f, charactersOPEN_SANS_SEMIBOLD_11_16PX,
         bitmapOPEN_SANS_SEMIBOLD_11_16PX),
-    Font(
-        BAGL_FONT_SYMBOLS_0,
-        None,
-        4, 16, 16, 0,
-        0x0000, 0x0006,
-        charactersSYMBOLS_0,
-        bitmapSYMBOLS_0)
+    Font(BAGL_FONT_SYMBOLS_0, 4, 16, 16, 0, 0x0000, 0x0006, charactersSYMBOLS_0, bitmapSYMBOLS_0)
 ]
 
 
