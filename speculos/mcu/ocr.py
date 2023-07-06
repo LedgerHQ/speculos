@@ -4,8 +4,6 @@ import json
 import os
 import string
 from dataclasses import dataclass
-from PIL import Image
-from pytesseract import image_to_data, Output
 from typing import Dict, List, Mapping, Optional, Tuple
 
 from speculos.observer import TextEvent
@@ -266,22 +264,6 @@ class OCR:
             else:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
-
-    def analyze_image(self, screen_size: Tuple[int, int], data: bytes) -> None:
-        image = Image.frombytes("RGB", screen_size, data)
-        i_data = image_to_data(image, output_type=Output.DICT)
-        new_text_has_been_added = False
-        for item in range(len(i_data["text"])):
-            if (i_data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
-                if new_text_has_been_added and self.events and \
-                   i_data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD:
-                    self.events[-1].text += " " + i_data["text"][item]
-                else:
-                    x = i_data["left"][item]
-                    y = i_data["top"][item]
-                    w, h = screen_size
-                    self.events.append(TextEvent(i_data['text'][item], x, y, w, h))
-                    new_text_has_been_added = True
 
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()

@@ -233,10 +233,6 @@ class Display(ABC):
         return self._display_args.force_full_ocr
 
     @property
-    def disable_tesseract(self) -> bool:
-        return self._display_args.disable_tesseract
-
-    @property
     def rendering(self):
         return self._display_args.rendering
 

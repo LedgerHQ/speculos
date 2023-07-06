@@ -37,7 +37,6 @@ class DisplayArgs:
     x: Optional[int]
     y: Optional[int]
     force_full_ocr: bool
-    disable_tesseract: bool
 
 
 class ServerArgs(NamedTuple):
