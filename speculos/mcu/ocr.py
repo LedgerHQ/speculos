@@ -1,7 +1,5 @@
 from typing import List, Mapping
 from dataclasses import dataclass
-from PIL import Image
-from pytesseract import image_to_data, Output
 import base64
 import functools
 import json
@@ -266,22 +264,6 @@ class OCR:
             else:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
-
-    def analyze_image(self, screen_size: (int, int), data: bytes):
-        image = Image.frombytes("RGB", screen_size, data)
-        data = image_to_data(image, output_type=Output.DICT)
-        new_text_has_been_added = False
-        for item in range(len(data["text"])):
-            if (data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
-                if new_text_has_been_added and self.events and \
-                   data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD:
-                    self.events[-1].text += " "+data["text"][item]
-                else:
-                    x = data["left"][item]
-                    y = data["top"][item]
-                    w, h = screen_size
-                    self.events.append(TextEvent(data['text'][item], x, y, w, h))
-                    new_text_has_been_added = True
 
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()

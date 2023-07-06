@@ -238,16 +238,6 @@ def setup_logging(args):
 
 
 def main(prog=None):
-    disable_tesseract = False
-    if not find_executable("tesseract"):
-        disable_tesseract = True
-        warning_message = "\n\n\n!****************************************************************!\n"
-        warning_message += "tesseract-ocr is not found and is required to run Speculos with ocr.\n"
-        warning_message += "Please run `sudo apt install tesseract-ocr`\n"
-        warning_message += "Speculos will continue without tesseract-ocr enabled\n"
-        warning_message += "!****************************************************************!\n\n\n"
-        logger.warn(warning_message)
-
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
@@ -294,7 +284,6 @@ def main(prog=None):
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
     group.add_argument('--force-full-ocr', action='store_true',
                        help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
-    group.add_argument('--disable-tesseract', action='store_true', help='Disable tesseract OCR: only for stax')
 
     if prog:
         parser.prog = prog
@@ -504,12 +493,8 @@ def main(prog=None):
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
-    if disable_tesseract:
-        args.disable_tesseract = True
-
     display_args = display.DisplayArgs(args.color, args.model, args.ontop, rendering,
-                                       args.keymap, zoom, x, y, args.force_full_ocr,
-                                       args.disable_tesseract)
+                                       args.keymap, zoom, x, y, args.force_full_ocr)
     server_args = display.ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen = Screen(display_args, server_args)
 

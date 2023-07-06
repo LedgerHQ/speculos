@@ -29,12 +29,11 @@ class NBGL:
         if bpp == 4:
             return color * 0x111111
 
-    def __init__(self, m, size, force_full_ocr, disable_tesseract):
+    def __init__(self, m, size, force_full_ocr):
         self.m = m
         # front screen dimension
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
         self.force_full_ocr = force_full_ocr
-        self.disable_tesseract = disable_tesseract
 
     def __assert_area(self, area):
         if area.y0 % 4 or area.height % 4:

@@ -318,11 +318,9 @@ class SeProxyHal:
                 if self.refreshed:
                     self.refreshed = False
 
-                    if not screen.nbgl.disable_tesseract:
-                        # Run the OCR
-                        screen.nbgl.m.update_screenshot()
-                        screen_size, image_data = screen.nbgl.m.take_screenshot()
-                        self.ocr.analyze_image(screen_size, image_data)
+                    # Run the OCR
+                    screen.nbgl.m.update_screenshot()
+                    screen.nbgl.m.take_screenshot()
 
                     # Publish the new screenshot, we'll upload its associated events shortly
                     screen.nbgl.m.update_public_screenshot()

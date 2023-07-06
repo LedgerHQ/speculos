@@ -24,15 +24,12 @@ COPY --from=builder /speculos/speculos/resources/ /speculos/speculos/resources/
 
 RUN pip install --upgrade pip pipenv
 RUN pipenv install --deploy --system
-RUN pip install pytesseract
 
 
 RUN apt-get update && apt-get install -qy \
     qemu-user-static \
     libvncserver-dev \
     gdb-multiarch \
-    tesseract-ocr \
-    libtesseract-dev \
     && apt-get clean
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/
