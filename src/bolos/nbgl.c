@@ -164,17 +164,17 @@ unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area, uint8_t *buf
   return 0;
 }
 
-unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
+unsigned long sys_nbgl_front_draw_img_rle_10(nbgl_area_t *area, uint8_t *buffer,
                                              uint32_t buffer_len,
                                              color_t fore_color)
 {
-  return sys_nbgl_front_draw_img_rle_next(area, buffer, buffer_len, fore_color, 0);
+  return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len, fore_color, 0);
 }
 
-unsigned long sys_nbgl_front_draw_img_rle_next(nbgl_area_t *area, uint8_t *buffer,
-                                               uint32_t buffer_len,
-                                               color_t fore_color,
-                                               uint8_t nb_skipped_bytes)
+unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
+                                          uint32_t buffer_len,
+                                          color_t fore_color,
+                                          uint8_t nb_skipped_bytes)
 {
   // We need to keep data compressed to be able to compare with fonts bitmaps
   uint8_t header[3];
