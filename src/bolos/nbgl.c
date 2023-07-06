@@ -11,6 +11,13 @@
 #define SEPROXYHAL_TAG_NBGL_DRAW_LINE       0xFC
 #define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0xFD
 #define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0xFE
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE  0xFF
+
+#define HBE(value, dst, offset)                                                \
+  do {                                                                         \
+    dst[offset++] = (value >> 8) & 0xff;                                       \
+    dst[offset++] = value & 0xff;                                              \
+  } while (0)
 
 unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area)
 {
@@ -143,9 +150,9 @@ unsigned long sys_nbgl_screen_reinit(void)
 
 uint8_t uncompress_rle_buffer[SCREEN_HEIGHT * SCREEN_WIDTH / 2];
 
-unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
-                                          uint32_t buffer_len,
-                                          color_t fore_color)
+unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area, uint8_t *buffer,
+                                                 uint32_t buffer_len,
+                                                 color_t fore_color)
 {
   // Uncompress input buffer
   nbgl_uncompress_rle(area, buffer, buffer_len, uncompress_rle_buffer,
@@ -157,10 +164,31 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
   return 0;
 }
 
-unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
-                                                 uint8_t *buffer,
-                                                 uint32_t buffer_len,
-                                                 color_t fore_color)
+unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
+                                             uint32_t buffer_len,
+                                             color_t fore_color)
 {
-  return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len, fore_color);
+  return sys_nbgl_front_draw_img_rle_next(area, buffer, buffer_len, fore_color, 0);
+}
+
+unsigned long sys_nbgl_front_draw_img_rle_next(nbgl_area_t *area, uint8_t *buffer,
+                                               uint32_t buffer_len,
+                                               color_t fore_color,
+                                               uint8_t nb_skipped_bytes)
+{
+  // We need to keep data compressed to be able to compare with fonts bitmaps
+  uint8_t header[3];
+  size_t len = sizeof(nbgl_area_t) + buffer_len + 1 + 1;
+
+  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE;
+  header[1] = (len >> 8) & 0xff;
+  header[2] = len & 0xff;
+
+  sys_io_seph_send(header, sizeof(header));
+  sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
+  sys_io_seph_send(buffer, buffer_len);
+  sys_io_seph_send((const uint8_t *)&fore_color, 1);
+  sys_io_seph_send((const uint8_t *)&nb_skipped_bytes, 1);
+
+  return 0;
 }

@@ -134,3 +134,9 @@ unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
                                                  uint8_t *buffer,
                                                  uint32_t buffer_len,
                                                  color_t fore_color);
+
+unsigned long sys_nbgl_front_draw_img_rle_next(nbgl_area_t *area,
+                                               uint8_t *buffer,
+                                               uint32_t buffer_len,
+                                               color_t fore_color,
+                                               uint8_t nb_skipped_bytes);

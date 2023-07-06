@@ -56,6 +56,7 @@ class SephTag(IntEnum):
     NBGL_DRAW_LINE = 0xFC
     NBGL_DRAW_IMAGE = 0xFD
     NBGL_DRAW_IMAGE_FILE = 0xFE
+    NBGL_DRAW_IMAGE_RLE = 0xFF
 
 
 TICKER_DELAY = 0.1
@@ -431,6 +432,10 @@ class SeProxyHal(IODevice):
         elif tag == SephTag.NBGL_DRAW_IMAGE:
             assert isinstance(screen.display.gl, NBGL)
             screen.display.gl.hal_draw_image(data)
+
+        elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
+            self.ocr.analyze_bitmap(data)
+            screen.nbgl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
             assert isinstance(screen.display.gl, NBGL)
