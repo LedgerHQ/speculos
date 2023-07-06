@@ -78,11 +78,11 @@ class FrameBuffer(ABC):
     def __init__(self, model):
         self.pixels = {}
         self._public_screenshot_value = b''
-        self.current_screen_size = (0, 0)
         self.current_data = b''
         self.recreate_public_screenshot = True
         self.model = model
-        self.screenshot = Screenshot(MODELS[model].screen_size)
+        self.current_screen_size = MODELS[model].screen_size
+        self.screenshot = Screenshot(self.current_screen_size)
         # Init published content now, don't wait for the first request
         if self.model == "stax":
             self.update_public_screenshot()
