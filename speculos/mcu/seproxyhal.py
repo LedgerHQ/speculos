@@ -244,7 +244,8 @@ class SeProxyHal:
                  automation_server: Optional[AutomationServer] = None,
                  transport: str = 'hid',
                  fonts_path: str = None,
-                 api_level=None):
+                 api_level=None,
+                 model=None):
         self.s = s
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -263,7 +264,7 @@ class SeProxyHal:
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
-        self.ocr = OCR(fonts_path, api_level)
+        self.ocr = OCR(fonts_path, api_level, model)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable] = []
@@ -359,7 +360,7 @@ class SeProxyHal:
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
             screen.display_raw_status(data)
             if screen.model in ["nanox", "nanosp"]:
-                self.ocr.analyze_bitmap(data)
+                self.ocr.analyze_bitmap_bagl(data)
             if tag != SephTag.BAGL_DRAW_BITMAP:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
             if screen.rendering == RENDER_METHOD.PROGRESSIVE:
@@ -428,7 +429,7 @@ class SeProxyHal:
             screen.nbgl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
-            self.ocr.analyze_bitmap(data)
+            self.ocr.analyze_bitmap_nbgl(data)
             screen.nbgl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:

@@ -457,7 +457,8 @@ def main(prog=None):
         automation_server=automation_server,
         transport=args.usb,
         fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
-        api_level=args.apiLevel)
+        api_level=args.apiLevel,
+        model=args.model)
 
     button = None
     if args.button_port:

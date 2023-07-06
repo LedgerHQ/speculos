@@ -5,6 +5,16 @@ import functools
 import json
 import os
 import string
+from construct import Struct, Int8ul, Int16ul
+
+nbgl_area_t = Struct(
+    "x0" / Int16ul,
+    "y0" / Int16ul,
+    "width" / Int16ul,
+    "height" / Int16ul,
+    "color" / Int8ul,
+    "bpp" / Int8ul,
+)
 
 from .automation import TextEvent
 from . import bagl_font
@@ -83,41 +93,6 @@ def display_char(font: bagl_font.Font, char: str) -> None:
     print("\n".join(split_bytes(char.bitmap, font.bpp * char.char.char_width)))
 
 
-def get_json_font(json_name: str) -> Mapping[Char, BitMapChar]:
-    # If no json filename was provided, just return
-    if json_name is None:
-        return None
-
-    # Add the fonts path (JSON files are in speculos/fonts)
-    json_name = os.path.join(OCR.fonts_path, json_name)
-    # Add api level information and file extension
-    json_name += f"-api-level-{OCR.api_level}.json"
-
-    # Read the JSON file if we found one
-    font_info = []
-    if os.path.exists(json_name):
-        with open(json_name, "r") as json_file:
-            font_info = json.load(json_file, strict=False)
-            font_info = font_info[0]
-            # Deserialize bitmap
-            bitmap = base64.b64decode(font_info['bitmap'])
-            # Build BitMapChar
-            font_map = {}
-            for character in font_info['bagl_font_character']:
-                char = character['char']
-                offset = character['bitmap_offset']
-                count = character['bitmap_byte_count']
-                # Add this entry in font_map
-                font_map[chr(char)] = BitMapChar(
-                    char,
-                    bytes(bitmap[offset:(offset + count)]),
-                )
-            OCR.json_fonts.append(font_map)
-            return font_map
-
-    return None
-
-
 def get_font_map(font: bagl_font.Font):
     if font.font_id not in __FONT_MAP:
         __FONT_MAP[font.font_id] = _get_font_map(font)
@@ -125,11 +100,6 @@ def get_font_map(font: bagl_font.Font):
 
 
 def _get_font_map(font: bagl_font.Font) -> Mapping[Char, BitMapChar]:
-    # Do we have a JSON file containing all the information we want?
-    json_font = get_json_font(font.font_name)
-    if json_font is not None:
-        return json_font
-
     font_map = {}
     for ord_char, font_char in zip(
         range(font.first_char, font.last_char), font.characters
@@ -148,63 +118,190 @@ def _get_font_map(font: bagl_font.Font) -> Mapping[Char, BitMapChar]:
     return font_map
 
 
-def find_char_from_bitmap(bitmap: BitMap):
-    """
-     Find a character from a bitmap
-    >>> font = get_font(4)
-    >>> char = get_char(font, 'c')
-    >>> find_char_from_bitmap(char.bitmap)
-    'c'
-    """
-    all_values = []
-    legacy = True
-    for font in bagl_font.FONTS:
-        font_map = get_font_map(font)
-        if font_map in OCR.json_fonts:
-            # This is a loaded JSON font => new behaviour
-            for character_value, bitmap_struct in font_map.items():
-                if bitmap_struct.bitmap == bitmap:
-                    all_values.append(character_value)
-                    legacy = False
-        else:
-            # Not a loaded JSON font => legacy behaviour
-            for character_value, bitmap_struct in font_map.items():
-                if bitmap_struct.bitmap.startswith(bitmap):
-                    # sometimes (but not always) the bitmap being passed is
-                    # shortened by one '\0' byte, not matching the exact bitmap
-                    # provided in the font. Hence the 'residual' computation
-                    residual_bytes: bytes = bitmap_struct.bitmap[len(bitmap):]
-                    if all(b == 0 for b in residual_bytes):
-                        all_values.append(character_value)
-        if all_values:
-            char = max([x for x in all_values])
-            if char == "\x80":
-                char = " "
-            return legacy, char
-
-    return legacy, None
-
-
 class OCR:
 
     # Maximum space for a letter to be considered part of the same word
     MAX_BLANK_SPACE = 12
-    # Location of JSON fonts
-    fonts_path = ""
-    # To keep track of loaded JSON fonts
-    json_fonts = []
     # Current API_LEVEL
     api_level = 0
+    # Current device model (nanox, nanosp, stax etc)
+    model = ""
+    # Font names for LNX & LNS+ (most used ones first)
+    font_names_nanox_nanosp = ["bagl_font_open_sans_regular_11px",
+                          "bagl_font_open_sans_extrabold_11px",
+                          "bagl_font_open_sans_light_16px"]
+    # Font names for stax (most used ones first)
+    font_names_stax = ["nbgl_font_inter_regular_24",
+                       "nbgl_font_inter_semibold_24",
+                       "nbgl_font_inter_medium_32",
+                       "nbgl_font_inter_regular_24_1bpp",
+                       "nbgl_font_inter_semibold_24_1bpp",
+                       "nbgl_font_inter_medium_32_1bpp",
+                       "nbgl_font_hmalpha_mono_medium_32"]
+    # To keep track of loaded JSON fonts
+    json_fonts = []
+    # By default use legacy OCR (built-in font bitmaps)
+    legacy = True
 
-    def __init__(self, fonts_path=None, api_level=None):
+    def __init__(self, fonts_path=None, api_level=None, model=None):
         self.events: List[TextEvent] = []
-        # Save fonts path & the API_LEVEL in a class variable
-        if fonts_path is not None:
-            OCR.fonts_path = fonts_path
+        # Save model & the API_LEVEL in a class variable
         if api_level is not None:
             OCR.api_level = int(api_level)
+        if model is not None:
+            OCR.model = str(model)
+        # With API_LEVEL 5 and >= 11, we can read fonts in JSON files
+        if OCR.api_level == 5 or OCR.api_level >= 11:
+            # Build font_names list using api_level & model
+            if OCR.model == "stax":
+                names = OCR.font_names_stax
+                struct_name = 'nbgl_font_character'
+                OCR.MAX_BLANK_SPACE = 24        # Characters are bigger on Stax
+            else:
+                names = OCR.font_names_nanox_nanosp
+                struct_name = 'bagl_font_character'
 
-    def analyze_bitmap(self, data: bytes):
+            for name in names:
+                # Add the fonts path (JSON files are in speculos/fonts)
+                json_name = os.path.join(fonts_path, name)
+                # Add api level information and file extension
+                json_name += f"-api-level-{OCR.api_level}.json"
+                if os.path.exists(json_name):
+                    self.get_json_font(json_name, struct_name)
+
+            if len(OCR.json_fonts) != 0:
+                OCR.legacy = False
+            else:
+                print("WARNING: didn't find any JSON font files => OCR will "\
+                      "not work properly!\n")
+
+    @staticmethod
+    def get_json_font(name, struct_name) -> Mapping[Char, BitMapChar]:
+        """
+        Read the JSON file and parse all character information
+        """
+        with open(name, "r") as json_file:
+            font_info = json.load(json_file, strict=False)
+            font_info = font_info[0]
+            # Deserialize bitmap
+            bitmap = base64.b64decode(font_info['bitmap'])
+            if not struct_name in font_info:
+                return
+            # Build BitMapChar
+            font_map = {}
+            for character in font_info[struct_name]:
+                char = character['char']
+                offset = character['bitmap_offset']
+                count = character['bitmap_byte_count']
+                # Add this entry in font_map
+                font_map[chr(char)] = BitMapChar(
+                    char,
+                    bytes(bitmap[offset:(offset + count)]),
+                )
+            OCR.json_fonts.append(font_map)
+
+    @staticmethod
+    def find_char_from_bitmap_legacy(bitmap: BitMap):
+        """
+        Find a character from a bitmap
+        >>> font = get_font(4)
+        >>> char = get_char(font, 'c')
+        >>> find_char_from_bitmap(char.bitmap)
+        'c'
+        """
+        all_values = []
+        for font in bagl_font.FONTS:
+            font_map = get_font_map(font)
+            for character_value, bitmap_struct in font_map.items():
+                if bitmap_struct.bitmap.startswith(bitmap):
+                    # sometimes (but not always) the bitmap being passed is shortened
+                    # by one '\x00' byte, not matching the exact bitmap
+                    # provided in the font. Hence the 'residual' computation
+                    residual_bytes: bytes = bitmap_struct.bitmap[len(bitmap):]
+                    if all(b == 0 for b in residual_bytes):
+                        all_values.append(character_value)
+            if all_values:
+                char = max([x for x in all_values])
+                if char == "\x80":
+                    char = " "
+                return char
+        return None
+
+    def analyze_bitmap_legacy(self, x, y, w, h, bitmap):
+        char = self.find_char_from_bitmap_legacy(bitmap)
+        if char:
+            if self.events and y <= self.events[-1].y:
+                self.events[-1].text += char
+            else:
+                # create a new TextEvent if there are no events yet
+                # or if there is a new line
+                self.events.append(TextEvent(char, x, y, w, h))
+
+    @staticmethod
+    def find_char_from_bitmap(bitmap: BitMap):
+        """
+        Parse loaded JSON fonts and compare font bitmaps with the one provided
+        """
+        all_values = []
+        for font_map in OCR.json_fonts:
+            for character_value, bitmap_struct in font_map.items():
+                if bitmap_struct.bitmap == bitmap:
+                    all_values.append(character_value)
+        if all_values:
+            char = max([x for x in all_values])
+            if char == "\x80":
+                char = " "
+            return char
+
+        return None
+
+    def store_char_in_last_event(self, x, y, w, h, char):
+        """
+        Add current character to last event
+        """
+        self.events[-1].text += char
+        # Update w for all chars in self.events[-1]
+        x2 = x + w - 1
+        self.events[-1].w = x2 - self.events[-1].x + 1
+        # Update y & h, if needed, for all chars in self.events[-1]
+        y1 = y
+        if y1 > self.events[-1].y:
+            # Keep the lowest Y in Y1
+            y1 = self.events[-1].y
+        y2 = y + h - 1
+        if y2 < (self.events[-1].y + self.events[-1].h):
+            # Keep the highest Y in Y2
+            y2 = self.events[-1].y + self.events[-1].h - 1
+        self.events[-1].y = y1
+        self.events[-1].h = y2 - y1 + 1
+
+    def analyze_bitmap(self, x, y, w, h, bitmap):
+        """
+        Check if provided bitmap is identical to a char in loaded fonts.
+        """
+        # Space is now encoded as an empty character (no 'space' wasted :)
+        if len(bitmap) == 0:
+            char = ' '
+        else:
+            char = self.find_char_from_bitmap(bitmap)
+        # a char was 'recognised': is it on the same line than previous one?
+        if char:
+            # Compute difference with X coord from previous event
+            # if x_diff > MAX_BLANK_SPACE the char is not on same sentence
+            if self.events:
+                x_diff = x - (self.events[-1].x + self.events[-1].w)
+                if x_diff < 0:
+                    x_diff = -x_diff
+            # Try to find if that char can be added to previous event
+            if self.events and y < (self.events[-1].y + self.events[-1].h) \
+               and x_diff < OCR.MAX_BLANK_SPACE:
+                # Add this character to previous event
+                self.store_char_in_last_event(x, y, w, h, char)
+            else:
+                # create a new TextEvent if there are no events yet or if there is a new line
+                self.events.append(TextEvent(char, x, y, w, h))
+
+    def analyze_bitmap_bagl(self, data: bytes):
         if data[0] != 0:
             return
 
@@ -221,49 +318,27 @@ class OCR:
         if (len(bitmap) * 8) % w:
             h += 1
 
-        # Space is now encoded as an empty character (no 'space' wasted :)
-        if len(bitmap) == 0:
-            char = ' '
-            legacy = False
+        if OCR.legacy:
+            self.analyze_bitmap_legacy(x, y, w, h, bitmap)
         else:
-            legacy, char = find_char_from_bitmap(bitmap)
-        if char:
-            if legacy:
-                # char is not from a loaded JSON font => keep legacy behaviour
-                if self.events and y <= self.events[-1].y:
-                    self.events[-1].text += char
-                else:
-                    # create a new TextEvent if there are no events yet
-                    # or if there is a new line
-                    self.events.append(TextEvent(char, x, y, w, h))
-                return
-            # char was found in a loaded JSON font => new behaviour
-            if self.events:
-                x_diff = x - (self.events[-1].x + self.events[-1].w)
-                if x_diff < 0:
-                    x_diff = -x_diff
-            # if x_diff > MAX_BLANK_SPACE the char is not on same word
-            if self.events and y < (self.events[-1].y + self.events[-1].h) \
-               and x_diff < OCR.MAX_BLANK_SPACE:
-                # Add this character to previous event
-                self.events[-1].text += char
-                # Update w for all chars in self.events[-1]
-                x2 = x + w - 1
-                self.events[-1].w = x2 - self.events[-1].x + 1
-                # Update y & h, if needed, for all chars in self.events[-1]
-                y1 = y
-                if y1 > self.events[-1].y:
-                    # Keep the lowest Y in Y1
-                    y1 = self.events[-1].y
-                y2 = y + h - 1
-                if y2 < (self.events[-1].y + self.events[-1].h):
-                    # Keep the highest Y in Y2
-                    y2 = self.events[-1].y + self.events[-1].h - 1
-                self.events[-1].y = y1
-                self.events[-1].h = y2 - y1 + 1
-            else:
-                # create a new TextEvent if there are no events yet or if there is a new line
-                self.events.append(TextEvent(char, x, y, w, h))
+            self.analyze_bitmap(x, y, w, h, bitmap)
+
+    def analyze_bitmap_nbgl(self, data: bytes):
+        """
+        data contains (check sys_nbgl_front_draw_img_rle in src/bolos/nbgl.c)
+        - area (sizeof(nbgl_area_t))
+        - compressed bitmap (buffer_len)
+        - foreground_color (1 byte)
+        - nb_skipped_bytes (1 byte)
+        """
+        area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
+        bitmap = data[nbgl_area_t.sizeof():-2]
+        if OCR.legacy:
+            self.analyze_bitmap_legacy(
+                area.x0, area.y0, area.width, area.height, bitmap)
+        else:
+            self.analyze_bitmap(
+                area.x0, area.y0, area.width, area.height, bitmap)
 
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()
