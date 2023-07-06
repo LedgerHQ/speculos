@@ -130,7 +130,7 @@ static void nbgl_uncompress_rle_4bpp(nbgl_area_t *area, uint8_t *buffer,
     return;
   }
 
-  memset(out_buffer, 0, out_buffer_len);
+  memset(out_buffer, 0xFF, out_buffer_len);
 
   uint32_t pix_cnt = 0;
   uint32_t read_cnt = 0;
