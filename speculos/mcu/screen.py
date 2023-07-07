@@ -202,7 +202,7 @@ class Screen(Display):
         super().__init__(display, server)
         self._init_notifiers(server)
         if display.model != "stax":
-            self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size)
+            self.bagl = bagl.Bagl(app.m, MODELS[display.model].screen_size, display.model)
         else:
             self.nbgl = nbgl.NBGL(app.m, MODELS[display.model].screen_size, display.force_full_ocr,
                                   display.disable_tesseract)

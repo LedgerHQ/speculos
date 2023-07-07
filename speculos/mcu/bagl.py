@@ -66,9 +66,10 @@ DrawState = namedtuple('DrawState', 'x y width height colors bpp xx yy')
 
 
 class Bagl:
-    def __init__(self, m, size):
+    def __init__(self, m, size, model=None):
         self.m = m
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
+        self.model = model
         self.draw_state = DrawState(0, 0, 0, 0, [], 0, 0, 0)
         self.logger = logging.getLogger("bagl")
 
@@ -99,7 +100,7 @@ class Bagl:
             xx, yy = restore
 
         bitmap = list(bitmap)
-        while bitmap or yy < requested_yh:
+        while bitmap or (yy < requested_yh and self.model != "blue"):
             if bitmap:
                 ch = bitmap.pop(0)
             else:
