@@ -302,14 +302,12 @@ class SeProxyHal(IODevice):
         notifier.remove_notifier(self.fileno)
         self.file.close()
 
-    def can_read(self, fd: int, screen: DisplayNotifier):
+    def can_read(self, screen: DisplayNotifier):
         '''
         Handle packet sent by the app.
 
         This function is called thanks to a screen QSocketNotifier.
         '''
-        assert fd == self.fileno
-
         tag, size, data = self.socket_helper.read_packet()
         if data is None:
             self._cleanup(screen)

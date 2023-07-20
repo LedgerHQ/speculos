@@ -29,7 +29,7 @@ class FakeFingerClient(IODevice):
         screen.remove_notifier(self.socket.fileno())
         self.logger.debug("connection closed with fake button client")
 
-    def can_read(self, fd: int, screen: DisplayNotifier):
+    def can_read(self, screen: DisplayNotifier):
         packet = self.socket.recv(100)
         if packet == b'':
             self._cleanup(screen)
@@ -58,7 +58,7 @@ class FakeFinger(IODevice):
     def file(self):
         return self.socket
 
-    def can_read(self, fd: int, screen: DisplayNotifier) -> None:
+    def can_read(self, screen: DisplayNotifier) -> None:
         c, addr = self.file.accept()
         self.logger.debug("New client from %s", addr)
         client = FakeFingerClient(c)

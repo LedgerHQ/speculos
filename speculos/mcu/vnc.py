@@ -69,10 +69,8 @@ class VNC(IODevice):
         self.subprocess.stdin.write(buf)
         self.subprocess.stdin.flush()
 
-    def can_read(self, fd: int, screen: DisplayNotifier):
+    def can_read(self, screen: DisplayNotifier):
         '''Process a new keyboard or mouse event message from the VNC server.'''
-
-        assert fd == self.fileno
 
         data = b''
         while len(data) != 6:

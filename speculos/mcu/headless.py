@@ -80,7 +80,7 @@ class HeadlessNotifier(DisplayNotifier):
             rlist, _, _ = select.select(_rlist, [], [])
             try:
                 for fd in rlist:
-                    self.notifiers[fd].can_read(fd, self)
+                    self.notifiers[fd].can_read(self)
 
             # This exception occur when can_read have no more data available
             except ReadError:

@@ -35,7 +35,7 @@ class IODevice(ABC):
         return self.file.fileno()
 
     @abstractmethod
-    def can_read(self, fd: int, screen: DisplayNotifier) -> None:
+    def can_read(self, screen: DisplayNotifier) -> None:
         """
         Callback used by a notifier to trigger `IODevice` events on given screen
         """

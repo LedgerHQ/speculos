@@ -257,16 +257,16 @@ class QtScreenNotifier(DisplayNotifier):
         assert isinstance(self.display, Screen)
         self.display.set_app(self._app_widget)
 
-    def _can_read(self, device: IODevice, fd: int) -> None:
+    def _can_read(self, device: IODevice) -> None:
         try:
-            device.can_read(fd, self)
+            device.can_read(self)
         # This exception occur when can_read have no more data available
         except ReadError:
             self._app_widget.close()
 
     def add_notifier(self, device: IODevice) -> None:
         n = QSocketNotifier(voidptr(device.fileno), QSocketNotifier.Read, self._qapp)
-        n.activated.connect(lambda fd: self._can_read(device, fd))
+        n.activated.connect(lambda _: self._can_read(device))
         assert device.fileno not in self.notifiers
         self.notifiers[device.fileno] = n
 
