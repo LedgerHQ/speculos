@@ -84,6 +84,12 @@ class Screenshot:
 
 
 class FrameBuffer:
+    """
+    A class responsible for managing the graphic screen of the current application.
+
+    It updates the screen, takes screenshots, manages colors and such.
+    """
+
     COLORS = {
         "nanos": 0x00fffb,
         "nanox": 0xdddddd,
@@ -162,6 +168,11 @@ class FrameBuffer:
 
 
 class GraphicLibrary(ABC):
+    """
+    A class interface defining mandatory method a graphical library must implement.
+
+    Currently implemented graphic libraries are `bagl.Bagl` and `nbgl.NBGL`.
+    """
 
     def __init__(self, fb: FrameBuffer, size: Tuple[int, int], model: str):
         self._fb = fb
@@ -187,6 +198,20 @@ class GraphicLibrary(ABC):
 
 
 class Display(ABC):
+    """
+    A class interface for managing the graphic display of an application.
+
+    Every display type is composed of two classes:
+    - A `Display` implementation, which will mostly deal with the graphics
+    - A `DisplayNotifier`, which will managed the `IOdevice` tied to the running application.
+
+    Currently, there are 3 display management type, stored in following modules:
+    - `screen.py`, displaying the application infos using Qt
+    - `screen_text.py`, displaying the application infos using the terminal (through `curses`)
+    - `headless.py`, displaying nothing, although the application interface can still be reached
+      through VNC if activated.
+    """
+
     def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
         self._server_args = server_args
         self._display_args = display_args
@@ -240,6 +265,20 @@ class Display(ABC):
 
 
 class DisplayNotifier(ABC):
+    """
+    A class interface for managing the events between an application display and the `IODevice`
+    subclasses.
+
+    Every display type is composed of two classes:
+    - A `Display` implementation, which will mostly deal with the graphics
+    - A `DisplayNotifier`, which will managed the `IOdevice` tied to the running application.
+
+    Currently, there are 3 display management type, stored in following modules:
+    - `screen.py`, displaying the application infos using Qt
+    - `screen_text.py`, displaying the application infos using the terminal (through `curses`)
+    - `headless.py`, displaying nothing, although the application interface can still be reached
+      through VNC if activated.
+    """
 
     def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
         # TODO: this should be Dict[int, IODevice], but in QtScreen, it is
