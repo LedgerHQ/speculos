@@ -9,10 +9,17 @@ import os
 import logging
 import subprocess
 import sys
+from typing import IO, Optional, Tuple
+
+from .display import DisplayNotifier, IODevice
 
 
-class VNC:
-    def __init__(self, port, screen_size, password=None, verbose=False):
+class VNC(IODevice):
+    def __init__(self,
+                 port: int,
+                 screen_size: Tuple[int, int],
+                 password: Optional[str] = None,
+                 verbose: bool = False):
         self.logger = logging.getLogger("vnc")
 
         width, height = screen_size
@@ -34,10 +41,12 @@ class VNC:
         if password is not None:
             cmd += ['-passwd', password]
 
-        self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.subprocess = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
-        # required by Screen.add_notifier
-        self.s = self.p.stdout
+    @property
+    def file(self) -> IO[bytes]:
+        assert self.subprocess.stdout is not None
+        return self.subprocess.stdout
 
     def redraw(self, pixels):
         '''The framebuffer was updated, forward everything to the VNC server.'''
@@ -57,18 +66,15 @@ class VNC:
             buf[i + 8] = 0x0a
             i += 9
 
-        self.p.stdin.write(buf)
-        self.p.stdin.flush()
+        self.subprocess.stdin.write(buf)
+        self.subprocess.stdin.flush()
 
-    def can_read(self, s, screen):
+    def can_read(self, screen: DisplayNotifier):
         '''Process a new keyboard or mouse event message from the VNC server.'''
-
-        assert s == self.s.fileno()
-        assert s == self.p.stdout.fileno()
 
         data = b''
         while len(data) != 6:
-            tmp = self.p.stdout.read(6 - len(data))
+            tmp = self.file.read(6 - len(data))
             if not tmp:
                 self.logger.info("connection with vnc stdout closed")
                 sys.exit(0)
@@ -79,11 +85,11 @@ class VNC:
             x = int.from_bytes(data[0:2], 'little')
             y = int.from_bytes(data[2:4], 'little')
             pressed = (data[4] != 0x00)
-            screen.seph.handle_finger(x, y, pressed)
+            screen.display.seph.handle_finger(x, y, pressed)
         elif data[4] in [0x10, 0x11]:
             # keyboard
             button = data[0]
             pressed = (data[4] == 0x11)
-            screen.seph.handle_button(button, pressed)
+            screen.display.seph.handle_button(button, pressed)
         else:
             self.logger.error("invalid message from the VNC server")

@@ -1,7 +1,3 @@
-from contextlib import contextmanager
-from PIL import Image, ImageChops
-from typing import Generator, List, Optional, Tuple, Type
-from types import TracebackType
 import json
 import logging
 import requests
@@ -9,6 +5,11 @@ import socket
 import sys
 import subprocess
 import time
+from contextlib import contextmanager
+from PIL import Image, ImageChops
+from requests import Response
+from typing import Generator, List, Optional, Tuple, Type
+from types import TracebackType
 
 logger = logging.getLogger("speculos-client")
 logger.setLevel(logging.INFO)
@@ -70,7 +71,7 @@ class Api:
         self.api_url = api_url
         self.timeout = 2000
         self.session = requests.Session()
-        self.stream = None
+        self.stream: Optional[Response] = None
 
     def open_stream(self) -> None:
         assert self.stream is None
@@ -94,6 +95,7 @@ class Api:
 
         https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream
         """
+        assert self.stream is not None
         data = b""
         while True:
             line = self.stream.raw.readline()

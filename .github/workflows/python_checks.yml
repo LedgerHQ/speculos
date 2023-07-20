@@ -1,0 +1,43 @@
+name: Python checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+
+jobs:
+  linter:
+    name: Linter on Python code
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Python dependency
+      run: pip install flake8
+    - name: Lint Python code
+      run: find speculos/ -type f -name '*.py' -exec flake8 --max-line-length=120 '{}' '+'
+
+  mypy:
+    name: Type checking
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone
+      uses: actions/checkout@v3
+    - run: pip install mypy types-requests types-setuptools PyQt5-stubs
+    - name: Mypy type checking
+      run: mypy speculos
+
+  bandit:
+    name: Security checking
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone
+      uses: actions/checkout@v3
+    - run: pip install bandit
+    - name: Bandit security checking
+      run: bandit -r speculos -ll || echo 0

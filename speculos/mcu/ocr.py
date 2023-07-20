@@ -1,14 +1,14 @@
-from typing import List, Mapping
-from dataclasses import dataclass
-from PIL import Image
-from pytesseract import image_to_data, Output
 import base64
 import functools
 import json
 import os
 import string
+from dataclasses import dataclass
+from PIL import Image
+from pytesseract import image_to_data, Output
+from typing import Dict, List, Mapping, Optional, Tuple
 
-from .automation import TextEvent
+from speculos.observer import TextEvent
 from . import bagl_font
 
 MIN_WORD_CONFIDENCE_LVL = 0  # percent
@@ -81,11 +81,11 @@ def get_char(font: bagl_font.Font, char: str) -> BitMapChar:
 
 
 def display_char(font: bagl_font.Font, char: str) -> None:
-    char = get_char(font, char)
-    print("\n".join(split_bytes(char.bitmap, font.bpp * char.char.char_width)))
+    bm_char = get_char(font, char)
+    print("\n".join(split_bytes(bm_char.bitmap, font.bpp * bm_char.char.char_width)))
 
 
-def get_json_font(json_name: str) -> Mapping[Char, BitMapChar]:
+def get_json_font(json_name: str) -> Optional[Mapping[Char, BitMapChar]]:
     # If no json filename was provided, just return
     if json_name is None:
         return None
@@ -100,12 +100,12 @@ def get_json_font(json_name: str) -> Mapping[Char, BitMapChar]:
     if os.path.exists(json_name):
         with open(json_name, "r") as json_file:
             font_info = json.load(json_file, strict=False)
-            font_info = font_info[0]
+            font_info_dict = font_info[0]
             # Deserialize bitmap
-            bitmap = base64.b64decode(font_info['bitmap'])
+            bitmap = base64.b64decode(font_info_dict['bitmap'])
             # Build BitMapChar
             font_map = {}
-            for character in font_info['bagl_font_character']:
+            for character in font_info_dict['bagl_font_character']:
                 char = character['char']
                 offset = character['bitmap_offset']
                 count = character['bitmap_byte_count']
@@ -194,11 +194,11 @@ class OCR:
     # Location of JSON fonts
     fonts_path = ""
     # To keep track of loaded JSON fonts
-    json_fonts = []
+    json_fonts: List[Dict] = []
     # Current API_LEVEL
     api_level = 0
 
-    def __init__(self, fonts_path=None, api_level=None):
+    def __init__(self, fonts_path=None, api_level=None) -> None:
         self.events: List[TextEvent] = []
         # Save fonts path & the API_LEVEL in a class variable
         if fonts_path is not None:
@@ -267,20 +267,20 @@ class OCR:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
 
-    def analyze_image(self, screen_size: (int, int), data: bytes):
+    def analyze_image(self, screen_size: Tuple[int, int], data: bytes) -> None:
         image = Image.frombytes("RGB", screen_size, data)
-        data = image_to_data(image, output_type=Output.DICT)
+        i_data = image_to_data(image, output_type=Output.DICT)
         new_text_has_been_added = False
-        for item in range(len(data["text"])):
-            if (data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
+        for item in range(len(i_data["text"])):
+            if (i_data["conf"][item] > MIN_WORD_CONFIDENCE_LVL):
                 if new_text_has_been_added and self.events and \
-                   data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD:
-                    self.events[-1].text += " "+data["text"][item]
+                   i_data["top"][item] <= self.events[-1].y + NEW_LINE_THRESHOLD:
+                    self.events[-1].text += " " + i_data["text"][item]
                 else:
-                    x = data["left"][item]
-                    y = data["top"][item]
+                    x = i_data["left"][item]
+                    y = i_data["top"][item]
                     w, h = screen_size
-                    self.events.append(TextEvent(data['text'][item], x, y, w, h))
+                    self.events.append(TextEvent(i_data['text'][item], x, y, w, h))
                     new_text_has_been_added = True
 
     def get_events(self) -> List[TextEvent]:
