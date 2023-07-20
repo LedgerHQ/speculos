@@ -11,18 +11,34 @@ from .struct import DisplayArgs, MODELS, ServerArgs
 
 
 class IODevice(ABC):
+    """
+    An interface every class implementing application IOs (screens, buttons, APDUs, ...) should
+    inherit from.
+
+    These classes will be managed by a `DisplayNotifier`, which is responsible to redirect events
+    to the correct `IODevice` instance through its `IODevice.can_read` callback.
+    """
 
     @property
     @abstractmethod
     def file(self) -> Union[IO[bytes], socket]:
+        """
+        Returns the file (Pipe, Socket, ...) tied to this `IODevice`
+        """
         raise NotImplementedError()
 
     @property
     def fileno(self) -> int:
+        """
+        Returns the file descriptor of the file tied to this `IODevice`
+        """
         return self.file.fileno()
 
     @abstractmethod
-    def can_read(self, s: int, screen: DisplayNotifier) -> None:
+    def can_read(self, fd: int, screen: DisplayNotifier) -> None:
+        """
+        Callback used by a notifier to trigger `IODevice` events on given screen
+        """
         pass
 
 
@@ -216,10 +232,10 @@ class Display(ABC):
     def screen_update(self) -> bool:
         pass
 
-    def forward_to_app(self, packet: bytes):
+    def forward_to_app(self, packet: bytes) -> None:
         self.seph.to_app(packet)
 
-    def forward_to_apdu_client(self, packet):
+    def forward_to_apdu_client(self, packet: bytes) -> None:
         self.apdu.forward_to_client(packet)
 
 

@@ -27,8 +27,8 @@ class ApduServer(IODevice):
     def file(self):
         return self.socket
 
-    def can_read(self, s: int, screen: DisplayNotifier):
-        assert self.fileno == s
+    def can_read(self, fd: int, screen: DisplayNotifier):
+        assert self.fileno == fd
         c, _ = self.file.accept()
         self.client = ApduClient(c)
         screen.add_notifier(self.client)
@@ -73,10 +73,10 @@ class ApduClient(IODevice):
 
         return packet
 
-    def can_read(self, s, screen):
+    def can_read(self, fd: int, screen: DisplayNotifier) -> None:
         '''Forward APDU packet to the app'''
 
-        assert self.fileno == s
+        assert self.fileno == fd
 
         packet = self.recv_packet()
         if packet is None:
@@ -85,7 +85,7 @@ class ApduClient(IODevice):
             return
 
         self.logger.info("> {}".format(packet.hex()))
-        screen.forward_to_app(packet)
+        screen.display.forward_to_app(packet)
 
     def forward_to_client(self, packet):
         '''Encode and forward APDU to the client.'''

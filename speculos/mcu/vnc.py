@@ -41,12 +41,12 @@ class VNC(IODevice):
         if password is not None:
             cmd += ['-passwd', password]
 
-        self.p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.subprocess = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     @property
     def file(self) -> IO[bytes]:
-        assert self.p.stdout is not None
-        return self.p.stdout
+        assert self.subprocess.stdout is not None
+        return self.subprocess.stdout
 
     def redraw(self, pixels):
         '''The framebuffer was updated, forward everything to the VNC server.'''
@@ -66,13 +66,13 @@ class VNC(IODevice):
             buf[i + 8] = 0x0a
             i += 9
 
-        self.p.stdin.write(buf)
-        self.p.stdin.flush()
+        self.subprocess.stdin.write(buf)
+        self.subprocess.stdin.flush()
 
-    def can_read(self, s: int, screen: DisplayNotifier):
+    def can_read(self, fd: int, screen: DisplayNotifier):
         '''Process a new keyboard or mouse event message from the VNC server.'''
 
-        assert s == self.fileno
+        assert fd == self.fileno
 
         data = b''
         while len(data) != 6:

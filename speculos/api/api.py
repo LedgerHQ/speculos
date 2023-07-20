@@ -35,8 +35,8 @@ class ApiRunner(IODevice):
     def file(self):
         return self.sock
 
-    def can_read(self, s: int, screen: DisplayNotifier) -> None:
-        assert s == self.fileno
+    def can_read(self, fd: int, screen: DisplayNotifier) -> None:
+        assert fd == self.fileno
         # Being able to read from the socket only happens when the API server exited.
         raise ReadError("API server exited")
 

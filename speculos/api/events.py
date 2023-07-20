@@ -1,7 +1,7 @@
 import json
 import logging
 import threading
-from typing import Optional, List
+from typing import Dict, Generator, List, Optional, Tuple, Union
 from dataclasses import asdict
 from flask import stream_with_context, Response
 from flask_restful import inputs, reqparse
@@ -23,11 +23,11 @@ class EventsBroadcaster(BroadcastInterface):
         self.condition = threading.Condition()
         self.logger = logging.getLogger("events")
 
-    def clear_events(self):
+    def clear_events(self) -> None:
         self.logger.debug("Clearing events")
         self.screen_content = []
 
-    def broadcast(self, event: TextEvent):
+    def broadcast(self, event: TextEvent) -> None:
         if self.screen_content:
             # Reset screen content if new event is not below the last text line of
             # current screen. Event Y coordinate starts at the top of the screen.
@@ -44,11 +44,11 @@ class EventsBroadcaster(BroadcastInterface):
 
 
 class EventClient(ObserverInterface):
-    def __init__(self, broadcaster: EventsBroadcaster):
+    def __init__(self, broadcaster: EventsBroadcaster) -> None:
         self.events: List[TextEvent] = []
         self._broadcaster = broadcaster
 
-    def generate(self):
+    def generate(self) -> Generator[bytes, None, None]:
         try:
             # force headers to be sent
             yield b""
@@ -71,7 +71,7 @@ class EventClient(ObserverInterface):
 
 
 class Events(AppResource):
-    def __init__(self, *args, automation_server: Optional[EventsBroadcaster] = None, **kwargs):
+    def __init__(self, *args, automation_server: Optional[EventsBroadcaster] = None, **kwargs) -> None:
         if automation_server is None:
             raise RuntimeError("Argument 'automation_server' must not be None")
         self._broadcaster = automation_server
@@ -80,7 +80,7 @@ class Events(AppResource):
         self.parser.add_argument("currentscreenonly", type=inputs.boolean, default=False, location='values')
         super().__init__(*args, **kwargs)
 
-    def get(self):
+    def get(self) -> Union[Response, Tuple[Dict[str, List], int]]:
         args = self.parser.parse_args()
         if args.stream:
             client = EventClient(self._broadcaster)
@@ -92,6 +92,6 @@ class Events(AppResource):
             event_list = self._broadcaster.events
         return {"events": [asdict(e) for e in event_list]}, 200
 
-    def delete(self):
+    def delete(self) -> Tuple[Dict, int]:
         self._broadcaster.events.clear()
         return {}, 200
