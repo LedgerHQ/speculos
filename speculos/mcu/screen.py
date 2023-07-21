@@ -69,12 +69,6 @@ class PaintWidget(FrameBuffer, QWidget):
 
         self.update_screenshot()
 
-    def update_public_screenshot(self):
-        return self.fb.update_public_screenshot()
-
-    def get_public_screenshot(self):
-        return self.fb.get_public_screenshot()
-
 
 class App(QMainWindow):
     def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
@@ -198,14 +192,14 @@ class App(QMainWindow):
 
 
 class Screen(Display):
-    def __init__(self, app: App, display: DisplayArgs, server: ServerArgs) -> None:
+    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
         self.app: App
-        self.m = self.app.widget
         self._gl: GraphicLibrary
 
     def set_app(self, app: App) -> None:
         self.app = app
+        self.app.set_screen(self)
         model = self._display_args.model
         if model != "stax":
             self._gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
@@ -214,6 +208,10 @@ class Screen(Display):
                                  MODELS[model].screen_size,
                                  model,
                                  self._display_args.force_full_ocr)
+
+    @property
+    def m(self) -> QWidget:
+        return self.app.widget
 
     @property
     def gl(self):
@@ -250,9 +248,9 @@ class Screen(Display):
 
 class QtScreenNotifier(DisplayNotifier):
     def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        self._qapp = QApplication([])
         super().__init__(display_args, server_args)
         self._set_display_class(Screen)
-        self._qapp = QApplication([])
         self._app_widget = App(self._qapp, display_args, server_args)
         assert isinstance(self.display, Screen)
         self.display.set_app(self._app_widget)
