@@ -173,28 +173,32 @@ class OCR:
                 logger.warning("WARNING: didn't find any JSON font files => "\
                                "OCR will not work properly!\n")
 
-    def get_json_font(self, name, struct_name) -> Mapping[Char, BitMapChar]:
+    def get_json_font(self, name, struct_name) -> None:
         """
         Read the JSON file and parse all character information
         """
         with open(name, "r") as json_file:
             font_info = json.load(json_file, strict=False)
             font_info = font_info[0]
-            # Deserialize bitmap
-            bitmap = base64.b64decode(font_info['bitmap'])
-            if not struct_name in font_info:
-                return
-            # Build BitMapChar
-            font_map = {}
-            for character in font_info[struct_name]:
-                char = character['char']
-                offset = character['bitmap_offset']
-                count = character['bitmap_byte_count']
-                # Add this entry in font_map
-                font_map[chr(char)] = BitMapChar(
-                    char,
-                    bytes(bitmap[offset:(offset + count)]),
-                )
+
+        # Deserialize bitmap
+        bitmap = base64.b64decode(font_info['bitmap'])
+        if not struct_name in font_info:
+            logger = logging.getLogger("OCR")
+            logger.warning(f"WARNING: didn't find field '{struct_name}' "\
+                           f"in {name} => this font will be ignored!\n")
+            return
+        # Build BitMapChar
+        font_map = {}
+        for character in font_info[struct_name]:
+            char = character['char']
+            offset = character['bitmap_offset']
+            count = character['bitmap_byte_count']
+            # Add this entry in font_map
+            font_map[chr(char)] = BitMapChar(
+                char,
+                bytes(bitmap[offset:(offset + count)]),
+            )
             self.json_fonts.append(font_map)
 
     @staticmethod
