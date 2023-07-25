@@ -459,12 +459,12 @@ def main(prog=None) -> int:
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
+        fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
+        model=args.model,
         automation=automation_path,
         automation_server=automation_server,
         transport=args.usb,
-        fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
-        api_level=args.apiLevel,
-        model=args.model)
+        api_level=args.apiLevel)
 
     button = None
     if args.button_port:

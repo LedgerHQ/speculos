@@ -4,7 +4,7 @@ import json
 import os
 import string
 from dataclasses import dataclass
-from typing import List, Mapping
+from typing import List, Optional, Mapping
 from speculos.observer import TextEvent
 from . import bagl_font
 
@@ -135,7 +135,10 @@ class OCR:
                        "nbgl_font_inter_medium_32_1bpp",
                        "nbgl_font_hmalpha_mono_medium_32"]
 
-    def __init__(self, fonts_path=None, api_level=None, model=None):
+    def __init__(self,
+                 fonts_path:str,
+                 model:str,
+                 api_level:Optional[int]=None):
         self.events: List[TextEvent] = []
         # To keep track of loaded JSON fonts
         self.json_fonts = []
