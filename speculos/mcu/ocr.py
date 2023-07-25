@@ -5,7 +5,7 @@ import logging
 import os
 import string
 from dataclasses import dataclass
-from typing import List, Mapping
+from typing import List, Optional, Mapping
 from speculos.observer import TextEvent
 from . import bagl_font
 
@@ -202,7 +202,7 @@ class OCR:
             self.json_fonts.append(font_map)
 
     @staticmethod
-    def find_char_from_bitmap_legacy(bitmap: BitMap):
+    def find_char_from_bitmap_legacy(bitmap: BitMap) -> Optional[str]:
         """
         Find a character from a bitmap
         >>> font = get_font(4)
@@ -226,9 +226,9 @@ class OCR:
                 if char == "\x80":
                     char = " "
                 return char
-        return None
 
-    def analyze_bitmap_legacy(self, x, y, w, h, bitmap):
+    def analyze_bitmap_legacy(self, x: int, y: int, w: int, h: int,
+                              bitmap: bytes) -> None:
         char = self.find_char_from_bitmap_legacy(bitmap)
         if char:
             if self.events and y <= self.events[-1].y:
@@ -238,7 +238,7 @@ class OCR:
                 # or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
 
-    def find_char_from_bitmap(self, bitmap: BitMap):
+    def find_char_from_bitmap(self, bitmap: BitMap) -> Optional[str]:
         """
         Parse loaded JSON fonts and compare font bitmaps with the one provided
         """
@@ -253,9 +253,7 @@ class OCR:
                 char = " "
             return char
 
-        return None
-
-    def store_char_in_last_event(self, x, y, w, h, char):
+    def store_char_in_last_event(self, x: int, y: int, w: int, h:int, char:str) -> None:
         """
         Add current character to last event
         """
@@ -275,7 +273,7 @@ class OCR:
         self.events[-1].y = y1
         self.events[-1].h = y2 - y1 + 1
 
-    def analyze_bitmap(self, x, y, w, h, bitmap):
+    def analyze_bitmap(self, x: int, y: int, w: int, h: int, bitmap: bytes) -> None:
         """
         Check if provided bitmap is identical to a char in loaded fonts.
         """
@@ -301,7 +299,7 @@ class OCR:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
 
-    def analyze_bitmap_bagl(self, data: bytes):
+    def analyze_bitmap_bagl(self, data: bytes) -> None:
         if data[0] != 0:
             return
 
@@ -323,7 +321,7 @@ class OCR:
         else:
             self.analyze_bitmap(x, y, w, h, bitmap)
 
-    def analyze_bitmap_nbgl(self, data: bytes):
+    def analyze_bitmap_nbgl(self, data: bytes) -> None:
         """
         data contains (check sys_nbgl_front_draw_img_rle in src/bolos/nbgl.c)
         - area (sizeof(nbgl_area_t))
