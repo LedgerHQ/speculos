@@ -1,6 +1,7 @@
 import base64
 import functools
 import json
+import logging
 import os
 import string
 from dataclasses import dataclass
@@ -168,8 +169,9 @@ class OCR:
             if len(self.json_fonts) != 0:
                 self.legacy = False
             else:
-                print("WARNING: didn't find any JSON font files => OCR will "\
-                      "not work properly!\n")
+                logger = logging.getLogger("OCR")
+                logger.warning("WARNING: didn't find any JSON font files => "\
+                               "OCR will not work properly!\n")
 
     def get_json_font(self, name, struct_name) -> Mapping[Char, BitMapChar]:
         """
