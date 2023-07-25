@@ -243,10 +243,10 @@ class SeProxyHal(IODevice):
                  sock: socket,
                  fonts_path: str,
                  model: str,
+                 api_level: int,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
-                 transport: str = 'hid',
-                 api_level: Optional[int] = None):
+                 transport: str = 'hid'):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''

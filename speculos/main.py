@@ -456,15 +456,21 @@ def main(prog=None) -> int:
     qemu_pid = run_qemu(s1, s2, args)
     s1.close()
 
+    # Convert api_level to an int
+    if args.apiLevel is None:
+        api_level = 0   # Invalid value, but we don't care here
+    else:
+        api_level = int(args.apiLevel)
+
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
         fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
         model=args.model,
+        api_level=api_level,
         automation=automation_path,
         automation_server=automation_server,
-        transport=args.usb,
-        api_level=args.apiLevel)
+        transport=args.usb)
 
     button = None
     if args.button_port:
