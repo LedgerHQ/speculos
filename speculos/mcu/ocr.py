@@ -122,61 +122,53 @@ class OCR:
 
     # Maximum space for a letter to be considered part of the same word
     MAX_BLANK_SPACE = 12
-    # Current API_LEVEL
-    api_level = 0
-    # Current device model (nanox, nanosp, stax etc)
-    model = ""
     # Font names for LNX & LNS+ (most used ones first)
-    font_names_nanox_nanosp = ["bagl_font_open_sans_regular_11px",
+    FONT_NAMES_NANOX_NANOSP = ["bagl_font_open_sans_regular_11px",
                           "bagl_font_open_sans_extrabold_11px",
                           "bagl_font_open_sans_light_16px"]
     # Font names for stax (most used ones first)
-    font_names_stax = ["nbgl_font_inter_regular_24",
+    FONT_NAMES_STAX = ["nbgl_font_inter_regular_24",
                        "nbgl_font_inter_semibold_24",
                        "nbgl_font_inter_medium_32",
                        "nbgl_font_inter_regular_24_1bpp",
                        "nbgl_font_inter_semibold_24_1bpp",
                        "nbgl_font_inter_medium_32_1bpp",
                        "nbgl_font_hmalpha_mono_medium_32"]
-    # To keep track of loaded JSON fonts
-    json_fonts = []
-    # By default use legacy OCR (built-in font bitmaps)
-    legacy = True
 
     def __init__(self, fonts_path=None, api_level=None, model=None):
         self.events: List[TextEvent] = []
-        # Save model & the API_LEVEL in a class variable
-        if api_level is not None:
-            OCR.api_level = int(api_level)
-        if model is not None:
-            OCR.model = str(model)
+        # To keep track of loaded JSON fonts
+        self.json_fonts = []
+        # By default use legacy OCR (built-in font bitmaps)
+        self.legacy = True
+        # Maximum space for a letter to be considered part of the same word
+        self.max_blank_space = OCR.MAX_BLANK_SPACE
         # With API_LEVEL 5 and >= 11, we can read fonts in JSON files
-        if OCR.api_level == 5 or OCR.api_level >= 11:
+        if api_level == 5 or api_level >= 11:
             # Build font_names list using api_level & model
-            if OCR.model == "stax":
-                names = OCR.font_names_stax
+            if model == "stax":
+                names = OCR.FONT_NAMES_STAX
                 struct_name = 'nbgl_font_character'
-                OCR.MAX_BLANK_SPACE = 24        # Characters are bigger on Stax
+                self.max_blank_space = 24       # Characters are bigger on Stax
             else:
-                names = OCR.font_names_nanox_nanosp
+                names = OCR.FONT_NAMES_NANOX_NANOSP
                 struct_name = 'bagl_font_character'
 
             for name in names:
                 # Add the fonts path (JSON files are in speculos/fonts)
                 json_name = os.path.join(fonts_path, name)
                 # Add api level information and file extension
-                json_name += f"-api-level-{OCR.api_level}.json"
+                json_name += f"-api-level-{api_level}.json"
                 if os.path.exists(json_name):
                     self.get_json_font(json_name, struct_name)
 
-            if len(OCR.json_fonts) != 0:
-                OCR.legacy = False
+            if len(self.json_fonts) != 0:
+                self.legacy = False
             else:
                 print("WARNING: didn't find any JSON font files => OCR will "\
                       "not work properly!\n")
 
-    @staticmethod
-    def get_json_font(name, struct_name) -> Mapping[Char, BitMapChar]:
+    def get_json_font(self, name, struct_name) -> Mapping[Char, BitMapChar]:
         """
         Read the JSON file and parse all character information
         """
@@ -198,7 +190,7 @@ class OCR:
                     char,
                     bytes(bitmap[offset:(offset + count)]),
                 )
-            OCR.json_fonts.append(font_map)
+            self.json_fonts.append(font_map)
 
     @staticmethod
     def find_char_from_bitmap_legacy(bitmap: BitMap):
@@ -237,13 +229,12 @@ class OCR:
                 # or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
 
-    @staticmethod
-    def find_char_from_bitmap(bitmap: BitMap):
+    def find_char_from_bitmap(self, bitmap: BitMap):
         """
         Parse loaded JSON fonts and compare font bitmaps with the one provided
         """
         all_values = []
-        for font_map in OCR.json_fonts:
+        for font_map in self.json_fonts:
             for character_value, bitmap_struct in font_map.items():
                 if bitmap_struct.bitmap == bitmap:
                     all_values.append(character_value)
@@ -287,14 +278,14 @@ class OCR:
         # a char was 'recognised': is it on the same line than previous one?
         if char:
             # Compute difference with X coord from previous event
-            # if x_diff > MAX_BLANK_SPACE the char is not on same sentence
+            # if x_diff > self.max_blank_space the char is not on same sentence
             if self.events:
                 x_diff = x - (self.events[-1].x + self.events[-1].w)
                 if x_diff < 0:
                     x_diff = -x_diff
             # Try to find if that char can be added to previous event
             if self.events and y < (self.events[-1].y + self.events[-1].h) \
-               and x_diff < OCR.MAX_BLANK_SPACE:
+               and x_diff < self.max_blank_space:
                 # Add this character to previous event
                 self.store_char_in_last_event(x, y, w, h, char)
             else:
@@ -318,7 +309,7 @@ class OCR:
         if (len(bitmap) * 8) % w:
             h += 1
 
-        if OCR.legacy:
+        if self.legacy:
             self.analyze_bitmap_legacy(x, y, w, h, bitmap)
         else:
             self.analyze_bitmap(x, y, w, h, bitmap)
@@ -333,7 +324,7 @@ class OCR:
         """
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         bitmap = data[nbgl_area_t.sizeof():-2]
-        if OCR.legacy:
+        if self.legacy:
             self.analyze_bitmap_legacy(
                 area.x0, area.y0, area.width, area.height, bitmap)
         else:
