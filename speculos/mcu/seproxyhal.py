@@ -362,7 +362,7 @@ class SeProxyHal(IODevice):
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
             screen.display.display_raw_status(data)
             if screen.display.model in ["nanox", "nanosp"]:
-                self.ocr.analyze_bitmap_bagl(data)
+                self.ocr.analyze_bitmap(data)
             if tag != SephTag.BAGL_DRAW_BITMAP:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
             if screen.display.rendering == RENDER_METHOD.PROGRESSIVE:
@@ -435,7 +435,7 @@ class SeProxyHal(IODevice):
             screen.display.gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
-            self.ocr.analyze_bitmap_nbgl(data)
+            self.ocr.analyze_bitmap(data)
             screen.display.gl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:

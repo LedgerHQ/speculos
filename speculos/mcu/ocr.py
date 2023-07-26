@@ -147,10 +147,12 @@ class OCR:
         self.legacy = True
         # Maximum space for a letter to be considered part of the same word
         self.max_blank_space = OCR.MAX_BLANK_SPACE
+        # Store the model of the device
+        self.model = model
         # With API_LEVEL 5 and >= 11, we can read fonts in JSON files
         if api_level == 5 or api_level >= 11:
             # Build font_names list using api_level & model
-            if model == "stax":
+            if self.model == "stax":
                 names = OCR.FONT_NAMES_STAX
                 struct_name = 'nbgl_font_character'
                 self.max_blank_space = 24       # Characters are bigger on Stax
@@ -227,7 +229,7 @@ class OCR:
                     char = " "
                 return char
 
-    def analyze_bitmap_legacy(self, x: int, y: int, w: int, h: int,
+    def find_bitmap_legacy(self, x: int, y: int, w: int, h: int,
                               bitmap: bytes) -> None:
         char = self.find_char_from_bitmap_legacy(bitmap)
         if char:
@@ -273,7 +275,7 @@ class OCR:
         self.events[-1].y = y1
         self.events[-1].h = y2 - y1 + 1
 
-    def analyze_bitmap(self, x: int, y: int, w: int, h: int, bitmap: bytes) -> None:
+    def find_bitmap(self, x: int, y: int, w: int, h: int, bitmap: bytes) -> None:
         """
         Check if provided bitmap is identical to a char in loaded fonts.
         """
@@ -282,8 +284,8 @@ class OCR:
             char = ' '
         else:
             char = self.find_char_from_bitmap(bitmap)
-        # a char was 'recognised': is it on the same line than previous one?
         if char:
+            # a char was found: is it on the same line than previous one?
             # Compute difference with X coord from previous event
             # if x_diff > self.max_blank_space the char is not on same sentence
             if self.events:
@@ -299,44 +301,37 @@ class OCR:
                 # create a new TextEvent if there are no events yet or if there is a new line
                 self.events.append(TextEvent(char, x, y, w, h))
 
-    def analyze_bitmap_bagl(self, data: bytes) -> None:
-        if data[0] != 0:
-            return
+    def analyze_bitmap(self, data: bytes) -> None:
+        """
+        data contain information about the latest displayed character.
+        Extract needed information (x, y, w, h & bitmap content) then parse
+        known fonts to find the corresponding character.
+        """
+        if self.model == "stax":
+            area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
+            x, y, w, h = area.x0, area.y0, area.width, area.height
+            bitmap = data[nbgl_area_t.sizeof():-2]
+        else:
+            if data[0] != 0:
+                return
 
-        x = int.from_bytes(data[1:3], byteorder="big", signed=True)
-        y = int.from_bytes(data[3:5], byteorder="big", signed=True)
-        w = int.from_bytes(data[5:7], byteorder="big", signed=True)
-        h = int.from_bytes(data[7:9], byteorder="big", signed=True)
-        bpp = int.from_bytes(data[9:10], byteorder="big")
-        color_size = 4 * (1 << bpp)
-        bitmap = data[10+color_size:]
+            x = int.from_bytes(data[1:3], byteorder="big", signed=True)
+            y = int.from_bytes(data[3:5], byteorder="big", signed=True)
+            w = int.from_bytes(data[5:7], byteorder="big", signed=True)
+            h = int.from_bytes(data[7:9], byteorder="big", signed=True)
+            bpp = int.from_bytes(data[9:10], byteorder="big")
+            color_size = 4 * (1 << bpp)
+            bitmap = data[10+color_size:]
 
-        # h may no reflect the real char height: use number of lines displayed
-        h = (len(bitmap) * 8) // w
-        if (len(bitmap) * 8) % w:
-            h += 1
+            # h may no reflect the real height: use number of lines displayed
+            h = (len(bitmap) * 8) // w
+            if (len(bitmap) * 8) % w:
+                h += 1
 
         if self.legacy:
-            self.analyze_bitmap_legacy(x, y, w, h, bitmap)
+            self.find_bitmap_legacy(x, y, w, h, bitmap)
         else:
-            self.analyze_bitmap(x, y, w, h, bitmap)
-
-    def analyze_bitmap_nbgl(self, data: bytes) -> None:
-        """
-        data contains (check sys_nbgl_front_draw_img_rle in src/bolos/nbgl.c)
-        - area (sizeof(nbgl_area_t))
-        - compressed bitmap (buffer_len)
-        - foreground_color (1 byte)
-        - nb_skipped_bytes (1 byte)
-        """
-        area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
-        bitmap = data[nbgl_area_t.sizeof():-2]
-        if self.legacy:
-            self.analyze_bitmap_legacy(
-                area.x0, area.y0, area.width, area.height, bitmap)
-        else:
-            self.analyze_bitmap(
-                area.x0, area.y0, area.width, area.height, bitmap)
+            self.find_bitmap(x, y, w, h, bitmap)
 
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()
