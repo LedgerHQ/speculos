@@ -6,6 +6,8 @@ from enum import IntEnum
 from typing import Tuple
 
 from .display import FrameBuffer, GraphicLibrary
+# This is a copy - original version is in the SDK (tools/rle_custom.py)
+from .rle_custom import RLECustom
 
 
 class NbglColor(IntEnum):
@@ -260,228 +262,6 @@ class NBGL(GraphicLibrary):
         # decompress
 
     # -------------------------------------------------------------------------
-    # All following RLE related methods can be found in the SDK (rle_custom.py)
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def remove_duplicates(pairs):
-        """
-        Check if there are some duplicated pairs (same values) and merge them.
-        """
-        index = len(pairs) - 1
-        while index >= 1:
-            repeat1, value1 = pairs[index-1]
-            repeat2, value2 = pairs[index]
-            # Do we have identical consecutives values?
-            if value1 == value2:
-                repeat1 += repeat2
-                # Merge them and remove last entry
-                pairs[index-1] = (repeat1, value1)
-                pairs.pop(index)
-            index -= 1
-
-        return pairs
-
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def decode_pass1(data):
-        """
-        Decode array of tuples containing (repeat, val).
-        Return an array of values.
-        """
-        output = []
-        for repeat, value in data:
-            for _ in range(repeat):
-                output.append(value)
-
-        return output
-
-    # -------------------------------------------------------------------------
-    def decode_pass2_4bpp(self, data):
-        """
-        Decode packed bytes into array of tuples containing (repeat, value).
-        The bytes provided contains:
-        11RRRRRR
-        10RRVVVV WWWWXXXX YYYYZZZZ
-        0RRRVVVV
-        With:
-          * 11RRRRRR
-            - RRRRRRR is repeat count - 1 of White (0xF) quartets (max=63+1)
-          * 10RRVVVV WWWWXXXX YYYYZZZZ QQQQ0000
-            - RR is repeat count - 3 of quartets (max=3+3 => 6 quartets)
-            - VVVV: value of 1st 4BPP pixel
-            - WWWW: value of 2nd 4BPP pixel
-            - XXXX: value of 3rd 4BPP pixel
-            - YYYY: value of 4th 4BPP pixel
-            - ZZZZ: value of 5th 4BPP pixel
-            - QQQQ: value of 6th 4BPP pixel
-          * 0RRRVVVV
-            - RRR: repeat count - 1 => allow to store 1 to 8 repeat counts
-            - VVVV: value of the 4BPP pixel
-        """
-        pairs = []
-        index = 0
-        while index < len(data):
-            byte = data[index]
-            index += 1
-            # Is it a big duplication of whites or singles?
-            if byte & 0x80:
-                # Is it a big duplication of whites?
-                if byte & 0x40:
-                    # 11RRRRRR
-                    byte &= 0x3F
-                    repeat = 1 + byte
-                    value = 0x0F
-                # We need to decode singles
-                else:
-                    # 10RRVVVV WWWWXXXX YYYYZZZZ
-                    count = (byte & 0x30)
-                    count >>= 4
-                    count += 3
-                    value = byte & 0x0F
-                    pairs.append((1, value))
-                    count -= 1
-                    while count > 0 and index < len(data):
-                        byte = data[index]
-                        index += 1
-                        value = byte >> 4
-                        value &= 0x0F
-                        pairs.append((1, value))
-                        count -= 1
-                        if count > 0:
-                            value = byte & 0x0F
-                            pairs.append((1, value))
-                            count -= 1
-                    continue
-            else:
-                # 0RRRVVVV
-                value = byte & 0x0F
-                byte >>= 4
-                byte &= 0x07
-                repeat = 1 + byte
-
-            pairs.append((repeat, value))
-
-        # There was a limitation on repeat count => remove duplicates
-        pairs = self.remove_duplicates(pairs)
-
-        return pairs
-
-    # -------------------------------------------------------------------------
-    def decode_pass2_1bpp(self, data):
-        """
-        Decode packed bytes into array of tuples containing (repeat, value).
-        The provided packed values will contain ZZZZOOOO with
-        - ZZZZ: number of consecutives 0, from 0 to 15
-        - OOOO: number of consecutives 1, from 0 to 15
-        """
-        pairs = []
-        for byte in data:
-            ones = byte & 0x0F
-            byte >>= 4
-            zeros = byte & 0x0F
-            if zeros:
-                pairs.append((zeros, 0))
-            if ones:
-                pairs.append((ones, 1))
-
-        # There was a limitation on repeat count => remove duplicates
-        pairs = self.remove_duplicates(pairs)
-
-        return pairs
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def values_to_4bpp(data):
-        """
-        Takes values (assumed from 0x00 to 0x0F) in data and returns an array
-        of bytes containing quartets with values concatenated.
-        """
-        output = bytes()
-        remaining_values = len(data)
-        index = 0
-        while remaining_values > 1:
-            byte = data[index] & 0x0F
-            index += 1
-            byte <<= 4
-            byte |= data[index] & 0x0F
-            index += 1
-            remaining_values -= 2
-            output += bytes([byte])
-
-        # Is there a remaining quartet ?
-        if remaining_values != 0:
-            byte = data[index] & 0x0F
-            byte <<= 4  # Store it in the MSB
-            output += bytes([byte])
-
-        return output
-
-    # -------------------------------------------------------------------------
-    @staticmethod
-    def values_to_1bpp(data):
-        """
-        Takes values (bytes containing 0 or 1) in data and returns an array
-        of bytes containing bits concatenated.
-        (first pixel is bit 10000000 of first byte)
-        """
-        output = bytes()
-        remaining_values = len(data)
-        index = 0
-        bits = 7
-        byte = 0
-        while remaining_values > 0:
-            pixel = data[index] & 1
-            index += 1
-            byte |= pixel << bits
-            bits -= 1
-            if bits < 0:
-                # We read 8 pixels: store them and get ready for next ones
-                output += bytes([byte])
-                bits = 7
-                byte = 0
-            remaining_values -= 1
-
-        # Is there some remaining pixels stored?
-        if bits != 7:
-            output += bytes([byte])
-
-        nb_bytes = len(data)//8
-        if len(data) % 8:
-            nb_bytes += 1
-        assert len(output) == nb_bytes
-
-        return output
-
-    # -------------------------------------------------------------------------
-    def decode_rle_4bpp(self, data):
-        """
-        Input: array of compressed bytes
-        - decode to pairs using custom RLE
-        - convert the tuples of (repeat, value) to values
-        - convert to an array of packed pixels
-        Output: array of packed pixels
-        """
-        pairs = self.decode_pass2_4bpp(data)
-        values = self.decode_pass1(pairs)
-        decoded = self.values_to_4bpp(values)
-
-        return decoded
-
-    # -------------------------------------------------------------------------
-    def decode_rle_1bpp(self, data):
-        """
-        Input: array of compressed bytes
-        - decode to pairs using custom RLE
-        - convert the tuples of (repeat, value) to values
-        - convert to an array of packed pixels
-        Output: array of packed pixels
-        """
-        pairs = self.decode_pass2_1bpp(data)
-        values = self.decode_pass1(pairs)
-        decoded = self.values_to_1bpp(values)
-
-        return decoded
-
-    # -------------------------------------------------------------------------
     def hal_draw_image_rle(self, data):
         """
         Draw a bitmap (4BPP or 1BPP) which has been encoded via custom RLE.
@@ -501,10 +281,9 @@ class NBGL(GraphicLibrary):
         # Uncompress RLE data into buffer
         if bpp == 4:
             buffer = bytes([0xFF] * nb_skipped_bytes)
-            buffer += self.decode_rle_4bpp(bitmap)
         else:
             buffer = bytes([0x00] * nb_skipped_bytes)
-            buffer += self.decode_rle_1bpp(bitmap)
+        buffer += RLECustom.decode(1, bitmap, bpp)
 
         # Display the uncompressed image
         transformation = 0 # NO_TRANSFORMATION
