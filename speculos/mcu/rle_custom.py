@@ -8,6 +8,7 @@ This module contain tools to test different custom RLE coding/decoding.
 import argparse
 import sys
 
+
 # -----------------------------------------------------------------------------
 # Regular RLE encoding
 # -----------------------------------------------------------------------------
@@ -299,6 +300,7 @@ class RLECustomBase:
         """
         return len(data)
 
+
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte
 # -----------------------------------------------------------------------------
@@ -369,6 +371,7 @@ class RLECustom1 (RLECustomBase):
         pairs = self.remove_duplicates(pairs)
 
         return pairs
+
 
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte +
@@ -474,6 +477,7 @@ class RLECustom2 (RLECustom1):
 
         return pairs
 
+
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte +
 # - white handling
@@ -559,7 +563,7 @@ class RLECustom3 (RLECustom2):
                 if count > 6:
                     # Special case: if count = 8 then do 5+3
                     if count == 8:
-                        count = 5 # to allow storing next 3 singles!!
+                        count = 5       # to allow storing next 3 singles!!
                     else:
                         count = 6
                 # Do we have at least 3 singles?
@@ -578,13 +582,13 @@ class RLECustom3 (RLECustom2):
                     index += 1
                     count -= 1
                     while count > 0:
-                        byte = single_output[index] # No need to mask
+                        byte = single_output[index]         # No need to mask
                         index += 1
                         count -= 1
                         byte <<= 4
                         # Do we have an other quartet?
                         if count > 0:
-                            byte |= single_output[index] # No need to mask
+                            byte |= single_output[index]    # No need to mask
                             index += 1
                             count -= 1
                         # Store the quartet(s)
@@ -667,6 +671,7 @@ class RLECustom3 (RLECustom2):
 
         return pairs
 
+
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte
 # -----------------------------------------------------------------------------
@@ -736,6 +741,7 @@ class RLECustom4 (RLECustomBase):
 
         return pairs
 
+
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte
 # -----------------------------------------------------------------------------
@@ -772,7 +778,7 @@ class RLECustomN (RLECustomBase):
         infos = []
         index = 0
         if self.bpp == 1:
-            #threshold = 7
+            # threshold = 7
             threshold = 2
         else:
             threshold = 3
@@ -884,10 +890,11 @@ class RLECustomN (RLECustomBase):
             pixels_size += 1
 
         sys.stdout.write(f"Nb pixels: {total_pixels}\n")
-        sys.stdout.write(f"sizes: cmd={cmd_size}, count={count_size}"\
+        sys.stdout.write(f"sizes: cmd={cmd_size}, count={count_size}"
                          f", data={pixels_size}\n")
 
         return cmd_size + count_size + pixels_size
+
 
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte
@@ -987,6 +994,7 @@ class RLECustomA (RLECustomBase):
         pairs = self.remove_duplicates(pairs)
 
         return pairs
+
 
 # -----------------------------------------------------------------------------
 # Custom RLE encoding: pack repeat count & value into 1 byte
@@ -1091,6 +1099,7 @@ class RLECustomB (RLECustomBase):
 
         return pairs
 
+
 # -----------------------------------------------------------------------------
 # Entry point for easy RLE encoding/decoding
 # -----------------------------------------------------------------------------
@@ -1151,6 +1160,7 @@ class RLECustom:
 
         return decoded
 
+
 # -----------------------------------------------------------------------------
 # Program entry point:
 # -----------------------------------------------------------------------------
@@ -1161,7 +1171,7 @@ if __name__ == "__main__":
         """
         Main method.
         """
-        #ascii 0x0040 (88 bytes)
+        # ascii 0x0040 (88 bytes)
         data = bytes([
             0x00, 0x7F, 0xE0, 0x00, 0x1F, 0xFF, 0x00, 0x07,
             0xC0, 0x38, 0x00, 0xF0, 0x01, 0x80, 0x1E, 0x00,
@@ -1178,7 +1188,7 @@ if __name__ == "__main__":
         with RLECustomA(args.bpp, args.verbose) as rle:
             compressed = rle.encode(data)
             encoded_size = rle.get_encoded_size(compressed)
-            sys.stdout.write(f"Encoded size: {encoded_size} bytes "\
+            sys.stdout.write(f"Encoded size: {encoded_size} bytes "
                              f"(instead of {len(data)})\n")
         # No need to check if decoding is fine, already done when encoding
 
@@ -1197,7 +1207,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "-v", "--verbose",
-        action = 'store_true',
+        action='store_true',
         help="Add verbosity to output ('%(default)s' by default)")
 
     # Call main function:

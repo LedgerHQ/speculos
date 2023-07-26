@@ -15,7 +15,6 @@ import socket
 import sys
 import threading
 import pkg_resources
-from distutils.spawn import find_executable
 from elftools.elf.elffile import ELFFile
 from mnemonic import mnemonic
 from typing import Optional, Type

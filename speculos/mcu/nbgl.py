@@ -286,6 +286,6 @@ class NBGL(GraphicLibrary):
         buffer += RLECustom.decode(1, bitmap, bpp)
 
         # Display the uncompressed image
-        transformation = 0 # NO_TRANSFORMATION
+        transformation = 0      # NO_TRANSFORMATION
         color_map = data[nbgl_area_t.sizeof() + len(bitmap)]  # front color in case of BPP4
         self.draw_image(area, bpp, transformation, buffer, color_map)

@@ -435,6 +435,7 @@ class SeProxyHal(IODevice):
             screen.display.gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
+            assert isinstance(screen.display.gl, NBGL)
             self.ocr.analyze_bitmap(data)
             screen.display.gl.hal_draw_image_rle(data)
 
