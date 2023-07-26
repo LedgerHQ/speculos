@@ -305,11 +305,16 @@ class OCR:
 
     def analyze_bitmap(self, data: bytes) -> None:
         """
-        data contain information about the latest displayed character.
+        data contain information about the latest displayed bitmap.
         Extract needed information (x, y, w, h & bitmap content) then parse
-        known fonts to find the corresponding character.
+        known fonts to find any corresponding character.
         """
         if self.model == "stax":
+            # Can be called via SephTag.NBGL_DRAW_IMAGE or SephTag.NBGL_DRAW_IMAGE_RLE
+            # In both cases, data contains:
+            # - area (sizeof(nbgl_area_t))
+            # - compressed bitmap (buffer_len)
+            # - 2 bytes of different meaning depending on SephTag
             area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
             x, y, w, h = area.x0, area.y0, area.width, area.height
             bitmap = data[nbgl_area_t.sizeof():-2]
