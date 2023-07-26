@@ -150,7 +150,8 @@ unsigned long sys_nbgl_screen_reinit(void)
 
 uint8_t uncompress_rle_buffer[SCREEN_HEIGHT * SCREEN_WIDTH / 2];
 
-unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area, uint8_t *buffer,
+unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
+                                                 uint8_t *buffer,
                                                  uint32_t buffer_len,
                                                  color_t fore_color)
 {
@@ -165,13 +166,15 @@ unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area, uint8_t *buf
 }
 
 unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
-                                             uint32_t buffer_len,
-                                             color_t fore_color)
+                                          uint32_t buffer_len,
+                                          color_t fore_color)
 {
-  return sys_nbgl_front_draw_img_rle_next(area, buffer, buffer_len, fore_color, 0);
+  return sys_nbgl_front_draw_img_rle_next(area, buffer, buffer_len, fore_color,
+                                          0);
 }
 
-unsigned long sys_nbgl_front_draw_img_rle_next(nbgl_area_t *area, uint8_t *buffer,
+unsigned long sys_nbgl_front_draw_img_rle_next(nbgl_area_t *area,
+                                               uint8_t *buffer,
                                                uint32_t buffer_len,
                                                color_t fore_color,
                                                uint8_t nb_skipped_bytes)
