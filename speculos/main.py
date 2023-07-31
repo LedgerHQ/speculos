@@ -15,7 +15,6 @@ import socket
 import sys
 import threading
 import pkg_resources
-from distutils.spawn import find_executable
 from elftools.elf.elffile import ELFFile
 from mnemonic import mnemonic
 from typing import Optional, Type
@@ -240,15 +239,6 @@ def setup_logging(args):
 
 
 def main(prog=None) -> int:
-    disable_tesseract = False
-    if not find_executable("tesseract"):
-        disable_tesseract = True
-        warning_message = "\n\n\n!****************************************************************!\n"
-        warning_message += "tesseract-ocr is not found and is required to run Speculos with ocr.\n"
-        warning_message += "Please run `sudo apt install tesseract-ocr`\n"
-        warning_message += "Speculos will continue without tesseract-ocr enabled\n"
-        warning_message += "!****************************************************************!\n\n\n"
-        logger.warn(warning_message)
 
     parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
     parser.add_argument('app.elf', type=str, help='application path')
@@ -294,9 +284,6 @@ def main(prog=None) -> int:
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
-    group.add_argument('--force-full-ocr', action='store_true',
-                       help='Degrade screen display to enhance OCR capacities for inverted text (only for Stax)')
-    group.add_argument('--disable-tesseract', action='store_true', help='Disable tesseract OCR: only for stax')
 
     if prog:
         parser.prog = prog
@@ -466,14 +453,21 @@ def main(prog=None) -> int:
     qemu_pid = run_qemu(s1, s2, args)
     s1.close()
 
+    # Convert api_level to an int
+    if args.apiLevel is None:
+        api_level = 0   # Invalid value, but we don't care here
+    else:
+        api_level = int(args.apiLevel)
+
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
+        fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
+        model=args.model,
+        api_level=api_level,
         automation=automation_path,
         automation_server=automation_server,
-        transport=args.usb,
-        fonts_path=pkg_resources.resource_filename(__name__, "/fonts"),
-        api_level=args.apiLevel)
+        transport=args.usb)
 
     button = None
     if args.button_port:
@@ -509,12 +503,8 @@ def main(prog=None) -> int:
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
-    if disable_tesseract:
-        args.disable_tesseract = True
-
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
-                               args.keymap, zoom, x, y, args.force_full_ocr,
-                               args.disable_tesseract)
+                               args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen_notifier = ScreenNotifier(display_args, server_args)
 

@@ -126,11 +126,16 @@ unsigned long sys_nbgl_get_font(unsigned int fontId);
 
 unsigned long sys_nbgl_screen_reinit(void);
 
-unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
-                                          uint32_t buffer_len,
-                                          color_t fore_color);
+unsigned long sys_nbgl_front_draw_img_rle_10(nbgl_area_t *area, uint8_t *buffer,
+                                             uint32_t buffer_len,
+                                             color_t fore_color);
 
 unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
                                                  uint8_t *buffer,
                                                  uint32_t buffer_len,
                                                  color_t fore_color);
+
+unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
+                                          uint32_t buffer_len,
+                                          color_t fore_color,
+                                          uint8_t nb_skipped_bytes);

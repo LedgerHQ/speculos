@@ -204,10 +204,7 @@ class Screen(Display):
         if model != "stax":
             self._gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
         else:
-            self._gl = nbgl.NBGL(app.widget,
-                                 MODELS[model].screen_size,
-                                 model,
-                                 self._display_args.force_full_ocr)
+            self._gl = nbgl.NBGL(app.widget, MODELS[model].screen_size, model)
 
     @property
     def m(self) -> QWidget:

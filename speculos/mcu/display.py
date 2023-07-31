@@ -100,11 +100,11 @@ class FrameBuffer:
     def __init__(self, model: str):
         self.pixels: Dict[Tuple[int, int], int] = {}
         self._public_screenshot_value = b''
-        self.current_screen_size = (0, 0)
         self.current_data = b''
         self.recreate_public_screenshot = True
         self.model = model
-        self.screenshot = Screenshot(MODELS[model].screen_size)
+        self.current_screen_size = MODELS[model].screen_size
+        self.screenshot = Screenshot(self.current_screen_size)
         # Init published content now, don't wait for the first request
         if self.model == "stax":
             self.update_public_screenshot()
@@ -227,14 +227,6 @@ class Display(ABC):
     @property
     def model(self) -> str:
         return self._display_args.model
-
-    @property
-    def force_full_ocr(self) -> bool:
-        return self._display_args.force_full_ocr
-
-    @property
-    def disable_tesseract(self) -> bool:
-        return self._display_args.disable_tesseract
 
     @property
     def rendering(self):

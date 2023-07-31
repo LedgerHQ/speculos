@@ -1,16 +1,19 @@
 import gzip
 import logging
+import sys
 from construct import Struct, Int8ul, Int16ul
 from enum import IntEnum
 from typing import Tuple
 
 from .display import FrameBuffer, GraphicLibrary
+# This is a copy - original version is in the SDK (tools/rle_custom.py)
+from .rle_custom import RLECustom
 
 
 class NbglColor(IntEnum):
-    BLACK = 0,
-    DARK_GRAY = 1,
-    LIGHT_GRAY = 2,
+    BLACK = 0
+    DARK_GRAY = 1
+    LIGHT_GRAY = 2
     WHITE = 3
 
 
@@ -39,10 +42,8 @@ class NBGL(GraphicLibrary):
     def __init__(self,
                  fb: FrameBuffer,
                  size: Tuple[int, int],
-                 model: str,
-                 force_full_ocr: bool):
+                 model: str):
         super().__init__(fb, size, model)
-        self.force_full_ocr = force_full_ocr
         self.logger = logging.getLogger("NBGL")
 
     def __assert_area(self, area) -> None:
@@ -55,15 +56,10 @@ class NBGL(GraphicLibrary):
 
     def hal_draw_rect(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data)
-        if self.force_full_ocr:
-            # We need all text shown in black with white background
-            area.color = 3
-
         self.__assert_area(area)
         for x in range(area.x0, area.x0+area.width):
             for y in range(area.y0, area.y0+area.height):
                 self.fb.draw_point(x, y, NBGL.to_screen_color(area.color, 2))
-        return
 
     def refresh(self, data: bytes) -> bool:
         area = nbgl_area_t.parse(data)
@@ -119,6 +115,7 @@ class NBGL(GraphicLibrary):
         mapped_index = COLOR_MAPS_4BPP[(NbglColor(front_color), NbglColor(back_color))][index]
         return NBGL.to_screen_color(mapped_index, 4)
 
+    @staticmethod
     def nbgl_bpp_to_read_bpp(abpp):
         if abpp == 0:
             bpp = 1
@@ -130,25 +127,7 @@ class NBGL(GraphicLibrary):
             return 0
         return bpp
 
-    def hal_draw_image(self, data: bytes):
-        area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
-        self.__assert_area(area)
-        bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
-        bit_size = (area.width * area.height * bpp)
-        buffer_size = (bit_size // 8) + ((bit_size % 8) > 0)
-        buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof()+buffer_size]
-        transformation: int = data[nbgl_area_t.sizeof()+buffer_size]
-        color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
-
-        if self.force_full_ocr:
-            # Avoid white on black text
-            if (bpp == 4) and (color_map == NbglColor.WHITE) and (area.color == NbglColor.BLACK):
-                area.color = NbglColor.WHITE
-                color_map = NbglColor.BLACK
-            elif bpp != 4 and color_map == 3:
-                area.color = NbglColor.WHITE
-                color_map = 0
-
+    def draw_image(self, area, bpp, transformation, buffer, color_map):
         if transformation == 0:
             x = area.x0 + area.width - 1
             y = area.y0
@@ -167,7 +146,7 @@ class NBGL(GraphicLibrary):
         else:
             # error
             self.logger.error("Unknown transformation '%d'", transformation)
-            exit(-2)
+            sys.exit(-2)
 
         if bpp == 1:
             bit_step = 1
@@ -227,6 +206,17 @@ class NBGL(GraphicLibrary):
                     # error
                     pass
 
+    def hal_draw_image(self, data: bytes):
+        area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
+        self.__assert_area(area)
+        bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
+        bit_size = (area.width * area.height * bpp)
+        buffer_size = (bit_size // 8) + ((bit_size % 8) > 0)
+        buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof()+buffer_size]
+        transformation: int = data[nbgl_area_t.sizeof()+buffer_size]
+        color_map = data[nbgl_area_t.sizeof()+buffer_size + 1]  # front color in case of BPP4
+        self.draw_image(area, bpp, transformation, buffer, color_map)
+
     def hal_draw_image_file(self, data):
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
@@ -255,3 +245,32 @@ class NBGL(GraphicLibrary):
         data = nbgl_area_t.build(area) + bytes(output_buffer) + b'\0' + data[-1].to_bytes(1, 'big')
         self.hal_draw_image(data)
         # decompress
+
+    # -------------------------------------------------------------------------
+    def hal_draw_image_rle(self, data):
+        """
+        Draw a bitmap (4BPP or 1BPP) which has been encoded via custom RLE.
+        Input:
+        data contains (check sys_nbgl_front_draw_img_rle in src/bolos/nbgl.c)
+        - area (sizeof(nbgl_area_t))
+        - compressed bitmap (buffer_len)
+        - foreground_color (1 byte)
+        - nb_skipped_bytes (1 byte)
+        """
+        area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
+        self.__assert_area(area)
+        bitmap = data[nbgl_area_t.sizeof():-2]
+        bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
+        # We may have to skip initial transparent pixels (bytes, in that case)
+        nb_skipped_bytes = data[nbgl_area_t.sizeof() + len(bitmap) + 1]
+        # Uncompress RLE data into buffer
+        if bpp == 4:
+            buffer = bytes([0xFF] * nb_skipped_bytes)
+        else:
+            buffer = bytes([0x00] * nb_skipped_bytes)
+        buffer += RLECustom.decode(1, bitmap, bpp)
+
+        # Display the uncompressed image
+        transformation = 0      # NO_TRANSFORMATION
+        color_map = data[nbgl_area_t.sizeof() + len(bitmap)]  # front color in case of BPP4
+        self.draw_image(area, bpp, transformation, buffer, color_map)

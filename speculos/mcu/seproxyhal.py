@@ -56,6 +56,7 @@ class SephTag(IntEnum):
     NBGL_DRAW_LINE = 0xFC
     NBGL_DRAW_IMAGE = 0xFD
     NBGL_DRAW_IMAGE_FILE = 0xFE
+    NBGL_DRAW_IMAGE_RLE = 0xFF
 
 
 TICKER_DELAY = 0.1
@@ -240,11 +241,12 @@ class SocketHelper(threading.Thread):
 class SeProxyHal(IODevice):
     def __init__(self,
                  sock: socket,
+                 fonts_path: str,
+                 model: str,
+                 api_level: int,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
-                 transport: str = 'hid',
-                 fonts_path: Optional[str] = None,
-                 api_level: Optional[int] = None):
+                 transport: str = 'hid'):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -263,7 +265,7 @@ class SeProxyHal(IODevice):
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
-        self.ocr = OCR(fonts_path, api_level)
+        self.ocr = OCR(fonts_path, model, api_level)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable[[bytes], None]] = []
@@ -320,11 +322,9 @@ class SeProxyHal(IODevice):
                 if self.refreshed:
                     self.refreshed = False
 
-                    if not screen.display.disable_tesseract:
-                        # Run the OCR
-                        screen.display.gl.update_screenshot()
-                        screen_size, image_data = screen.display.gl.take_screenshot()
-                        self.ocr.analyze_image(screen_size, image_data)
+                    # Run the OCR
+                    screen.display.gl.update_screenshot()
+                    screen.display.gl.take_screenshot()
 
                     # Publish the new screenshot, we'll upload its associated events shortly
                     screen.display.gl.update_public_screenshot()
@@ -432,7 +432,13 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.NBGL_DRAW_IMAGE:
             assert isinstance(screen.display.gl, NBGL)
+            self.ocr.analyze_bitmap(data)
             screen.display.gl.hal_draw_image(data)
+
+        elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
+            assert isinstance(screen.display.gl, NBGL)
+            self.ocr.analyze_bitmap(data)
+            screen.display.gl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
             assert isinstance(screen.display.gl, NBGL)

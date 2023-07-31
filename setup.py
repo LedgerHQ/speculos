@@ -61,7 +61,6 @@ setup(
         "pyelftools>=0.27,<1.0",
         "pyqt5>=5.15.2,<6.0.0",
         "requests>=2.25.1,<3.0.0",
-        "pytesseract>=0.3.10,<0.4.0",
     ]
     + (["dataclasses>=0.8,<0.9"] if sys.version_info <= (3, 6) else []),
     extras_require={
