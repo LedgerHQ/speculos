@@ -19,7 +19,7 @@ class Headless(Display):
         if display.model != "stax":
             self._gl = bagl.Bagl(self.m, MODELS[self.model].screen_size, self.model)
         else:
-            self._gl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, self.model, display.force_full_ocr)
+            self._gl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, self.model)
 
     @property
     def gl(self) -> GraphicLibrary:

@@ -229,10 +229,6 @@ class Display(ABC):
         return self._display_args.model
 
     @property
-    def force_full_ocr(self) -> bool:
-        return self._display_args.force_full_ocr
-
-    @property
     def rendering(self):
         return self._display_args.rendering
 

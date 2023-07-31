@@ -42,10 +42,8 @@ class NBGL(GraphicLibrary):
     def __init__(self,
                  fb: FrameBuffer,
                  size: Tuple[int, int],
-                 model: str,
-                 force_full_ocr: bool):
+                 model: str):
         super().__init__(fb, size, model)
-        self.force_full_ocr = force_full_ocr
         self.logger = logging.getLogger("NBGL")
 
     def __assert_area(self, area) -> None:
@@ -58,10 +56,6 @@ class NBGL(GraphicLibrary):
 
     def hal_draw_rect(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data)
-        if self.force_full_ocr:
-            # We need all text shown in black with white background
-            area.color = 3
-
         self.__assert_area(area)
         for x in range(area.x0, area.x0+area.width):
             for y in range(area.y0, area.y0+area.height):
@@ -134,15 +128,6 @@ class NBGL(GraphicLibrary):
         return bpp
 
     def draw_image(self, area, bpp, transformation, buffer, color_map):
-        if self.force_full_ocr:
-            # Avoid white on black text
-            if (bpp == 4) and (color_map == NbglColor.WHITE) and (area.color == NbglColor.BLACK):
-                area.color = NbglColor.WHITE
-                color_map = NbglColor.BLACK
-            elif bpp != 4 and color_map == 3:
-                area.color = NbglColor.WHITE
-                color_map = 0
-
         if transformation == 0:
             x = area.x0 + area.width - 1
             y = area.y0
