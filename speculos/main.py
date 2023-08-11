@@ -106,11 +106,20 @@ def get_elf_infos(app_path):
         svc_cx_call_symbol = symtab.get_symbol_by_name("SVC_cx_call")
         if svc_cx_call_symbol is not None:
             svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
+        # Check where are located fonts in .elf file (LNX/LNS+ only)
+        # (Stax fonts are loaded at a known location: STAX_FONTS_ARRAY_ADDR)
+        fonts_addr = 0
+        fonts_size = 0
+        bagl_fonts_symbol = symtab.get_symbol_by_name('C_bagl_fonts')
+        if bagl_fonts_symbol is not None:
+            fonts_addr = bagl_fonts_symbol[0]['st_value']
+            fonts_size = bagl_fonts_symbol[0]['st_size']
+            print(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
 
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, svc_call_addr, svc_cx_call_addr
+    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
 
 
 def get_cx_infos(app_path):
@@ -171,7 +180,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
-            text_load_addr, svc_call_address, svc_cx_call_address = get_elf_infos(lib_path)
+            text_load_addr, svc_call_address, svc_cx_call_address, \
+            fonts_addr, fonts_size = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
@@ -182,6 +192,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         lib_arg = f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}'
         lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
         lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
+        lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
         argv.append(lib_arg)
 
     if args.model == 'blue':

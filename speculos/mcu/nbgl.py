@@ -256,10 +256,11 @@ class NBGL(GraphicLibrary):
         - compressed bitmap (buffer_len)
         - foreground_color (1 byte)
         - nb_skipped_bytes (1 byte)
+        - character (4 bytes) [added by speculos syscall]
         """
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
-        bitmap = data[nbgl_area_t.sizeof():-2]
+        bitmap = data[nbgl_area_t.sizeof():-6]
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
         # We may have to skip initial transparent pixels (bytes, in that case)
         nb_skipped_bytes = data[nbgl_area_t.sizeof() + len(bitmap) + 1]

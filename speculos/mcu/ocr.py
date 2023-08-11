@@ -170,10 +170,8 @@ class OCR:
 
             if len(self.json_fonts) != 0:
                 self.legacy = False
-            else:
-                logger = logging.getLogger("OCR")
-                logger.warning("WARNING: didn't find any JSON font files => "
-                               "OCR will not work properly!\n")
+            # With API_LEVEL >= 13, we don't need JSON files anymore for 'OCR'
+            # => no need to display an error message if they are missing
 
     def get_json_font(self, name, struct_name) -> None:
         """
@@ -277,6 +275,26 @@ class OCR:
         self.events[-1].y = y1
         self.events[-1].h = y2 - y1 + 1
 
+    def add_character(self, x: int, y: int, w: int, h: int, char: str) -> None:
+        """
+        Add the provided character to previous event or create a new one
+        """
+        # Compute difference with X coord from previous event
+        # if x_diff > self.max_blank_space the char is not on same sentence
+        if self.events:
+            x_diff = x - (self.events[-1].x + self.events[-1].w)
+            if x_diff < 0:
+                x_diff = -x_diff
+            # Try to find if that char can be added to previous event
+            if y < (self.events[-1].y + self.events[-1].h) \
+               and x_diff < self.max_blank_space:
+                # Add this character to previous event
+                self.store_char_in_last_event(x, y, w, h, char)
+                return
+
+        # create a new TextEvent if there are no events yet or if there is a new line
+        self.events.append(TextEvent(char, x, y, w, h))
+
     def find_bitmap(self, x: int, y: int, w: int, h: int, bitmap: bytes) -> None:
         """
         Check if provided bitmap is identical to a char in loaded fonts.
@@ -288,20 +306,7 @@ class OCR:
             char = self.find_char_from_bitmap(bitmap)
         if char:
             # a char was found: is it on the same line than previous one?
-            # Compute difference with X coord from previous event
-            # if x_diff > self.max_blank_space the char is not on same sentence
-            if self.events:
-                x_diff = x - (self.events[-1].x + self.events[-1].w)
-                if x_diff < 0:
-                    x_diff = -x_diff
-            # Try to find if that char can be added to previous event
-            if self.events and y < (self.events[-1].y + self.events[-1].h) \
-               and x_diff < self.max_blank_space:
-                # Add this character to previous event
-                self.store_char_in_last_event(x, y, w, h, char)
-            else:
-                # create a new TextEvent if there are no events yet or if there is a new line
-                self.events.append(TextEvent(char, x, y, w, h))
+            self.add_character(x, y, w, h, char)
 
     def analyze_bitmap(self, data: bytes) -> None:
         """
@@ -315,9 +320,11 @@ class OCR:
             # - area (sizeof(nbgl_area_t))
             # - compressed bitmap (buffer_len)
             # - 2 bytes of different meaning depending on SephTag
+            # - 4 bytes with unicode code point of displayed character
             area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
             x, y, w, h = area.x0, area.y0, area.width, area.height
-            bitmap = data[nbgl_area_t.sizeof():-2]
+            character = int.from_bytes(data[-4:], byteorder="little", signed=False)
+            bitmap = data[nbgl_area_t.sizeof():-6]
         else:
             if data[0] != 0:
                 return
@@ -327,15 +334,25 @@ class OCR:
             w = int.from_bytes(data[5:7], byteorder="big", signed=True)
             h = int.from_bytes(data[7:9], byteorder="big", signed=True)
             bpp = int.from_bytes(data[9:10], byteorder="big")
+            character = int.from_bytes(data[10:14], byteorder="big", signed=False)
             color_size = 4 * (1 << bpp)
-            bitmap = data[10+color_size:]
+            bitmap = data[14+color_size:]
 
             # h may no reflect the real height: use number of lines displayed
             h = (len(bitmap) * 8) // w
             if (len(bitmap) * 8) % w:
                 h += 1
 
-        if self.legacy:
+        # Space is now encoded as an empty character (no 'space' wasted :)
+        if len(bitmap) == 0:
+            character = 32
+
+        # If data contains a character, don't bother doing OCR, just store it!
+        if character != 0:
+            char = chr(character)
+            print(f"Got character '{char}'\n")
+            self.add_character(x, y, w, h, char)
+        elif self.legacy:
             self.find_bitmap_legacy(x, y, w, h, bitmap)
         else:
             self.find_bitmap(x, y, w, h, bitmap)
@@ -343,4 +360,7 @@ class OCR:
     def get_events(self) -> List[TextEvent]:
         events = self.events.copy()
         self.events = []
+        if len(events) != 0:
+            for event in events:
+                print(event)
         return events

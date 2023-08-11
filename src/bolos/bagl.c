@@ -3,6 +3,7 @@
 
 #include "bagl.h"
 #include "emulate.h"
+#include "fonts.h"
 
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START 0x00
 #define SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_CONT  0x01
@@ -72,6 +73,14 @@ unsigned long sys_bagl_hal_draw_rect(unsigned int color, int x, int y,
     dst[offset++] = value & 0xff;                                              \
   } while (0)
 
+#define IBE(value, dst, offset)                                                \
+  do {                                                                         \
+    dst[offset++] = (value >> 24) & 0xff;                                      \
+    dst[offset++] = (value >> 16) & 0xff;                                      \
+    dst[offset++] = (value >> 8) & 0xff;                                       \
+    dst[offset++] = value & 0xff;                                              \
+  } while (0)
+
 size_t build_chunk(uint8_t *buf, size_t *offset, size_t size,
                    const uint8_t *bitmap, const size_t bitmap_length)
 {
@@ -92,7 +101,7 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
   size_t i, len, size;
   uint8_t buf[300 - 4]; /* size limit in io_seph_send */
   uint8_t header[4];
-
+  uint32_t character = get_character_from_bitmap(bitmap);
   size = 0;
 
   HBE(x, buf, size);
@@ -101,6 +110,8 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
   HBE(height, buf, size);
 
   buf[size++] = bit_per_pixel;
+
+  IBE(character, buf, size);
 
   if (size + color_count * sizeof(unsigned int) > sizeof(buf)) {
     errx(1, "color overflow in sys_bagl_hal_draw_bitmap_within_rect\n");

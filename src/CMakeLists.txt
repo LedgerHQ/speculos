@@ -31,6 +31,7 @@ add_library(emu
         bolos/cx_weierstrass.c
         bolos/cxlib.c
         bolos/bagl.c
+        bolos/fonts_info.c
         bolos/nbgl.c
         bolos/nbgl_rle.c
         bolos/touch.c

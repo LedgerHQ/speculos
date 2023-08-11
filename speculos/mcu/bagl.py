@@ -618,13 +618,14 @@ class Bagl(GraphicLibrary):
             w = int.from_bytes(data[5:7], byteorder='big')
             h = int.from_bytes(data[7:9], byteorder='big')
             bpp = int.from_bytes(data[9:10], byteorder='big')
+            # character = data[10:14]     # Added by speculos syscall (unused here)
 
             color_size = 4 * (1 << bpp)
             colors = []
-            for i in range(10, 10 + color_size, 4):
+            for i in range(14, 14 + color_size, 4):
                 color = int.from_bytes(data[i:i+4], byteorder='little')
                 colors.append(color)
-            bitmap = data[10+color_size:]
+            bitmap = data[14+color_size:]
 
             self.hal_draw_bitmap_within_rect(x, y, w, h, colors, bpp, list(bitmap))
 
