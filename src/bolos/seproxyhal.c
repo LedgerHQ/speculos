@@ -11,7 +11,7 @@
 #define SEPROXYHAL_TAG_STATUS_MASK    0xF0
 #define SEPROXYHAL_TAG_GENERAL_STATUS 0x60
 
-static bool tx_status = true;
+static bool tx_status = false;
 static uint32_t rx_length = 0;
 static uint8_t last_tag;
 static size_t next_length;
