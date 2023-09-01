@@ -10,7 +10,6 @@ include speculos/api/static/swagger/*.json
 include speculos/api/static/swagger/*.md
 include speculos/cxlib/*.elf
 include speculos/fonts/*.bin
-include speculos/fonts/*.json
 include speculos/mcu/resources/*.schema
 include speculos/resources/launcher
 include speculos/resources/vnc_server
