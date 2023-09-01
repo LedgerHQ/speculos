@@ -114,12 +114,13 @@ def get_elf_infos(app_path):
         if bagl_fonts_symbol is not None:
             fonts_addr = bagl_fonts_symbol[0]['st_value']
             fonts_size = bagl_fonts_symbol[0]['st_size']
-            print(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
+            logger.info(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
 
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
+    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, \
+        svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
 
 
 def get_cx_infos(app_path):

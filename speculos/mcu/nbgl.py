@@ -260,7 +260,7 @@ class NBGL(GraphicLibrary):
         """
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
-        bitmap = data[nbgl_area_t.sizeof():-6]
+        bitmap = data[nbgl_area_t.sizeof():-(1+1+4)]
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
         # We may have to skip initial transparent pixels (bytes, in that case)
         nb_skipped_bytes = data[nbgl_area_t.sizeof() + len(bitmap) + 1]

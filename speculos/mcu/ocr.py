@@ -118,7 +118,8 @@ def _get_font_map(font: bagl_font.Font) -> Mapping[Char, BitMapChar]:
 class OCR:
 
     # Maximum space for a letter to be considered part of the same word
-    MAX_BLANK_SPACE = 12
+    MAX_BLANK_SPACE_NANO = 12
+    MAX_BLANK_SPACE_STAX = 24
 
     def __init__(self, model: str):
         self.events: List[TextEvent] = []
@@ -126,9 +127,9 @@ class OCR:
         self.model = model
         # Maximum space for a letter to be considered part of the same word
         if model == "stax":
-            self.max_blank_space = 24   # Characters are bigger on Stax
+            self.max_blank_space = OCR.MAX_BLANK_SPACE_STAX
         else:
-            self.max_blank_space = OCR.MAX_BLANK_SPACE
+            self.max_blank_space = OCR.MAX_BLANK_SPACE_NANO
 
     @staticmethod
     def find_char_from_bitmap(bitmap: BitMap) -> str:
@@ -210,7 +211,7 @@ class OCR:
     def analyze_bitmap(self, data: bytes) -> None:
         """
         data contain information about the latest displayed bitmap.
-        Since unified SDK, speculos added the displayd character to data.
+        Since unified SDK, speculos added the displayed character to data.
         For older SKD versions, legacy behaviour is used: parsing internal
         fonts to find a matching bitmap.
         """
@@ -224,7 +225,7 @@ class OCR:
             area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
             x, y, w, h = area.x0, area.y0, area.width, area.height
             character = int.from_bytes(data[-4:], byteorder="little", signed=False)
-            bitmap = data[nbgl_area_t.sizeof():-6]
+            bitmap = data[nbgl_area_t.sizeof():-(2+4)]
         else:
             if data[0] != 0:
                 return

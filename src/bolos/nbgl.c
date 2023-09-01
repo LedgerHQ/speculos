@@ -3,9 +3,9 @@
 #include <string.h>
 
 #include "emulate.h"
+#include "fonts.h"
 #include "nbgl.h"
 #include "nbgl_rle.h"
-#include "fonts.h"
 
 #define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0xFA
 #define SEPROXYHAL_TAG_NBGL_REFRESH         0xFB
@@ -48,10 +48,10 @@ unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
   return 0;
 }
 
-static unsigned long sys_nbgl_front_draw_img_character(nbgl_area_t *area, uint8_t *buffer,
-                                                       nbgl_transformation_t transformation,
-                                                       nbgl_color_map_t colorMap,
-                                                       uint32_t character)
+static unsigned long
+nbgl_front_draw_img_character(nbgl_area_t *area, uint8_t *buffer,
+                              nbgl_transformation_t transformation,
+                              nbgl_color_map_t colorMap, uint32_t character)
 {
   uint8_t header[3];
   uint8_t bpp = 1 << area->bpp;
@@ -79,7 +79,8 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
 {
   // Try to find the character corresponding to provided bitmap
   uint32_t character = get_character_from_bitmap(buffer);
-  return sys_nbgl_front_draw_img_character(area, buffer, transformation, colorMap, character);
+  return nbgl_front_draw_img_character(area, buffer, transformation, colorMap,
+                                       character);
 }
 
 unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area)
@@ -167,7 +168,8 @@ unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
                       sizeof(uncompress_rle_buffer));
 
   // Now send it as if it was an uncompressed image
-  sys_nbgl_front_draw_img_character(area, uncompress_rle_buffer, NO_TRANSFORMATION, fore_color, character);
+  nbgl_front_draw_img_character(area, uncompress_rle_buffer, NO_TRANSFORMATION,
+                                fore_color, character);
 
   return 0;
 }
