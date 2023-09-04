@@ -241,9 +241,7 @@ class SocketHelper(threading.Thread):
 class SeProxyHal(IODevice):
     def __init__(self,
                  sock: socket,
-                 fonts_path: str,
                  model: str,
-                 api_level: int,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: str = 'hid'):
@@ -264,7 +262,7 @@ class SeProxyHal(IODevice):
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
-        self.ocr = OCR(fonts_path, model, api_level)
+        self.ocr = OCR(model)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable[[bytes], None]] = []

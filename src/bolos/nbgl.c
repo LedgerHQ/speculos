@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "emulate.h"
+#include "fonts.h"
 #include "nbgl.h"
 #include "nbgl_rle.h"
 
@@ -12,12 +13,6 @@
 #define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0xFD
 #define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0xFE
 #define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE  0xFF
-
-#define HBE(value, dst, offset)                                                \
-  do {                                                                         \
-    dst[offset++] = (value >> 8) & 0xff;                                       \
-    dst[offset++] = value & 0xff;                                              \
-  } while (0)
 
 unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area)
 {
@@ -53,15 +48,16 @@ unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
   return 0;
 }
 
-unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
-                                      nbgl_transformation_t transformation,
-                                      nbgl_color_map_t colorMap)
+static unsigned long
+nbgl_front_draw_img_character(nbgl_area_t *area, uint8_t *buffer,
+                              nbgl_transformation_t transformation,
+                              nbgl_color_map_t colorMap, uint32_t character)
 {
   uint8_t header[3];
   uint8_t bpp = 1 << area->bpp;
   uint32_t nb_pixs = (area->width * area->height * bpp);
   uint32_t buffer_len = (nb_pixs / 8) + ((nb_pixs % 8) > 0);
-  size_t len = sizeof(nbgl_area_t) + buffer_len + 2;
+  size_t len = sizeof(nbgl_area_t) + buffer_len + 1 + 1 + 4;
 
   header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE;
   header[1] = (len >> 8) & 0xff;
@@ -72,8 +68,19 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
   sys_io_seph_send(buffer, buffer_len);
   sys_io_seph_send((const uint8_t *)&transformation, 1);
   sys_io_seph_send((const uint8_t *)&colorMap, 1);
+  sys_io_seph_send((const uint8_t *)&character, 4);
 
   return 0;
+}
+
+unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
+                                      nbgl_transformation_t transformation,
+                                      nbgl_color_map_t colorMap)
+{
+  // Try to find the character corresponding to provided bitmap
+  uint32_t character = get_character_from_bitmap(buffer);
+  return nbgl_front_draw_img_character(area, buffer, transformation, colorMap,
+                                       character);
 }
 
 unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area)
@@ -132,14 +139,12 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
   return 0;
 }
 
-#define FONTS_ARRAY_ADDR 0x00805000
-#define NB_FONTS         7
 unsigned long sys_nbgl_get_font(unsigned int fontId)
 {
-  if (fontId >= NB_FONTS) {
+  if (fontId >= STAX_NB_FONTS) {
     return 0;
   } else {
-    return *((unsigned int *)(FONTS_ARRAY_ADDR + (4 * fontId)));
+    return *((unsigned int *)(STAX_FONTS_ARRAY_ADDR + (4 * fontId)));
   }
 }
 
@@ -155,13 +160,17 @@ unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
                                                  uint32_t buffer_len,
                                                  color_t fore_color)
 {
+  // Try to find the character corresponding to provided bitmap
+  uint32_t character = get_character_from_bitmap(buffer);
+
   // Uncompress input buffer
   nbgl_uncompress_rle(area, buffer, buffer_len, uncompress_rle_buffer,
                       sizeof(uncompress_rle_buffer));
 
   // Now send it as if it was an uncompressed image
-  sys_nbgl_front_draw_img(area, uncompress_rle_buffer, NO_TRANSFORMATION,
-                          fore_color);
+  nbgl_front_draw_img_character(area, uncompress_rle_buffer, NO_TRANSFORMATION,
+                                fore_color, character);
+
   return 0;
 }
 
@@ -177,9 +186,11 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
                                           color_t fore_color,
                                           uint8_t nb_skipped_bytes)
 {
+  // Try to find the character corresponding to provided bitmap
+  uint32_t character = get_character_from_bitmap(buffer);
   // We need to keep data compressed to be able to compare with fonts bitmaps
   uint8_t header[3];
-  size_t len = sizeof(nbgl_area_t) + buffer_len + 1 + 1;
+  size_t len = sizeof(nbgl_area_t) + buffer_len + 1 + 1 + 4;
 
   header[0] = SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE;
   header[1] = (len >> 8) & 0xff;
@@ -190,6 +201,7 @@ unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
   sys_io_seph_send(buffer, buffer_len);
   sys_io_seph_send((const uint8_t *)&fore_color, 1);
   sys_io_seph_send((const uint8_t *)&nb_skipped_bytes, 1);
+  sys_io_seph_send((const uint8_t *)&character, 4);
 
   return 0;
 }

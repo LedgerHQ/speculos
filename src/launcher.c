@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "emulate.h"
+#include "fonts.h"
 #include "svc.h"
 
 #define LOAD_ADDR     ((void *)0x40000000)
@@ -32,6 +33,8 @@ struct elf_info_s {
   unsigned long svc_call_addr;
   unsigned long svc_cx_call_addr;
   unsigned long text_load_addr;
+  unsigned long fonts_addr;
+  unsigned long fonts_size;
 };
 
 struct app_s {
@@ -126,6 +129,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   apps[napp].elf.svc_call_addr = elf->svc_call_addr;
   apps[napp].elf.svc_cx_call_addr = elf->svc_cx_call_addr;
   apps[napp].elf.text_load_addr = elf->text_load_addr;
+  apps[napp].elf.fonts_addr = elf->fonts_addr;
+  apps[napp].elf.fonts_size = elf->fonts_size;
 
   napp++;
 
@@ -428,17 +433,17 @@ static int load_fonts(char *fonts_path)
 
   if (sdk_version == SDK_API_LEVEL_1 || sdk_version == SDK_API_LEVEL_3 ||
       sdk_version == SDK_API_LEVEL_5) {
-    load_addr = 0x00805000;
+    load_addr = STAX_FONTS_ARRAY_ADDR;
     load_size = 20480;
   } else if (sdk_version == SDK_API_LEVEL_7) {
-    load_addr = 0x00805000;
+    load_addr = STAX_FONTS_ARRAY_ADDR;
     load_size = 45056;
   } else if ((sdk_version == SDK_API_LEVEL_8 ||
               sdk_version == SDK_API_LEVEL_9 ||
               sdk_version == SDK_API_LEVEL_10 ||
               sdk_version == SDK_API_LEVEL_11 ||
               sdk_version == SDK_API_LEVEL_12)) {
-    load_addr = 0x00805000;
+    load_addr = STAX_FONTS_ARRAY_ADDR;
     load_size = 40960;
   } else {
     warn("Invalid sdk version for fonts");
@@ -534,6 +539,10 @@ static int run_app(char *name, unsigned long *parameters)
 
   app = get_current_app();
 
+  // Parse fonts and build bitmap -> character table
+  parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
+              app->elf.fonts_size);
+
   /* thumb mode */
   f = (void *)((unsigned long)p | 1);
   stack_end = app->elf.stack_addr;
@@ -590,11 +599,12 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
     err(1, "strdup");
   }
 
-  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx",
-               libname, *filename, &elf->load_offset, &elf->load_size,
-               &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
-               &elf->svc_cx_call_addr, &elf->text_load_addr);
-  if (ret != 9) {
+  ret = sscanf(
+      arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx",
+      libname, *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr,
+      &elf->stack_size, &elf->svc_call_addr, &elf->svc_cx_call_addr,
+      &elf->text_load_addr, &elf->fonts_addr, &elf->fonts_size);
+  if (ret != 11) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
