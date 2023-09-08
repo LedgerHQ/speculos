@@ -14,7 +14,7 @@
 // (They are defined in the SDK, in lib_bagl/include/bagl.h
 // ============================================================================
 
-// Latest (SDK_API_LEVEL_12)
+// Latest (starting from SDK_API_LEVEL_12)
 typedef struct {
   uint32_t encoding : 2;
   uint32_t bitmap_offset : 12;

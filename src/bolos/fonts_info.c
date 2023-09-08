@@ -182,6 +182,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   case SDK_API_LEVEL_1:
   case SDK_API_LEVEL_5:
   case SDK_API_LEVEL_12:
+  case SDK_API_LEVEL_13:
     break;
   default:
     // Unsupported API_LEVEL, will not parse fonts!

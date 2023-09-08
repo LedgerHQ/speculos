@@ -442,7 +442,8 @@ static int load_fonts(char *fonts_path)
               sdk_version == SDK_API_LEVEL_9 ||
               sdk_version == SDK_API_LEVEL_10 ||
               sdk_version == SDK_API_LEVEL_11 ||
-              sdk_version == SDK_API_LEVEL_12)) {
+              sdk_version == SDK_API_LEVEL_12 ||
+              sdk_version == SDK_API_LEVEL_13)) {
     load_addr = STAX_FONTS_ARRAY_ADDR;
     load_size = 40960;
   } else {
@@ -654,6 +655,8 @@ static sdk_version_t apilevelstr2sdkver(const char *api_level_arg)
     return SDK_API_LEVEL_11;
   } else if (strcmp("12", api_level_arg) == 0) {
     return SDK_API_LEVEL_12;
+  } else if (strcmp("13", api_level_arg) == 0) {
+    return SDK_API_LEVEL_13;
   } else {
     return SDK_COUNT;
   }
@@ -804,7 +807,7 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_7 &&
         sdk_version != SDK_API_LEVEL_8 && sdk_version != SDK_API_LEVEL_9 &&
         sdk_version != SDK_API_LEVEL_10 && sdk_version != SDK_API_LEVEL_11 &&
-        sdk_version != SDK_API_LEVEL_12) {
+        sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13) {
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
@@ -827,7 +830,7 @@ int main(int argc, char *argv[])
       sdk_version == SDK_API_LEVEL_5 || sdk_version == SDK_API_LEVEL_7 ||
       sdk_version == SDK_API_LEVEL_8 || sdk_version == SDK_API_LEVEL_9 ||
       sdk_version == SDK_API_LEVEL_10 || sdk_version == SDK_API_LEVEL_11 ||
-      sdk_version == SDK_API_LEVEL_12) {
+      sdk_version == SDK_API_LEVEL_12 || sdk_version == SDK_API_LEVEL_13) {
     if (load_cxlib(cxlib_path) != 0) {
       return 1;
     }
