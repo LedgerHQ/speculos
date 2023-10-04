@@ -541,10 +541,8 @@ static int run_app(char *name, unsigned long *parameters)
   app = get_current_app();
 
   // Parse fonts and build bitmap -> character table
-  if ((app->elf.fonts_addr != 0) || (hw_model == MODEL_STAX)) {
-    parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
-                app->elf.fonts_size);
-  }
+  parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
+              app->elf.fonts_size);
 
   /* thumb mode */
   f = (void *)((unsigned long)p | 1);
