@@ -1167,6 +1167,19 @@ cx_err_t cx_mpi_next_prime(cx_mpi_t *x)
   return error;
 }
 
+cx_err_t cx_mpi_gf2_n_mul(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *b,
+                          const cx_mpi_t *n,
+                          const cx_mpi_t *h __attribute__((unused)))
+{
+  cx_err_t error = CX_OK; // By default, until some error occurs
+
+  if (!BN_GF2m_mod_mul(r, a, b, n, local_bn_ctx)) {
+    error = CX_INTERNAL_ERROR;
+  }
+
+  return error;
+}
+
 #define MAX_BYTE_LEN 128
 void cx_mpi_reverse(cx_mpi_t *x, uint32_t nbytes)
 {
