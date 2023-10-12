@@ -520,6 +520,9 @@ def main(prog=None) -> int:
 
     screen_notifier.run()
 
+    if apirun is not None:
+        apirun.stop()
+
     s2.close()
     _, status = os.waitpid(qemu_pid, 0)
     qemu_exit_status = os.WEXITSTATUS(status)

@@ -30,6 +30,7 @@ class ApiRunner(IODevice):
         self._notify_exit: socket.socket
         self.sock, self._notify_exit = socket.socketpair()
         self.api_port: int = api_port
+        self._api_thread: threading.Thread
 
     @property
     def file(self):
@@ -55,8 +56,11 @@ class ApiRunner(IODevice):
                             automation_server: BroadcastInterface) -> None:
         wrapper = ApiWrapper(screen_, seph_, automation_server)
         self._app = wrapper.app
-        api_thread = threading.Thread(target=self._run, name="API-server", daemon=True)
-        api_thread.start()
+        self._api_thread = threading.Thread(target=self._run, name="API-server", daemon=True)
+        self._api_thread.start()
+
+    def stop(self):
+        self._api_thread.join(10)
 
 
 class ApiWrapper:
