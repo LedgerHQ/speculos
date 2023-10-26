@@ -17,6 +17,8 @@
 #include "svc.h"
 
 #define LOAD_ADDR     ((void *)0x40000000)
+#define LINK_RAM_ADDR (0xda7a0000)
+#define LOAD_RAM_ADDR (0x50000000)
 #define MAX_APP       16
 #define MAIN_APP_NAME "main"
 
@@ -299,6 +301,11 @@ static void *load_app(char *name)
   data_addr = get_lower_page_aligned_addr(app->elf.stack_addr);
   data_size = get_upper_page_aligned_size(
       app->elf.stack_size + app->elf.stack_addr - (unsigned long)data_addr);
+  if (app->elf.stack_addr == LINK_RAM_ADDR) {
+    // Emulate RAM relocation
+    data_addr = (void *)LOAD_RAM_ADDR;
+    data_size = get_upper_page_aligned_size(app->elf.stack_size);
+  }
 
   /* load code
    * map an extra page in case the _install_params are mapped in the beginning
@@ -547,7 +554,11 @@ static int run_app(char *name, unsigned long *parameters)
   /* thumb mode */
   f = (void *)((unsigned long)p | 1);
   stack_end = app->elf.stack_addr;
-  stack_start = app->elf.stack_addr + app->elf.stack_size;
+  if (app->elf.stack_addr == LINK_RAM_ADDR) {
+    // Emulate RAM relocation
+    stack_end = LOAD_RAM_ADDR;
+  }
+  stack_start = stack_end + app->elf.stack_size;
 
   asm volatile("mov r0, %2\n"
                "mov r9, %1\n"
