@@ -134,6 +134,8 @@ cx_err_t cx_mpi_mod_pow(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *e,
                         const cx_mpi_t *n);
 cx_err_t cx_mpi_is_prime(cx_mpi_t *x, bool *prime);
 cx_err_t cx_mpi_next_prime(cx_mpi_t *x);
+cx_err_t cx_mpi_gf2_n_mul(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *b,
+                          const cx_mpi_t *n, const cx_mpi_t *h);
 void cx_mpi_reverse(cx_mpi_t *x, uint32_t nbytes);
 void cx_mpi_swap(cx_mpi_t *a, cx_mpi_t *b, const int c);
 
@@ -196,6 +198,9 @@ cx_err_t sys_cx_bn_mod_pow2(cx_bn_t bn_r, const cx_bn_t bn_a, const uint8_t *e,
                             uint32_t len_e, const cx_bn_t bn_n);
 cx_err_t sys_cx_bn_is_prime(const cx_bn_t bn_x, bool *prime);
 cx_err_t sys_cx_bn_next_prime(const cx_bn_t bn_x);
+cx_err_t sys_cx_bn_gf2_n_mul(cx_bn_t bn_r, const cx_bn_t bn_a,
+                             const cx_bn_t bn_b, const cx_bn_t bn_n,
+                             const cx_bn_t bn_h);
 
 // cx_ecdomain.c
 int cx_nid_from_curve(cx_curve_t curve);

@@ -481,3 +481,21 @@ cx_err_t sys_cx_bn_next_prime(const cx_bn_t bn_x)
 end:
   return error;
 }
+
+cx_err_t sys_cx_bn_gf2_n_mul(cx_bn_t bn_r, const cx_bn_t bn_a,
+                             const cx_bn_t bn_b, const cx_bn_t bn_n,
+                             const cx_bn_t bn_h)
+{
+  cx_err_t error = CX_OK; // By default, until some error occurs
+  cx_mpi_t *r, *a, *b, *n, *h;
+
+  // Convert bn to mpi
+  CX_CHECK(cx_bn_rab_to_mpi(bn_r, &r, bn_a, &a, bn_b, &b));
+  CX_CHECK(cx_bn_ab_to_mpi(bn_n, &n, bn_h, &h));
+
+  // Perform a Galois field multiplication operation reduced by n
+  CX_CHECK(cx_mpi_gf2_n_mul(r, a, b, n, h));
+
+end:
+  return error;
+}

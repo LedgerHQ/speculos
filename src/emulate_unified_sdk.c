@@ -524,6 +524,13 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
     SYSCALL1(cx_bn_next_prime, "(%u)",
              uint32_t, a);
 
+    SYSCALL5(cx_bn_gf2_n_mul, "(%u, %u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             uint32_t, n,
+             uint32_t, h);
+
     SYSCALL10(cx_bls12381_key_gen, "(%u, %p, %u, %p, %u, %p, %u, %p, %p, %u)",
               uint8_t, mode,
               uint8_t *, secret,

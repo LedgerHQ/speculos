@@ -266,6 +266,9 @@ int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
 
     SYSCALL1(cx_bn_next_prime, "(%u)", uint32_t, a);
 
+    SYSCALL5(cx_bn_gf2_n_mul, "(%u, %u, %u, %u, %u)", uint32_t, r, uint32_t, a,
+             uint32_t, b, uint32_t, n, uint32_t, h);
+
     // SYSCALLs that may exists on other SDK versions, but with a different ID:
 
     SYSCALL0i(os_perso_isonboarded, os_perso_isonboarded_2_0);
