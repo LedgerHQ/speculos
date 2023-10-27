@@ -197,6 +197,11 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     nb_fonts = fonts_size / 4;
   }
 
+  // There is no font or we don't know its format
+  if (!nb_fonts) {
+    return;
+  }
+
   // Checks that fonts & nb_fonts are coherent
   if (fonts[nb_fonts] != nb_fonts) {
     fprintf(stdout, "ERROR: Expecting nb_fonts=%u and found %u instead!\n",

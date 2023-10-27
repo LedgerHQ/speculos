@@ -10,7 +10,7 @@
 #ifndef NATIVE_64BITS // NO 64BITS
 /** 64bits types, native or by-hands, depending on target and/or compiler
  * support.
- * This type is defined here only because sha-3 struct used it INTENALLY.
+ * This type is defined here only because sha-3 struct used it INTERNALLY.
  * It should never be directly used by other modules.
  */
 struct uint64_s {

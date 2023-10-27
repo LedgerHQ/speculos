@@ -115,6 +115,8 @@ def get_elf_infos(app_path):
             fonts_addr = bagl_fonts_symbol[0]['st_value']
             fonts_size = bagl_fonts_symbol[0]['st_size']
             logger.info(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
+        else:
+            logger.info("Disabling OCR.")
 
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
@@ -517,6 +519,9 @@ def main(prog=None) -> int:
         apirun.start_server_thread(screen_notifier, seph, automation_server)
 
     screen_notifier.run()
+
+    if apirun is not None:
+        apirun.stop()
 
     s2.close()
     _, status = os.waitpid(qemu_pid, 0)

@@ -33,17 +33,49 @@ being merged to `master`:
 
 ## Limitations
 
-The emulator handles only a few syscalls made by common apps; for instance,
+There is absolutely no guarantee that apps will have the same behavior on
+hardware devices and Speculos, though the differences are limited.
+
+### Syscalls
+
+The emulator handles only a few syscalls made by common apps. For instance,
 syscalls related to app install, firmware update or OS info can't be
 implemented.
 
-There is absolutely no guarantee that apps will have the same behavior on
-hardware devices and Speculos:
+Invalid syscall parameters might throw an exception on a real device while
+being ignored on Speculos.
+Notably, this is the case for application allowed derivation path and curve and
+application settings flags which are enforced by the device OS, but ignored by
+Speculos.
 
-- Invalid syscall parameters might throw an exception on a real device while
-  being ignored on Speculos.
-- Attempts to perform unaligned accesses when not allowed (eg. dereferencing a
-  misaligned pointer) will cause an alignment fault on a hardware device.
+### Memory alignment
+
+Attempts to perform unaligned accesses when not allowed (eg. dereferencing a
+misaligned pointer) will cause an alignment fault on a Ledger Nano S device but
+not on Speculos. Note that such unaligned accesses are supported by other
+Ledger devices.
+
+Following code crashes on LNS device, but not on Speculos nor on other devices.
+```
+uint8_t buffer[20];
+for (int i = 0; i < 20; i++) {
+    buffer[i] = i;
+}
+uint32_t display_value = *((uint32_t*) (buffer + 1));
+PRINTF("display_value: %d\n", display_value);
+```
+
+### Watchdog
+
+NanoX and Stax devices use an internal watchdog enforcing usage of regular
+calls to `io_seproxyhal_io_heartbeat();`. This watchdog is not emulated on
+Speculos.
+
+### Pending review screen
+
+The C SDK offers a feature to display a warning screen upon app launch
+indicating that the app has not been reviewed.
+As the `_install_parameters` are not handled by Speculos, the screen won't be displayed.
 
 
 ## Security
