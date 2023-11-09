@@ -7,7 +7,7 @@
 #include "bolos/cxlib.h"
 
 //-----------------------------------------------------------------------------
-static cx_aes_key_t local_aes_key;
+static AES_KEY local_aes_key;
 static bool local_aes_ready;
 static uint32_t local_aes_mode;
 
@@ -16,7 +16,19 @@ static uint32_t local_aes_mode;
 //-----------------------------------------------------------------------------
 cx_err_t sys_cx_aes_set_key_hw(const cx_aes_key_t *key, uint32_t mode)
 {
-  memcpy(&local_aes_key, key, sizeof(local_aes_key));
+  switch (mode) {
+  case CX_ENCRYPT:
+  case CX_SIGN:
+  case CX_VERIFY:
+    AES_set_encrypt_key(key->keys, (int)key->size * 8, &local_aes_key);
+    break;
+  case CX_DECRYPT:
+    AES_set_decrypt_key(key->keys, (int)key->size * 8, &local_aes_key);
+    break;
+  default:
+    local_aes_ready = false;
+    return CX_INVALID_PARAMETER;
+  }
   local_aes_mode = mode;
   local_aes_ready = true;
 
@@ -26,26 +38,21 @@ cx_err_t sys_cx_aes_set_key_hw(const cx_aes_key_t *key, uint32_t mode)
 cx_err_t sys_cx_aes_block_hw(const unsigned char *inblock,
                              unsigned char *outblock)
 {
-  AES_KEY aes_key;
 
   if (!local_aes_ready) {
     return CX_INTERNAL_ERROR;
   }
   if ((local_aes_mode & CX_MASK_SIGCRYPT) == CX_DECRYPT) {
-    AES_set_decrypt_key(local_aes_key.keys, (int)local_aes_key.size * 8,
-                        &aes_key);
-    AES_decrypt(inblock, outblock, &aes_key);
+    AES_decrypt(inblock, outblock, &local_aes_key);
   } else { // CX_SIGN, CX_VERIFY, CX_ENCRYPT:
-    AES_set_encrypt_key(local_aes_key.keys, (int)local_aes_key.size * 8,
-                        &aes_key);
-    AES_encrypt(inblock, outblock, &aes_key);
+    AES_encrypt(inblock, outblock, &local_aes_key);
   }
-  OPENSSL_cleanse(&aes_key, sizeof(aes_key));
 
   return CX_OK;
 }
 
 void sys_cx_aes_reset_hw(void)
 {
+  OPENSSL_cleanse(&local_aes_key, sizeof(local_aes_key));
   local_aes_ready = false;
 }
