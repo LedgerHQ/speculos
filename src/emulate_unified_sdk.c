@@ -16,6 +16,10 @@
 #define SYSCALL_HANDLED     1
 #define SYSCALL_NOT_HANDLED 0
 
+// Indicates whether the XOR in the CBC mode is implemented in the CX lib
+// or in the AES low level function
+extern bool hdw_cbc;
+
 /* Handle bagl related syscalls which behavior are defined in src/bolos/bagl.c
  */
 int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
@@ -166,8 +170,15 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
                        unsigned long *ret, bool verbose, sdk_version_t version,
                        hw_model_t model)
 {
-  (void)version;
   (void)model;
+
+  // Starting from API level 12, the XOR operation of the CBC mode
+  // is not in CX LIB anymore
+  // CBC mode must be implemented
+  // in the AES low level functions
+  if (version >= SDK_API_LEVEL_12) {
+    hdw_cbc = true;
+  }
 
   switch (syscall) {
     /* clang-format off */
