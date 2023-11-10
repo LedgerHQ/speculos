@@ -48,12 +48,17 @@ static cx_err_t cx_aes_block_hw_cbc(const unsigned char *inblock,
                                     unsigned char *outblock)
 {
   if (local_aes_op == CX_DECRYPT) {
+    uint8_t inblock_prev_value[AES_BLOCK_SIZE] = { 0 };
+    // If the same buffer is used for inblock and outblock
+    // save inblock value for next block encryption
+    memcpy(inblock_prev_value, inblock, AES_BLOCK_SIZE);
+
     AES_decrypt(inblock, outblock, &local_aes_key);
     // XOR the decryption result with aes_current_block
     cx_memxor(outblock, aes_current_block, AES_BLOCK_SIZE);
 
     // Store the input block for next block decryption
-    memcpy(aes_current_block, inblock, AES_BLOCK_SIZE);
+    memcpy(aes_current_block, inblock_prev_value, AES_BLOCK_SIZE);
   } else { // CX_SIGN, CX_VERIFY, CX_ENCRYPT:
 
     // Before the encryption, XOR the input block with the
