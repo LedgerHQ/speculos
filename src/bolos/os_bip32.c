@@ -478,6 +478,10 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
   const uint8_t *sk;
   int ret;
 
+  if (path == NULL) {
+    THROW(EXCEPTION);
+  }
+
   // In SDK2, some curves don't have the same value:
   switch ((int)curve) {
   case 0x71:
