@@ -112,17 +112,24 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
   uint8_t header[3];
 
   uint8_t compressed = buffer[4] & 0xF;
-  if (compressed && optional_uzlib_work_buffer == NULL) {
+  if (compressed == 1 && optional_uzlib_work_buffer == NULL) {
     fprintf(stderr, "no uzlib work buffer provided, failing");
     return 0;
   }
-
   size_t len = sizeof(nbgl_area_t) + 1;
-  size_t buffer_len;
-  if (compressed) {
-    buffer_len = (buffer[5] | (buffer[5 + 1] << 8) | (buffer[5 + 2] << 16)) + 8;
-  } else {
+  size_t buffer_len = 0;
+  switch (compressed) {
+  case 0: // no compression
     buffer_len = (area->width * area->height * (area->bpp + 1)) / 8;
+    break;
+  case 1: // gzlib compression
+    buffer_len = (buffer[5] | (buffer[5 + 1] << 8) | (buffer[5 + 2] << 16)) + 8;
+    break;
+  case 2: // rle compression
+    buffer_len = (buffer[5] | (buffer[5 + 1] << 8) | (buffer[5 + 2] << 16));
+    buffer += 8;
+    return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len,
+                                       ((colorMap >> (0 * 2)) & 0x3), 0);
   }
 
   len += buffer_len;

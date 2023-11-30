@@ -94,6 +94,25 @@ static void parse_nbgl_font(nbgl_font_t *nbgl_font)
   }
 }
 
+// Parse provided NBGL font and add bitmap/character pairs
+static void parse_nbgl_font_12(nbgl_font_t_12 *nbgl_font)
+{
+  uint8_t *bitmap = nbgl_font->bitmap;
+  nbgl_font_character_t_12 *characters = nbgl_font->characters;
+
+  for (uint32_t c = nbgl_font->first_char; c <= nbgl_font->last_char;
+       c++, characters++) {
+    // Be sure data is coherent
+    if (characters->bitmap_offset >= nbgl_font->bitmap_len) {
+      fprintf(stdout, "bitmap_offset (%d) is >= bitmap_len (%u)!\n",
+              characters->bitmap_offset, nbgl_font->bitmap_len);
+      return;
+    }
+    uint8_t *ptr = bitmap + characters->bitmap_offset;
+    add_bitmap_character(ptr, c);
+  }
+}
+
 // Parse provided BAGL font and add bitmap/character pairs
 static void parse_bagl_font(bagl_font_t *bagl_font, void *code,
                             unsigned long text_load_addr)
@@ -183,6 +202,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   case SDK_API_LEVEL_5:
   case SDK_API_LEVEL_12:
   case SDK_API_LEVEL_13:
+  case SDK_API_LEVEL_14:
     break;
   default:
     // Unsupported API_LEVEL, will not parse fonts!
@@ -217,7 +237,15 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   // Parse all those fonts and add bitmap/character pairs
   for (uint32_t i = 0; i < nb_fonts; i++) {
     if (hw_model == MODEL_STAX) {
-      parse_nbgl_font((void *)fonts[i]);
+      switch (sdk_version) {
+      case SDK_API_LEVEL_12:
+      case SDK_API_LEVEL_13:
+        parse_nbgl_font_12((void *)fonts[i]);
+        break;
+      default:
+        parse_nbgl_font((void *)fonts[i]);
+        break;
+      }
     } else {
       void *font = remap_addr(code, fonts[i], text_load_addr);
 
