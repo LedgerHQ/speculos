@@ -81,7 +81,7 @@ typedef struct {
 // (They are defined in the SDK, in lib_nbgl/include/nbgl_fonts.h
 // ============================================================================
 
-// Current API_LEVEL (12)
+// Current API_LEVEL (14)
 typedef struct {
   uint32_t encoding : 1;
   uint32_t bitmap_offset : 14;
@@ -98,6 +98,7 @@ typedef struct {
   uint8_t bpp;
   uint8_t height;
   uint8_t line_height;
+  uint8_t char_kerning;
   uint8_t crop;
   uint8_t y_min;
   uint8_t first_char;
@@ -105,6 +106,31 @@ typedef struct {
   nbgl_font_character_t *characters;
   uint8_t *bitmap;
 } nbgl_font_t;
+
+// SDK_API_LEVEL_12 and SDK_API_LEVEL_13
+typedef struct {
+  uint32_t encoding : 1;
+  uint32_t bitmap_offset : 14;
+  uint32_t width : 6;
+  uint32_t x_min_offset : 3;
+  uint32_t y_min_offset : 3;
+  uint32_t x_max_offset : 2;
+  uint32_t y_max_offset : 3;
+} nbgl_font_character_t_12;
+
+typedef struct {
+  uint32_t bitmap_len;
+  uint8_t font_id;
+  uint8_t bpp;
+  uint8_t height;
+  uint8_t line_height;
+  uint8_t crop;
+  uint8_t y_min;
+  uint8_t first_char;
+  uint8_t last_char;
+  nbgl_font_character_t_12 *characters;
+  uint8_t *bitmap;
+} nbgl_font_t_12;
 
 // ============================================================================
 

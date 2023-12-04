@@ -2,9 +2,8 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "cx.h"
-//#include "cx_utils.h"
 #include "bolos/exception.h"
+#include "cx.h"
 
 #define IPAD 0x36u
 #define OPAD 0x5cu
