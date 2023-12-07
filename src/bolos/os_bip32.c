@@ -9,23 +9,14 @@
 #include "cx.h"
 #include "cx_utils.h"
 #include "emulate.h"
+#include "seed.h"
 
 #define BIP32_HARDEN_MASK      0x80000000
 #define BIP32_SECP_SEED_LENGTH 12
-#define MAX_SEED_SIZE          64
 
 #define cx_ecfp_generate_pair     sys_cx_ecfp_generate_pair
 #define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
 #define cx_ecdsa_init_private_key cx_ecfp_init_private_key
-
-/* glory promote mansion idle axis finger extra february uncover one trip
- * resource lawn turtle enact monster seven myth punch hobby comfort wild raise
- * skin */
-static uint8_t default_seed[MAX_SEED_SIZE] =
-    "\xb1\x19\x97\xfa\xff\x42\x0a\x33\x1b\xb4\xa4\xff\xdc\x8b\xdc\x8b\xa7\xc0"
-    "\x17\x32\xa9\x9a\x30\xd8\x3d\xbb\xeb\xd4\x69\x66\x6c\x84\xb4\x7d\x09\xd3"
-    "\xf5\xf4\x72\xb3\xb9\x38\x4a\xc6\x34\xbe\xba\x2a\x44\x0b\xa3\x6e\xc7\x66"
-    "\x11\x44\x13\x2f\x35\xe2\x06\x87\x35\x64";
 
 static uint8_t const BIP32_SECP_SEED[] = { 'B', 'i', 't', 'c', 'o', 'i',
                                            'n', ' ', 's', 'e', 'e', 'd' };
@@ -164,65 +155,6 @@ static void expand_seed(cx_curve_t curve, const uint8_t *sk, size_t sk_length,
     memcpy(key->private_key, hash, 32);
     memcpy(key->chain_code, hash + 32, 32);
   }
-}
-
-int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size)
-{
-  unsigned int i;
-  uint8_t acc;
-  int8_t c;
-
-  acc = 0;
-  for (i = 0; i < src_size && (i >> 1) < dst_size; i++) {
-    c = src[i];
-    switch (c) {
-    case '0' ... '9':
-      acc = (acc << 4) + c - '0';
-      break;
-    case 'a' ... 'f':
-      acc = (acc << 4) + c - 'a' + 10;
-      break;
-    case 'A' ... 'F':
-      acc = (acc << 4) + c - 'A' + 10;
-      break;
-    default:
-      return -1;
-    }
-
-    if (i % 2 != 0) {
-      dst[i >> 1] = acc;
-      acc = 0;
-    }
-  }
-
-  if (i != src_size) {
-    return -1;
-  }
-
-  return src_size / 2;
-}
-
-size_t get_seed_from_env(const char *name, uint8_t *seed, size_t max_size)
-{
-  ssize_t seed_size;
-  char *p;
-
-  p = getenv(name);
-  if (p != NULL) {
-    seed_size = unhex(seed, max_size, p, strlen(p));
-    if (seed_size < 0) {
-      warnx("invalid seed passed through %s environment variable", name);
-      p = NULL;
-    }
-  }
-
-  if (p == NULL) {
-    warnx("using default seed");
-    memcpy(seed, default_seed, sizeof(default_seed));
-    seed_size = sizeof(default_seed);
-  }
-
-  return seed_size;
 }
 
 static int hdw_bip32_ed25519(extended_private_key *key, const uint32_t *path,
@@ -512,7 +444,7 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     sk_length = seed_key_length;
   }
 
-  seed_size = get_seed_from_env("SPECULOS_SEED", seed, sizeof(seed));
+  seed_size = get_seed(seed, sizeof(seed));
 
   if (mode == HDW_SLIP21) {
     ret = hdw_slip21(sk, sk_length, seed, seed_size, (const uint8_t *)path,

@@ -16,5 +16,3 @@ typedef struct {
 
 void expand_seed_bip32(const cx_curve_domain_t *domain, uint8_t *seed,
                        unsigned int seed_length, extended_private_key *key);
-int unhex(uint8_t *dst, size_t dst_size, const char *src, size_t src_size);
-size_t get_seed_from_env(const char *name, uint8_t *seed, size_t max_size);
