@@ -71,12 +71,6 @@ NanoX and Stax devices use an internal watchdog enforcing usage of regular
 calls to `io_seproxyhal_io_heartbeat();`. This watchdog is not emulated on
 Speculos.
 
-### Pending review screen
-
-The C SDK offers a feature to display a warning screen upon app launch
-indicating that the app has not been reviewed.
-As the `_install_parameters` are not handled by Speculos, the screen won't be displayed.
-
 
 ## Security
 
