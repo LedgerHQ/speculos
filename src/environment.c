@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
-#include "seed.h"
+#include "environment.h"
 
 /* glory promote mansion idle axis finger extra february uncover one trip
  * resource lawn turtle enact monster seven myth punch hobby comfort wild raise
@@ -16,11 +17,13 @@ static uint8_t default_seed[MAX_SEED_SIZE] =
     "\x11\x44\x13\x2f\x35\xe2\x06\x87\x35\x64";
 
 const char *SEED_ENV_NAME = "SPECULOS_SEED";
-typedef struct {
+const char *RNG_ENV_NAME = "RNG_SEED";
+
+static struct {
   size_t size;
   uint8_t seed[MAX_SEED_SIZE];
-} seed_t;
-static seed_t actual_seed = { 0 };
+} actual_seed = { 0 };
+static unsigned int actual_rng = 0;
 
 static int unhex(uint8_t *dst, size_t dst_size, const char *src,
                  size_t src_size)
@@ -59,7 +62,7 @@ static int unhex(uint8_t *dst, size_t dst_size, const char *src,
   return src_size / 2;
 }
 
-void init_seed()
+void init_env_seed()
 {
   ssize_t size;
   char *p;
@@ -86,8 +89,25 @@ void init_seed()
   actual_seed.size = size;
 }
 
-size_t get_seed(uint8_t *seed, size_t max_size)
+size_t get_env_seed(uint8_t *seed, size_t max_size)
 {
   memcpy(seed, actual_seed.seed, max_size);
   return (actual_seed.size < max_size) ? actual_seed.size : max_size;
+}
+
+void init_env_rng()
+{
+  char *p;
+  p = getenv(RNG_ENV_NAME);
+  if (p != NULL) {
+    actual_rng = atoi(p);
+    fprintf(stderr, "[*] Seed initialized from environment: '%ud'\n", actual_rng);
+  } else {
+    actual_rng = time(NULL);
+    fprintf(stderr, "[*] Seed initialized by default: '%ud'\n", actual_rng);
+  }
+}
+
+unsigned int get_env_rng() {
+  return actual_rng;
 }

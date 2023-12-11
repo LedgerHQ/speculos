@@ -9,7 +9,7 @@
 #include "cx.h"
 #include "cx_utils.h"
 #include "emulate.h"
-#include "seed.h"
+#include "environment.h"
 
 #define BIP32_HARDEN_MASK      0x80000000
 #define BIP32_SECP_SEED_LENGTH 12
@@ -444,7 +444,7 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     sk_length = seed_key_length;
   }
 
-  seed_size = get_seed(seed, sizeof(seed));
+  seed_size = get_env_seed(seed, sizeof(seed));
 
   if (mode == HDW_SLIP21) {
     ret = hdw_slip21(sk, sk_length, seed, seed_size, (const uint8_t *)path,

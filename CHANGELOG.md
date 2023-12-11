@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2024-??-??
 
 ### Added
-- Seed is fetched from the environment during the Speculos launch and stored internally for further
-  use. This avoids several Speculos instances from messing up with each other's seeds.
+- Seed, RNG are fetched from the environment during the Speculos launch and stored internally for
+  further use. This avoids several Speculos instances from messing up with each other's environment
+  variables.
 
 ## [0.4.1] - 2023-12-19
 

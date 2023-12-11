@@ -13,8 +13,8 @@
 #include <unistd.h>
 
 #include "emulate.h"
+#include "environment.h"
 #include "fonts.h"
-#include "seed.h"
 #include "svc.h"
 
 #define LOAD_ADDR     ((void *)0x40000000)
@@ -723,7 +723,8 @@ int main(int argc, char *argv[])
   extra_rampage_size = 0;
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
-  init_seed();
+  init_env_seed();
+  init_env_rng();
 
   while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:")) != -1) {
     switch (opt) {
