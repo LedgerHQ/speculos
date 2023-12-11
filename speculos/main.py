@@ -227,6 +227,11 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     if args.deterministic_rng:
         os.environ['RNG_SEED'] = args.deterministic_rng
 
+    if args.user_private_key:
+        os.environ['USER_PRIVATE_KEY'] = args.user_private_key
+    if args.attestation_key:
+        os.environ['ATTESTATION_PRIVATE_KEY'] = args.attestation_key
+
     logger.debug(f"executing qemu: {argv}")
     try:
         os.execvp(argv[0], argv)
@@ -260,8 +265,12 @@ def main(prog=None) -> int:
                                                        'to specify a path')
     parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
     parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
-    parser.add_argument('--deterministic-rng', default="", help='Seed the rng with a given value to produce '
+    parser.add_argument('--deterministic-rng', default='', help='Seed the rng with a given value to produce '
                                                                 'deterministic randomness')
+    parser.add_argument('--user-private-key', default='',
+                        help='32B in hex format, will be used as the user private keys')
+    parser.add_argument('--attestation-key', default='', help='32B in hex format, will be used as the private '
+                                                              'attestation key')
     parser.add_argument('-k', '--sdk', type=str, help='SDK version')
     parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '

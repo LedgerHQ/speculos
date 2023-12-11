@@ -579,7 +579,7 @@ static void test_bip32_vector(const bip32_test_vector *v)
   memset(&extkey, 0, sizeof(extkey));
 
   assert_int_equal(setenv("SPECULOS_SEED", v->seed, 1), 0);
-  init_env_seed();
+  init_environment();
 
   for (i = 0; i < v->chain_len; i++) {
     path[i] = v->chain[i].index;
@@ -601,7 +601,7 @@ static void test_bip32_vector(const bip32_test_vector *v)
 static void test_bip32(void **state __attribute__((unused)))
 {
   size_t i;
-  init_env_seed();
+  init_environment();
   for (i = 0; i < ARRAY_SIZE(test_vectors); i++) {
     test_bip32_vector(&test_vectors[i]);
   }
@@ -616,7 +616,7 @@ static void test_bolos_vector(const struct bolos_vector *v)
   size_t sk_length;
   ssize_t path_len;
   uint8_t *p;
-  init_env_seed();
+  init_environment();
 
   switch (v->mode) {
   case 0:

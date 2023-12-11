@@ -723,8 +723,8 @@ int main(int argc, char *argv[])
   extra_rampage_size = 0;
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
-  init_env_seed();
-  init_env_rng();
+
+  init_environment();
 
   while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:")) != -1) {
     switch (opt) {

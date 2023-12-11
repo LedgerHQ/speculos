@@ -31,7 +31,7 @@ void test_slip21(void **state __attribute__((unused)))
              1),
       0);
 
-  init_env_seed();
+  init_environment();
 
   sys_os_perso_derive_node_with_seed_key(HDW_SLIP21, CX_CURVE_SECP256K1,
                                          (uint32_t *)SLIP77_LABEL, 10, key,

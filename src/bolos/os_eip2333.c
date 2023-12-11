@@ -142,7 +142,7 @@ unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
     THROW(EXCEPTION);
   }
 
-  seed_size = get_env_seed(seed, sizeof(seed));
+  seed_size = env_get_seed(seed, sizeof(seed));
 
   cx_derive_master_sk(seed, seed_size, sk);
   if (privateKey != NULL) {

@@ -17,7 +17,7 @@ unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length)
   unsigned int i;
 
   if (!initialized) {
-    srand(get_env_rng());
+    srand(env_get_rng());
     initialized = true;
   }
 

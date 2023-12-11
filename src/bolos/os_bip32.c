@@ -444,7 +444,7 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     sk_length = seed_key_length;
   }
 
-  seed_size = get_env_seed(seed, sizeof(seed));
+  seed_size = env_get_seed(seed, sizeof(seed));
 
   if (mode == HDW_SLIP21) {
     ret = hdw_slip21(sk, sk_length, seed, seed_size, (const uint8_t *)path,
