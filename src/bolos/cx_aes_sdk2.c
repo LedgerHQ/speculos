@@ -37,7 +37,7 @@ cx_err_t sys_cx_aes_set_key_hw(const cx_aes_key_t *key, uint32_t mode)
   }
   local_aes_op = mode & CX_MASK_SIGCRYPT;
   local_aes_chain_mode = mode & CX_MASK_CHAIN;
-  set_aes_iv = true;
+  set_aes_iv = hdw_cbc;
   local_aes_ready = true;
 
   return CX_OK;
