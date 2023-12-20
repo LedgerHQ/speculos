@@ -724,8 +724,6 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  init_environment();
-
   while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:")) != -1) {
     switch (opt) {
     case 'f':
@@ -854,6 +852,8 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
+
+  init_environment();
 
   if (hw_model == MODEL_STAX && fonts_path) {
     if (load_fonts(fonts_path) != 0) {

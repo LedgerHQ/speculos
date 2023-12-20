@@ -4,6 +4,7 @@
 
 #define MAX_SEED_SIZE   64
 #define MAX_STRING_SIZE 128
+#define MAX_CERT_SIZE 6 + 33 * 2
 
 typedef enum {
   BOLOS_TAG_APPNAME = 0x01,
@@ -17,7 +18,7 @@ typedef struct {
 
 typedef struct {
   uint8_t length;
-  uint8_t buffer[];
+  uint8_t buffer[MAX_CERT_SIZE];
 } env_user_certificate_t;
 
 size_t env_get_seed(uint8_t *seed, size_t max_size);
