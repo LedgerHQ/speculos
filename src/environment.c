@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "bolos/cx.h"
 #include "bolos/endorsement.h"
@@ -30,6 +30,13 @@ static struct {
   uint8_t seed[MAX_SEED_SIZE];
 } actual_seed = { 0 };
 
+/* APP NAME and VERSION */
+static const char *APP_NAME_VERSION_ENV_NAME = "SPECULOS_APPNAME";
+static const char *APP_NAME_VERSION_ENV_NAME_BKP = "SPECULOS_DETECTED_APPNAME";
+
+static env_sized_name_t app_name = { 3, "app\0" };
+static env_sized_name_t app_version = { 6, "1.33.7\0" };
+
 /* RNG VARIABLES */
 
 static const char *RNG_ENV_NAME = "RNG_SEED";
@@ -41,11 +48,11 @@ static const char *USER_KEY_ENV_NAME = "USER_PRIVATE_KEY";
 static const char *ATTESTATION_ENV_NAME = "ATTESTATION_PRIVATE_KEY";
 
 static cx_ecfp_private_key_t attestation_key = {
-    CX_CURVE_256K1,
-    32,
-    { 0x13, 0x8f, 0xb9, 0xb9, 0x1d, 0xa7, 0x45, 0xf1, 0x29, 0x77, 0xa2,
-      0xb4, 0x6f, 0x0b, 0xce, 0x2f, 0x04, 0x18, 0xb5, 0x0f, 0xcb, 0x76,
-      0x63, 0x1b, 0xaf, 0x0f, 0x08, 0xce, 0xef, 0xdb, 0x5d, 0x57},
+  CX_CURVE_256K1,
+  32,
+  { 0x13, 0x8f, 0xb9, 0xb9, 0x1d, 0xa7, 0x45, 0xf1, 0x29, 0x77, 0xa2,
+    0xb4, 0x6f, 0x0b, 0xce, 0x2f, 0x04, 0x18, 0xb5, 0x0f, 0xcb, 0x76,
+    0x63, 0x1b, 0xaf, 0x0f, 0x08, 0xce, 0xef, 0xdb, 0x5d, 0x57 },
 };
 
 static cx_ecfp_private_key_t user_private_key_1 = {
@@ -68,12 +75,12 @@ static env_user_certificate_t user_certificate_1 = {
   71,
   // user_private_key_1 signed by test owner private key
   // "138fb9b91da745f12977a2b46f0bce2f0418b50fcb76631baf0f08ceefdb5d57"
-  {  0x30, 0x45, 0x02, 0x21, 0x00, 0xbf, 0x23, 0x7e, 0x5b, 0x40, 0x06, 0x14,
-     0x17, 0xf6, 0x62, 0xa6, 0xd0, 0x8a, 0x4b, 0xde, 0x1f, 0xe3, 0x34, 0x3b,
-     0xd8, 0x70, 0x8c, 0xed, 0x04, 0x6c, 0x84, 0x17, 0x49, 0x5a, 0xd3, 0x6c,
-     0xcf, 0x02, 0x20, 0x3d, 0x39, 0xa5, 0x32, 0xee, 0xca, 0xdf, 0xf6, 0xdf,
-     0x20, 0x53, 0xe4, 0xab, 0x98, 0x96, 0xaa, 0x00, 0xf3, 0xbe, 0xf1, 0x5c,
-     0x4b, 0xd1, 0x1c, 0x53, 0x66, 0x1e, 0x54, 0xfe, 0x5e, 0x2f, 0xf4 },
+  { 0x30, 0x45, 0x02, 0x21, 0x00, 0xbf, 0x23, 0x7e, 0x5b, 0x40, 0x06, 0x14,
+    0x17, 0xf6, 0x62, 0xa6, 0xd0, 0x8a, 0x4b, 0xde, 0x1f, 0xe3, 0x34, 0x3b,
+    0xd8, 0x70, 0x8c, 0xed, 0x04, 0x6c, 0x84, 0x17, 0x49, 0x5a, 0xd3, 0x6c,
+    0xcf, 0x02, 0x20, 0x3d, 0x39, 0xa5, 0x32, 0xee, 0xca, 0xdf, 0xf6, 0xdf,
+    0x20, 0x53, 0xe4, 0xab, 0x98, 0x96, 0xaa, 0x00, 0xf3, 0xbe, 0xf1, 0x5c,
+    0x4b, 0xd1, 0x1c, 0x53, 0x66, 0x1e, 0x54, 0xfe, 0x5e, 0x2f, 0xf4 },
 };
 
 static env_user_certificate_t user_certificate_2 = {
@@ -85,8 +92,7 @@ static env_user_certificate_t user_certificate_2 = {
     0xd8, 0x70, 0x8c, 0xed, 0x04, 0x6c, 0x84, 0x17, 0x49, 0x5a, 0xd3, 0x6c,
     0xcf, 0x02, 0x20, 0x3d, 0x39, 0xa5, 0x32, 0xee, 0xca, 0xdf, 0xf6, 0xdf,
     0x20, 0x53, 0xe4, 0xab, 0x98, 0x96, 0xaa, 0x00, 0xf3, 0xbe, 0xf1, 0x5c,
-    0x4b, 0xd1, 0x1c, 0x53, 0x66, 0x1e, 0x54, 0xfe, 0x5e, 0x2f, 0xf4
-  },
+    0x4b, 0xd1, 0x1c, 0x53, 0x66, 0x1e, 0x54, 0xfe, 0x5e, 0x2f, 0xf4 },
 };
 
 /* UTILS */
@@ -180,7 +186,8 @@ unsigned int env_get_rng()
   return actual_rng;
 }
 
-static bool env_init_user_hex_private_key(const char *ENV_NAME, cx_ecfp_private_key_t *dst)
+static bool env_init_user_hex_private_key(const char *ENV_NAME,
+                                          cx_ecfp_private_key_t *dst)
 {
   ssize_t size;
   char *p;
@@ -190,22 +197,23 @@ static bool env_init_user_hex_private_key(const char *ENV_NAME, cx_ecfp_private_
   if (p != NULL) {
     size = unhex(tmp, dst->d_len, p, strlen(p));
     if (size < 0) {
-      warnx(
-          "invalid  user key passed through %s environment variable: not an hex string",
-          USER_KEY_ENV_NAME);
+      warnx("invalid  user key passed through %s environment variable: not an "
+            "hex string",
+            USER_KEY_ENV_NAME);
       p = NULL;
     } else if ((unsigned int)size != dst->d_len) {
-      warnx(
-          "invalid size for user key passed through %s environment variable: expecting '%u', got '%i'",
-          USER_KEY_ENV_NAME, dst->d_len, size);
+      warnx("invalid size for user key passed through %s environment variable: "
+            "expecting '%u', got '%i'",
+            USER_KEY_ENV_NAME, dst->d_len, size);
       p = NULL;
     }
   }
 
   if (p == NULL) {
-      fprintf(stderr, "[*] Private key ('%s') initialized with default value: '%p'\n",
-              ENV_NAME, dst->d);
-      return false;
+    fprintf(stderr,
+            "[*] Private key ('%s') initialized with default value: '%p'\n",
+            ENV_NAME, dst->d);
+    return false;
   } else {
     memcpy(dst->d, tmp, dst->d_len);
     fprintf(stderr,
@@ -237,16 +245,14 @@ static void env_init_user_certificate(unsigned int index)
 
   sys_cx_sha256_init(&sha256);
   sys_cx_hash((cx_hash_t *)&sha256, 0, (unsigned char *)"\xfe", 1, NULL, 0);
-  sys_cx_hash((cx_hash_t *)&sha256, CX_LAST, pkey, sizeof(pkey),
-              hash, sizeof(hash));
-  sys_cx_ecdsa_sign(&attestation_key, CX_RND_TRNG, CX_SHA256,
-                    hash, sizeof(hash),
-                    certificate->buffer, 6 + 33 * 2,
-                    NULL);
+  sys_cx_hash((cx_hash_t *)&sha256, CX_LAST, pkey, sizeof(pkey), hash,
+              sizeof(hash));
+  sys_cx_ecdsa_sign(&attestation_key, CX_RND_TRNG, CX_SHA256, hash,
+                    sizeof(hash), certificate->buffer, 6 + 33 * 2, NULL);
   certificate->length = certificate->buffer[1] + 2;
 
-  fprintf(stderr, "[*] User certificate %u initialized (size: %u)\n",
-          index, certificate->length);
+  fprintf(stderr, "[*] User certificate %u initialized (size: %u)\n", index,
+          certificate->length);
 }
 
 static void env_init_endorsement()
@@ -263,7 +269,7 @@ static void env_init_endorsement()
   }
 }
 
-cx_ecfp_private_key_t* env_get_user_private_key(unsigned int index)
+cx_ecfp_private_key_t *env_get_user_private_key(unsigned int index)
 {
   switch (index) {
   case 1:
@@ -278,8 +284,7 @@ cx_ecfp_private_key_t* env_get_user_private_key(unsigned int index)
   }
 }
 
-
-env_user_certificate_t* env_get_user_certificate(unsigned int index)
+env_user_certificate_t *env_get_user_certificate(unsigned int index)
 {
   switch (index) {
   case 1:
@@ -294,9 +299,72 @@ env_user_certificate_t* env_get_user_certificate(unsigned int index)
   }
 }
 
+static void env_init_app_name_version()
+{
+  char *str;
+
+  str = getenv(APP_NAME_VERSION_ENV_NAME);
+  if (str == NULL) {
+    str = getenv(APP_NAME_VERSION_ENV_NAME_BKP);
+  }
+
+  if (str == NULL) {
+    warnx("using default app name & version");
+    fprintf(stderr, "[*] Default app name: '%s'\n", app_name.name);
+    fprintf(stderr, "[*] Default app version: '%s'\n", app_version.name);
+    return;
+  }
+
+  char *char_ptr = strchr(str, ':');
+  if (char_ptr == NULL) {
+    warnx("Invalid '<name>:<version>' format in env variable '%s', falling "
+          "back to default.",
+          str);
+    fprintf(stderr, "[*] Default app name: '%s'\n", app_name.name);
+    fprintf(stderr, "[*] Default app version: '%s'\n", app_version.name);
+    return;
+  }
+
+  app_name.length = (char_ptr - str);
+  app_version.length = (strlen(str) - (size_t)(app_name.length + 1));
+  str[app_name.length] = '\0';
+  // + 1 to include trailing '\0'
+  strncpy(app_name.name, str, app_name.length + 1);
+  strncpy(app_version.name, str + app_name.length + 1, app_version.length + 1);
+
+  fprintf(stderr, "[*] Env app name: '%s'\n", app_name.name);
+  fprintf(stderr, "[*] Env app version: '%s'\n", app_version.name);
+}
+
+size_t env_get_app_tag(char *dst, size_t length, BOLOS_TAG tag)
+{
+  env_sized_name_t *field;
+  switch (tag) {
+  case BOLOS_TAG_APPNAME:
+    field = &app_name;
+    break;
+  case BOLOS_TAG_APPVERSION:
+    field = &app_version;
+    break;
+  default:
+    return 0;
+  }
+  if (length < field->length) {
+    warnx("Providing length to copy env variable too small: asked for %u, "
+          "needs %u",
+          length, field->length);
+    return 0;
+  }
+
+  strncpy(dst, field->name, length);
+  dst[field->length] = '\0';
+  return field->length;
+}
+
 void init_environment()
 {
-    env_init_seed();
-    env_init_rng();
-    env_init_endorsement();
+  env_init_seed();
+  env_init_rng();
+  env_init_endorsement();
+  env_init_app_name_version();
 }

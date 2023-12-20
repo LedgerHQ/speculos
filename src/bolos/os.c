@@ -3,14 +3,12 @@
 #include <unistd.h>
 
 #include "emulate.h"
+#include "environment.h"
 #include "svc.h"
 
 #define OS_SETTING_PLANEMODE_OLD 5
 #define OS_SETTING_PLANEMODE_NEW 6
 #define OS_SETTING_SOUND         9
-
-#define BOLOS_TAG_APPNAME    0x01
-#define BOLOS_TAG_APPVERSION 0x02
 
 #undef PATH_MAX
 #define PATH_MAX 1024
@@ -69,56 +67,7 @@ unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
                                                   uint8_t *buffer,
                                                   size_t length)
 {
-  const char *name;
-  const char *version;
-  const char *str;
-  char *str_dup = NULL;
-
-  if (length < 1) {
-    return 0;
-  }
-
-  name = "app";
-  version = "1.33.7";
-
-  str = getenv("SPECULOS_APPNAME");
-  if (str == NULL) {
-    str = getenv("SPECULOS_DETECTED_APPNAME");
-  }
-
-  if (str != NULL) {
-    str_dup = strdup(str);
-    if (str_dup != NULL) {
-      char *p = strstr(str_dup, ":");
-      if (p != NULL) {
-        *p = '\x00';
-        name = str_dup;
-        version = p + 1;
-      }
-    }
-  }
-
-  switch (tag) {
-  case BOLOS_TAG_APPNAME:
-    strncpy((char *)buffer, name, length);
-    length = MIN(length, strlen(name));
-    break;
-  case BOLOS_TAG_APPVERSION:
-    strncpy((char *)buffer, version, length);
-    length = MIN(length, strlen(version));
-    break;
-  default:
-    length = 0;
-    break;
-  }
-
-  buffer[length] = '\x00';
-
-  if (str_dup != NULL) {
-    free(str_dup);
-  }
-
-  return length;
+  return env_get_app_tag((char *)buffer, length, tag);
 }
 
 unsigned long sys_os_lib_call(unsigned long *call_parameters)
