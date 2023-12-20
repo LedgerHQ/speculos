@@ -8,7 +8,7 @@
 #include <cmocka.h>
 
 #include "nist_cavp.h"
-#include "utils.h"
+#include "../utils.h"
 
 #include "bolos/cx.h"
 #include "emulate.h"

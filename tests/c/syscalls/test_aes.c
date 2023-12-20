@@ -37,7 +37,7 @@ print(binascii.hexlify(dt))
 #include "bolos/cx.h"
 #include "emulate.h"
 
-#include "utils.h"
+#include "../utils.h"
 
 void test_aes_cbc1(void **state __attribute__((unused)))
 {

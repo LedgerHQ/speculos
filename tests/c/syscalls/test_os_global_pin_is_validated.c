@@ -6,7 +6,7 @@
 
 #include "emulate.h"
 #include "sdk.h"
-#include "utils.h"
+#include "../utils.h"
 
 #define os_os_global_pin_is_validated sys_os_global_pin_is_validated
 

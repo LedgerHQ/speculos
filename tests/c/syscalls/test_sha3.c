@@ -8,7 +8,7 @@
 
 #include "bolos/cx.h"
 #include "nist_cavp.h"
-#include "utils.h"
+#include "../utils.h"
 
 /*
 // Exception-related functions. Exceptions are not handled, functions are just

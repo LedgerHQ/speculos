@@ -12,7 +12,7 @@
 #include "bolos/os_bip32.h"
 #include "emulate.h"
 #include "environment.h"
-#include "utils.h"
+#include "../utils.h"
 
 #define MAX_CHAIN_LEN 5
 

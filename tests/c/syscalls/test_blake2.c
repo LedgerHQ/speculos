@@ -6,7 +6,7 @@
 
 #include "bolos/cx.h"
 #include "nist_cavp.h"
-#include "utils.h"
+#include "../utils.h"
 
 void test_blake2b_kat(void **state __attribute__((unused)))
 {

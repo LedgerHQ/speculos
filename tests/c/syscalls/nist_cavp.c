@@ -8,7 +8,7 @@
 
 #include "bolos/cx.h"
 #include "nist_cavp.h"
-#include "utils.h"
+#include "../utils.h"
 
 #define CX_MAX_DIGEST_SIZE CX_SHA512_SIZE
 

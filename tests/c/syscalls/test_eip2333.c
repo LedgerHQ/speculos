@@ -12,7 +12,7 @@
 #include "bolos/cx_utils.h"
 #include "emulate.h"
 #include "environment.h"
-#include "utils.h"
+#include "../utils.h"
 
 #define MAX_PATH_LEN 10
 
