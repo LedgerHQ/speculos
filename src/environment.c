@@ -59,9 +59,9 @@ static const uint8_t default_user_private_key[32] = {
   0x87, 0xfd, 0xf8, 0x2e, 0x03, 0x1f, 0x67, 0x28, 0xb7, 0x10
 };
 
-static cx_ecfp_private_key_t attestation_key = { CX_CURVE_256K1, 32, { } };
-static cx_ecfp_private_key_t user_private_key_1 = { CX_CURVE_256K1, 32, { } };
-static cx_ecfp_private_key_t user_private_key_2 = { CX_CURVE_256K1, 32, { } };
+static cx_ecfp_private_key_t attestation_key = { CX_CURVE_256K1, 32, {} };
+static cx_ecfp_private_key_t user_private_key_1 = { CX_CURVE_256K1, 32, {} };
+static cx_ecfp_private_key_t user_private_key_2 = { CX_CURVE_256K1, 32, {} };
 static env_user_certificate_t user_certificate_1 = { 0 };
 static env_user_certificate_t user_certificate_2 = { 0 };
 
@@ -127,7 +127,7 @@ static void env_init_seed()
     size = sizeof(default_seed);
     fprintf(stderr, "[*] Seed initialized with default value: '0x");
     for (size_t i = 0; i < sizeof(default_seed); i++) {
-        fprintf(stderr, "%02x", default_seed[i]);
+      fprintf(stderr, "%02x", default_seed[i]);
     }
     fprintf(stderr, "'\n");
   }
@@ -189,7 +189,7 @@ static void env_init_user_hex_private_key(const char *ENV_NAME,
             "[*] Private key ('%s') initialized with default value: '0x",
             ENV_NAME);
     for (size_t i = 0; i < dst->d_len; i++) {
-        fprintf(stderr, "%02x", default_key[i]);
+      fprintf(stderr, "%02x", default_key[i]);
     }
     fprintf(stderr, "'\n");
   } else {

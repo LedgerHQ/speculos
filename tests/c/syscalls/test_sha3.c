@@ -6,9 +6,9 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
+#include "../utils.h"
 #include "bolos/cx.h"
 #include "nist_cavp.h"
-#include "../utils.h"
 
 /*
 // Exception-related functions. Exceptions are not handled, functions are just

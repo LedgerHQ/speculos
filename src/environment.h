@@ -4,7 +4,7 @@
 
 #define MAX_SEED_SIZE   64
 #define MAX_STRING_SIZE 128
-#define MAX_CERT_SIZE 6 + 33 * 2
+#define MAX_CERT_SIZE   6 + 33 * 2
 
 typedef enum {
   BOLOS_TAG_APPNAME = 0x01,

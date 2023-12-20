@@ -9,10 +9,10 @@
 #include <blst.h>
 #include <cmocka.h>
 
+#include "../utils.h"
 #include "bolos/cx.h"
 #include "bolos/cx_bls.h"
 #include "bolos/cxlib.h"
-#include "../utils.h"
 
 #define BLS_DERIVE_SECRET (0x80)
 #define BLS_DST_AUG       ("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_AUG_")

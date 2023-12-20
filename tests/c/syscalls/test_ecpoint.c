@@ -9,9 +9,10 @@
 
 #define _SDK_2_0_
 
+#include "../utils.h"
+
 #include "bolos/cx.h"
 #include "bolos/cxlib.h"
-#include "../utils.h"
 
 #define WYCH_MAX_LINE_LENGTH  (360)
 #define MONT_CURVE_MAX_LENGTH (56)

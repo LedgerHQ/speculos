@@ -1,9 +1,9 @@
 #include <setjmp.h>
-#include <stdbool.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include <cmocka.h>
@@ -44,47 +44,51 @@ static const uint8_t default_user_certificate[MAX_CERT_LENGTH] = {
 };
 
 typedef enum {
-    FIELD_SEED,
-    FIELD_RNG,
-    FIELD_USER_KEY,
-    FIELD_APPNAME,
-    FIELD_APPVERSION
+  FIELD_SEED,
+  FIELD_RNG,
+  FIELD_USER_KEY,
+  FIELD_APPNAME,
+  FIELD_APPVERSION
 } field_e;
 
 static void check_is_default(field_e field)
 {
-  switch(field) {
-  case FIELD_SEED:
-  {
+  switch (field) {
+  case FIELD_SEED: {
     uint8_t key[MAX_SEED_SIZE] = {};
     env_get_seed(&key[0], MAX_SEED_SIZE);
     assert_memory_equal(&key[0], default_seed, MAX_SEED_SIZE);
     break;
   }
   case FIELD_RNG:
-      unsigned int now = time(NULL);
-      // RNG is initialized in the past, not that long ago, but still
-      // assert_int_equal(env_get_rng(), time(NULL)); can sometimes fail
-      assert_in_range(env_get_rng(), now - 1, now);
+    unsigned int now = time(NULL);
+    // RNG is initialized in the past, not that long ago, but still
+    // assert_int_equal(env_get_rng(), time(NULL)); can sometimes fail
+    assert_in_range(env_get_rng(), now - 1, now);
     break;
-  case FIELD_USER_KEY:
-  {
-    assert_memory_equal(env_get_user_private_key(1)->d, default_user_private_key, env_get_user_private_key(1)->d_len);
-    assert_memory_equal(env_get_user_private_key(2)->d, default_user_private_key, env_get_user_private_key(2)->d_len);
-    assert_memory_equal(env_get_user_certificate(1)->buffer, default_user_certificate, env_get_user_certificate(1)->length);
-    assert_memory_equal(env_get_user_certificate(2)->buffer, default_user_certificate, env_get_user_certificate(2)->length);
+  case FIELD_USER_KEY: {
+    assert_memory_equal(env_get_user_private_key(1)->d,
+                        default_user_private_key,
+                        env_get_user_private_key(1)->d_len);
+    assert_memory_equal(env_get_user_private_key(2)->d,
+                        default_user_private_key,
+                        env_get_user_private_key(2)->d_len);
+    assert_memory_equal(env_get_user_certificate(1)->buffer,
+                        default_user_certificate,
+                        env_get_user_certificate(1)->length);
+    assert_memory_equal(env_get_user_certificate(2)->buffer,
+                        default_user_certificate,
+                        env_get_user_certificate(2)->length);
     break;
   }
-  case FIELD_APPNAME:
-  {
+  case FIELD_APPNAME: {
     char buffer[10];
     size_t size = env_get_app_tag(buffer, 10, BOLOS_TAG_APPNAME);
     assert_string_equal(buffer, default_app_name);
     assert_int_equal(size, strlen(buffer));
     break;
   }
-  case FIELD_APPVERSION:
-  {
+  case FIELD_APPVERSION: {
     char buffer[10];
     size_t size = env_get_app_tag(buffer, 10, BOLOS_TAG_APPVERSION);
     assert_string_equal(buffer, default_app_version);
@@ -144,13 +148,21 @@ static void test_change_rng(void **state __attribute__((unused)))
 
 static void test_change_attestation(void **state __attribute__((unused)))
 {
-  setenv(ATTESTATION_ENV_NAME, "0123456789000000000000000000000000000000000000000000000000abcdef", true);
+  setenv(ATTESTATION_ENV_NAME,
+         "0123456789000000000000000000000000000000000000000000000000abcdef",
+         true);
   init_environment();
 
-  assert_memory_equal(env_get_user_private_key(1)->d, default_user_private_key, env_get_user_private_key(1)->d_len);
-  assert_memory_equal(env_get_user_private_key(2)->d, default_user_private_key, env_get_user_private_key(2)->d_len);
-  assert_memory_not_equal(env_get_user_certificate(1)->buffer, default_user_certificate, env_get_user_certificate(1)->length);
-  assert_memory_not_equal(env_get_user_certificate(2)->buffer, default_user_certificate, env_get_user_certificate(2)->length);
+  assert_memory_equal(env_get_user_private_key(1)->d, default_user_private_key,
+                      env_get_user_private_key(1)->d_len);
+  assert_memory_equal(env_get_user_private_key(2)->d, default_user_private_key,
+                      env_get_user_private_key(2)->d_len);
+  assert_memory_not_equal(env_get_user_certificate(1)->buffer,
+                          default_user_certificate,
+                          env_get_user_certificate(1)->length);
+  assert_memory_not_equal(env_get_user_certificate(2)->buffer,
+                          default_user_certificate,
+                          env_get_user_certificate(2)->length);
 
   check_is_default(FIELD_SEED);
   check_is_default(FIELD_RNG);
@@ -160,13 +172,23 @@ static void test_change_attestation(void **state __attribute__((unused)))
 
 static void test_change_user_key(void **state __attribute__((unused)))
 {
-  setenv(USER_KEY_ENV_NAME, "abcdef0000000000000000000000000000000000000000000000000123456789", true);
+  setenv(USER_KEY_ENV_NAME,
+         "abcdef0000000000000000000000000000000000000000000000000123456789",
+         true);
   init_environment();
 
-  assert_memory_not_equal(env_get_user_private_key(1)->d, default_user_private_key, env_get_user_private_key(1)->d_len);
-  assert_memory_not_equal(env_get_user_private_key(2)->d, default_user_private_key, env_get_user_private_key(2)->d_len);
-  assert_memory_not_equal(env_get_user_certificate(1)->buffer, default_user_certificate, env_get_user_certificate(1)->length);
-  assert_memory_not_equal(env_get_user_certificate(2)->buffer, default_user_certificate, env_get_user_certificate(2)->length);
+  assert_memory_not_equal(env_get_user_private_key(1)->d,
+                          default_user_private_key,
+                          env_get_user_private_key(1)->d_len);
+  assert_memory_not_equal(env_get_user_private_key(2)->d,
+                          default_user_private_key,
+                          env_get_user_private_key(2)->d_len);
+  assert_memory_not_equal(env_get_user_certificate(1)->buffer,
+                          default_user_certificate,
+                          env_get_user_certificate(1)->length);
+  assert_memory_not_equal(env_get_user_certificate(2)->buffer,
+                          default_user_certificate,
+                          env_get_user_certificate(2)->length);
 
   check_is_default(FIELD_SEED);
   check_is_default(FIELD_RNG);
@@ -199,7 +221,8 @@ static void test_change_appname_appversion(void **state __attribute__((unused)))
   check_is_default(FIELD_USER_KEY);
 }
 
-static int setup(void **state __attribute__((unused))) {
+static int setup(void **state __attribute__((unused)))
+{
   unsetenv(SEED_ENV_NAME);
   unsetenv(APP_NAME_VERSION_ENV_NAME);
   unsetenv(APP_NAME_VERSION_ENV_NAME_BKP);

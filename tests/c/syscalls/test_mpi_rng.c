@@ -9,8 +9,8 @@
 #include <openssl/bn.h>
 #include <openssl/rand.h>
 
-#include "bolos/cxlib.h"
 #include "../utils.h"
+#include "bolos/cxlib.h"
 
 unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length);
 

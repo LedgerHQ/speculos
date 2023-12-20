@@ -6,9 +6,9 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
+#include "../utils.h"
 #include "bolos/cx.h"
 #include "nist_cavp.h"
-#include "../utils.h"
 
 #define CX_MAX_DIGEST_SIZE CX_SHA512_SIZE
 

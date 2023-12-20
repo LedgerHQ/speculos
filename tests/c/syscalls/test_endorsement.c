@@ -6,11 +6,12 @@
 
 #include <cmocka.h>
 
+#include "../utils.h"
+
 #include "bolos/cx.h"
 #include "bolos/endorsement.h"
 #include "emulate.h"
 #include "environment.h"
-#include "../utils.h"
 
 #define cx_ecfp_init_public_key      sys_cx_ecfp_init_public_key
 #define cx_hash                      sys_cx_hash
