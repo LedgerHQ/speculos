@@ -8,9 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.0] - 2024-??-??
 
 ### Added
-- Seed, RNG are fetched from the environment during the Speculos launch and stored internally for
-  further use. This avoids several Speculos instances from messing up with each other's environment
-  variables.
+- Attestation key or user private keys can now be configured with the new `--attestation-key`
+  and `--user-private-key` arguments (or `ATTESTATION_PRIVATE_KEY` and `USER_PRIVATE_KEY` through
+  environment variables). User certificates are correctly calculated signed from the user private
+  keys and the attestation key.
+
+### Changed
+- Seed, RNG, application name and version are now fetched from the environment when Speculos starts
+  then stored internally for further use, rather than fetched when needed during runtime. This
+  avoids several Speculos instances from messing up with each other's environment variables.
 
 ## [0.4.1] - 2023-12-19
 
