@@ -2,20 +2,21 @@ import pytest
 import os
 import re
 from collections import namedtuple
+from pathlib import Path
 from typing import List
 
 from speculos.client import SpeculosClient
 
 
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+# going back from...(conftest.py \ python \ tests \ git root) / 'apps'
+APP_DIR = Path(__file__).resolve().parent.  parent. parent    / "apps"
 AppInfo = namedtuple("AppInfo", ["filepath", "model", "name", "sdk", "hash"])
 
 
-def app_info_from_path(path) -> AppInfo:
+def app_info_from_path(path: Path) -> AppInfo:
     # name example: nanos#btc#1.5#5b6693b8.elf
     app_regexp = re.compile(r"^(nanos|nanox|blue|nanosp)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]*)\.elf$")
-    filename = os.path.basename(path)
-    matching = re.match(app_regexp, filename)
+    matching = re.match(app_regexp, path.name)
     if not matching:
         return None
     assert len(matching.groups()) == 4
@@ -23,7 +24,7 @@ def app_info_from_path(path) -> AppInfo:
                    hash=matching.group(4))
 
 
-def list_apps_to_test(app_dir) -> List[AppInfo]:
+def list_apps_to_test() -> List[AppInfo]:
     """
     List apps matching the pattern:
 
@@ -37,11 +38,10 @@ def list_apps_to_test(app_dir) -> List[AppInfo]:
     'apps/nanos#btc#1.5#5b6693b8.elf'
     """
     all_apps = []
-    for filename in os.listdir(app_dir):
-        if "#" not in filename:
+    for appfile in APP_DIR.iterdir():
+        if "#" not in appfile.name:
             continue
-        path = os.path.join(app_dir, filename)
-        info = app_info_from_path(path)
+        info = app_info_from_path(appfile)
         if not info:
             pytest.fail(
                 f"An unexpected file was found in apps/, with a # but not matching the pattern: {filename!r}"
@@ -53,25 +53,21 @@ def list_apps_to_test(app_dir) -> List[AppInfo]:
 
 @pytest.fixture(scope="function")
 def app(request, client):
-    return app_info_from_path(client.app)
+    return app_info_from_path(Path(client.app))
 
 
-def get_apps(name):
-    """Retrieve the list of apps in the ../apps directory."""
-    app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
-    apps = list_apps_to_test(app_dir)
-    apps = [app for app in apps if app.name == name]
-    return apps
+def get_apps(name: str) -> List[AppInfo]:
+    """Retrieve the list of apps in the ../../apps directory."""
+    return [app for app in list_apps_to_test() if app.name == name]
 
 
-def default_btc_app():
-    app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
-    filepath = os.path.realpath(os.path.join(app_dir, "btc.elf"))
+def default_btc_app() -> List[AppInfo]:
+    filepath = (APP_DIR / "btc.elf").resolve()
     apps = get_apps("btc")
-    return [app for app in apps if os.path.realpath(app.filepath) == filepath]
+    return [app for app in apps if app.filepath == filepath]
 
 
-def idfn(app):
+def idfn(app: Path) -> str:
     """
     Set the test ID to the app file name for each test running on a set of apps.
 
@@ -80,14 +76,14 @@ def idfn(app):
       These IDs can be used with -k to select specific cases to run, and they will
       also identify the specific case when one is failing.
     """
-    return os.path.basename(app.filepath)
+    return app.filepath
 
 
 def client_instance(app, additional_args=None):
     args = ["--model", app.model, "--sdk", app.sdk]
     if additional_args is not None:
         args += additional_args
-    return SpeculosClient(app.filepath, args=args)
+    return SpeculosClient(str(app.filepath), args=args)
 
 
 @pytest.fixture(scope="module", params=get_apps("btc"), ids=idfn)
@@ -99,9 +95,9 @@ def client_btc(request):
 @pytest.fixture(scope="module", params=get_apps("btc-test"), ids=idfn)
 def client_btc_testnet(request):
     app = request.param
-    btc_app = app.filepath.replace("btc-test", "btc")
-    assert os.path.exists(btc_app)
-    args = ["-l", "Bitcoin:%s" % btc_app]
+    btc_app = app.filepath.parent / app.filepath.name.replace("btc-test", "btc")
+    assert btc_app.is_file()
+    args = ["-l", "Bitcoin:%s" % str(btc_app)]
 
     with client_instance(request.param, additional_args=args) as _client:
         yield _client
@@ -122,4 +118,14 @@ def client_vnc(request):
         get_closest_marker = request.node.get_marker
     args = list(get_closest_marker("additional_args").args)
     with client_instance(request.param, args) as _client:
+        yield _client
+
+
+@pytest.fixture(scope="class")
+def client(request):
+    """Run the API tests on the default btc.elf app."""
+
+    info = app_info_from_path((APP_DIR / "btc.elf").resolve())
+    args = ["--model", info.model, "--sdk", info.sdk]
+    with SpeculosClient(app=str(info.filepath), args=args) as _client:
         yield _client

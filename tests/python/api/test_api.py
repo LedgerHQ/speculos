@@ -9,25 +9,7 @@ from collections import namedtuple
 
 from speculos.client import SpeculosClient
 
-AppInfo = namedtuple("AppInfo", ["filepath", "device", "name", "version", "hash"])
-
-SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 API_URL = "http://127.0.0.1:5000"
-
-
-@pytest.fixture(scope="class")
-def client(request):
-    """Run the API tests on the default btc.elf app."""
-
-    app_dir = os.path.join(SCRIPT_DIR, os.pardir, os.pardir, "apps")
-    filepath = os.path.realpath(os.path.join(app_dir, "btc.elf"))
-    info = [filepath] + os.path.basename(filepath).split("#")
-    info = AppInfo(*info)
-
-    args = ["--model", info.device, "--sdk", info.version]
-
-    with SpeculosClient(app=filepath, args=args) as _client:
-        yield _client
 
 
 @pytest.mark.usefixtures("client")
@@ -109,7 +91,7 @@ class TestApi:
                         assert re.match(text, event["text"])
 
                 texts = [("About",), ("Version", ".*"), ("Bitcoin", "is ready")]
-                for i in range(0, 3):
+                for i in range(len(texts)):
                     TestApi.press_button("left")
                     for text in texts[i]:
                         event = get_next_event(stream)

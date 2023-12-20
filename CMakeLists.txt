@@ -136,7 +136,7 @@ link_libraries(ssl crypto dl blst)
 add_subdirectory(src)
 
 if (BUILD_TESTING)
-  add_subdirectory(tests/syscalls)
+  add_subdirectory(tests/c/)
 endif()
 
 add_custom_target(
