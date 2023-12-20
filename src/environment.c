@@ -23,7 +23,7 @@ static const uint8_t default_seed[MAX_SEED_SIZE] =
     "\xf5\xf4\x72\xb3\xb9\x38\x4a\xc6\x34\xbe\xba\x2a\x44\x0b\xa3\x6e\xc7\x66"
     "\x11\x44\x13\x2f\x35\xe2\x06\x87\x35\x64";
 
-static const char *SEED_ENV_NAME = "SPECULOS_SEED";
+static const char SEED_ENV_NAME[] = "SPECULOS_SEED";
 
 static struct {
   size_t size;
@@ -31,21 +31,21 @@ static struct {
 } actual_seed = { 0 };
 
 /* APP NAME and VERSION */
-static const char *APP_NAME_VERSION_ENV_NAME = "SPECULOS_APPNAME";
-static const char *APP_NAME_VERSION_ENV_NAME_BKP = "SPECULOS_DETECTED_APPNAME";
+static const char APP_NAME_VERSION_ENV_NAME[] = "SPECULOS_APPNAME";
+static const char APP_NAME_VERSION_ENV_NAME_BKP[] = "SPECULOS_DETECTED_APPNAME";
 
 static env_sized_name_t app_name = { 3, "app\0" };
 static env_sized_name_t app_version = { 6, "1.33.7\0" };
 
 /* RNG VARIABLES */
 
-static const char *RNG_ENV_NAME = "RNG_SEED";
+static const char RNG_ENV_NAME[] = "RNG_SEED";
 static unsigned int actual_rng = 0;
 
 /* ENDORSEMENT VARIABLES */
 
-static const char *USER_KEY_ENV_NAME = "USER_PRIVATE_KEY";
-static const char *ATTESTATION_ENV_NAME = "ATTESTATION_PRIVATE_KEY";
+static const char USER_KEY_ENV_NAME[] = "USER_PRIVATE_KEY";
+static const char ATTESTATION_ENV_NAME[] = "ATTESTATION_PRIVATE_KEY";
 
 static const uint8_t default_attestation_key[32] = {
   0x13, 0x8f, 0xb9, 0xb9, 0x1d, 0xa7, 0x45, 0xf1, 0x29, 0x77, 0xa2,
