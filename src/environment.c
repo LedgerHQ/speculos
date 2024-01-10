@@ -125,11 +125,6 @@ static void env_init_seed()
     warnx("using default seed");
     memcpy(actual_seed.seed, default_seed, sizeof(default_seed));
     size = sizeof(default_seed);
-    fprintf(stderr, "[*] Seed initialized with default value: '0x");
-    for (size_t i = 0; i < sizeof(default_seed); i++) {
-      fprintf(stderr, "%02x", default_seed[i]);
-    }
-    fprintf(stderr, "'\n");
   }
   actual_seed.size = size;
 }
@@ -149,8 +144,6 @@ static void env_init_rng()
     fprintf(stderr, "[*] RNG initialized from environment: '%u'\n", actual_rng);
   } else {
     actual_rng = time(NULL);
-    fprintf(stderr, "[*] RNG initialized by default (time(NULL)): '%u'\n",
-            actual_rng);
   }
 }
 
@@ -185,13 +178,6 @@ static void env_init_user_hex_private_key(const char *ENV_NAME,
 
   if (p == NULL) {
     memcpy(dst->d, default_key, dst->d_len);
-    fprintf(stderr,
-            "[*] Private key ('%s') initialized with default value: '0x",
-            ENV_NAME);
-    for (size_t i = 0; i < dst->d_len; i++) {
-      fprintf(stderr, "%02x", default_key[i]);
-    }
-    fprintf(stderr, "'\n");
   } else {
     memcpy(dst->d, tmp, dst->d_len);
     fprintf(stderr, "[*] Private key ('%s') initialized from environment\n",
@@ -227,9 +213,6 @@ static void env_init_user_certificate(unsigned int index)
   sys_cx_ecdsa_sign(&attestation_key, CX_RND_TRNG, CX_SHA256, hash,
                     sizeof(hash), certificate->buffer, MAX_CERT_SIZE, NULL);
   certificate->length = certificate->buffer[1] + 2;
-
-  fprintf(stderr, "[*] User certificate %u initialized (size: %u)\n", index,
-          certificate->length);
 }
 
 static void env_init_endorsement()
@@ -284,8 +267,6 @@ static void env_init_app_name_version()
 
   if (str == NULL) {
     warnx("using default app name & version");
-    fprintf(stderr, "[*] Default app name: '%s'\n", app_name.name);
-    fprintf(stderr, "[*] Default app version: '%s'\n", app_version.name);
     return;
   }
 
