@@ -117,7 +117,7 @@ static void env_init_seed()
             SEED_ENV_NAME);
       p = NULL;
     } else {
-      fprintf(stderr, "[*] Seed initialized from environment: '0x%s'\n", p);
+      fprintf(stderr, "[*] Seed initialized from environment\n");
     }
   }
 
@@ -194,9 +194,8 @@ static void env_init_user_hex_private_key(const char *ENV_NAME,
     fprintf(stderr, "'\n");
   } else {
     memcpy(dst->d, tmp, dst->d_len);
-    fprintf(stderr,
-            "[*] Private key ('%s') initialized from environment: '%s'\n",
-            ENV_NAME, p);
+    fprintf(stderr, "[*] Private key ('%s') initialized from environment\n",
+            ENV_NAME);
   }
 }
 
