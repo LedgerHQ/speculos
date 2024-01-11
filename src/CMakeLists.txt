@@ -56,6 +56,7 @@ add_library(emu
         emulate_blue_2.2.5.c
         emulate_lnsp_1.0.c
         emulate_unified_sdk.c
+        environment.c
         svc.c)
 
 add_dependencies(emu openssl)

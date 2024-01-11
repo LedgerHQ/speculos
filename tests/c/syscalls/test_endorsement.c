@@ -6,10 +6,12 @@
 
 #include <cmocka.h>
 
+#include "../utils.h"
+
 #include "bolos/cx.h"
 #include "bolos/endorsement.h"
 #include "emulate.h"
-#include "utils.h"
+#include "environment.h"
 
 #define cx_ecfp_init_public_key      sys_cx_ecfp_init_public_key
 #define cx_hash                      sys_cx_hash
@@ -25,6 +27,8 @@
 
 void test_endorsement(void **state __attribute__((unused)))
 {
+  init_environment();
+
   uint8_t raw_endorsement_pubkey[65] = { 0 };
   uint8_t endorsement_sig[80] = { 0 };
   uint8_t endorsement_key1_sig[80] = { 0 };

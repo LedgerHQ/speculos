@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include "emulate.h"
+#include "environment.h"
 #include "fonts.h"
 #include "svc.h"
 
@@ -851,6 +852,8 @@ int main(int argc, char *argv[])
       return 1;
     }
   }
+
+  init_environment();
 
   if (hw_model == MODEL_STAX && fonts_path) {
     if (load_fonts(fonts_path) != 0) {

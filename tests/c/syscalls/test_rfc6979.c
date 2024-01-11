@@ -7,9 +7,9 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
+#include "../utils.h"
 #include "bolos/cx.h"
 #include "emulate.h"
-#include "utils.h"
 
 // Test vectors from https://tools.ietf.org/html/rfc6979#appendix-A.2
 typedef struct {

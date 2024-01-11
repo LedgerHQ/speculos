@@ -4,24 +4,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "emulate.h"
+#include "environment.h"
 
 static bool initialized = false;
-
-static unsigned int get_rng_seed_from_env(const char *name)
-{
-  char *p;
-
-  p = getenv(name);
-  if (p != NULL) {
-    return atoi(p);
-  } else {
-    return time(NULL);
-  }
-}
 
 /* not secure, but this is clearly not the goal of this emulator */
 unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length)
@@ -29,7 +17,7 @@ unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length)
   unsigned int i;
 
   if (!initialized) {
-    srand(get_rng_seed_from_env("RNG_SEED"));
+    srand(env_get_rng());
     initialized = true;
   }
 

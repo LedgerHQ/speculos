@@ -7,8 +7,8 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
+#include "../utils.h"
 #include "nist_cavp.h"
-#include "utils.h"
 
 #include "bolos/cx.h"
 #include "emulate.h"

@@ -8,10 +8,11 @@
 
 #include <cmocka.h>
 
+#include "../utils.h"
 #include "bolos/cx.h"
 #include "bolos/cx_utils.h"
 #include "emulate.h"
-#include "utils.h"
+#include "environment.h"
 
 #define MAX_PATH_LEN 10
 
@@ -228,6 +229,7 @@ static void test_eip_vector(const eip2333_test_vector *v)
   int path_len;
 
   assert_int_equal(setenv("SPECULOS_SEED", v->seed, 1), 0);
+  init_environment();
 
   path_len = get_path(v->path, path, MAX_PATH_LEN);
   assert_int_equal(path_len, 1);
@@ -245,6 +247,7 @@ static void test_eip2333_derive(void **state __attribute__((unused)))
   unsigned int i;
 
   assert_int_equal(setenv("SPECULOS_SEED", default_seed, 1), 0);
+  init_environment();
 
   for (i = 0; i < ARRAY_SIZE(test_vectors); i++) {
     test_eip_vector(&test_vectors[i]);
@@ -257,6 +260,7 @@ static void test_bolos_vector(const bolos_test_vector *v)
   unsigned int path[10];
   int path_len;
 
+  init_environment();
   path_len = get_path(v->path, path, MAX_PATH_LEN);
   assert_int_equal(path_len, v->path_len);
 

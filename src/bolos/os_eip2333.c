@@ -6,8 +6,8 @@
 #include "cx.h"
 #include "cx_utils.h"
 #include "emulate.h"
+#include "environment.h"
 #include "exception.h"
-#include "os_bip32.h"
 
 #define MAX_SEED_SIZE          64
 #define CX_SHA256_SIZE         32
@@ -142,7 +142,7 @@ unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
     THROW(EXCEPTION);
   }
 
-  seed_size = get_seed_from_env("SPECULOS_SEED", seed, sizeof(seed));
+  seed_size = env_get_seed(seed, sizeof(seed));
 
   cx_derive_master_sk(seed, seed_size, sk);
   if (privateKey != NULL) {

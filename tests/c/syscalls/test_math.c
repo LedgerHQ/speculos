@@ -5,7 +5,7 @@
 // must come after setjmp.h
 #include <cmocka.h>
 
-#include "utils.h"
+#include "../utils.h"
 
 #include "bolos/cx.h"
 #include "emulate.h"

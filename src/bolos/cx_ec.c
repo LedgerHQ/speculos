@@ -1652,7 +1652,6 @@ int sys_cx_ecdsa_sign(const cx_ecfp_private_key_t *key, int mode,
   BIGNUM *normalized_s = BN_new();
   ECDSA_SIG_get0(ecdsa_sig, &r, &s);
   if ((mode & CX_NO_CANONICAL) == 0 && BN_cmp(s, halfn) > 0) {
-    fprintf(stderr, "cx_ecdsa_sign: normalizing s > n/2\n");
     BN_sub(normalized_s, n, s);
     if (info != NULL) {
       *info ^= CX_ECCINFO_PARITY_ODD; // Inverse the bit

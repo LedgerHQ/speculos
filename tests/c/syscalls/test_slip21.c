@@ -9,6 +9,7 @@
 #include "bolos/cx.h"
 #include "bolos/os_bip32.h"
 #include "emulate.h"
+#include "environment.h"
 
 void test_slip21(void **state __attribute__((unused)))
 {
@@ -29,6 +30,8 @@ void test_slip21(void **state __attribute__((unused)))
              "4a9043eeb77bdd53aa6fc3a0e31462270316fa04b8c19114c8798706cd02ac8",
              1),
       0);
+
+  init_environment();
 
   sys_os_perso_derive_node_with_seed_key(HDW_SLIP21, CX_CURVE_SECP256K1,
                                          (uint32_t *)SLIP77_LABEL, 10, key,
