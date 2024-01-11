@@ -1,0 +1,31 @@
+name: Force rebased
+
+on: [pull_request]
+
+jobs:
+  force-rebase:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: 'PR commits + 1'
+        id: pr_commits
+        run: echo "pr_fetch_depth=$(( ${{ github.event.pull_request.commits }} + 1 ))" >> "${GITHUB_OUTPUT}"
+
+      - name: 'Checkout PR branch and all PR commits'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: ${{ steps.pr_commits.outputs.pr_fetch_depth }}
+
+      - name: Check if PR branch is rebased on target branch
+        shell: bash
+        run: |
+          git merge-base --is-ancestor ${{ github.event.pull_request.base.sha }} HEAD
+
+      - name: Check if PR branch contains merge commits
+        shell: bash
+        run: |
+          merges=$(git log --oneline HEAD~${{ github.event.pull_request.commits }}...HEAD --merges ); \
+          echo "--- Merges ---"; \
+          echo ${merges}; \
+          [[ -z "${merges}" ]]
