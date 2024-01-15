@@ -157,7 +157,7 @@ unsigned long sys_bagl_hal_draw_bitmap_within_rect(
     sys_io_seph_send(buf, len);
   }
 
-  return 0;
+  return 0x9000; // SWO_SUCCESS
 }
 
 unsigned long sys_screen_update(void)

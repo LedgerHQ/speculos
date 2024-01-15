@@ -139,7 +139,26 @@ def get_cx_infos(app_path):
     return sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load
 
 
-def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> int:
+def get_elf_fonts_size(app_path):
+    with open(app_path, 'rb') as fp:
+        elf = ELFFile(fp)
+        text = elf.get_section_by_name('.text')
+        for seg in elf.iter_segments():
+            if seg['p_type'] != 'PT_LOAD':
+                continue
+            if seg.section_in_segment(text):
+                break
+        else:
+            raise RuntimeError("No program header with text section!")
+        symtab = elf.get_section_by_name('.symtab')
+        bagl_fonts_symbol = symtab.get_symbol_by_name('C_bagl_fonts')
+        if bagl_fonts_symbol is not None:
+            return bagl_fonts_symbol[0]['st_size']
+
+    return 0
+
+
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, is_bagl: bool) -> int:
     argv = ['qemu-arm-static']
 
     if args.debug:
@@ -170,13 +189,12 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         logger.warn(f"Cx lib {cxlib_filepath} not found")
 
-    if args.model == "stax":
-        fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
-        fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
-        if os.path.exists(fonts):
-            argv += ['-f', fonts]
-        else:
-            logger.warn(f"Fonts {fonts_filepath} not found")
+    fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
+    fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
+    if os.path.exists(fonts):
+        argv += ['-f', fonts]
+    elif not is_bagl:
+        logger.warn(f"Fonts {fonts_filepath} not found")
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
@@ -185,6 +203,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
             fonts_addr, fonts_size = get_elf_infos(lib_path)
+
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
@@ -325,6 +344,12 @@ def main(prog=None) -> int:
         else:
             args.model = metadata["target"]
             logger.warn(f"Device model detected from metadata: {args.model}")
+
+    # For Nano S and Blue, it can only be BAGL
+    if args.model == "nanos" or args.model == "blue":
+        is_bagl = True
+    else:
+        is_bagl = get_elf_fonts_size(app_path) != 0
 
     if not args.apiLevel:
         if "api_level" in metadata:
@@ -473,13 +498,14 @@ def main(prog=None) -> int:
 
     s1, s2 = socket.socketpair()
 
-    qemu_pid = run_qemu(s1, s2, args)
+    qemu_pid = run_qemu(s1, s2, args, is_bagl)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
         model=args.model,
+        is_bagl=is_bagl,
         automation=automation_path,
         automation_server=automation_server,
         transport=args.usb)
@@ -521,7 +547,7 @@ def main(prog=None) -> int:
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
                                args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
-    screen_notifier = ScreenNotifier(display_args, server_args)
+    screen_notifier = ScreenNotifier(display_args, server_args, is_bagl)
 
     if apirun is not None:
         assert automation_server is not None

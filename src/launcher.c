@@ -441,7 +441,18 @@ static int load_fonts(char *fonts_path)
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ;
-  int load_addr = STAX_FONTS_ARRAY_ADDR;
+  int load_addr = 0;
+
+  if (hw_model == MODEL_STAX) {
+    load_addr = STAX_FONTS_ARRAY_ADDR;
+  } else if (hw_model == MODEL_NANO_SP) {
+    load_addr = NANOSP_FONTS_ARRAY_ADDR;
+  } else if (hw_model == MODEL_NANO_X) {
+    load_addr = NANOX_FONTS_ARRAY_ADDR;
+  } else {
+    warnx("hw_model %u not supported", hw_model);
+    return -1;
+  }
 
   void *p = mmap((void *)load_addr, load_size, prot, flags, fd, 0);
   fprintf(stderr, "[*] loaded fonts at %p\n", p);
@@ -769,7 +780,8 @@ int main(int argc, char *argv[])
   case MODEL_NANO_X:
     if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
-        sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12) {
+        sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
+        sdk_version != SDK_API_LEVEL_15) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -781,7 +793,7 @@ int main(int argc, char *argv[])
   case MODEL_NANO_SP:
     if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
-        sdk_version != SDK_API_LEVEL_12) {
+        sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_15) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
@@ -818,7 +830,7 @@ int main(int argc, char *argv[])
 
   init_environment();
 
-  if (hw_model == MODEL_STAX && fonts_path) {
+  if (fonts_path) {
     if (load_fonts(fonts_path) != 0) {
       return 1;
     }
