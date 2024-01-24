@@ -73,21 +73,42 @@ def get_elf_ledger_metadata(app_path):
 def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
+
         text = elf.get_section_by_name('.text')
+        bss = elf.get_section_by_name('.bss')
+        data = elf.get_section_by_name('.data')
+        symtab = elf.get_section_by_name('.symtab')
+
+        text_seg = None
+        bss_seg = None
+        data_seg = None
         for seg in elf.iter_segments():
             if seg['p_type'] != 'PT_LOAD':
                 continue
             if seg.section_in_segment(text):
                 text_seg = seg
-                break
-        else:
-            raise RuntimeError("No program header with text section!")
-        symtab = elf.get_section_by_name('.symtab')
-        bss = elf.get_section_by_name('.bss')
+            if seg.section_in_segment(bss):
+                bss_seg = seg
+            if seg.section_in_segment(data):
+                data_seg = seg
+
+        if text_seg is None:
+            raise RuntimeError(f"No program header with .text section!")
+        if bss_seg is None:
+            raise RuntimeError(f"No program header with .bss section!")
+
         sh_offset = text_seg['p_offset']
         sh_size = text_seg['p_filesz']
-        text_load_addr = text['sh_addr']
-        stack = bss['sh_addr']
+        text_load_addr = text_seg['p_paddr']
+        data_size = data['sh_size']
+
+        if data_seg is None:
+            stack = bss_seg['p_vaddr']
+            data_offset = 0
+        else:
+            stack = data_seg['p_vaddr']
+            data_offset = data_seg['p_offset']
+
         sym_estack = symtab.get_symbol_by_name('_estack')
         if sym_estack is None:
             sym_estack = symtab.get_symbol_by_name('END_STACK')
@@ -121,8 +142,9 @@ def get_elf_infos(app_path):
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
-    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, \
-        svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
+    print(f"{stack:x} - {stack_size:x}")
+    print(f"{data_offset:x}")
+    return sh_offset, sh_size, data_offset, data_size, stack, stack_size, ram_addr, ram_size, text_load_addr, svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
 
 
 def get_cx_infos(app_path):
@@ -182,7 +204,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
-        load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
+        load_offset, load_size, data_offset, data_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
             fonts_addr, fonts_size = get_elf_infos(lib_path)
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
@@ -193,6 +215,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
                 sys.exit(1)
             extra_ram = arg
         lib_arg = f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}'
+        lib_arg += f':{data_offset:#x}:{data_size:#x}'
         lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
         lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
         lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'

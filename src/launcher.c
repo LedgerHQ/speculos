@@ -31,6 +31,8 @@
 struct elf_info_s {
   unsigned long load_offset;
   unsigned long load_size;
+  unsigned long data_offset;
+  unsigned long data_size;
   unsigned long stack_addr;
   unsigned long stack_size;
   unsigned long svc_call_addr;
@@ -128,6 +130,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   apps[napp].elf.load_offset = elf->load_offset;
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
+  apps[napp].elf.data_offset = elf->data_offset;
+  apps[napp].elf.data_size = elf->data_size;
   apps[napp].elf.stack_size = elf->stack_size;
   apps[napp].elf.svc_call_addr = elf->svc_call_addr;
   apps[napp].elf.svc_cx_call_addr = elf->svc_cx_call_addr;
@@ -292,7 +296,7 @@ static void *load_app(char *name)
     goto error;
   }
 
-  size = app->elf.load_size;
+  size = app->elf.load_size + app->elf.data_size;
   if (size > st.st_size - app->elf.load_offset) {
     warnx("app load size is larger than file size (%lu > %lld)\n",
           app->elf.load_size, st.st_size);
@@ -311,11 +315,21 @@ static void *load_app(char *name)
   /* load code
    * map an extra page in case the _install_params are mapped in the beginning
    * of a new page so that they can still be accessed */
-  code = mmap(LOAD_ADDR, size + page_size, PROT_READ | PROT_EXEC,
+  code = mmap(LOAD_ADDR, size + page_size, PROT_READ | PROT_WRITE,
               MAP_PRIVATE | MAP_FIXED, app->fd, app->elf.load_offset);
   if (code == MAP_FAILED) {
     warn("mmap code");
     goto error;
+  }
+
+  if (app->elf.data_size != 0) {
+    // Temporarily use LOAD_RAM_ADDR to read .data section and copy it
+    if (mmap((void *)LOAD_RAM_ADDR, app->elf.data_size, PROT_READ, MAP_PRIVATE | MAP_FIXED, app->fd, app->elf.data_offset) == MAP_FAILED) {
+      warn("mmap temp");
+      goto error;
+    }
+    memcpy(LOAD_ADDR + app->elf.load_size, (void *)LOAD_RAM_ADDR, app->elf.data_size);
+    munmap((void *)LOAD_RAM_ADDR, app->elf.data_size);
   }
 
   /* setup data */
@@ -364,11 +378,6 @@ static void *load_app(char *name)
         fprintf(stderr, "\n");
       }
     }
-  }
-
-  if (mprotect(code, size, PROT_READ | PROT_WRITE) != 0) {
-    warn("could not update mprotect in rw mode for app");
-    goto error;
   }
 
   // If the syscall functions are not inlined and their symbols have been found
@@ -613,12 +622,15 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
     err(1, "strdup");
   }
 
-  ret = sscanf(
-      arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx",
-      libname, *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr,
-      &elf->stack_size, &elf->svc_call_addr, &elf->svc_cx_call_addr,
-      &elf->text_load_addr, &elf->fonts_addr, &elf->fonts_size);
-  if (ret != 11) {
+  ret = sscanf(arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx",
+               libname, *filename,
+               &elf->load_offset, &elf->load_size,
+               &elf->data_offset, &elf->data_size,
+               &elf->stack_addr, &elf->stack_size,
+               &elf->svc_call_addr, &elf->svc_cx_call_addr,
+               &elf->text_load_addr,
+               &elf->fonts_addr, &elf->fonts_size);
+  if (ret != 13) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
