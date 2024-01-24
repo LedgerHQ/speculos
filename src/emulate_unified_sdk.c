@@ -542,6 +542,36 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
              uint32_t, n,
              uint32_t, h);
 
+    SYSCALL2(cx_mont_alloc, "(%p, %u)",
+             void *, ctx,
+             size_t, length);
+
+
+    SYSCALL2(cx_mont_init, "(%p, %u)",
+             void *, ctx,
+             uint32_t, n);
+
+    SYSCALL3(cx_mont_init2, "(%p, %u, %u)",
+             void *, ctx,
+             uint32_t, n,
+             uint32_t, h);
+
+    SYSCALL4(cx_mont_mul, "(%u, %u, %u, %p)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             void *, ctx);
+
+    SYSCALL3(cx_mont_to_montgomery, "(%u, %u, %p)",
+             uint32_t, x,
+             uint32_t, z,
+             void *, ctx);
+
+    SYSCALL3(cx_mont_from_montgomery, "(%u, %u, %p)",
+             uint32_t, z,
+             uint32_t, x,
+             void *, ctx);
+
     SYSCALL10(cx_bls12381_key_gen, "(%u, %p, %u, %p, %u, %p, %u, %p, %p, %u)",
               uint8_t, mode,
               uint8_t *, secret,

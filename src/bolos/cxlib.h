@@ -66,6 +66,12 @@ typedef struct cx_mpi_ecpoint_s {
 
 } cx_mpi_ecpoint_t;
 
+// Montgomery context.
+typedef struct {
+  cx_bn_t n; // Modulus
+  cx_bn_t h; // Second Montgomery constant
+} cx_bn_mont_ctx_t;
+
 //-----------------------------------------------------------------------------
 // Prototypes
 //-----------------------------------------------------------------------------
@@ -201,6 +207,16 @@ cx_err_t sys_cx_bn_next_prime(const cx_bn_t bn_x);
 cx_err_t sys_cx_bn_gf2_n_mul(cx_bn_t bn_r, const cx_bn_t bn_a,
                              const cx_bn_t bn_b, const cx_bn_t bn_n,
                              const cx_bn_t bn_h);
+cx_err_t sys_cx_mont_alloc(cx_bn_mont_ctx_t *ctx, size_t length);
+cx_err_t sys_cx_mont_init(cx_bn_mont_ctx_t *ctx, const cx_bn_t n);
+cx_err_t sys_cx_mont_init2(cx_bn_mont_ctx_t *ctx, const cx_bn_t n,
+                           const cx_bn_t h);
+cx_err_t sys_cx_mont_to_montgomery(cx_bn_t x, const cx_bn_t z,
+                                   const cx_bn_mont_ctx_t *ctx);
+cx_err_t sys_cx_mont_from_montgomery(cx_bn_t z, const cx_bn_t x,
+                                     const cx_bn_mont_ctx_t *ctx);
+cx_err_t sys_cx_mont_mul(cx_bn_t r, const cx_bn_t a, const cx_bn_t b,
+                         const cx_bn_mont_ctx_t *ctx);
 
 // cx_ecdomain.c
 int cx_nid_from_curve(cx_curve_t curve);
