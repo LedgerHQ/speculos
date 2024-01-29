@@ -432,34 +432,17 @@ static int load_fonts(char *fonts_path)
     warnx("failed to open \"%s\"", fonts_path);
     return -1;
   }
-  fprintf(stderr, "[*] loading fonts from \"%s\"\n", fonts_path);
+
+  int load_size = lseek(fd, 0, SEEK_END);
+  lseek(fd, 0L, SEEK_SET);
+
+  fprintf(stderr, "[*] loading fonts from \"%s\" (%d)\n", fonts_path,
+          load_size);
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ;
-  int load_addr;
-  int load_size;
+  int load_addr = STAX_FONTS_ARRAY_ADDR;
 
-  if (sdk_version == SDK_API_LEVEL_1 || sdk_version == SDK_API_LEVEL_3 ||
-      sdk_version == SDK_API_LEVEL_5) {
-    load_addr = STAX_FONTS_ARRAY_ADDR;
-    load_size = 20480;
-  } else if (sdk_version == SDK_API_LEVEL_7) {
-    load_addr = STAX_FONTS_ARRAY_ADDR;
-    load_size = 45056;
-  } else if ((sdk_version == SDK_API_LEVEL_8 ||
-              sdk_version == SDK_API_LEVEL_9 ||
-              sdk_version == SDK_API_LEVEL_10 ||
-              sdk_version == SDK_API_LEVEL_11 ||
-              sdk_version == SDK_API_LEVEL_12 ||
-              sdk_version == SDK_API_LEVEL_13 ||
-              sdk_version == SDK_API_LEVEL_14)) {
-    load_addr = STAX_FONTS_ARRAY_ADDR;
-    load_size = 40960;
-  } else {
-    warn("Invalid sdk version for fonts");
-    close(fd);
-    return -1;
-  }
   void *p = mmap((void *)load_addr, load_size, prot, flags, fd, 0);
   fprintf(stderr, "[*] loaded fonts at %p\n", p);
 
