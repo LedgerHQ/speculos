@@ -12,11 +12,15 @@ typedef enum {
   SDK_BLUE_2_2_5,
   SDK_NANO_SP_1_0,
   SDK_NANO_SP_1_0_3,
-  // Unified SDK versions only below, do not add unrelated versions
+  // Unified SDK versions only below, do not add unrelated versions.
+  // Make sure to add all API_LEVEL as apilevelstr2sdkver() relies on it
   // SDK_API_LEVEL_START
   SDK_API_LEVEL_1,
+  SDK_API_LEVEL_2,
   SDK_API_LEVEL_3,
+  SDK_API_LEVEL_4,
   SDK_API_LEVEL_5,
+  SDK_API_LEVEL_6,
   SDK_API_LEVEL_7,
   SDK_API_LEVEL_8,
   SDK_API_LEVEL_9,

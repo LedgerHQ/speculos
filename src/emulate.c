@@ -38,21 +38,12 @@ int emulate(unsigned long syscall, unsigned long *parameters,
   case SDK_BLUE_2_2_5:
     retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
     break;
-  case SDK_API_LEVEL_1:
-  case SDK_API_LEVEL_3:
-  case SDK_API_LEVEL_5:
-  case SDK_API_LEVEL_7:
-  case SDK_API_LEVEL_8:
-  case SDK_API_LEVEL_9:
-  case SDK_API_LEVEL_10:
-  case SDK_API_LEVEL_11:
-  case SDK_API_LEVEL_12:
-  case SDK_API_LEVEL_13:
-  case SDK_API_LEVEL_14:
-    retid =
-        emulate_unified_sdk(syscall, parameters, ret, verbose, version, model);
-    break;
   default:
+    if ((version >= SDK_API_LEVEL_1) && (version < SDK_COUNT)) {
+      retid = emulate_unified_sdk(syscall, parameters, ret, verbose, version,
+                                  model);
+      break;
+    }
     errx(1, "Unsupported SDK version %u", version);
     break;
   }

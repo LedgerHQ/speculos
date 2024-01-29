@@ -633,31 +633,15 @@ static int load_apps(int argc, char *argv[])
 
 static sdk_version_t apilevelstr2sdkver(const char *api_level_arg)
 {
-  if (strcmp("1", api_level_arg) == 0) {
-    return SDK_API_LEVEL_1;
-  } else if (strcmp("3", api_level_arg) == 0) {
-    return SDK_API_LEVEL_3;
-  } else if (strcmp("5", api_level_arg) == 0) {
-    return SDK_API_LEVEL_5;
-  } else if (strcmp("7", api_level_arg) == 0) {
-    return SDK_API_LEVEL_7;
-  } else if (strcmp("8", api_level_arg) == 0) {
-    return SDK_API_LEVEL_8;
-  } else if (strcmp("9", api_level_arg) == 0) {
-    return SDK_API_LEVEL_9;
-  } else if (strcmp("10", api_level_arg) == 0) {
-    return SDK_API_LEVEL_10;
-  } else if (strcmp("11", api_level_arg) == 0) {
-    return SDK_API_LEVEL_11;
-  } else if (strcmp("12", api_level_arg) == 0) {
-    return SDK_API_LEVEL_12;
-  } else if (strcmp("13", api_level_arg) == 0) {
-    return SDK_API_LEVEL_13;
-  } else if (strcmp("14", api_level_arg) == 0) {
-    return SDK_API_LEVEL_14;
-  } else {
+  int api_level = atoi(api_level_arg);
+  int _sdk_version = api_level - 1 + SDK_API_LEVEL_1;
+
+  if ((api_level <= 0) || (_sdk_version >= SDK_COUNT)) {
+    warnx("Invalid api level (\"%s\")", api_level_arg);
     return SDK_COUNT;
   }
+
+  return _sdk_version;
 }
 
 static sdk_version_t sdkstr2sdkver(const char *sdk_arg)
@@ -765,14 +749,15 @@ int main(int argc, char *argv[])
     if (sdk_version == SDK_COUNT) {
       errx(1, "invalid SDK api_level: %s", api_level);
     }
+    fprintf(stderr, "[*] using API_LEVEL version %s on %s\n", api_level,
+            model_str);
   } else {
     sdk_version = sdkstr2sdkver(sdk);
     if (sdk_version == SDK_COUNT) {
       errx(1, "invalid SDK version: %s", sdk);
     }
+    fprintf(stderr, "[*] using SDK version %s on %s\n", sdk, model_str);
   }
-
-  fprintf(stderr, "[*] using SDK version %u on %s\n", sdk_version, model_str);
 
   switch (hw_model) {
   case MODEL_NANO_S:
@@ -825,12 +810,7 @@ int main(int argc, char *argv[])
   if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
       sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
       sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3 ||
-      sdk_version == SDK_API_LEVEL_1 || sdk_version == SDK_API_LEVEL_3 ||
-      sdk_version == SDK_API_LEVEL_5 || sdk_version == SDK_API_LEVEL_7 ||
-      sdk_version == SDK_API_LEVEL_8 || sdk_version == SDK_API_LEVEL_9 ||
-      sdk_version == SDK_API_LEVEL_10 || sdk_version == SDK_API_LEVEL_11 ||
-      sdk_version == SDK_API_LEVEL_12 || sdk_version == SDK_API_LEVEL_13 ||
-      sdk_version == SDK_API_LEVEL_14) {
+      ((sdk_version >= SDK_API_LEVEL_1) && (sdk_version < SDK_COUNT))) {
     if (load_cxlib(cxlib_path) != 0) {
       return 1;
     }
