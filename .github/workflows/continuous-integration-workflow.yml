@@ -15,8 +15,6 @@ jobs:
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
     steps:
     - name: Clone
       uses: actions/checkout@v3
@@ -31,10 +29,14 @@ jobs:
         make -C build clean
         make -C build
         make -C build test
-        python3 -m pip install pytest pytest-cov
-        python3 -m pytest --cov=speculos --cov-report=xml
+        pip install pytest-cov
+        pip install .
+        pytest --cov=speculos --cov-report=xml
+    - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       with:
         name: codecov-speculos
 
@@ -60,17 +62,19 @@ jobs:
       with:
         python-version: ${{ matrix.python_version }}
 
-    - name: Build
+    - name: Build and install package
       run: |
         cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1
         make -C build
+        pip install pytest
+        pip install .
 
     - name: Test
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
         make -C build/ test
-        python3 -m pytest
+        pytest
 
   package_python:
     name: Build and deploy Speculos Python Package
