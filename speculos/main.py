@@ -535,4 +535,4 @@ def main(prog=None) -> int:
     s2.close()
     _, status = os.waitpid(qemu_pid, 0)
     qemu_exit_status = os.WEXITSTATUS(status)
-    return qemu_exit_status
+    sys.exit(qemu_exit_status)
