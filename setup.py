@@ -57,7 +57,7 @@ setup(
         "flask-restful>=0.3.9,<1.0",
         "jsonschema>=3.2.0,<4.18.0",
         "mnemonic>=0.19,<1.0",
-        "pillow>=8.0.0,<10.0.0",
+        "pillow>=8.0.0,<11.0.0",
         "pyelftools>=0.27,<1.0",
         "pyqt5>=5.15.2,<6.0.0",
         "requests>=2.25.1,<3.0.0",
