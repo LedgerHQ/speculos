@@ -11,7 +11,16 @@ build-backend = "setuptools.build_meta"
 name = "speculos"
 authors = [{name = "Ledger", email = "hello@ledger.fr"}]
 description = "Ledger Blue, Stax and Nano S/S+/X application emulator"
-urls = {Homepage = "https://github.com/LedgerHQ/speculos"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+]
 requires-python = ">=3.8"
 dependencies = [
     "construct>=2.10.56,<3.0.0",
@@ -29,6 +38,10 @@ dynamic = ["version"]
 [project.readme]
 file = "README.md"
 content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/LedgerHQ/speculos"
+"Bug Tracker" = "https://github.com/LedgerHQ/speculos/issues"
 
 [project.optional-dependencies]
 dev = [
