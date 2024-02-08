@@ -14,20 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Python dependency
-      run: pip install flake8
+      run: pip install flake8 flake8-pyproject
     - name: Lint Python code
-      run: find speculos/ -type f -name '*.py' -exec flake8 --max-line-length=120 '{}' '+'
+      run: flake8 speculos* setup.py
 
   linter-c:
     name: Linter on C code
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Lint C code
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - run: pip install mypy types-requests types-setuptools PyQt5-stubs
     - name: Mypy type checking
       run: mypy speculos
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - run: pip install bandit
     - name: Bandit security checking
       run: bandit -r speculos -ll || echo 0
@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Check misspellings
@@ -72,29 +72,3 @@ jobs:
         check_filenames: true
         ignore_words_file: .codespell-ignore
         skip: ./speculos/api/static/swagger/swagger-ui.css,./speculos/api/static/swagger/swagger-ui-bundle.js,./speculos/api/static/swagger/swagger-ui-standalone-preset.js,./speculos/fonts
-
-  coverage:
-    name: Code coverage
-    runs-on: ubuntu-latest
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
-    steps:
-    - name: Clone
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-    - name: Rebuild with code coverage instrumentation
-      env:
-        CTEST_OUTPUT_ON_FAILURE: 1
-        RNG_SEED: 0
-      run: |
-        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
-        make -C build clean
-        make -C build
-        make -C build test
-        python3 -m pip install pytest-cov
-        python3 -m pytest --cov=speculos --cov-report=xml
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        name: codecov-speculos

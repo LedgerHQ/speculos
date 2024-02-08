@@ -12,13 +12,42 @@ on:
       - master
 
 jobs:
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-latest
+    container:
+      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+    steps:
+    - name: Clone
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Build with code coverage instrumentation
+      env:
+        CTEST_OUTPUT_ON_FAILURE: 1
+        RNG_SEED: 0
+      run: |
+        cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1 -DCODE_COVERAGE=ON
+        make -C build clean
+        make -C build
+        make -C build test
+        pip install pytest-cov
+        pip install .
+        PYTHONPATH=. pytest --cov=speculos --cov-report=xml
+    - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        name: codecov-speculos
 
   build:
     name: Clone, build, test
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-
+    strategy:
+      matrix:
+        python_version: ['3.8', '3.9', '3.10', '3.11']
     # Use https://ghcr.io/ledgerhq/speculos-builder which has all the required
     # dependencies
     container:
@@ -26,21 +55,28 @@ jobs:
 
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
-    - name: Build
+    - name: Setup Python version
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python_version }}
+
+    - name: Build and install package
       run: |
         cmake -Bbuild -H. -DPRECOMPILED_DEPENDENCIES_DIR=/install -DWITH_VNC=1
         make -C build
+        pip install pytest
+        pip install .
 
     - name: Test
       env:
         CTEST_OUTPUT_ON_FAILURE: 1
       run: |
         make -C build/ test
-        python3 -m pytest
+        pytest
 
   package_python:
     name: Build and deploy Speculos Python Package
@@ -51,7 +87,7 @@ jobs:
 
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -113,7 +149,7 @@ jobs:
     needs: [build]
     steps:
     - name: Clone
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Build and publish to GitHub Packages
