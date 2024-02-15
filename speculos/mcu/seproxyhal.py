@@ -149,6 +149,9 @@ class SocketHelper(threading.Thread):
             size -= len(tmp)
         return data
 
+    def get_tick_count(self):
+        return self.ticks_count
+
     def read_packet(self):
         data = self._recvall(3)
         if data is None:
@@ -499,3 +502,6 @@ class SeProxyHal(IODevice):
             self.socket_helper.queue_packet(SephTag(tag), packet)
         else:
             self.usb.xfer(packet)
+
+    def get_tick_count(self):
+        return self.socket_helper.get_tick_count()
