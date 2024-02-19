@@ -60,12 +60,13 @@ static void check_is_default(field_e field)
     assert_memory_equal(&key[0], default_seed, MAX_SEED_SIZE);
     break;
   }
-  case FIELD_RNG:
+  case FIELD_RNG: {
     unsigned int now = time(NULL);
     // RNG is initialized in the past, not that long ago, but still
     // assert_int_equal(env_get_rng(), time(NULL)); can sometimes fail
     assert_in_range(env_get_rng(), now - 1, now);
     break;
+  }
   case FIELD_USER_KEY: {
     assert_memory_equal(env_get_user_private_key(1)->d,
                         default_user_private_key,
