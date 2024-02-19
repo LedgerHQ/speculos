@@ -6,11 +6,11 @@
 
 #define STAX_FONTS_ARRAY_ADDR 0x00805000
 // Latest (starting from SDK_API_LEVEL_15)
-#define STAX_NB_FONTS         6
+#define STAX_NB_FONTS 6
 // SDK_API_LEVEL_12 to SDK_API_LEVEL_14
-#define STAX_NB_FONTS_12      7
+#define STAX_NB_FONTS_12 7
 
-#define MAX_NB_FONTS STAX_NB_FONTS
+#define MAX_NB_FONTS    STAX_NB_FONTS
 #define MAX_NB_FONTS_12 STAX_NB_FONTS_12
 
 // ============================================================================

@@ -5,7 +5,7 @@
 #include "fonts.h"
 #include "sdk.h"
 
-#define MAX_BITMAP_CHAR (MAX_NB_FONTS * 128)
+#define MAX_BITMAP_CHAR    (MAX_NB_FONTS * 128)
 #define MAX_BITMAP_CHAR_12 (MAX_NB_FONTS_12 * 128)
 
 typedef struct {
@@ -37,9 +37,8 @@ static void add_bitmap_character(uint8_t *bitmap, uint32_t character)
       fprintf(stdout, "ERROR: we reached MAX_BITMAP_CHAR!\n");
       return;
     }
-  }
-  else {
-   if (nb_bitmap_char >= MAX_BITMAP_CHAR_12) {
+  } else {
+    if (nb_bitmap_char >= MAX_BITMAP_CHAR_12) {
       fprintf(stdout, "ERROR: we reached MAX_BITMAP_CHAR_12!\n");
       return;
     }
@@ -242,8 +241,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     fonts = (void *)STAX_FONTS_ARRAY_ADDR;
     if (sdk_version > SDK_API_LEVEL_14) {
       nb_fonts = STAX_NB_FONTS;
-    }
-    else {
+    } else {
       nb_fonts = STAX_NB_FONTS_12;
     }
   } else {
@@ -264,14 +262,15 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   }
   if (sdk_version > SDK_API_LEVEL_14) {
     if (nb_fonts > MAX_NB_FONTS) {
-      fprintf(stdout, "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS (%d)!\n",
+      fprintf(stdout,
+              "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS (%d)!\n",
               nb_fonts, MAX_NB_FONTS);
       return;
     }
-  }
-  else {
+  } else {
     if (nb_fonts > MAX_NB_FONTS_12) {
-      fprintf(stdout, "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS_12 (%d)!\n",
+      fprintf(stdout,
+              "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS_12 (%d)!\n",
               nb_fonts, MAX_NB_FONTS_12);
       return;
     }
