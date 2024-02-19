@@ -6,13 +6,14 @@
 #include "sdk.h"
 
 #define MAX_BITMAP_CHAR (MAX_NB_FONTS * 128)
+#define MAX_BITMAP_CHAR_12 (MAX_NB_FONTS_12 * 128)
 
 typedef struct {
   const uint8_t *bitmap;
   uint32_t character;
 } BITMAP_CHAR;
 
-BITMAP_CHAR bitmap_char[MAX_BITMAP_CHAR];
+BITMAP_CHAR bitmap_char[MAX_BITMAP_CHAR_12];
 uint32_t nb_bitmap_char;
 
 // Return the real addr depending on where the app was loaded
@@ -31,9 +32,17 @@ static void *remap_addr(void *code, uint32_t addr, uint32_t text_load_addr)
 // Store bitmap/character pair
 static void add_bitmap_character(uint8_t *bitmap, uint32_t character)
 {
-  if (nb_bitmap_char >= MAX_BITMAP_CHAR) {
-    fprintf(stdout, "ERROR: we reached MAX_BITMAP_CHAR!\n");
-    return;
+  if (sdk_version > SDK_API_LEVEL_14) {
+    if (nb_bitmap_char >= MAX_BITMAP_CHAR) {
+      fprintf(stdout, "ERROR: we reached MAX_BITMAP_CHAR!\n");
+      return;
+    }
+  }
+  else {
+   if (nb_bitmap_char >= MAX_BITMAP_CHAR_12) {
+      fprintf(stdout, "ERROR: we reached MAX_BITMAP_CHAR_12!\n");
+      return;
+    }
   }
   // Space character is empty and have no bitmap -> erase it with next character
   if (nb_bitmap_char && bitmap_char[nb_bitmap_char - 1].bitmap == bitmap) {
@@ -80,6 +89,25 @@ static void parse_nbgl_font(nbgl_font_t *nbgl_font)
 {
   uint8_t *bitmap = nbgl_font->bitmap;
   nbgl_font_character_t *characters = nbgl_font->characters;
+
+  for (uint32_t c = nbgl_font->first_char; c <= nbgl_font->last_char;
+       c++, characters++) {
+    // Be sure data is coherent
+    if (characters->bitmap_offset >= nbgl_font->bitmap_len) {
+      fprintf(stdout, "bitmap_offset (%u) is >= bitmap_len (%u)!\n",
+              characters->bitmap_offset, nbgl_font->bitmap_len);
+      return;
+    }
+    uint8_t *ptr = bitmap + characters->bitmap_offset;
+    add_bitmap_character(ptr, c);
+  }
+}
+
+// Parse provided NBGL font and add bitmap/character pairs
+static void parse_nbgl_font_14(nbgl_font_t_14 *nbgl_font)
+{
+  uint8_t *bitmap = nbgl_font->bitmap;
+  nbgl_font_character_t_14 *characters = nbgl_font->characters;
 
   for (uint32_t c = nbgl_font->first_char; c <= nbgl_font->last_char;
        c++, characters++) {
@@ -212,7 +240,12 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   // On Stax, fonts are loaded at a known location
   if (hw_model == MODEL_STAX) {
     fonts = (void *)STAX_FONTS_ARRAY_ADDR;
-    nb_fonts = STAX_NB_FONTS;
+    if (sdk_version > SDK_API_LEVEL_14) {
+      nb_fonts = STAX_NB_FONTS;
+    }
+    else {
+      nb_fonts = STAX_NB_FONTS_12;
+    }
   } else {
     fonts = remap_addr(code, fonts_addr, text_load_addr);
     nb_fonts = fonts_size / 4;
@@ -229,10 +262,19 @@ void parse_fonts(void *code, unsigned long text_load_addr,
             nb_fonts, fonts[nb_fonts]);
     return;
   }
-  if (nb_fonts > MAX_NB_FONTS) {
-    fprintf(stdout, "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS (%d)!\n",
-            nb_fonts, MAX_NB_FONTS);
-    return;
+  if (sdk_version > SDK_API_LEVEL_14) {
+    if (nb_fonts > MAX_NB_FONTS) {
+      fprintf(stdout, "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS (%d)!\n",
+              nb_fonts, MAX_NB_FONTS);
+      return;
+    }
+  }
+  else {
+    if (nb_fonts > MAX_NB_FONTS_12) {
+      fprintf(stdout, "ERROR: nb_fonts (%u) is bigger than MAX_NB_FONTS_12 (%d)!\n",
+              nb_fonts, MAX_NB_FONTS_12);
+      return;
+    }
   }
 
   // Parse all those fonts and add bitmap/character pairs
@@ -242,6 +284,9 @@ void parse_fonts(void *code, unsigned long text_load_addr,
       case SDK_API_LEVEL_12:
       case SDK_API_LEVEL_13:
         parse_nbgl_font_12((void *)fonts[i]);
+        break;
+      case SDK_API_LEVEL_14:
+        parse_nbgl_font_14((void *)fonts[i]);
         break;
       default:
         parse_nbgl_font((void *)fonts[i]);
