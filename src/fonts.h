@@ -5,9 +5,13 @@
 // ============================================================================
 
 #define STAX_FONTS_ARRAY_ADDR 0x00805000
-#define STAX_NB_FONTS         7
+// Latest (starting from SDK_API_LEVEL_15)
+#define STAX_NB_FONTS 6
+// SDK_API_LEVEL_12 to SDK_API_LEVEL_14
+#define STAX_NB_FONTS_12 7
 
-#define MAX_NB_FONTS STAX_NB_FONTS
+#define MAX_NB_FONTS    STAX_NB_FONTS
+#define MAX_NB_FONTS_12 STAX_NB_FONTS_12
 
 // ============================================================================
 // BAGL font related structures
@@ -81,15 +85,15 @@ typedef struct {
 // (They are defined in the SDK, in lib_nbgl/include/nbgl_fonts.h
 // ============================================================================
 
-// Current API_LEVEL (14)
+// Current API_LEVEL (15)
 typedef struct {
+  uint32_t bitmap_offset;
   uint32_t encoding : 1;
-  uint32_t bitmap_offset : 14;
   uint32_t width : 6;
-  uint32_t x_min_offset : 3;
-  uint32_t y_min_offset : 3;
-  uint32_t x_max_offset : 2;
-  uint32_t y_max_offset : 3;
+  uint32_t x_min_offset : 4;
+  uint32_t y_min_offset : 6;
+  uint32_t x_max_offset : 4;
+  uint32_t y_max_offset : 6;
 } nbgl_font_character_t;
 
 typedef struct {
@@ -106,6 +110,32 @@ typedef struct {
   nbgl_font_character_t *characters;
   uint8_t *bitmap;
 } nbgl_font_t;
+
+// SDK_API_LEVEL_14
+typedef struct {
+  uint32_t encoding : 1;
+  uint32_t bitmap_offset : 14;
+  uint32_t width : 6;
+  uint32_t x_min_offset : 3;
+  uint32_t y_min_offset : 3;
+  uint32_t x_max_offset : 2;
+  uint32_t y_max_offset : 3;
+} nbgl_font_character_t_14;
+
+typedef struct {
+  uint32_t bitmap_len;
+  uint8_t font_id;
+  uint8_t bpp;
+  uint8_t height;
+  uint8_t line_height;
+  uint8_t char_kerning;
+  uint8_t crop;
+  uint8_t y_min;
+  uint8_t first_char;
+  uint8_t last_char;
+  nbgl_font_character_t_14 *characters;
+  uint8_t *bitmap;
+} nbgl_font_t_14;
 
 // SDK_API_LEVEL_12 and SDK_API_LEVEL_13
 typedef struct {
