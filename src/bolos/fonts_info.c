@@ -19,8 +19,8 @@ uint32_t nb_bitmap_char;
 // Return the real addr depending on where the app was loaded
 static void *remap_addr(void *code, uint32_t addr, uint32_t text_load_addr)
 {
-  // No remap on Stax, fonts are loaded at a fixed location
-  if (hw_model == MODEL_STAX) {
+  // No remap on Stax/Europa, fonts are loaded at a fixed location
+  if ((hw_model == MODEL_STAX) || (hw_model == MODEL_EUROPA)) {
     return (void *)addr;
   }
   uint8_t *ptr = code;
@@ -217,7 +217,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
                  unsigned long fonts_addr, unsigned long fonts_size)
 {
   // Number of fonts stored at fonts_addr
-  uint32_t nb_fonts;
+  uint32_t nb_fonts = 0;
   uint32_t *fonts;
 
   nb_bitmap_char = 0;
@@ -236,13 +236,23 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     // Unsupported API_LEVEL, will not parse fonts!
     return;
   }
-  // On Stax, fonts are loaded at a known location
-  if (hw_model == MODEL_STAX) {
-    fonts = (void *)STAX_FONTS_ARRAY_ADDR;
-    if (sdk_version > SDK_API_LEVEL_14) {
-      nb_fonts = STAX_NB_FONTS;
-    } else {
-      nb_fonts = STAX_NB_FONTS_12;
+  // With NBGL apps, fonts are loaded at a known location, in the OS
+  if (fonts_size == 0) {
+    switch (hw_model) {
+    case MODEL_STAX:
+      fonts = (void *)STAX_FONTS_ARRAY_ADDR;
+      if (sdk_version >= SDK_API_LEVEL_15) {
+        nb_fonts = STAX_NB_FONTS;
+      } else {
+        nb_fonts = STAX_NB_FONTS_12;
+      }
+      break;
+    case MODEL_EUROPA:
+      fonts = (void *)EUROPA_FONTS_ARRAY_ADDR;
+      nb_fonts = EUROPA_NB_FONTS;
+      break;
+    default:
+      return;
     }
   } else {
     fonts = remap_addr(code, fonts_addr, text_load_addr);
@@ -278,7 +288,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
 
   // Parse all those fonts and add bitmap/character pairs
   for (uint32_t i = 0; i < nb_fonts; i++) {
-    if (hw_model == MODEL_STAX) {
+    if (fonts_size == 0) {
       switch (sdk_version) {
       case SDK_API_LEVEL_12:
       case SDK_API_LEVEL_13:

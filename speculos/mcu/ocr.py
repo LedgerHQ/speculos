@@ -120,6 +120,7 @@ class OCR:
     # Maximum space for a letter to be considered part of the same word
     MAX_BLANK_SPACE_NANO = 12
     MAX_BLANK_SPACE_STAX = 24
+    MAX_BLANK_SPACE_EUROPA = 26
 
     def __init__(self, model: str, is_bagl: bool):
         self.events: List[TextEvent] = []
@@ -129,6 +130,8 @@ class OCR:
         # Maximum space for a letter to be considered part of the same word
         if model == "stax":
             self.max_blank_space = OCR.MAX_BLANK_SPACE_STAX
+        elif model == "europa":
+            self.max_blank_space = OCR.MAX_BLANK_SPACE_EUROPA
         else:
             self.max_blank_space = OCR.MAX_BLANK_SPACE_NANO
 
