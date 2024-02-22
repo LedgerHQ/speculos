@@ -148,7 +148,7 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
 
 unsigned long sys_nbgl_get_font(unsigned int fontId)
 {
-  switch(hw_model) {
+  switch (hw_model) {
   case MODEL_STAX: {
     unsigned int maxNbFonts;
     if (sdk_version >= SDK_API_LEVEL_15) {
@@ -168,6 +168,20 @@ unsigned long sys_nbgl_get_font(unsigned int fontId)
       return 0;
     } else {
       return *((unsigned int *)(EUROPA_FONTS_ARRAY_ADDR + (4 * fontId)));
+    }
+  case MODEL_NANO_SP:
+    fontId -= 8; // BAGL_FONT_OPEN_SANS_EXTRABOLD_11px_1bpp
+    if (fontId >= NANO_NB_FONTS) {
+      return 0;
+    } else {
+      return *((unsigned int *)(NANOSP_FONTS_ARRAY_ADDR + (4 * fontId)));
+    }
+  case MODEL_NANO_X:
+    fontId -= 8; // BAGL_FONT_OPEN_SANS_EXTRABOLD_11px_1bpp
+    if (fontId >= NANO_NB_FONTS) {
+      return 0;
+    } else {
+      return *((unsigned int *)(NANOX_FONTS_ARRAY_ADDR + (4 * fontId)));
     }
   default:
     return 0;

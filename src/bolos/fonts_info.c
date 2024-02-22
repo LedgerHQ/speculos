@@ -251,6 +251,14 @@ void parse_fonts(void *code, unsigned long text_load_addr,
       fonts = (void *)EUROPA_FONTS_ARRAY_ADDR;
       nb_fonts = EUROPA_NB_FONTS;
       break;
+    case MODEL_NANO_SP:
+      fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;
+      nb_fonts = NANO_NB_FONTS;
+      break;
+    case MODEL_NANO_X:
+      fonts = (void *)NANOX_FONTS_ARRAY_ADDR;
+      nb_fonts = NANO_NB_FONTS;
+      break;
     default:
       return;
     }
