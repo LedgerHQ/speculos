@@ -441,7 +441,19 @@ static int load_fonts(char *fonts_path)
 
   int flags = MAP_PRIVATE | MAP_FIXED;
   int prot = PROT_READ;
-  int load_addr = STAX_FONTS_ARRAY_ADDR;
+  int load_addr = 0;
+
+  switch (hw_model) {
+  case MODEL_STAX:
+    load_addr = STAX_FONTS_ARRAY_ADDR;
+    break;
+  case MODEL_EUROPA:
+    load_addr = EUROPA_FONTS_ARRAY_ADDR;
+    break;
+  default:
+    warnx("hw_model %u not supported", hw_model);
+    return -1;
+  }
 
   void *p = mmap((void *)load_addr, load_size, prot, flags, fd, 0);
   fprintf(stderr, "[*] loaded fonts at %p\n", p);
@@ -668,7 +680,7 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
-                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\", \"stax\" and \"blue\".\n\
+                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\", \"stax\", \"europa\" and \"blue\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n\
   -a <api_level>:       A string representing the SDK api level to be used, like \"1\".\n");
   exit(EXIT_FAILURE);
@@ -726,6 +738,8 @@ int main(int argc, char *argv[])
         hw_model = MODEL_NANO_SP;
       } else if (strcmp(optarg, "stax") == 0) {
         hw_model = MODEL_STAX;
+      } else if (strcmp(optarg, "europa") == 0) {
+        hw_model = MODEL_EUROPA;
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
@@ -793,6 +807,11 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13 &&
         sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15) {
       errx(1, "invalid SDK version for the Ledger Stax");
+    }
+    break;
+  case MODEL_EUROPA:
+    if (sdk_version != SDK_API_LEVEL_15) {
+      errx(1, "invalid SDK version for the Ledger Europa");
     }
     break;
   default:

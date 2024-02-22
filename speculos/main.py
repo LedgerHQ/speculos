@@ -107,7 +107,8 @@ def get_elf_infos(app_path):
         if svc_cx_call_symbol is not None:
             svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
         # Check where are located fonts in .elf file (LNX/LNS+ only)
-        # (Stax fonts are loaded at a known location: STAX_FONTS_ARRAY_ADDR)
+        # (Stax and Europa fonts are loaded at a known location: STAX_FONTS_ARRAY_ADDR
+        # and EUROPA_FONTS_ARRAY_ADDR)
         fonts_addr = 0
         fonts_size = 0
         bagl_fonts_symbol = symtab.get_symbol_by_name('C_bagl_fonts')
@@ -533,6 +534,7 @@ def main(prog=None) -> int:
             "nanosp": 2,
             "blue": 1,
             "stax": 1,
+            "europa": 1
         }
         zoom = default_zoom.get(args.model)
 

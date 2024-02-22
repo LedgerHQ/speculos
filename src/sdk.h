@@ -41,6 +41,7 @@ typedef enum {
   MODEL_NANO_X,
   MODEL_BLUE,
   MODEL_STAX,
+  MODEL_EUROPA,
   MODEL_COUNT
 } hw_model_t;
 

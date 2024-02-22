@@ -28,7 +28,7 @@ int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
 {
   (void)version;
 
-  if (model == MODEL_STAX) {
+  if ((model == MODEL_STAX) || (model == MODEL_EUROPA)) {
     return SYSCALL_NOT_HANDLED;
   }
 
@@ -73,7 +73,7 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
 {
   (void)version;
 
-  if (model != MODEL_STAX) {
+  if ((model != MODEL_STAX) && (version < SDK_API_LEVEL_15)) {
     return SYSCALL_NOT_HANDLED;
   }
 
@@ -147,7 +147,7 @@ int emulate_syscall_touch(unsigned long syscall, unsigned long *parameters,
 {
   (void)version;
 
-  if (model != MODEL_STAX) {
+  if ((model != MODEL_STAX) && (model != MODEL_EUROPA)){
     return SYSCALL_NOT_HANDLED;
   }
 

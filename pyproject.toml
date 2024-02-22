@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "speculos"
 authors = [{name = "Ledger", email = "hello@ledger.fr"}]
-description = "Ledger Blue, Stax and Nano S/S+/X application emulator"
+description = "Ledger Blue, Stax, Europa and Nano S/S+/X application emulator"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
