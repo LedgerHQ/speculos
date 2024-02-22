@@ -217,7 +217,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
                  unsigned long fonts_addr, unsigned long fonts_size)
 {
   // Number of fonts stored at fonts_addr
-  uint32_t nb_fonts;
+  uint32_t nb_fonts = 0;
   uint32_t *fonts;
 
   nb_bitmap_char = 0;
@@ -236,14 +236,25 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     // Unsupported API_LEVEL, will not parse fonts!
     return;
   }
-  // On Stax, fonts are loaded at a known location
-  if (hw_model == MODEL_STAX) {
-    fonts = (void *)STAX_FONTS_ARRAY_ADDR;
-    if (sdk_version > SDK_API_LEVEL_14) {
-      nb_fonts = STAX_NB_FONTS;
+  // With NBGL apps, fonts are loaded at a known location, in the OS
+  if (fonts_size == 0) {
+    if (hw_model == MODEL_STAX) {
+      fonts = (void *)STAX_FONTS_ARRAY_ADDR;
+      if (sdk_version >= SDK_API_LEVEL_15) {
+        nb_fonts = STAX_NB_FONTS;
+      } else {
+        nb_fonts = STAX_NB_FONTS_12;
+      }
+    } else if (hw_model == MODEL_NANO_SP) {
+      fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;
+      nb_fonts = NANO_NB_FONTS;
+    } else if (hw_model == MODEL_NANO_X) {
+      fonts = (void *)NANOX_FONTS_ARRAY_ADDR;
+      nb_fonts = NANO_NB_FONTS;
     } else {
-      nb_fonts = STAX_NB_FONTS_12;
+      return;
     }
+
   } else {
     fonts = remap_addr(code, fonts_addr, text_load_addr);
     nb_fonts = fonts_size / 4;
@@ -278,7 +289,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
 
   // Parse all those fonts and add bitmap/character pairs
   for (uint32_t i = 0; i < nb_fonts; i++) {
-    if (hw_model == MODEL_STAX) {
+    if (fonts_size == 0) {
       switch (sdk_version) {
       case SDK_API_LEVEL_12:
       case SDK_API_LEVEL_13:

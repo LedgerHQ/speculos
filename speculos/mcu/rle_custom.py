@@ -153,9 +153,8 @@ class RLECustomBase:
         if bits != 7:
             output += bytes([byte])
 
-        nb_bytes = len(data)/8
-        if len(data) % 8:
-            nb_bytes += 1
+        nb_bytes = (len(data)+7)//8
+
         assert len(output) == nb_bytes
 
         return output

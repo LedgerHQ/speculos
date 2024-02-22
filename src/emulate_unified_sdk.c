@@ -73,7 +73,7 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
 {
   (void)version;
 
-  if (model != MODEL_STAX) {
+  if ((model != MODEL_STAX) && (version < SDK_API_LEVEL_15)) {
     return SYSCALL_NOT_HANDLED;
   }
 
