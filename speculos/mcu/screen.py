@@ -196,16 +196,17 @@ class App(QMainWindow):
 
 
 class Screen(Display):
-    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
+    def __init__(self, display: DisplayArgs, server: ServerArgs, is_bagl: bool) -> None:
         super().__init__(display, server)
         self.app: App
         self._gl: GraphicLibrary
+        self.is_bagl = is_bagl
 
-    def set_app(self, app: App) -> None:
+    def set_app(self, app: App, is_bagl: bool) -> None:
         self.app = app
         self.app.set_screen(self)
         model = self._display_args.model
-        if model != "stax":
+        if self.is_bagl:
             self._gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
         else:
             self._gl = nbgl.NBGL(app.widget, MODELS[model].screen_size, model)
@@ -248,13 +249,13 @@ class Screen(Display):
 
 
 class QtScreenNotifier(DisplayNotifier):
-    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs, is_bagl: bool) -> None:
         self._qapp = QApplication([])
-        super().__init__(display_args, server_args)
+        super().__init__(display_args, server_args, is_bagl)
         self._set_display_class(Screen)
         self._app_widget = App(self._qapp, display_args, server_args)
         assert isinstance(self.display, Screen)
-        self.display.set_app(self._app_widget)
+        self.display.set_app(self._app_widget, is_bagl)
 
     def _can_read(self, device: IODevice) -> None:
         try:

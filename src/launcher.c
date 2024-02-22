@@ -818,7 +818,7 @@ int main(int argc, char *argv[])
 
   init_environment();
 
-  if (hw_model == MODEL_STAX && fonts_path) {
+  if (fonts_path) {
     if (load_fonts(fonts_path) != 0) {
       return 1;
     }
