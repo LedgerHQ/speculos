@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
+from functools import cache
 from PIL import Image
 from socket import socket
 from typing import Any, Dict, IO, List, Optional, Tuple, Union
@@ -54,35 +55,6 @@ COLORS: Dict[str, int] = {
 }
 
 
-def _screenshot_to_iobytes_value(screen_size, data):
-    image = Image.frombytes("RGB", screen_size, data)
-    iobytes = io.BytesIO()
-    image.save(iobytes, format="PNG")
-    return iobytes.getvalue()
-
-
-class Screenshot:
-    def __init__(self, screen_size: Tuple[int, int]):
-        self.pixels: Dict[Tuple[int, int], int] = {}
-        self.width, self.height = screen_size
-        for y in range(0, self.height):
-            for x in range(0, self.width):
-                self.pixels[(x, y)] = 0x000000
-
-    def update(self, pixels: Dict[Tuple[int, int], int]) -> None:
-        # Don't call update, replace the object instead
-        self.pixels = {**self.pixels, **pixels}
-
-    def get_image(self) -> Tuple[Tuple[int, int], bytes]:
-        # Get the pixels object once, as it may be replaced during the loop.
-        data = bytearray(self.width * self.height * 3)
-        for y in range(0, self.height):
-            for x in range(0, self.width):
-                pos = 3 * (y * self.width + x)
-                data[pos:pos + 3] = self.pixels[(x, y)].to_bytes(3, "big")
-        return (self.width, self.height), bytes(data)
-
-
 class FrameBuffer:
     """
     A class responsible for managing the graphic screen of the current application.
@@ -99,34 +71,67 @@ class FrameBuffer:
 
     def __init__(self, model: str):
         self.pixels: Dict[Tuple[int, int], int] = {}
+        self.screenshot_pixels: Dict[Tuple[int, int], int] = {}
+        self.default_color = 0
+        self.draw_default_color = False
         self._public_screenshot_value = b''
         self.current_data = b''
         self.recreate_public_screenshot = True
         self.model = model
         self.current_screen_size = MODELS[model].screen_size
-        self.screenshot = Screenshot(self.current_screen_size)
-        # Init published content now, don't wait for the first request
-        if self.model == "stax":
-            self.update_public_screenshot()
+        self._width, self._height = MODELS[model].screen_size
 
-    def draw_point(self, x: int, y: int, color: int) -> None:
+    @cache
+    def check_color(self, color: int) -> int:
         # There are only 2 colors on the Nano S and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
         if self.model != 'stax':
             if color != 0x000000:
                 color = FrameBuffer.COLORS.get(self.model, color)
-        self.pixels[(x, y)] = color
+        return color
 
-    def screenshot_update_pixels(self):
-        # Update the screenshot object with our current pixels content
-        self.screenshot.update(self.pixels)
+    def draw_point(self, x: int, y: int, color: int) -> None:
+        self.pixels[(x, y)] = self.check_color(color)
+
+    def draw_horizontal_line(self, x0: int, y: int, width: int, color: int) -> None:
+        for x in range(x0, x0 + width):
+            self.pixels[(x, y)] = self.check_color(color)
+
+    def draw_rect(self, x0: int, y0: int, width: int, height: int, color: int) -> None:
+        color = self.check_color(color)
+
+        if x0 == 0 and y0 == 0 and width == self._width and height == self._height:
+            self.default_color = color
+            self.draw_default_color = True
+            self.pixels = {}
+            self.screenshot_pixels = {}
+            return
+
+        for x in range(x0, x0 + width):
+            for y in range(y0, y0 + height):
+                self.pixels[(x, y)] = color
+
+    def _get_image(self) -> bytes:
+        data = bytearray(self.default_color.to_bytes(3, "big")) * self._width * self._height
+        for (x, y), color in self.screenshot_pixels.items():
+            pos = 3 * (y * self._width + x)
+            data[pos:pos + 3] = color.to_bytes(3, "big")
+        return bytes(data)
+
+    def _get_screenshot_iobytes_value(self) -> bytes:
+        # Get the pixels object once, as it may be replaced during the loop.
+        data = self._get_image()
+
+        image = Image.frombytes("RGB", self.current_screen_size, data)
+        iobytes = io.BytesIO()
+        image.save(iobytes, format="PNG")
+        return iobytes.getvalue()
 
     def take_screenshot(self) -> Tuple[Tuple[int, int], bytes]:
-        self.current_screen_size, self.current_data = self.screenshot.get_image()
-        return self.current_screen_size, self.current_data
+        return self.current_screen_size, self._get_image()
 
     def update_screenshot(self) -> None:
-        self.screenshot.update(self.pixels)
+        self.screenshot_pixels = {**self.screenshot_pixels, **self.pixels}
 
     def update_public_screenshot(self) -> None:
         # Stax only
@@ -140,7 +145,7 @@ class FrameBuffer:
         # and not necessary if no one tries to read the value
         if self.recreate_public_screenshot:
             self.recreate_public_screenshot = False
-            self._public_screenshot_value = _screenshot_to_iobytes_value(self.current_screen_size, self.current_data)
+            self._public_screenshot_value = self._get_screenshot_iobytes_value()
 
         return self._public_screenshot_value
 
@@ -152,8 +157,7 @@ class FrameBuffer:
             return self.public_screenshot_value
         # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
         # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
-        screen_size, data = self.take_screenshot()
-        return _screenshot_to_iobytes_value(screen_size, data)
+        return self._get_screenshot_iobytes_value()
 
     # Should be declared as an `@abstractmethod` (and also `class FrameBuffer(ABC):`), but in this
     # case multiple inheritance in `screen.PaintWidget(FrameBuffer, QWidget)` will break, as both
