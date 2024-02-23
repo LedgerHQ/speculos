@@ -527,12 +527,18 @@ def main(prog=None) -> int:
         assert automation_server is not None
         apirun.start_server_thread(screen_notifier, seph, automation_server)
 
-    screen_notifier.run()
+    try:
+        screen_notifier.run()
+    except BaseException:
+        # Will deal with exception triggered in the ScreenNotifier, including
+        # KeyboardInterrupt (if not Qt display, else it will segfault)
+        logger.exception("An error occurred")
+        logger.critical("Stopping Speculos")
+    finally:
+        if apirun is not None:
+            apirun.stop()
 
-    if apirun is not None:
-        apirun.stop()
-
-    s2.close()
-    _, status = os.waitpid(qemu_pid, 0)
-    qemu_exit_status = os.WEXITSTATUS(status)
-    sys.exit(qemu_exit_status)
+        s2.close()
+        _, status = os.waitpid(qemu_pid, 0)
+        qemu_exit_status = os.WEXITSTATUS(status)
+        sys.exit(qemu_exit_status)
