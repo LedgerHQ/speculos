@@ -3,7 +3,12 @@ import logging
 import sys
 from construct import Struct, Int8ul, Int16ul
 from enum import IntEnum
-from functools import cache
+try:
+    from functools import cache
+except ImportError:
+    # `functools.cache` does not exists on Python3.8
+    from functools import lru_cache
+    cache = lru_cache(maxsize=None)
 from typing import Tuple
 
 from .display import FrameBuffer, GraphicLibrary

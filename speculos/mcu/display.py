@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
-from functools import cache
+try:
+    from functools import cache
+except ImportError:
+    # `functools.cache` does not exists on Python3.8
+    from functools import lru_cache
+    cache = lru_cache(maxsize=None)
 from PIL import Image
 from socket import socket
 from typing import Any, Dict, IO, List, Optional, Tuple, Union
