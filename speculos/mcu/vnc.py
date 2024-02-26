@@ -22,13 +22,13 @@ class VNC(IODevice):
                  verbose: bool = False):
         self.logger = logging.getLogger("vnc")
 
-        width, height = screen_size
+        self.width, self.height = screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../resources/vnc_server')
         cmd = [server]
 
         # custom options
-        cmd += ['-s', f'{width}x{height}']
+        cmd += ['-s', f'{self.width}x{self.height}']
         if verbose:
             cmd += ['-v']
 
@@ -48,23 +48,25 @@ class VNC(IODevice):
         assert self.subprocess.stdout is not None
         return self.subprocess.stdout
 
-    def redraw(self, pixels):
+    def redraw(self, pixels, default_color):
         '''The framebuffer was updated, forward everything to the VNC server.'''
 
         # int.to_bytes() is super slow, hence the manual encoding
         buf = bytearray(len(pixels) * 9)
         i = 0
-        for (x, y), color in pixels.items():
-            buf[i + 0] = y & 0xff
-            buf[i + 1] = (y >> 8) & 0xff
-            buf[i + 2] = x & 0xff
-            buf[i + 3] = (x >> 8) & 0xff
-            buf[i + 4] = color & 0xff
-            buf[i + 5] = (color >> 8) & 0xff
-            buf[i + 6] = (color >> 16) & 0xff
-            buf[i + 7] = (color >> 24) & 0xff
-            buf[i + 8] = 0x0a
-            i += 9
+        for x in range(0, self._width):
+            for y in range(0, self._height):
+                color = pixels.get((x, y), default_color)
+                buf[i + 0] = y & 0xff
+                buf[i + 1] = (y >> 8) & 0xff
+                buf[i + 2] = x & 0xff
+                buf[i + 3] = (x >> 8) & 0xff
+                buf[i + 4] = color & 0xff
+                buf[i + 5] = (color >> 8) & 0xff
+                buf[i + 6] = (color >> 16) & 0xff
+                buf[i + 7] = (color >> 24) & 0xff
+                buf[i + 8] = 0x0a
+                i += 9
 
         self.subprocess.stdin.write(buf)
         self.subprocess.stdin.flush()

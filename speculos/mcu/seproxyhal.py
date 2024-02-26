@@ -322,11 +322,8 @@ class SeProxyHal(IODevice):
                 if self.refreshed:
                     self.refreshed = False
 
-                    # Run the OCR
+                    # Update the screenshot, we'll upload its associated events shortly
                     screen.display.gl.update_screenshot()
-                    screen.display.gl.take_screenshot()
-
-                    # Publish the new screenshot, we'll upload its associated events shortly
                     screen.display.gl.update_public_screenshot()
 
                 if screen.display.model != "stax" and screen.display.screen_update():
@@ -423,7 +420,7 @@ class SeProxyHal(IODevice):
             screen.display.gl.refresh(data)
             # Stax only
             # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
-            # then we'll perform a new OCR and make public the resulting screenshot / OCR analysis
+            # then we'll perform a screen update and make public the resulting screenshot
             self.refreshed = True
 
         elif tag == SephTag.NBGL_DRAW_LINE:

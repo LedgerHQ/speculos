@@ -30,7 +30,7 @@ class PaintWidget(FrameBuffer, QWidget):
         self.vnc = vnc
 
     def paintEvent(self, event: QEvent):
-        if self.pixels:
+        if self.pixels or self.draw_default_color:
             pixmap = QPixmap(self.size() / self.pixel_size)
             pixmap.fill(Qt.white)
             painter = QPainter(pixmap)
@@ -38,6 +38,7 @@ class PaintWidget(FrameBuffer, QWidget):
             self._redraw(painter)
             self.mPixmap = pixmap
             self.pixels = {}
+            self.draw_default_color = False
 
         qp = QPainter(self)
         copied_pixmap = self.mPixmap
@@ -60,12 +61,15 @@ class PaintWidget(FrameBuffer, QWidget):
         return self.pixels != {}
 
     def _redraw(self, qp):
+        if self.draw_default_color:
+            qp.fillRect(0, 0, self._width, self._height, QColor.fromRgb(self.default_color))
+
         for (x, y), color in self.pixels.items():
             qp.setPen(QColor.fromRgb(color))
             qp.drawPoint(x, y)
 
         if self.vnc is not None:
-            self.vnc.redraw(self.pixels)
+            self.vnc.redraw(self.pixels, self.default_color)
 
         self.update_screenshot()
 

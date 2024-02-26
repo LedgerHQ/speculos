@@ -3,6 +3,7 @@ import logging
 import sys
 from construct import Struct, Int8ul, Int16ul
 from enum import IntEnum
+from functools import cache
 from typing import Tuple
 
 from .display import FrameBuffer, GraphicLibrary
@@ -30,6 +31,7 @@ nbgl_area_t = Struct(
 class NBGL(GraphicLibrary):
 
     @staticmethod
+    @cache
     def to_screen_color(color: int, bpp: int) -> int:
         color_table = {
             1: 0xFFFFFF,
@@ -57,9 +59,7 @@ class NBGL(GraphicLibrary):
     def hal_draw_rect(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
-        for x in range(area.x0, area.x0+area.width):
-            for y in range(area.y0, area.y0+area.height):
-                self.fb.draw_point(x, y, NBGL.to_screen_color(area.color, 2))
+        self.fb.draw_rect(area.x0, area.y0, area.width, area.height, NBGL.to_screen_color(area.color, 2))
 
     def refresh(self, data: bytes) -> bool:
         area = nbgl_area_t.parse(data)
@@ -74,19 +74,21 @@ class NBGL(GraphicLibrary):
 
         back_color = NBGL.to_screen_color(area.color, 2)
         front_color = NBGL.to_screen_color(color, 2)
-        for x in range(area.x0, area.x0+area.width):
-            for y in range(area.y0, area.y0+area.height):
-                if (mask >> (y-area.y0)) & 0x1:
-                    self.fb.draw_point(x, y, front_color)
-                else:
-                    self.fb.draw_point(x, y, back_color)
+
+        for y in range(area.y0, area.y0+area.height):
+            if (mask >> (y-area.y0)) & 0x1:
+                self.fb.draw_horizontal_line(area.x0, y, area.width, front_color)
+            else:
+                self.fb.draw_horizontal_line(area.x0, y, area.width, back_color)
 
     @staticmethod
+    @cache
     def get_color_from_color_map(color, color_map, bpp):
         # #define GET_COLOR_MAP(__map__,__col__) ((__map__>>(__col__*2))&0x3)
         return NBGL.to_screen_color((color_map >> (color*2)) & 0x3, bpp)
 
     @staticmethod
+    @cache
     def get_4bpp_color_from_color_index(index, front_color, back_color):
         COLOR_MAPS_4BPP = {
             # Manually hardcoced color maps
