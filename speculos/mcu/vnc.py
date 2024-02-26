@@ -11,7 +11,7 @@ import subprocess
 import sys
 from typing import IO, Optional, Tuple
 
-from .display import DisplayNotifier, IODevice
+from .display import DisplayNotifier, IODevice, PixelColorMapping
 
 
 class VNC(IODevice):
@@ -22,13 +22,13 @@ class VNC(IODevice):
                  verbose: bool = False):
         self.logger = logging.getLogger("vnc")
 
-        self.width, self.height = screen_size
+        self._width, self._height = screen_size
         path = os.path.dirname(os.path.realpath(__file__))
         server = os.path.join(path, '../resources/vnc_server')
         cmd = [server]
 
         # custom options
-        cmd += ['-s', f'{self.width}x{self.height}']
+        cmd += ['-s', f'{self._width}x{self._height}']
         if verbose:
             cmd += ['-v']
 
@@ -48,7 +48,7 @@ class VNC(IODevice):
         assert self.subprocess.stdout is not None
         return self.subprocess.stdout
 
-    def redraw(self, pixels, default_color):
+    def redraw(self, pixels: PixelColorMapping, default_color: int) -> None:
         '''The framebuffer was updated, forward everything to the VNC server.'''
 
         # int.to_bytes() is super slow, hence the manual encoding
@@ -68,10 +68,11 @@ class VNC(IODevice):
                 buf[i + 8] = 0x0a
                 i += 9
 
+        assert self.subprocess.stdin is not None
         self.subprocess.stdin.write(buf)
         self.subprocess.stdin.flush()
 
-    def can_read(self, screen: DisplayNotifier):
+    def can_read(self, screen: DisplayNotifier) -> None:
         '''Process a new keyboard or mouse event message from the VNC server.'''
 
         data = b''

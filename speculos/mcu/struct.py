@@ -1,19 +1,14 @@
 from dataclasses import dataclass
 from typing import Any, Dict, NamedTuple, Optional, Tuple
 
-# from speculos.mcu.apdu import ApduServer
-# from speculos.mcu.seproxyhal import SeProxyHal
-# from speculos.mcu.button_tcp import FakeButton
-# from speculos.mcu.finger_tcp import FakeFinger
-# from speculos.mcu.vnc import VNC
-# from speculos.api.api import ApiRunner
+Pixel = Tuple[int, int]
 
 
 @dataclass
 class Model:
     name: str
     screen_size: Tuple[int, int]
-    box_position: Tuple[int, int]
+    box_position: Pixel
     box_size: Tuple[int, int]
 
 
