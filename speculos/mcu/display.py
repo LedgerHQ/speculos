@@ -8,7 +8,9 @@ from socket import socket
 from typing import Any, Dict, IO, List, Optional, Tuple, Union
 
 from speculos.observer import TextEvent
-from .struct import DisplayArgs, MODELS, ServerArgs
+from .struct import DisplayArgs, MODELS, Pixel, ServerArgs
+
+PixelColorMapping = Dict[Pixel, int]
 
 
 class IODevice(ABC):
@@ -70,8 +72,8 @@ class FrameBuffer:
     }
 
     def __init__(self, model: str):
-        self.pixels: Dict[Tuple[int, int], int] = {}
-        self.screenshot_pixels: Dict[Tuple[int, int], int] = {}
+        self.pixels: PixelColorMapping = {}
+        self.screenshot_pixels: PixelColorMapping = {}
         self.default_color = 0
         self.draw_default_color = False
         self._public_screenshot_value = b''
@@ -131,7 +133,7 @@ class FrameBuffer:
         return self.current_screen_size, self._get_image()
 
     def update_screenshot(self) -> None:
-        self.screenshot_pixels = {**self.screenshot_pixels, **self.pixels}
+        self.screenshot_pixels.update(self.pixels)
 
     def update_public_screenshot(self) -> None:
         # Stax only
