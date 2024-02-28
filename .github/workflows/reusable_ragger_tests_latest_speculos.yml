@@ -69,7 +69,6 @@ jobs:
           - device: nanox
           - device: nanosp
           - device: stax
-          - device: europa
     steps:
     - name: Clone
       uses: actions/checkout@v4

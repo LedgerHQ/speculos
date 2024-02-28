@@ -245,7 +245,7 @@ class SeProxyHal(IODevice):
     def __init__(self,
                  sock: socket,
                  model: str,
-                 is_bagl: bool,
+                 use_bagl: bool,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: str = 'hid'):
@@ -266,7 +266,9 @@ class SeProxyHal(IODevice):
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
-        self.ocr = OCR(model, is_bagl)
+        self.ocr = OCR(model, use_bagl)
+
+        self.use_bagl = use_bagl
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable[[bytes], None]] = []
@@ -327,10 +329,10 @@ class SeProxyHal(IODevice):
                     screen.display.gl.update_screenshot()
                     screen.display.gl.update_public_screenshot()
 
-                if not isinstance(screen.display.gl, NBGL) and screen.display.screen_update():
+                if self.use_bagl and screen.display.screen_update():
                     if screen.display.model in ["nanox", "nanosp"]:
                         self.events += self.ocr.get_events()
-                elif isinstance(screen.display.gl, NBGL):
+                elif not self.use_bagl:
                     self.events += self.ocr.get_events()
 
                 # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
