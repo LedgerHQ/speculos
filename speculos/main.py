@@ -141,16 +141,12 @@ def get_cx_infos(app_path):
 
 
 def get_elf_fonts_size(app_path):
+    '''
+    Check for C_bagl_fonts symbol to determine if the app use BAGL or NBGL syscalls.
+    If C_bagl_fonts is found, it means that this app uses BAGL (useful on NanoX and NanoSP)
+    '''
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
-        text = elf.get_section_by_name('.text')
-        for seg in elf.iter_segments():
-            if seg['p_type'] != 'PT_LOAD':
-                continue
-            if seg.section_in_segment(text):
-                break
-        else:
-            raise RuntimeError("No program header with text section!")
         symtab = elf.get_section_by_name('.symtab')
         bagl_fonts_symbol = symtab.get_symbol_by_name('C_bagl_fonts')
         if bagl_fonts_symbol is not None:
@@ -159,7 +155,7 @@ def get_elf_fonts_size(app_path):
     return 0
 
 
-def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, is_bagl: bool) -> int:
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
     argv = ['qemu-arm-static']
 
     if args.debug:
@@ -190,12 +186,14 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, is_
     else:
         logger.warn(f"Cx lib {cxlib_filepath} not found")
 
-    fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
-    fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
-    if os.path.exists(fonts):
-        argv += ['-f', fonts]
-    elif not is_bagl:
-        logger.warn(f"Fonts {fonts_filepath} not found")
+    # for NBGL apps, fonts binary file is mandatory
+    if not use_bagl:
+        fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
+        if os.path.exists(fonts):
+            argv += ['-f', fonts]
+        else:
+            logger.warn(f"Fonts {fonts_filepath} not found")
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
@@ -348,9 +346,9 @@ def main(prog=None) -> int:
 
     # For Nano S and Blue, it can only be BAGL
     if args.model == "nanos" or args.model == "blue":
-        is_bagl = True
+        use_bagl = True
     else:
-        is_bagl = get_elf_fonts_size(app_path) != 0
+        use_bagl = get_elf_fonts_size(app_path) != 0
 
     if not args.apiLevel:
         if "api_level" in metadata:
@@ -499,14 +497,14 @@ def main(prog=None) -> int:
 
     s1, s2 = socket.socketpair()
 
-    qemu_pid = run_qemu(s1, s2, args, is_bagl)
+    qemu_pid = run_qemu(s1, s2, args, use_bagl)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
         model=args.model,
-        is_bagl=is_bagl,
+        use_bagl=use_bagl,
         automation=automation_path,
         automation_server=automation_server,
         transport=args.usb)
@@ -549,7 +547,7 @@ def main(prog=None) -> int:
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
                                args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
-    screen_notifier = ScreenNotifier(display_args, server_args, is_bagl)
+    screen_notifier = ScreenNotifier(display_args, server_args, use_bagl)
 
     if apirun is not None:
         assert automation_server is not None
