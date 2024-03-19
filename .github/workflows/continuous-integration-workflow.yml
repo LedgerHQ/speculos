@@ -143,21 +143,38 @@ jobs:
   deploy_docker:
     name: Build and Upload the Speculos docker
     runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     needs: [build]
     steps:
     - name: Clone
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - name: Build and publish to GitHub Packages
-      uses: docker/build-push-action@v1
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
       with:
-        repository: ledgerhq/speculos
+        images: ledgerhq/speculos
+        tags: |
+          type=raw,value=${{ github.sha }}
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to registry
+      uses: docker/login-action@v2
+      with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        tag_with_sha: true
-        tags: latest
+
+    - name: Build and publish to GitHub Packages
+      uses: docker/build-push-action@v3
+      with:
+        push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
