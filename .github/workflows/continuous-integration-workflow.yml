@@ -154,7 +154,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v4
       with:
-        images: ledgerhq/speculos
+        images: ghcr.io/ledgerhq/speculos
         tags: |
           type=raw,value=${{ github.sha }}
           type=ref,event=branch
