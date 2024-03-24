@@ -69,23 +69,32 @@ def get_elf_ledger_metadata(app_path):
                         metadata[section_name] = "nanosp"
     return metadata
 
+def get_segment_from_section(elf, section):
+    if section is None:
+        return None
+    for seg in elf.iter_segments(type='PT_LOAD'):
+        if seg.section_in_segment(section):
+            return seg
+    return None
 
 def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
         text = elf.get_section_by_name('.text')
-        for seg in elf.iter_segments():
-            if seg['p_type'] != 'PT_LOAD':
-                continue
-            if seg.section_in_segment(text):
-                text_seg = seg
-                break
-        else:
+        text_seg = get_segment_from_section(elf, text)
+        if text_seg is None:
             raise RuntimeError("No program header with text section!")
+        
+        nvm = elf.get_section_by_name('.nvm_data')
+        nvm_seg = get_segment_from_section(elf, nvm)
+        nvm_size = nvm_seg['p_filesz']  if nvm_seg is not None else 0
+        
         symtab = elf.get_section_by_name('.symtab')
         bss = elf.get_section_by_name('.bss')
         sh_offset = text_seg['p_offset']
-        sh_size = text_seg['p_filesz']
+        # In rust apps, there is a section called .nvm_data just below the .text section.
+        # Both of these sections need to be loaded in memory in order for the app to properly run.
+        sh_size = text_seg['p_filesz'] + nvm_size
         text_load_addr = text['sh_addr']
         stack = bss['sh_addr']
         sym_estack = symtab.get_symbol_by_name('_estack')
