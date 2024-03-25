@@ -69,6 +69,7 @@ def get_elf_ledger_metadata(app_path):
                         metadata[section_name] = "nanosp"
     return metadata
 
+
 def get_segment_from_section(elf, section):
     if section is None:
         return None
@@ -77,6 +78,7 @@ def get_segment_from_section(elf, section):
             return seg
     return None
 
+
 def get_elf_infos(app_path):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
@@ -84,11 +86,11 @@ def get_elf_infos(app_path):
         text_seg = get_segment_from_section(elf, text)
         if text_seg is None:
             raise RuntimeError("No program header with text section!")
-        
+
         nvm = elf.get_section_by_name('.nvm_data')
         nvm_seg = get_segment_from_section(elf, nvm)
-        nvm_size = nvm_seg['p_filesz']  if nvm_seg is not None else 0
-        
+        nvm_size = nvm_seg['p_filesz'] if nvm_seg is not None else 0
+
         symtab = elf.get_section_by_name('.symtab')
         bss = elf.get_section_by_name('.bss')
         sh_offset = text_seg['p_offset']
