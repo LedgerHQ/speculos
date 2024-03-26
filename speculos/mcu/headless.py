@@ -11,12 +11,12 @@ from .vnc import VNC
 
 
 class Headless(Display):
-    def __init__(self, display: DisplayArgs, server: ServerArgs, use_bagl: bool) -> None:
+    def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
 
         self.m = HeadlessPaintWidget(self.model, server.vnc)
         self._gl: GraphicLibrary
-        if use_bagl:
+        if display.use_bagl:
             self._gl = bagl.Bagl(self.m, MODELS[self.model].screen_size, self.model)
         else:
             self._gl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, self.model)
@@ -68,8 +68,8 @@ class HeadlessPaintWidget(FrameBuffer):
 
 class HeadlessNotifier(DisplayNotifier):
 
-    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs, use_bagl: bool) -> None:
-        super().__init__(display_args, server_args, use_bagl)
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
+        super().__init__(display_args, server_args)
         self._set_display_class(Headless)
 
     def run(self) -> None:

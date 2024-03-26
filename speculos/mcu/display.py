@@ -245,6 +245,10 @@ class Display(ABC):
         return self._display_args.rendering
 
     @property
+    def use_bagl(self) -> bool:
+        return self._display_args.use_bagl
+
+    @property
     @abstractmethod
     def gl(self) -> GraphicLibrary:
         pass
@@ -284,7 +288,7 @@ class DisplayNotifier(ABC):
       through VNC if activated.
     """
 
-    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs, use_bagl: bool) -> None:
+    def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
         # TODO: this should be Dict[int, IODevice], but in QtScreen, it is
         #       a QSocketNotifier, which has a completely different interface
         #       and is not used in the same way in the mcu/screen.py module.
@@ -292,11 +296,10 @@ class DisplayNotifier(ABC):
         self._server_args = server_args
         self._display_args = display_args
         self._display: Display
-        self.use_bagl = use_bagl
         self.__init_notifiers()
 
     def _set_display_class(self, display_class: type):
-        self._display = display_class(self._display_args, self._server_args, self.use_bagl)
+        self._display = display_class(self._display_args, self._server_args)
 
     @property
     def display(self) -> Display:

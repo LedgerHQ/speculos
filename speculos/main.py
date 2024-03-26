@@ -545,9 +545,9 @@ def main(prog=None) -> int:
         apirun = ApiRunner(args.api_port)
 
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
-                               args.keymap, zoom, x, y)
+                               args.keymap, zoom, x, y, use_bagl)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
-    screen_notifier = ScreenNotifier(display_args, server_args, use_bagl)
+    screen_notifier = ScreenNotifier(display_args, server_args)
 
     if apirun is not None:
         assert automation_server is not None
