@@ -205,7 +205,7 @@ class Screen(Display):
         self.app = app
         self.app.set_screen(self)
         model = self._display_args.model
-        if model != "stax":
+        if self.use_bagl:
             self._gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
         else:
             self._gl = nbgl.NBGL(app.widget, MODELS[model].screen_size, model)
