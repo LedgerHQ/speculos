@@ -790,7 +790,7 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
-        sdk_version != SDK_API_LEVEL_15) {
+        sdk_version != SDK_API_LEVEL_18) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -802,7 +802,7 @@ int main(int argc, char *argv[])
   case MODEL_NANO_SP:
     if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
-        sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_15) {
+        sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
@@ -817,7 +817,7 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_EUROPA:
-    if (sdk_version != SDK_API_LEVEL_15) {
+    if (sdk_version != SDK_API_LEVEL_18) {
       errx(1, "invalid SDK version for the Ledger Europa");
     }
     break;

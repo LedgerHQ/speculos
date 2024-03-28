@@ -17,12 +17,8 @@ BITMAP_CHAR bitmap_char[MAX_BITMAP_CHAR_12];
 uint32_t nb_bitmap_char;
 
 // Return the real addr depending on where the app was loaded
-static void *remap_addr(void *code, uint32_t addr, uint32_t text_load_addr)
+static void *remap_bagl_addr(void *code, uint32_t addr, uint32_t text_load_addr)
 {
-  // No remap on Stax/Europa, fonts are loaded at a fixed location
-  if ((hw_model == MODEL_STAX) || (hw_model == MODEL_EUROPA)) {
-    return (void *)addr;
-  }
   uint8_t *ptr = code;
   ptr += addr - text_load_addr;
 
@@ -145,9 +141,9 @@ static void parse_bagl_font(bagl_font_t *bagl_font, void *code,
                             unsigned long text_load_addr)
 {
   uint8_t *bitmap =
-      remap_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
   bagl_font_character_t *characters =
-      remap_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
 
   for (uint32_t c = bagl_font->first_char; c <= bagl_font->last_char;
        c++, characters++) {
@@ -167,9 +163,9 @@ static void parse_bagl_font_5(bagl_font_t_5 *bagl_font, void *code,
                               unsigned long text_load_addr)
 {
   uint8_t *bitmap =
-      remap_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
   bagl_font_character_t_5 *characters =
-      remap_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
   uint32_t last_character = bagl_font->last_char - bagl_font->first_char;
   uint32_t bitmap_len = characters[last_character].bitmap_offset +
                         characters[last_character].bitmap_byte_count;
@@ -192,9 +188,9 @@ static void parse_bagl_font_1(bagl_font_t_1 *bagl_font, void *code,
                               unsigned long text_load_addr)
 {
   uint8_t *bitmap =
-      remap_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
   bagl_font_character_t_1 *characters =
-      remap_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
   uint32_t last_character = bagl_font->last_char - bagl_font->first_char;
   uint32_t bitmap_len = characters[last_character].bitmap_offset +
                         characters[last_character].bitmap_byte_count;
@@ -263,7 +259,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
       return;
     }
   } else {
-    fonts = remap_addr(code, fonts_addr, text_load_addr);
+    fonts = remap_bagl_addr(code, fonts_addr, text_load_addr);
     nb_fonts = fonts_size / 4;
   }
 
@@ -310,7 +306,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
         break;
       }
     } else {
-      void *font = remap_addr(code, fonts[i], text_load_addr);
+      void *font = remap_bagl_addr(code, fonts[i], text_load_addr);
 
       switch (sdk_version) {
       case SDK_API_LEVEL_1:
