@@ -162,12 +162,12 @@ unsigned long sys_nbgl_get_font(unsigned int fontId)
       return *((unsigned int *)(STAX_FONTS_ARRAY_ADDR + (4 * fontId)));
     }
   }
-  case MODEL_EUROPA:
+  case MODEL_FLEX:
     fontId -= 11; // BAGL_FONT_INTER_REGULAR_28px
-    if (fontId >= EUROPA_NB_FONTS) {
+    if (fontId >= FLEX_NB_FONTS) {
       return 0;
     } else {
-      return *((unsigned int *)(EUROPA_FONTS_ARRAY_ADDR + (4 * fontId)));
+      return *((unsigned int *)(FLEX_FONTS_ARRAY_ADDR + (4 * fontId)));
     }
   case MODEL_NANO_SP:
     fontId -= 8; // BAGL_FONT_OPEN_SANS_EXTRABOLD_11px_1bpp

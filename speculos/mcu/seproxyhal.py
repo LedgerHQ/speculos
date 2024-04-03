@@ -421,7 +421,7 @@ class SeProxyHal(IODevice):
         elif tag == SephTag.NBGL_REFRESH:
             assert isinstance(screen.display.gl, NBGL)
             screen.display.gl.refresh(data)
-            # Stax/Europa only
+            # Stax/Flex only
             # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
             # then we'll perform a screen update and make public the resulting screenshot
             self.refreshed = True

@@ -244,9 +244,9 @@ void parse_fonts(void *code, unsigned long text_load_addr,
         nb_fonts = STAX_NB_FONTS_12;
       }
       break;
-    case MODEL_EUROPA:
-      fonts = (void *)EUROPA_FONTS_ARRAY_ADDR;
-      nb_fonts = EUROPA_NB_FONTS;
+    case MODEL_FLEX:
+      fonts = (void *)FLEX_FONTS_ARRAY_ADDR;
+      nb_fonts = FLEX_NB_FONTS;
       break;
     case MODEL_NANO_SP:
       fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;

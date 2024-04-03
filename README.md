@@ -5,7 +5,7 @@
 
 ![screenshot btc nano s](https://raw.githubusercontent.com/LedgerHQ/speculos/master/docs/screenshot-api-nanos-btc.png)
 
-The goal of this project is to emulate Ledger Nano S/S+, Nano X, Blue, Europa and Stax apps on
+The goal of this project is to emulate Ledger Nano S/S+, Nano X, Blue, Flex and Stax apps on
 standard desktop computers, without any hardware device. More information can
 be found here in the
 [documentation website](https://ledgerhq.github.io/speculos) (or in the
@@ -67,7 +67,7 @@ PRINTF("display_value: %d\n", display_value);
 
 ### Watchdog
 
-NanoX, Europa and Stax devices use an internal watchdog enforcing usage of regular
+NanoX, Flex and Stax devices use an internal watchdog enforcing usage of regular
 calls to `io_seproxyhal_io_heartbeat();`. This watchdog is not emulated on
 Speculos.
 

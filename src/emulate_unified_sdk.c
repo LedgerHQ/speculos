@@ -28,7 +28,7 @@ int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
 {
   (void)version;
 
-  if ((model == MODEL_STAX) || (model == MODEL_EUROPA)) {
+  if ((model == MODEL_STAX) || (model == MODEL_FLEX)) {
     return SYSCALL_NOT_HANDLED;
   }
 
@@ -147,7 +147,7 @@ int emulate_syscall_touch(unsigned long syscall, unsigned long *parameters,
 {
   (void)version;
 
-  if ((model != MODEL_STAX) && (model != MODEL_EUROPA)) {
+  if ((model != MODEL_STAX) && (model != MODEL_FLEX)) {
     return SYSCALL_NOT_HANDLED;
   }
 

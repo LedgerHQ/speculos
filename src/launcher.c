@@ -447,8 +447,8 @@ static int load_fonts(char *fonts_path)
   case MODEL_STAX:
     load_addr = STAX_FONTS_ARRAY_ADDR;
     break;
-  case MODEL_EUROPA:
-    load_addr = EUROPA_FONTS_ARRAY_ADDR;
+  case MODEL_FLEX:
+    load_addr = FLEX_FONTS_ARRAY_ADDR;
     break;
   case MODEL_NANO_SP:
     load_addr = NANOSP_FONTS_ARRAY_ADDR;
@@ -686,7 +686,7 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
-                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\", \"stax\", \"europa\" and \"blue\".\n\
+                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\", \"stax\", \"flex\" and \"blue\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n\
   -a <api_level>:       A string representing the SDK api level to be used, like \"1\".\n");
   exit(EXIT_FAILURE);
@@ -744,8 +744,8 @@ int main(int argc, char *argv[])
         hw_model = MODEL_NANO_SP;
       } else if (strcmp(optarg, "stax") == 0) {
         hw_model = MODEL_STAX;
-      } else if (strcmp(optarg, "europa") == 0) {
-        hw_model = MODEL_EUROPA;
+      } else if (strcmp(optarg, "flex") == 0) {
+        hw_model = MODEL_FLEX;
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
@@ -817,9 +817,9 @@ int main(int argc, char *argv[])
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
-  case MODEL_EUROPA:
+  case MODEL_FLEX:
     if (sdk_version != SDK_API_LEVEL_18) {
-      errx(1, "invalid SDK version for the Ledger Europa");
+      errx(1, "invalid SDK version for the Ledger Flex");
     }
     break;
   default:
