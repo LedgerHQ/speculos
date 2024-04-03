@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - NBGL support for non-Stax devices
+- Add Flex support
+- Add support of API_LEVEL_18 for NanoX, NanoS+ and Flex
 
 ## [0.7.1] - 2024-02-26
 
