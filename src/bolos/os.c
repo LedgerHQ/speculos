@@ -53,7 +53,8 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
     if (setting_id == OS_SETTING_PLANEMODE_NEW) {
       return 1;
     }
-    if (hw_model == MODEL_STAX && setting_id == OS_SETTING_SOUND) {
+    if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
+        setting_id == OS_SETTING_SOUND) {
       return 0xff;
     }
   }

@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "speculos"
 authors = [{name = "Ledger", email = "hello@ledger.fr"}]
-description = "Ledger Blue, Stax and Nano S/S+/X application emulator"
+description = "Ledger Blue, Stax, Flex and Nano S/S+/X application emulator"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
@@ -32,6 +32,7 @@ dependencies = [
     "pyelftools>=0.27,<1.0",
     "pyqt5>=5.15.2,<6.0.0",
     "requests>=2.25.1,<3.0.0",
+    "ledgered>=0.6.2",
 ]
 dynamic = ["version"]
 

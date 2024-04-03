@@ -74,6 +74,7 @@ class FrameBuffer:
         "nanox": 0xdddddd,
         "nanosp": 0xdddddd,
         "stax": 0xdddddd,
+        "flex": 0xdddddd,
     }
 
     def __init__(self, model: str):
@@ -92,7 +93,7 @@ class FrameBuffer:
     def check_color(self, color: int) -> int:
         # There are only 2 colors on the Nano S and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
-        if self.model != 'stax':
+        if self.model != 'stax' and self.model != 'flex':
             if color != 0x000000:
                 color = FrameBuffer.COLORS.get(self.model, color)
         return color
@@ -141,13 +142,13 @@ class FrameBuffer:
         self.screenshot_pixels.update(self.pixels)
 
     def update_public_screenshot(self) -> None:
-        # Stax only
+        # Stax/Flex only
         # As we lazyly evaluate the published screenshot, we only flag the evaluation update as necessary
         self.recreate_public_screenshot = True
 
     @property
     def public_screenshot_value(self) -> bytes:
-        # Stax only
+        # Stax/Flex only
         # Lazy calculation of the published screenshot, as it is a costly operation
         # and not necessary if no one tries to read the value
         if self.recreate_public_screenshot:
@@ -157,9 +158,9 @@ class FrameBuffer:
         return self._public_screenshot_value
 
     def get_public_screenshot(self) -> bytes:
-        if self.model == "stax":
-            # On Stax, we only make the screenshot public on the RESTFUL api when it is consistent with events
-            # On top of this, take_screenshot is time consuming on stax, so we'll do as few as possible
+        if self.model == "stax" or self.model == "flex":
+            # On Stax/Flex, we only make the screenshot public on the RESTFUL api when it is consistent with events
+            # On top of this, take_screenshot is time consuming on stax/flex, so we'll do as few as possible
             # We return the value calculated last time update_public_screenshot was called
             return self.public_screenshot_value
         # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
@@ -242,6 +243,10 @@ class Display(ABC):
     @property
     def rendering(self):
         return self._display_args.rendering
+
+    @property
+    def use_bagl(self) -> bool:
+        return self._display_args.use_bagl
 
     @property
     @abstractmethod

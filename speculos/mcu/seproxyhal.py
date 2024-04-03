@@ -245,6 +245,7 @@ class SeProxyHal(IODevice):
     def __init__(self,
                  sock: socket,
                  model: str,
+                 use_bagl: bool,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: str = 'hid'):
@@ -265,7 +266,9 @@ class SeProxyHal(IODevice):
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
 
-        self.ocr = OCR(model)
+        self.ocr = OCR(model, use_bagl)
+
+        self.use_bagl = use_bagl
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable[[bytes], None]] = []
@@ -326,10 +329,10 @@ class SeProxyHal(IODevice):
                     screen.display.gl.update_screenshot()
                     screen.display.gl.update_public_screenshot()
 
-                if screen.display.model != "stax" and screen.display.screen_update():
+                if self.use_bagl and screen.display.screen_update():
                     if screen.display.model in ["nanox", "nanosp"]:
                         self.events += self.ocr.get_events()
-                elif screen.display.model == "stax":
+                elif not self.use_bagl:
                     self.events += self.ocr.get_events()
 
                 # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
@@ -418,7 +421,7 @@ class SeProxyHal(IODevice):
         elif tag == SephTag.NBGL_REFRESH:
             assert isinstance(screen.display.gl, NBGL)
             screen.display.gl.refresh(data)
-            # Stax only
+            # Stax/Flex only
             # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
             # then we'll perform a screen update and make public the resulting screenshot
             self.refreshed = True

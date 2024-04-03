@@ -18,6 +18,7 @@ MODELS: Dict[str, Model] = {
     'nanosp': Model('Nano SP', (128, 64), (5, 5), (10, 10)),
     'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
     'stax': Model('Stax', (400, 672), (13, 13), (26, 26)),
+    'flex': Model('Flex', (480, 600), (13, 13), (26, 26)),
 }
 
 
@@ -31,6 +32,7 @@ class DisplayArgs:
     pixel_size: int
     x: Optional[int]
     y: Optional[int]
+    use_bagl: bool
 
 
 class ServerArgs(NamedTuple):

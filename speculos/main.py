@@ -16,6 +16,7 @@ import sys
 import threading
 import pkg_resources
 from elftools.elf.elffile import ELFFile
+from ledgered.binary import LedgerBinaryApp
 from mnemonic import mnemonic
 from typing import Optional, Type
 
@@ -46,28 +47,6 @@ def set_pdeath(sig):
     PR_SET_PDEATHSIG = 1
     libc = ctypes.cdll.LoadLibrary('libc.so.6')
     libc.prctl(PR_SET_PDEATHSIG, sig)
-
-
-ELF_METADATA_SECTIONS = [
-    "target",
-    "app_name",
-    "app_version",
-    "api_level"
-]
-
-
-def get_elf_ledger_metadata(app_path):
-    with open(app_path, 'rb') as fp:
-        elf = ELFFile(fp)
-        metadata = {}
-        for section_name in ELF_METADATA_SECTIONS:
-            section = elf.get_section_by_name(f"ledger.{section_name}")
-            if section:
-                metadata[section_name] = section.data().decode("utf-8").strip()
-                if section_name == "target":
-                    if metadata[section_name] == "nanos2":
-                        metadata[section_name] = "nanosp"
-    return metadata
 
 
 def get_elf_infos(app_path):
@@ -106,8 +85,9 @@ def get_elf_infos(app_path):
         svc_cx_call_symbol = symtab.get_symbol_by_name("SVC_cx_call")
         if svc_cx_call_symbol is not None:
             svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
-        # Check where are located fonts in .elf file (LNX/LNS+ only)
-        # (Stax fonts are loaded at a known location: STAX_FONTS_ARRAY_ADDR)
+        # Check where are located fonts in .elf file (LNX/LNS+ with BAGL only)
+        # (on apps using NBGL, fonts are loaded from a known location: STAX_FONTS_ARRAY_ADDR,
+        #  FLEX_FONTS_ARRAY_ADDR, NANOX_FONTS_ARRAY_ADDR or NANOSP_FONTS_ARRAY_ADDR)
         fonts_addr = 0
         fonts_size = 0
         bagl_fonts_symbol = symtab.get_symbol_by_name('C_bagl_fonts')
@@ -139,7 +119,7 @@ def get_cx_infos(app_path):
     return sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load
 
 
-def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> int:
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
     argv = ['qemu-arm-static']
 
     if args.debug:
@@ -170,7 +150,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         logger.warn(f"Cx lib {cxlib_filepath} not found")
 
-    if args.model == "stax":
+    # for NBGL apps, fonts binary file is mandatory
+    if not use_bagl:
         fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
         fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
         if os.path.exists(fonts):
@@ -185,6 +166,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
             fonts_addr, fonts_size = get_elf_infos(lib_path)
+
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
@@ -317,18 +299,25 @@ def main(prog=None) -> int:
 
     # Init model and api_level if not specified from app elf metadata
     app_path = getattr(args, 'app.elf')
-    metadata = get_elf_ledger_metadata(app_path)
+    binary = LedgerBinaryApp(app_path)
     if not args.model:
-        if "target" not in metadata:
+        if binary.sections.target is None:
             logger.error("Device model not detected from elf. Then it must be specified")
             sys.exit(1)
         else:
-            args.model = metadata["target"]
+            args.model = "nanosp" if binary.sections.target == "nanos2" else binary.sections.target
             logger.warn(f"Device model detected from metadata: {args.model}")
 
+    # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
+    # manage the cases where it is NOT 'bagl' but the section does not exists yet
+    if args.model in ["stax", "flex"]:
+        use_bagl = False
+    else:
+        use_bagl = binary.sections.sdk_graphics == "bagl"
+
     if not args.apiLevel:
-        if "api_level" in metadata:
-            args.apiLevel = metadata["api_level"]
+        if binary.sections.api_level is not None:
+            args.apiLevel = binary.sections.api_level
             logger.warn(f"Api level detected from metadata: {args.apiLevel}")
 
     # Check args.apiLevel, 0 is an invalid value
@@ -338,8 +327,8 @@ def main(prog=None) -> int:
 
     # Set SPECULOS_DETECTED_APPNAME env variable for proper emulation.
     # See sys_os_registry_get_current_app_tag() for corresponding usage.
-    app_name = metadata.get("app_name")
-    app_version = metadata.get("app_version")
+    app_name = binary.sections.app_name
+    app_version = binary.sections.app_version
     if app_name and app_version:
         os.environ["SPECULOS_DETECTED_APPNAME"] = f"{app_name}:{app_version}"
 
@@ -352,8 +341,7 @@ def main(prog=None) -> int:
             lib_name = None
             lib_path = lib_arg
 
-        metadata = get_elf_ledger_metadata(lib_path)
-        elf_lib_name = metadata.get("app_name", None)
+        elf_lib_name = LedgerBinaryApp(lib_path).sections.app_name
 
         if lib_name is None:
             if elf_lib_name is None:
@@ -372,14 +360,14 @@ def main(prog=None) -> int:
 
     # Check model and api_level against all lib elf metadata
     for path in [app_path] + [x.split(":")[1] for x in args.library]:
-        metadata = get_elf_ledger_metadata(path)
+        binary = LedgerBinaryApp(path)
 
-        elf_model = metadata.get("target", args.model)
+        elf_model = ("nanosp" if binary.sections.target == "nanos2" else binary.sections.target) or args.model
         if args.model != elf_model:
             logger.error(f"Invalid model in {path} ({elf_model} vs {args.model})")
             sys.exit(1)
 
-        elf_api_level = metadata.get("api_level", "0")
+        elf_api_level = binary.sections.api_level or "0"
         # Check args.apiLevel against elf api level. If elf api level == 0 (SDK master
         # reserved value) ignore it.
         if elf_api_level != "0" and args.apiLevel != elf_api_level:
@@ -473,13 +461,14 @@ def main(prog=None) -> int:
 
     s1, s2 = socket.socketpair()
 
-    qemu_pid = run_qemu(s1, s2, args)
+    qemu_pid = run_qemu(s1, s2, args, use_bagl)
     s1.close()
 
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
         model=args.model,
+        use_bagl=use_bagl,
         automation=automation_path,
         automation_server=automation_server,
         transport=args.usb)
@@ -507,6 +496,7 @@ def main(prog=None) -> int:
             "nanosp": 2,
             "blue": 1,
             "stax": 1,
+            "flex": 1
         }
         zoom = default_zoom.get(args.model)
 
@@ -519,7 +509,7 @@ def main(prog=None) -> int:
         apirun = ApiRunner(args.api_port)
 
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
-                               args.keymap, zoom, x, y)
+                               args.keymap, zoom, x, y, use_bagl)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen_notifier = ScreenNotifier(display_args, server_args)
 

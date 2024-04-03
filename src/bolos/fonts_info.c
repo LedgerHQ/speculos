@@ -17,12 +17,8 @@ BITMAP_CHAR bitmap_char[MAX_BITMAP_CHAR_12];
 uint32_t nb_bitmap_char;
 
 // Return the real addr depending on where the app was loaded
-static void *remap_addr(void *code, uint32_t addr, uint32_t text_load_addr)
+static void *remap_bagl_addr(void *code, uint32_t addr, uint32_t text_load_addr)
 {
-  // No remap on Stax, fonts are loaded at a fixed location
-  if (hw_model == MODEL_STAX) {
-    return (void *)addr;
-  }
   uint8_t *ptr = code;
   ptr += addr - text_load_addr;
 
@@ -145,9 +141,9 @@ static void parse_bagl_font(bagl_font_t *bagl_font, void *code,
                             unsigned long text_load_addr)
 {
   uint8_t *bitmap =
-      remap_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
   bagl_font_character_t *characters =
-      remap_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
 
   for (uint32_t c = bagl_font->first_char; c <= bagl_font->last_char;
        c++, characters++) {
@@ -167,9 +163,9 @@ static void parse_bagl_font_5(bagl_font_t_5 *bagl_font, void *code,
                               unsigned long text_load_addr)
 {
   uint8_t *bitmap =
-      remap_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
   bagl_font_character_t_5 *characters =
-      remap_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
   uint32_t last_character = bagl_font->last_char - bagl_font->first_char;
   uint32_t bitmap_len = characters[last_character].bitmap_offset +
                         characters[last_character].bitmap_byte_count;
@@ -192,9 +188,9 @@ static void parse_bagl_font_1(bagl_font_t_1 *bagl_font, void *code,
                               unsigned long text_load_addr)
 {
   uint8_t *bitmap =
-      remap_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->bitmap, text_load_addr);
   bagl_font_character_t_1 *characters =
-      remap_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
+      remap_bagl_addr(code, (uint32_t)bagl_font->characters, text_load_addr);
   uint32_t last_character = bagl_font->last_char - bagl_font->first_char;
   uint32_t bitmap_len = characters[last_character].bitmap_offset +
                         characters[last_character].bitmap_byte_count;
@@ -217,7 +213,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
                  unsigned long fonts_addr, unsigned long fonts_size)
 {
   // Number of fonts stored at fonts_addr
-  uint32_t nb_fonts;
+  uint32_t nb_fonts = 0;
   uint32_t *fonts;
 
   nb_bitmap_char = 0;
@@ -231,21 +227,40 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   case SDK_API_LEVEL_13:
   case SDK_API_LEVEL_14:
   case SDK_API_LEVEL_15:
+  case SDK_API_LEVEL_18:
     break;
   default:
     // Unsupported API_LEVEL, will not parse fonts!
     return;
   }
-  // On Stax, fonts are loaded at a known location
-  if (hw_model == MODEL_STAX) {
-    fonts = (void *)STAX_FONTS_ARRAY_ADDR;
-    if (sdk_version > SDK_API_LEVEL_14) {
-      nb_fonts = STAX_NB_FONTS;
-    } else {
-      nb_fonts = STAX_NB_FONTS_12;
+  // With NBGL apps, fonts are loaded at a known location, in the OS
+  if (fonts_size == 0) {
+    switch (hw_model) {
+    case MODEL_STAX:
+      fonts = (void *)STAX_FONTS_ARRAY_ADDR;
+      if (sdk_version >= SDK_API_LEVEL_15) {
+        nb_fonts = STAX_NB_FONTS;
+      } else {
+        nb_fonts = STAX_NB_FONTS_12;
+      }
+      break;
+    case MODEL_FLEX:
+      fonts = (void *)FLEX_FONTS_ARRAY_ADDR;
+      nb_fonts = FLEX_NB_FONTS;
+      break;
+    case MODEL_NANO_SP:
+      fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;
+      nb_fonts = NANO_NB_FONTS;
+      break;
+    case MODEL_NANO_X:
+      fonts = (void *)NANOX_FONTS_ARRAY_ADDR;
+      nb_fonts = NANO_NB_FONTS;
+      break;
+    default:
+      return;
     }
   } else {
-    fonts = remap_addr(code, fonts_addr, text_load_addr);
+    fonts = remap_bagl_addr(code, fonts_addr, text_load_addr);
     nb_fonts = fonts_size / 4;
   }
 
@@ -278,7 +293,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
 
   // Parse all those fonts and add bitmap/character pairs
   for (uint32_t i = 0; i < nb_fonts; i++) {
-    if (hw_model == MODEL_STAX) {
+    if (fonts_size == 0) {
       switch (sdk_version) {
       case SDK_API_LEVEL_12:
       case SDK_API_LEVEL_13:
@@ -292,7 +307,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
         break;
       }
     } else {
-      void *font = remap_addr(code, fonts[i], text_load_addr);
+      void *font = remap_bagl_addr(code, fonts[i], text_load_addr);
 
       switch (sdk_version) {
       case SDK_API_LEVEL_1:

@@ -120,14 +120,18 @@ class OCR:
     # Maximum space for a letter to be considered part of the same word
     MAX_BLANK_SPACE_NANO = 12
     MAX_BLANK_SPACE_STAX = 24
+    MAX_BLANK_SPACE_FLEX = 26
 
-    def __init__(self, model: str):
+    def __init__(self, model: str, use_bagl: bool):
         self.events: List[TextEvent] = []
         # Store the model of the device
         self.model = model
+        self.use_bagl = use_bagl
         # Maximum space for a letter to be considered part of the same word
         if model == "stax":
             self.max_blank_space = OCR.MAX_BLANK_SPACE_STAX
+        elif model == "flex":
+            self.max_blank_space = OCR.MAX_BLANK_SPACE_FLEX
         else:
             self.max_blank_space = OCR.MAX_BLANK_SPACE_NANO
 
@@ -215,7 +219,7 @@ class OCR:
         For older SKD versions, legacy behaviour is used: parsing internal
         fonts to find a matching bitmap.
         """
-        if self.model == "stax":
+        if not self.use_bagl:
             # Can be called via SephTag.NBGL_DRAW_IMAGE or SephTag.NBGL_DRAW_IMAGE_RLE
             # In both cases, data contains:
             # - area (sizeof(nbgl_area_t))

@@ -105,7 +105,7 @@ class TextScreen(Display):
 
         self.width, self.height = MODELS[display_args.model].screen_size
         self.m = TextWidget(self, display_args.model)
-        if display_args.model != "stax":
+        if self.use_bagl:
             self._gl = bagl.Bagl(self.m, MODELS[display_args.model].screen_size, display_args.model)
         else:
             raise NotImplementedError("This display can not emulate NBGL OS yet")
