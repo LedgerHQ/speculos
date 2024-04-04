@@ -297,6 +297,9 @@ def main(prog=None) -> int:
     if args.model:
         args.model = args.model.lower()
 
+    # Initialize root logging level and handlers and module specific level if requested in command line
+    setup_logging(args)
+
     # Init model and api_level if not specified from app elf metadata
     app_path = getattr(args, 'app.elf')
     binary = LedgerBinaryApp(app_path)
@@ -373,8 +376,6 @@ def main(prog=None) -> int:
         if elf_api_level != "0" and args.apiLevel != elf_api_level:
             logger.error(f"Invalid api_level in {path} ({elf_api_level} vs {args.apiLevel})")
             sys.exit(1)
-
-    setup_logging(args)
 
     rendering = seproxyhal.RENDER_METHOD.FLUSHED
     if args.progressive:
