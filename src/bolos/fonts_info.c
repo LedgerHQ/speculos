@@ -210,11 +210,12 @@ static void parse_bagl_font_1(bagl_font_t_1 *bagl_font, void *code,
 
 // Parse all fonts located at provided addr
 void parse_fonts(void *code, unsigned long text_load_addr,
-                 unsigned long fonts_addr, unsigned long fonts_size)
+                 unsigned long fonts_addr, unsigned long fonts_size,
+                 bool use_nbgl)
 {
   // Number of fonts stored at fonts_addr
   uint32_t nb_fonts = 0;
-  uint32_t *fonts;
+  uint32_t *fonts = NULL;
 
   nb_bitmap_char = 0;
 
@@ -234,7 +235,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     return;
   }
   // With NBGL apps, fonts are loaded at a known location, in the OS
-  if (fonts_size == 0) {
+  if (use_nbgl) {
     switch (hw_model) {
     case MODEL_STAX:
       fonts = (void *)STAX_FONTS_ARRAY_ADDR;
@@ -259,7 +260,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     default:
       return;
     }
-  } else {
+  } else if (fonts_size != 0) {
     fonts = remap_bagl_addr(code, fonts_addr, text_load_addr);
     nb_fonts = fonts_size / 4;
   }

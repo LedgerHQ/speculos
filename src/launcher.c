@@ -536,7 +536,7 @@ static int load_cxlib(char *cxlib_args)
   return 0;
 }
 
-static int run_app(char *name, unsigned long *parameters)
+static int run_app(char *name, unsigned long *parameters, bool use_nbgl)
 {
   unsigned long stack_end, stack_start;
   void (*f)(unsigned long *);
@@ -552,7 +552,7 @@ static int run_app(char *name, unsigned long *parameters)
 
   // Parse fonts and build bitmap -> character table
   parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
-              app->elf.fonts_size);
+              app->elf.fonts_size, use_nbgl);
 
   /* thumb mode */
   f = (void *)((unsigned long)p | 1);
@@ -854,7 +854,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  run_app(MAIN_APP_NAME, NULL);
+  run_app(MAIN_APP_NAME, NULL, fonts_path != NULL);
 
   return 0;
 }
