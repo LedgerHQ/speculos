@@ -49,7 +49,7 @@ def set_pdeath(sig):
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
 
-def get_elf_infos(app_path):
+def get_elf_infos(app_path, use_bagl):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
         text = elf.get_section_by_name('.text')
@@ -95,7 +95,7 @@ def get_elf_infos(app_path):
             fonts_addr = bagl_fonts_symbol[0]['st_value']
             fonts_size = bagl_fonts_symbol[0]['st_size']
             logger.info(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
-        else:
+        elif use_bagl:
             logger.info("Disabling OCR.")
 
         supp_ram = elf.get_section_by_name('.rfbss')
@@ -157,7 +157,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         if os.path.exists(fonts):
             argv += ['-f', fonts]
         else:
-            logger.warn(f"Fonts {fonts_filepath} not found")
+            logger.error(f"Fonts {fonts_filepath} not found")
+            sys.exit(1)
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
@@ -165,7 +166,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
-            fonts_addr, fonts_size = get_elf_infos(lib_path)
+            fonts_addr, fonts_size = get_elf_infos(lib_path, use_bagl)
 
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):

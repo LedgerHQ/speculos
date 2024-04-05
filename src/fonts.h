@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 // ============================================================================
@@ -172,6 +173,7 @@ typedef struct {
 // ============================================================================
 
 void parse_fonts(void *code, unsigned long text_load_addr,
-                 unsigned long fonts_addr, unsigned long fonts_size);
+                 unsigned long fonts_addr, unsigned long fonts_size,
+                 bool use_nbgl);
 
 uint32_t get_character_from_bitmap(const uint8_t *bitmap);
