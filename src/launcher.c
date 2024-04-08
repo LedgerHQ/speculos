@@ -75,6 +75,7 @@ static size_t extra_rampage_size;
 
 sdk_version_t sdk_version = SDK_COUNT;
 hw_model_t hw_model = MODEL_COUNT;
+bool use_nbgl = false;
 
 static struct app_s *current_app;
 
@@ -411,6 +412,10 @@ static void *load_app(char *name)
 
   current_app = app;
 
+  // Parse fonts and build bitmap -> character table
+  parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
+              app->elf.fonts_size, use_nbgl);
+
   return code;
 
 error:
@@ -536,7 +541,7 @@ static int load_cxlib(char *cxlib_args)
   return 0;
 }
 
-static int run_app(char *name, unsigned long *parameters, bool use_nbgl)
+static int run_app(char *name, unsigned long *parameters)
 {
   unsigned long stack_end, stack_start;
   void (*f)(unsigned long *);
@@ -549,10 +554,6 @@ static int run_app(char *name, unsigned long *parameters, bool use_nbgl)
   }
 
   app = get_current_app();
-
-  // Parse fonts and build bitmap -> character table
-  parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
-              app->elf.fonts_size, use_nbgl);
 
   /* thumb mode */
   f = (void *)((unsigned long)p | 1);
@@ -848,13 +849,14 @@ int main(int argc, char *argv[])
     if (load_fonts(fonts_path) != 0) {
       return 1;
     }
+    use_nbgl = true;
   }
 
   if (setup_signals() != 0) {
     return 1;
   }
 
-  run_app(MAIN_APP_NAME, NULL, fonts_path != NULL);
+  run_app(MAIN_APP_NAME, NULL);
 
   return 0;
 }
