@@ -105,7 +105,7 @@ class FrameBuffer:
         for x in range(x0, x0 + width):
             self.pixels[(x, y)] = self.check_color(color)
 
-    def draw_rect(self, x0: int, y0: int, width: int, height: int, color: int) -> None:
+    def draw_rect(self, x0: int, y0: int, width: int, height: int, color: int) -> List[TextEvent]:
         color = self.check_color(color)
 
         if x0 == 0 and y0 == 0 and width == self._width and height == self._height:
@@ -113,11 +113,13 @@ class FrameBuffer:
             self.draw_default_color = True
             self.pixels = {}
             self.screenshot_pixels = {}
-            return
+            return [TextEvent("", 0, 0, 0, 0, True)]
 
         for x in range(x0, x0 + width):
             for y in range(y0, y0 + height):
                 self.pixels[(x, y)] = color
+
+        return []
 
     def _get_image(self) -> bytes:
         data = bytearray(self.default_color.to_bytes(3, "big")) * self._width * self._height

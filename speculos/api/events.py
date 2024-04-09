@@ -9,9 +9,6 @@ from flask_restful import inputs, reqparse
 from speculos.observer import BroadcastInterface, ObserverInterface, TextEvent
 from .restful import AppResource
 
-# Approximative minimum vertical distance between two lines of text on the devices' screen.
-MIN_LINES_HEIGHT_DISTANCE = 10  # pixels
-
 
 class EventsBroadcaster(BroadcastInterface):
     """This used to be the 'Automation Server'."""
@@ -28,11 +25,9 @@ class EventsBroadcaster(BroadcastInterface):
         self.screen_content = []
 
     def broadcast(self, event: TextEvent) -> None:
-        if self.screen_content:
-            # Reset screen content if new event is not below the last text line of
-            # current screen. Event Y coordinate starts at the top of the screen.
-            if event.y <= self.screen_content[-1].y + MIN_LINES_HEIGHT_DISTANCE:
-                self.clear_events()
+        if event.clear:
+            self.clear_events()
+            return
 
         self.logger.debug("events: broadcasting %s to %d client(s)", asdict(event), len(self.clients))
         self.screen_content.append(event)

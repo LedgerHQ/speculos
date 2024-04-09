@@ -417,7 +417,8 @@ class Bagl(GraphicLibrary):
                                              bpp,
                                              bitmap)
 
-    def _display_bagl_rectangle(self, component, context, context_encoding, halignment, valignment):
+    def _display_bagl_rectangle(self, component, context, context_encoding, halignment, valignment) -> List[TextEvent]:
+        ret = []
         radius = min(component.radius, min(component.width//2, component.height//2))
         if component.fill != BAGL_FILL:
             coords = [
@@ -450,7 +451,10 @@ class Bagl(GraphicLibrary):
                 (component.x+component.width-radius, component.y+radius, radius, component.height-2*radius),
             ]
             for (x, y, width, height) in coords:
-                self._hal_draw_rect(component.fgcolor, x, y, width, height)
+                if x == 0 and y == 0 and width == self.SCREEN_WIDTH and height == self.SCREEN_HEIGHT:
+                    ret += self.fb.draw_rect(x, y, width, height, component.fgcolor)
+                else:
+                    self._hal_draw_rect(component.fgcolor, x, y, width, height)
 
         if radius > 1:
             radiusint = 0
@@ -499,6 +503,8 @@ class Bagl(GraphicLibrary):
                               component.height - valignment - stroke,
                               context)
 
+        return ret
+
     def _display_bagl_labeline(self,
                                component,
                                text,
@@ -540,7 +546,7 @@ class Bagl(GraphicLibrary):
 
         return [TextEvent(text.decode("utf-8", "ignore"),
                           component.x + halignment, y,
-                          component.width - halignment, component.height)]
+                          component.width - halignment, component.height, False)]
 
     def _display_get_alignment(self, component, context, context_encoding):
         halignment = 0
@@ -600,7 +606,7 @@ class Bagl(GraphicLibrary):
             # self.renderer.clear()
             pass
         elif type_ == BAGL_RECTANGLE:
-            self._display_bagl_rectangle(component, context, context_encoding, halignment, valignment)
+            ret = self._display_bagl_rectangle(component, context, context_encoding, halignment, valignment)
         elif type_ == BAGL_LABEL:
             self._display_bagl_labeline(component, context, halignment, valignment, baseline, char_height,
                                         strwidth, type_)

@@ -3,13 +3,14 @@ import logging
 import sys
 from construct import Struct, Int8ul, Int16ul
 from enum import IntEnum
+from speculos.observer import TextEvent
 try:
     from functools import cache
 except ImportError:
     # `functools.cache` does not exists on Python3.8
     from functools import lru_cache
     cache = lru_cache(maxsize=None)
-from typing import Tuple
+from typing import List, Tuple
 
 from .display import FrameBuffer, GraphicLibrary
 # This is a copy - original version is in the SDK (tools/rle_custom.py)
@@ -61,10 +62,10 @@ class NBGL(GraphicLibrary):
         if area.y0 > self.SCREEN_HEIGHT or (area.y0+area.height) > self.SCREEN_HEIGHT:
             raise AssertionError("top edge (%d) or bottom edge (%d) out of screen" % (area.y0, (area.y0 + area.height)))
 
-    def hal_draw_rect(self, data: bytes) -> None:
+    def hal_draw_rect(self, data: bytes) -> List[TextEvent]:
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
-        self.fb.draw_rect(area.x0, area.y0, area.width, area.height, NBGL.to_screen_color(area.color, 2))
+        return self.fb.draw_rect(area.x0, area.y0, area.width, area.height, NBGL.to_screen_color(area.color, 2))
 
     def refresh(self, data: bytes) -> bool:
         area = nbgl_area_t.parse(data)

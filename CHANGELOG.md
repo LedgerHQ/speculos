@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Removing PyQt5 from Speculos Docker images as it is unused and triggers error on MAC.
+- Fix OCR screen content reset mechanism
 
 ## [0.8.3] - 2024-04-08
 

@@ -353,8 +353,7 @@ class SeProxyHal(IODevice):
             self.logger.debug(f"DISPLAY_STATUS {data!r}")
             if screen.display.model not in ["nanox", "nanosp"] or tag == SephTag.BAGL_DRAW_RECT:
                 events = screen.display.display_status(data)
-                if events:
-                    self.events += events
+                self.events += events
             if tag != SephTag.BAGL_DRAW_RECT:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
@@ -416,7 +415,7 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.NBGL_DRAW_RECT:
             assert isinstance(screen.display.gl, NBGL)
-            screen.display.gl.hal_draw_rect(data)
+            self.events += screen.display.gl.hal_draw_rect(data)
 
         elif tag == SephTag.NBGL_REFRESH:
             assert isinstance(screen.display.gl, NBGL)
