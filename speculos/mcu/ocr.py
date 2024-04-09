@@ -170,7 +170,7 @@ class OCR:
             else:
                 # create a new TextEvent if there are no events yet
                 # or if there is a new line
-                self.events.append(TextEvent(char, x, y, w, h))
+                self.events.append(TextEvent(char, x, y, w, h, False))
 
     def store_char_in_last_event(self, x: int, y: int, w: int, h: int, char: str) -> None:
         """
@@ -210,7 +210,7 @@ class OCR:
                 return
 
         # create a new TextEvent if there are no events yet or if there is a new line
-        self.events.append(TextEvent(char, x, y, w, h))
+        self.events.append(TextEvent(char, x, y, w, h, False))
 
     def analyze_bitmap(self, data: bytes) -> None:
         """

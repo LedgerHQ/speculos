@@ -11,6 +11,7 @@ class TextEvent:
     y: int
     w: int
     h: int
+    clear: bool
 
 
 class ObserverInterface(ABC):
