@@ -244,6 +244,10 @@ int replace_current_code(struct app_s *app)
   memory.code_size = app->elf.load_size;
   current_app = app;
 
+  // Parse fonts and build bitmap -> character table
+  parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
+              app->elf.fonts_size, use_nbgl);
+
   return 0;
 }
 
