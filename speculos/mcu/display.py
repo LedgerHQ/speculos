@@ -82,6 +82,7 @@ class FrameBuffer:
         self.screenshot_pixels: PixelColorMapping = {}
         self.default_color = 0
         self.draw_default_color = False
+        self.reset_screeshot_pixels = False
         self._public_screenshot_value = b''
         self.current_data = b''
         self.recreate_public_screenshot = True
@@ -112,7 +113,7 @@ class FrameBuffer:
             self.default_color = color
             self.draw_default_color = True
             self.pixels = {}
-            self.screenshot_pixels = {}
+            self.reset_screeshot_pixels = True
             return [TextEvent("", 0, 0, 0, 0, True)]
 
         for x in range(x0, x0 + width):
@@ -141,6 +142,9 @@ class FrameBuffer:
         return self.current_screen_size, self._get_image()
 
     def update_screenshot(self) -> None:
+        if self.reset_screeshot_pixels:
+            self.screenshot_pixels = {}
+            self.reset_screeshot_pixels = False
         self.screenshot_pixels.update(self.pixels)
 
     def update_public_screenshot(self) -> None:
