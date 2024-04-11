@@ -10,6 +10,7 @@ except ImportError:
     cache = lru_cache(maxsize=None)
 from PIL import Image
 from socket import socket
+from threading import Lock
 from typing import Any, Dict, IO, List, Optional, Tuple, Union
 
 from speculos.observer import TextEvent
@@ -80,6 +81,7 @@ class FrameBuffer:
     def __init__(self, model: str):
         self.pixels: PixelColorMapping = {}
         self.screenshot_pixels: PixelColorMapping = {}
+        self.screenshot_pixels_lock = Lock()
         self.default_color = 0
         self.draw_default_color = False
         self.reset_screeshot_pixels = False
@@ -123,10 +125,13 @@ class FrameBuffer:
         return []
 
     def _get_image(self) -> bytes:
-        data = bytearray(self.default_color.to_bytes(3, "big")) * self._width * self._height
-        for (x, y), color in self.screenshot_pixels.items():
-            pos = 3 * (y * self._width + x)
-            data[pos:pos + 3] = color.to_bytes(3, "big")
+        # This call is made from the Speculos API thread
+        # Protect screenshot_pixels for concurrent Write during this Read
+        with self.screenshot_pixels_lock:
+            data = bytearray(self.default_color.to_bytes(3, "big")) * self._width * self._height
+            for (x, y), color in self.screenshot_pixels.items():
+                pos = 3 * (y * self._width + x)
+                data[pos:pos + 3] = color.to_bytes(3, "big")
         return bytes(data)
 
     def _get_screenshot_iobytes_value(self) -> bytes:
@@ -142,10 +147,13 @@ class FrameBuffer:
         return self.current_screen_size, self._get_image()
 
     def update_screenshot(self) -> None:
-        if self.reset_screeshot_pixels:
-            self.screenshot_pixels = {}
-            self.reset_screeshot_pixels = False
-        self.screenshot_pixels.update(self.pixels)
+        # This call is made from the MCU/Seproxyhal thread
+        # Protect screenshot_pixels for concurrent Read during this Write
+        with self.screenshot_pixels_lock:
+            if self.reset_screeshot_pixels:
+                self.screenshot_pixels = {}
+                self.reset_screeshot_pixels = False
+            self.screenshot_pixels.update(self.pixels)
 
     def update_public_screenshot(self) -> None:
         # Stax/Flex only
