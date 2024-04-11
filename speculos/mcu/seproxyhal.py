@@ -66,7 +66,7 @@ RENDER_METHOD = RenderMethods(0, 1)
 
 
 class TimeTickerDaemon(threading.Thread):
-    def __init__(self, add_tick: Callable, *args, **kwargs):
+    def __init__(self, add_tick: Callable, wait_until_tick_is_processed: Callable, *args, **kwargs):
         """
         Initializes the Ticker Daemon
         The goal of this daemon is to emulate the time spent in the application by sending it
@@ -81,6 +81,7 @@ class TimeTickerDaemon(threading.Thread):
         self._paused = False
         self._resume_cond = threading.Condition()
         self.add_tick = add_tick
+        self.wait_until_tick_is_processed = wait_until_tick_is_processed
 
     def pause(self):
         """
@@ -106,6 +107,7 @@ class TimeTickerDaemon(threading.Thread):
         Internal function to handle the pause
         """
         while self.paused:
+            self.wait_until_tick_is_processed()
             self._paused = True
             with self._resume_cond:
                 self._resume_cond.wait()
@@ -199,7 +201,12 @@ class SocketHelper(threading.Thread):
         with self.queue_condition:
             self.queue_condition.notify()
 
-    def add_tick(self, wait_fully_processed=False):
+    def wait_until_tick_is_processed(self):
+        # Wait until the app has finished processing the tick
+        while self.tick_requested or self.queue or not self.status_event.is_set():
+            self.status_event.wait()
+
+    def add_tick(self, wait_until_tick_is_processed=False):
         """Request sending of a ticker event to the app"""
         self.tick_requested = True
 
@@ -207,10 +214,8 @@ class SocketHelper(threading.Thread):
         with self.queue_condition:
             self.queue_condition.notify()
 
-        if wait_fully_processed:
-            # Wait until the app have finished processing the tick
-            while self.tick_requested or self.queue or not self.status_event.is_set():
-                self.status_event.wait()
+        if wait_until_tick_is_processed:
+            self.wait_until_tick_is_processed()
 
     def run(self):
         while not self.stop:
@@ -261,7 +266,8 @@ class SeProxyHal(IODevice):
         self.socket_helper = SocketHelper(self._socket, self.status_event)
         self.socket_helper.start()
 
-        self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick)
+        self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick,
+                                                   self.socket_helper.wait_until_tick_is_processed)
         self.time_ticker_thread.start()
 
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
@@ -473,7 +479,7 @@ class SeProxyHal(IODevice):
         elif action == "resume":
             self.time_ticker_thread.resume()
         elif action == "single-step":
-            self.time_ticker_thread.add_tick(wait_fully_processed=True)
+            self.time_ticker_thread.add_tick(wait_until_tick_is_processed=True)
 
     def handle_wait(self, delay: float):
         '''Wait for a specified delay, taking account real time seen by the app.'''
@@ -484,7 +490,7 @@ class SeProxyHal(IODevice):
                 time.sleep(TICKER_DELAY)
         else:
             for _ in range(expected_ticks):
-                self.time_ticker_thread.add_tick(wait_fully_processed=True)
+                self.time_ticker_thread.add_tick(wait_until_tick_is_processed=True)
 
     def to_app(self, packet: bytes):
         '''
