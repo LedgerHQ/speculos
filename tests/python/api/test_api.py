@@ -1,6 +1,6 @@
+import importlib.resources
 import json
 import os
-import pkg_resources
 import pytest
 import re
 import requests
@@ -16,8 +16,7 @@ API_URL = "http://127.0.0.1:5000"
 class TestApi:
     @staticmethod
     def get_automation_data(name):
-        path = os.path.join("resources", name)
-        path = pkg_resources.resource_filename(__name__, path)
+        path = importlib.resources.files(__package__) / "resources" / name
         with open(path, "rb") as fp:
             data = fp.read()
         return data

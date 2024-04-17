@@ -1,7 +1,7 @@
+import importlib.resources
 import json
 import jsonschema
 import os
-import pkg_resources
 import pytest
 
 from speculos.mcu import automation
@@ -10,8 +10,7 @@ from speculos.mcu import automation
 class TestAutomation:
     @staticmethod
     def get_json_path(name):
-        path = os.path.join("resources", name)
-        path = pkg_resources.resource_filename(__name__, path)
+        path = importlib.resources.files(__package__) / "resources" / name
         return f"file:{path}"
 
     def test_valid_json(self):

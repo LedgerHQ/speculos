@@ -1,8 +1,7 @@
+import importlib.resources
 import json
 import jsonschema
 import logging
-import os
-import pkg_resources
 import re
 
 
@@ -20,8 +19,8 @@ class Automation:
         self.validate()
 
     def validate(self):
-        path = os.path.join("resources", "automation.schema")
-        with pkg_resources.resource_stream(__name__, path) as fp:
+        path = importlib.resources.files(__package__) / "resources" / "automation.schema"
+        with path.open("rb") as fp:
             schema = json.load(fp)
         jsonschema.validate(instance=self.json, schema=schema)
 

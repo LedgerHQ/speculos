@@ -1,10 +1,9 @@
+import importlib.resources
 import json
-import os.path
-import pkg_resources
 
 
 def load_json_schema(filename):
-    path = os.path.join("resources", filename)
-    with pkg_resources.resource_stream(__name__, path) as fp:
+    path = importlib.resources.files(__package__) / "resources" / filename
+    with path.open("rb") as fp:
         schema = json.load(fp)
     return schema
