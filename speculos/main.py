@@ -7,6 +7,7 @@ Emulate the target app along the SE Proxy Hal server.
 import argparse
 import binascii
 import ctypes
+import importlib.resources
 import logging
 import os
 import re
@@ -14,7 +15,6 @@ import signal
 import socket
 import sys
 import threading
-import pkg_resources
 from elftools.elf.elffile import ELFFile
 from ledgered.binary import LedgerBinaryApp
 from mnemonic import mnemonic
@@ -38,7 +38,7 @@ DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover o
 
 logger = logging.getLogger("speculos")
 
-launcher_path = pkg_resources.resource_filename(__name__, "/resources/launcher")
+launcher_path = str(importlib.resources.files(__package__) / "resources" / "launcher")
 
 
 def set_pdeath(sig):
@@ -139,10 +139,10 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
 
     # load cxlib only if available for the specified api level or sdk
     if args.apiLevel:
-        cxlib_filepath = f"/cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
+        cxlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
     else:
-        cxlib_filepath = f"/cxlib/{args.model}-cx-{args.sdk}.elf"
-    cxlib = pkg_resources.resource_filename(__name__, cxlib_filepath)
+        cxlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
+    cxlib = str(importlib.resources.files(__package__) / cxlib_filepath)
     if os.path.exists(cxlib):
         sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
         cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
@@ -152,8 +152,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
 
     # for NBGL apps, fonts binary file is mandatory
     if not use_bagl:
-        fonts_filepath = f"/fonts/{args.model}-fonts-{args.apiLevel}.bin"
-        fonts = pkg_resources.resource_filename(__name__, fonts_filepath)
+        fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = str(importlib.resources.files(__package__) / fonts_filepath)
         if os.path.exists(fonts):
             argv += ['-f', fonts]
         else:

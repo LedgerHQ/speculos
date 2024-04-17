@@ -5,9 +5,9 @@ Tests to ensure that speculos launches correctly the BTC apps.
 '''
 
 import json
+import importlib.resources
 import io
 import os
-import pkg_resources
 import pytest
 
 from enum import IntEnum
@@ -28,8 +28,7 @@ def client(client_btc):
 
 
 def read_automation_rules(name):
-    path = os.path.join("resources", name)
-    path = pkg_resources.resource_filename(__name__, path)
+    path = importlib.resources.files(__package__) / "resources" / name
     with open(path, "rb") as fp:
         rules = json.load(fp)
     return rules
@@ -59,7 +58,7 @@ def test_btc_get_public_key_with_user_approval(client, app):
                 event = client.get_next_event()
 
         screenshot = client.get_screenshot()
-        path = pkg_resources.resource_filename(__name__, f"resources/btc_getpubkey_{app.model}.png")
+        path = importlib.resources.files(__package__) / "resources" / f"btc_getpubkey_{app.model}.png"
         assert speculos.client.screenshot_equal(path, io.BytesIO(screenshot))
 
         if app.model == "blue":
