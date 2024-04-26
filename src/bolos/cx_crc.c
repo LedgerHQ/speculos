@@ -105,5 +105,40 @@ unsigned int sys_cx_crc32_update(unsigned int crc, const void *buf, size_t len)
     crc = cx_ccitt32[(crc ^ *p++) & 0xff] ^ (crc >> 8u);
   }
 
-  return crc ^ 0xFFFFFFFF;
+  return crc ^ CX_CRC32_INIT;
+}
+
+uint32_t sys_cx_crc32_hw(const void *buf, size_t len)
+{
+  uint32_t crc;
+  crc = sys_cx_crc32_update(CX_CRC32_INIT, buf, len);
+
+  return crc;
+}
+
+static uint32_t reverse_32_bits(uint32_t value)
+{
+  uint32_t reverse_val = 0;
+
+  for (uint8_t i = 0; i < 32; i++) {
+    if ((value & (1 << i))) {
+      reverse_val |= 1 << ((32 - 1) - i);
+    }
+  }
+  return reverse_val;
+}
+
+uint32_t sys_cx_crc_hw(crc_type_t crc_type, uint32_t crc_state, const void *buf,
+                       size_t len)
+{
+  if (CRC_TYPE_CRC16_CCITT_FALSE == crc_type) {
+    return sys_cx_crc16_update(crc_state, buf, len);
+  }
+  if (CRC_TYPE_CRC32 == crc_type) {
+    uint32_t crc_init;
+    crc_init = reverse_32_bits(crc_state);
+    return sys_cx_crc32_update(crc_init, buf, len);
+  }
+
+  return 0;
 }

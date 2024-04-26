@@ -196,6 +196,12 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
              uint8_t *, buffer,
              size_t,    len);
 
+    SYSCALL4(cx_crc_hw, "(%u %u %p %u)",
+             crc_type_t, crc_type,
+             uint32_t, crc_state,
+             uint8_t *, buffer,
+             size_t,    len);
+
     SYSCALL2(cx_aes_set_key_hw, "(%p %u)",
              void *,    key,
              uint32_t,  mode);
