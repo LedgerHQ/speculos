@@ -822,7 +822,7 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_FLEX:
-    if (sdk_version != SDK_API_LEVEL_18) {
+    if (sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_19) {
       errx(1, "invalid SDK version for the Ledger Flex");
     }
     break;
