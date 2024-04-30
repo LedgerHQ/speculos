@@ -5,6 +5,8 @@
     "properties": {
         "x": { "type": "integer", "minimum": 0 },
         "y": { "type": "integer", "minimum": 0 },
+        "x2": { "type": "integer", "minimum": 0 },
+        "y2": { "type": "integer", "minimum": 0 },
         "action": { "enum": [ "press", "release", "press-and-release" ] },
         "delay": { "type": "number" }
     },

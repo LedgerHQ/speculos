@@ -173,8 +173,6 @@ class App(QMainWindow):
         self.mouse_offset = event.pos()
         x, y = self._get_x_y()
         if x >= 0 and x < self._width and y >= 0 and y < self._height:
-            # Send a press to update the last pressed x,y to the app
-            self.seph.handle_finger(x, y, True)
             # Send the release
             self.seph.handle_finger(x, y, False)
         QApplication.restoreOverrideCursor()
