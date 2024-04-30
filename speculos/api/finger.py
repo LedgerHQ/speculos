@@ -18,11 +18,13 @@ class Finger(SephResource):
         action = args["action"]
         delay = args.get("delay", 0.1)
 
+        x1, y1 = args["x"], args["y"]
         if action == "press-and-release":
-            self.seph.handle_finger(args["x"], args["y"], True)
+            self.seph.handle_finger(x1, y1, True)
             self.seph.handle_wait(delay)
-            self.seph.handle_finger(args["x"], args["y"], False)
+            x2, y2 = args.get("x2", x1), args.get("y2", y1)
+            self.seph.handle_finger(x2, y2, False)
         else:
-            self.seph.handle_finger(args["x"], args["y"], action == "press")
+            self.seph.handle_finger(x1, y1, action == "press")
 
         return {}, 200
