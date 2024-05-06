@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.7] - 2024-??-??
+## [0.9.0] - 2024-05-06
+
+### Added
+
+- Finger swipe capabilities (this feature is currently only available on Flex, using the capability
+  will have no effect on other devices)
+- Add support of API_LEVEL_19 for Flex
 
 ### Fixed
 

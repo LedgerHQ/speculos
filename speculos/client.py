@@ -126,8 +126,29 @@ class Api:
         with self.session.post(f"{self.api_url}/button/{button}", json=data) as response:
             check_status_code(response, f"/button/{button}")
 
-    def finger_touch(self, x: int, y: int, delay: float = 0.5) -> None:
+    def finger_touch(self,
+                     x: int, y: int,
+                     x2: Optional[int] = None, y2: Optional[int] = None,
+                     delay: float = 0.5) -> None:
         data = {"action": "press-and-release", "x": x, "y": y, "delay": delay}
+        if x2 is not None:
+            data["x2"] = x2
+        if y2 is not None:
+            data["y2"] = y2
+        with self.session.post(f"{self.api_url}/finger", json=data) as response:
+            check_status_code(response, "/finger")
+
+    def finger_swipe(self, x: int, y: int, direction: str, delay: float = 0.5) -> None:
+        x2, y2 = x, y
+        if direction == "up":
+            y2 -= 10
+        elif direction == "down":
+            y2 += 10
+        elif direction == "left":
+            x2 -= 10
+        elif direction == "right":
+            x2 += 10
+        data = {"action": "press-and-release", "x": x, "y": y, "x2": x2, "y2": y2, "delay": delay}
         with self.session.post(f"{self.api_url}/finger", json=data) as response:
             check_status_code(response, "/finger")
 

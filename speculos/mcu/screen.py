@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPainter, QColor, QPixmap
 from PyQt5.QtGui import QIcon, QKeyEvent, QMouseEvent
 from PyQt5.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
 from PyQt5.sip import voidptr
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from speculos.observer import TextEvent
 from . import bagl
@@ -124,10 +124,9 @@ class App(QMainWindow):
         self.setGeometry(window_x, window_y, window_width, window_height)
         self.setFixedSize(window_width, window_height)
 
-        flags: Union[Qt.WindowFlags, Qt.WindowType] = Qt.FramelessWindowHint
         if display.ontop:
-            flags |= Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint
-        self.setWindowFlags(flags)
+            flags = Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint
+            self.setWindowFlags(flags)
 
         self.setAutoFillBackground(True)
         p = self.palette()
@@ -171,19 +170,12 @@ class App(QMainWindow):
         QApplication.setOverrideCursor(Qt.DragMoveCursor)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
+        self.mouse_offset = event.pos()
         x, y = self._get_x_y()
         if x >= 0 and x < self._width and y >= 0 and y < self._height:
+            # Send the release
             self.seph.handle_finger(x, y, False)
         QApplication.restoreOverrideCursor()
-
-    def mouseMoveEvent(self, event: QMouseEvent):
-        '''Move the window.'''
-
-        x = event.globalX()
-        y = event.globalY()
-        x_w = self.mouse_offset.x()
-        y_w = self.mouse_offset.y()
-        self.move(x - x_w, y - y_w)
 
     def closeEvent(self, event: QEvent):
         '''
