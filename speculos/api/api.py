@@ -1,6 +1,5 @@
 import socket
 import threading
-import importlib.resources
 from typing import Any, Dict
 from flask import Flask
 from flask_restful import Api
@@ -9,6 +8,7 @@ from speculos.mcu.display import DisplayNotifier, IODevice
 from speculos.mcu.readerror import ReadError
 from speculos.mcu.seproxyhal import SeProxyHal
 from speculos.observer import BroadcastInterface
+from speculos.resources_importer import resources
 from .apdu import APDU
 from .automation import Automation
 from .button import Button
@@ -59,7 +59,7 @@ class ApiWrapper:
                  seph: SeProxyHal,
                  automation_server: BroadcastInterface):
         self._port = api_port
-        static_folder = str(importlib.resources.files(__package__) / "static")
+        static_folder = str(resources.files(__package__) / "static")
         self._app = Flask(__name__, static_url_path="", static_folder=static_folder)
         self._app.env = "development"
 

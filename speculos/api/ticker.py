@@ -1,12 +1,12 @@
 import jsonschema
 from flask import request
 
-from .helpers import load_json_schema
+from speculos.resources_importer import get_resource_schema_as_json
 from .restful import SephResource
 
 
 class Ticker(SephResource):
-    schema = load_json_schema("ticker.schema")
+    schema = get_resource_schema_as_json("api", "ticker.schema")
 
     def post(self):
         args = request.get_json(force=True)

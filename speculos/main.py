@@ -7,7 +7,6 @@ Emulate the target app along the SE Proxy Hal server.
 import argparse
 import binascii
 import ctypes
-import importlib.resources
 import logging
 import os
 import re
@@ -31,6 +30,7 @@ from .mcu.finger_tcp import FakeFinger
 from .mcu.struct import DisplayArgs, ServerArgs
 from .mcu.vnc import VNC
 from .observer import BroadcastInterface
+from .resources_importer import resources
 
 
 DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
@@ -38,7 +38,7 @@ DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover o
 
 logger = logging.getLogger("speculos")
 
-launcher_path = str(importlib.resources.files(__package__) / "resources" / "launcher")
+launcher_path = str(resources.files(__package__) / "resources" / "launcher")
 
 
 def set_pdeath(sig):
@@ -142,7 +142,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         cxlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
     else:
         cxlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
-    cxlib = str(importlib.resources.files(__package__) / cxlib_filepath)
+    cxlib = str(resources.files(__package__) / cxlib_filepath)
     if os.path.exists(cxlib):
         sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
         cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
@@ -153,7 +153,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     # for NBGL apps, fonts binary file is mandatory
     if not use_bagl:
         fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
-        fonts = str(importlib.resources.files(__package__) / fonts_filepath)
+        fonts = str(resources.files(__package__) / fonts_filepath)
         if os.path.exists(fonts):
             argv += ['-f', fonts]
         else:
