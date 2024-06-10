@@ -8,6 +8,7 @@
 #include "bolos/cxlib.h"
 #include "bolos/endorsement.h"
 #include "bolos/nbgl.h"
+#include "bolos/os_pki.h"
 #include "bolos/touch.h"
 #include "emulate.h"
 
@@ -653,6 +654,26 @@ int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
     SYSCALL2(os_serial, "(%p, %u)",
              unsigned char *, serial,
              unsigned int, maxlength);
+
+    SYSCALL6(os_pki_load_certificate, "(%u, %p, %u, %p, %p, %p)",
+             uint8_t, expected_key_usage,
+             uint8_t *, certificate,
+             size_t, certificate_len,
+             uint8_t *, trusted_name,
+             size_t *, trusted_name_len,
+             cx_ecfp_384_public_key_t *, public_key);
+
+    SYSCALL4(os_pki_verify, "(%p, %u, %p, %u)",
+             uint8_t *, descriptor_hash,
+             size_t, descriptor_hash_len,
+             uint8_t *, signature,
+             size_t, signature_len);
+
+    SYSCALL4(os_pki_get_info, "(%p, %p, %p, %p)",
+             uint8_t *, key_usage,
+             uint8_t *, trusted_name, 
+             size_t *, trusted_name_len,
+             cx_ecfp_384_public_key_t *, public_key);
 
   /* clang-format on */
   default:

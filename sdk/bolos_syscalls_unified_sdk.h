@@ -184,3 +184,7 @@
 #define SYSCALL_cx_hash_to_field_ID_IN                                0x06000104
 #define SYSCALL_cx_bls12381_aggregate_ID_IN                           0x05000105
 #define SYSCALL_cx_bls12381_key_gen_ID_IN                             0x03000108
+
+#define SYSCALL_os_pki_load_certificate_ID_IN                         0x060000aa
+#define SYSCALL_os_pki_verify_ID_IN                                   0x040000ab
+#define SYSCALL_os_pki_get_info_ID_IN                                 0x040000ac
