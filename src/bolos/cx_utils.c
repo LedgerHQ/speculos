@@ -305,6 +305,17 @@ void U4BE_ENCODE(uint8_t *buf, size_t off, uint32_t value)
   buf[off + 3] = value & 0xFF;
 }
 
+uint16_t U2BE(const uint8_t *buf, size_t off)
+{
+  return (buf[off] << 8) | buf[off + 1];
+}
+
+uint32_t U4BE(const uint8_t *buf, size_t off)
+{
+  return (((uint32_t)buf[off]) << 24) | (buf[off + 1] << 16) |
+         (buf[off + 2] << 8) | buf[off + 3];
+}
+
 void cx_memxor(uint8_t *buf1, const uint8_t *buf2, size_t len)
 {
   size_t i;
