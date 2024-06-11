@@ -817,7 +817,8 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_8 && sdk_version != SDK_API_LEVEL_9 &&
         sdk_version != SDK_API_LEVEL_10 && sdk_version != SDK_API_LEVEL_11 &&
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13 &&
-        sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15) {
+        sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15 &&
+        sdk_version != SDK_API_LEVEL_20) {
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
