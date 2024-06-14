@@ -26,6 +26,7 @@ typedef struct os_pki_s {
 } os_pki_t;
 
 static os_pki_t os_pki;
+static uint8_t os_pki_set;
 
 uint32_t os_pki_check_value(uint8_t *certificate_value,
                             cx_ecfp_384_public_key_t *cert_public_key)
@@ -248,6 +249,8 @@ uint32_t sys_os_pki_load_certificate(uint8_t expected_key_usage,
   cx_sign_algo_t sign_algo;
   uint32_t swo_error = 0x9000;
 
+  os_pki_set = 0;
+
   for (offset = 0; offset < certificate_len;) {
     if (CERTIFICATE_TAG_SIGNATURE == certificate[offset]) {
       break;
@@ -312,6 +315,10 @@ uint32_t sys_os_pki_load_certificate(uint8_t expected_key_usage,
     *trusted_name_len = os_pki.trusted_name_len;
   }
 
+  if (0x9000 == swo_error) {
+    os_pki_set = 1;
+  }
+
   return swo_error;
 }
 
@@ -320,6 +327,10 @@ bool sys_os_pki_verify(uint8_t *descriptor_hash, size_t descriptor_hash_len,
 {
   cx_sign_algo_t sign_algo =
       os_pki_get_signature_algorithm(os_pki.pk_sign_algo);
+
+  if (os_pki_set != 1) {
+    return false;
+  }
 
   return cx_verify(sign_algo, (cx_ecfp_public_key_t *)&os_pki.public_key,
                    descriptor_hash, descriptor_hash_len, signature,
@@ -330,6 +341,9 @@ uint32_t sys_os_pki_get_info(uint8_t *key_usage, uint8_t *trusted_name,
                              size_t *trusted_name_len,
                              cx_ecfp_384_public_key_t *public_key)
 {
+  if (os_pki_set != 1) {
+    return 0x590E;
+  }
   *key_usage = os_pki.key_usage;
   memcpy(trusted_name, os_pki.trusted_name, os_pki.trusted_name_len);
   *trusted_name_len = os_pki.trusted_name_len;
