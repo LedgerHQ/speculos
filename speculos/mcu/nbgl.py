@@ -55,8 +55,6 @@ class NBGL(GraphicLibrary):
         self.logger = logging.getLogger("NBGL")
 
     def __assert_area(self, area) -> None:
-        if self.model == "stax" and (area.y0 % 4 or area.height % 4):
-            raise AssertionError("X(%d) or height(%d) not 4 aligned " % (area.y0, area.height))
         if area.x0 > self.SCREEN_WIDTH or (area.x0+area.width) > self.SCREEN_WIDTH:
             raise AssertionError("left edge (%d) or right edge (%d) out of screen" % (area.x0, (area.x0 + area.width)))
         if area.y0 > self.SCREEN_HEIGHT or (area.y0+area.height) > self.SCREEN_HEIGHT:
