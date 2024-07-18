@@ -14,6 +14,7 @@
 #define OS_PKI_TLV_LENGTH_OFFSET  (1)
 #define OS_PKI_TLV_VALUE_OFFSET   (2)
 #define OS_PKI_SEMVER_VERSION_LEN (6)
+#define SWO_OK                    (0x0000)
 
 typedef struct os_pki_s {
   uint8_t key_usage;
@@ -33,7 +34,7 @@ uint32_t os_pki_check_value(uint8_t *certificate_value,
 {
   size_t domain_len;
   cx_ecpoint_t point;
-  uint32_t swo_error = 0x9000;
+  uint32_t swo_error = SWO_OK;
   cx_err_t error = CX_OK;
   char cert_validity[OS_PKI_SEMVER_VERSION_LEN] = { 0 };
   uint8_t tag = certificate_value[OS_PKI_TLV_TAG_OFFSET];
@@ -247,7 +248,7 @@ uint32_t sys_os_pki_load_certificate(uint8_t expected_key_usage,
   cx_hash_ctx hash_ctx;
   size_t digest_len;
   cx_sign_algo_t sign_algo;
-  uint32_t swo_error = 0x9000;
+  uint32_t swo_error = SWO_OK;
 
   os_pki_set = 0;
 
@@ -256,7 +257,7 @@ uint32_t sys_os_pki_load_certificate(uint8_t expected_key_usage,
       break;
     }
     if ((swo_error = os_pki_check_value(certificate + offset, public_key)) !=
-        0x9000) {
+        SWO_OK) {
       explicit_bzero(&os_pki, sizeof(os_pki));
       return swo_error;
     }
@@ -315,7 +316,7 @@ uint32_t sys_os_pki_load_certificate(uint8_t expected_key_usage,
     *trusted_name_len = os_pki.trusted_name_len;
   }
 
-  if (0x9000 == swo_error) {
+  if (SWO_OK == swo_error) {
     os_pki_set = 1;
   }
 
@@ -352,5 +353,5 @@ uint32_t sys_os_pki_get_info(uint8_t *key_usage, uint8_t *trusted_name,
                os_pki.public_key.W_len, (cx_ecfp_public_key_t *)public_key)) {
     return 0x3202;
   }
-  return 0x9000;
+  return SWO_OK;
 }
