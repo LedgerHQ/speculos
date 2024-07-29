@@ -140,6 +140,15 @@ jobs:
       test_dir: tests
       speculos_app_branch_name: ${{ github.ref }}
 
+  package_and_test_docker_for_nanos:
+    name: Build and test the Speculos docker for Nano S
+    uses: ./.github/workflows/reusable_ragger_tests_latest_speculos.yml
+    with:
+      app_repository: LedgerHQ/app-boilerplate
+      app_branch_name: nanos_baseline
+      test_dir: tests
+      speculos_app_branch_name: ${{ github.ref }}
+
   deploy_docker:
     name: Build and Upload the Speculos docker
     runs-on: ubuntu-latest
