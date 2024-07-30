@@ -92,7 +92,8 @@
 #define SYSCALL_cx_ecpoint_is_at_infinity_ID_IN                       0x0200014b
 #define SYSCALL_cx_ecpoint_x25519_ID_IN                               0x0300001b
 #define SYSCALL_cx_ecpoint_x448_ID_IN                                 0x03000060
-#define SYSCALL_cx_crc32_hw_ID_IN                                     0x02000102
+#define SYSCALL_cx_crc32_hw_ID_IN                                     0x02000102 // API levels < 18
+#define SYSCALL_cx_crc_hw_ID_IN                                       0x04000102 // API levels >= 18
 #define SYSCALL_cx_get_random_bytes_ID_IN                             0x02000107
 #define SYSCALL_cx_trng_get_random_data_ID_IN                         0x02000106
 #define SYSCALL_os_perso_erase_all_ID_IN                              0x0000004b
