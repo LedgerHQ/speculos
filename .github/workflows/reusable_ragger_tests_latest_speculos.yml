@@ -26,7 +26,7 @@ jobs:
     with:
       app_repository: ${{ inputs.app_repository }}
       app_branch_name: ${{ inputs.app_branch_name }}
-      upload_app_binaries_artifact: "compiled_app_binaries"
+      upload_app_binaries_artifact: compiled_app_binaries-${{ inputs.app_branch_name }}
 
   build_docker_image:
     name: Build Speculos Docker image
@@ -54,21 +54,25 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: speculos_image
+        name: speculos_image-${{ inputs.app_branch_name }}
         path: /tmp/speculos_image.tar
+
+  call_get_app_metadata:
+    name: Retrieve application metadata
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/_get_app_metadata.yml@v1
+    with:
+      app_repository: ${{ inputs.app_repository }}
+      app_branch_name: ${{ inputs.app_branch_name }}
 
   ragger_tests:
     name: Functional tests with Ragger
     runs-on: ubuntu-latest
-    needs: [build_docker_image, build_application]
+    needs: [build_docker_image, build_application, call_get_app_metadata]
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - device: nanos
-          - device: nanox
-          - device: nanosp
-          - device: stax
+        device: ${{ fromJSON(needs.call_get_app_metadata.outputs.compatible_devices) }}
+
     steps:
     - name: Clone
       uses: actions/checkout@v4
@@ -93,7 +97,7 @@ jobs:
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
-        name: speculos_image
+        name: speculos_image-${{ inputs.app_branch_name }}
         path: /tmp
 
     - name: Load image
@@ -104,7 +108,7 @@ jobs:
     - name: Download app binaries
       uses: actions/download-artifact@v4
       with:
-        name: "compiled_app_binaries"
+        name: compiled_app_binaries-${{ inputs.app_branch_name }}
         path: ${{ github.workspace }}/app/build
 
     - name: Run and test Speculos docker
