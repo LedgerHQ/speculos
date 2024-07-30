@@ -221,7 +221,6 @@ cx_err_t sys_cx_ecdomain_generator_bn(cx_curve_t cv, cx_ecpoint_t *P);
 unsigned int sys_get_api_level(void);
 cx_err_t sys_cx_get_random_bytes(void *buffer, size_t len);
 cx_err_t sys_cx_trng_get_random_data(void *buffer, size_t len);
-uint32_t sys_cx_crc32_hw(const void *_buf, size_t len);
 
 // cx_aes_sdk2.c
 cx_err_t sys_cx_aes_set_key_hw(const cx_aes_key_t *key, uint32_t mode);
