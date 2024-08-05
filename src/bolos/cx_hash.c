@@ -151,6 +151,7 @@ const cx_hash_info_t *spec_cx_hash_get_info(cx_md_t md_type)
   case CX_SHA512:
     return &cx_sha512_info;
   case CX_SHA3:
+  case CX_SHA3_256:
     return &cx_sha3_info;
   case CX_KECCAK:
     return &cx_keccak_info;
