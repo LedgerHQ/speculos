@@ -1,7 +1,3 @@
----
-sort: 2
----
-
 # Docker
 
 ## How to use the Docker image

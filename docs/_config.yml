@@ -1,7 +1,0 @@
-title: Speculos documentation
-lang: en
-
-remote_theme: sighingnow/jekyll-gitbook
-
-exclude:
-  - screenshot-btc-nanos.png
