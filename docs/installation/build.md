@@ -10,20 +10,30 @@ For Debian (version 10 "Buster" or later) and Ubuntu (version 18.04 or later):
 
 ```shell
 sudo apt install \
-    cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
+    git cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
     python3-pyqt5 python3-construct python3-flask-restful python3-jsonschema \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
-    qemu-user-static
-
+    qemu-user-static libvncserver-dev
 ```
 
-For optional VNC support, please also install `libvncserver-dev`:
+Please note that VNC support (the `libvncserver-dev` package), although necessary
+for a Python installation, is optional when building only the launcher (see below).
+
+## Build & install
+
+Easiest way to build & install Speculos is with `pip`. It will not only compile
+the launcher, but will also install the Python package wrapped around it, which
+includes the high-level Speculos entrypoint, used (for instance) in the
+[Ragger](https://ledgerhq.github.io/ragger/) framework.
+
+Following command ought to be executed into a Python virtualenv, else admin
+rights will be necessary.
 
 ```shell
-sudo apt install libvncserver-dev
+pip install .
 ```
 
-## Build
+## Building the Speculos launcher only
 
 ### speculos
 
