@@ -1,4 +1,4 @@
-# Docker
+# Docker - for Mac M1
 
 ## How to build the Docker image
 
