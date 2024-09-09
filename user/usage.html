@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Usage &mdash; Speculos  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
   
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -95,7 +95,7 @@
            <div itemprop="articleBody">
              
   <section id="usage">
-<h1>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h1>
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h1>
 <p>After having <a class="reference internal" href="../installation/build.html"><span class="std std-doc">installed the requirements and built</span></a> speculos:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./speculos.py<span class="w"> </span>apps/btc.elf
 </pre></div>
@@ -138,7 +138,7 @@ You main choose the SDK using <code class="docutils literal notranslate"><span c
 </table>
 <p>For more options, pass the <code class="docutils literal notranslate"><span class="pre">-h</span></code> or <code class="docutils literal notranslate"><span class="pre">--help</span></code> flag.</p>
 <section id="keyboard-control">
-<h2>Keyboard control<a class="headerlink" href="#keyboard-control" title="Link to this heading"></a></h2>
+<h2>Keyboard control<a class="headerlink" href="#keyboard-control" title="Permalink to this heading"></a></h2>
 <ul class="simple">
 <li><p>The keyboard left and right arrow keys are used instead of the Nano buttons.
 The down arrow can also be used as a more convenient shortcut.</p></li>
@@ -146,7 +146,7 @@ The down arrow can also be used as a more convenient shortcut.</p></li>
 </ul>
 </section>
 <section id="display">
-<h2>Display<a class="headerlink" href="#display" title="Link to this heading"></a></h2>
+<h2>Display<a class="headerlink" href="#display" title="Permalink to this heading"></a></h2>
 <p>Several display options are available through the <code class="docutils literal notranslate"><span class="pre">--display</span></code> parameter:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">qt</span></code>: default, requires a X server</p></li>
@@ -161,7 +161,7 @@ supported (issue #34).</p>
 <code class="docutils literal notranslate"><span class="pre">tools/gif-recorder.py</span></code> script.</p>
 </section>
 <section id="app-name-and-version">
-<h2>App name and version<a class="headerlink" href="#app-name-and-version" title="Link to this heading"></a></h2>
+<h2>App name and version<a class="headerlink" href="#app-name-and-version" title="Permalink to this heading"></a></h2>
 <p>On a real device, some parameters specific to the app to be installed (name and
 version, icon, allowed derivation paths, etc.) are given during the
 installation. This information isn’t embedded in the .elf file itself and thus
@@ -182,13 +182,13 @@ $<span class="w"> </span><span class="nb">echo</span><span class="w"> </span><sp
 </section>
 </section>
 <section id="bitcoin-testnet-app">
-<h1>Bitcoin Testnet app<a class="headerlink" href="#bitcoin-testnet-app" title="Link to this heading"></a></h1>
+<h1>Bitcoin Testnet app<a class="headerlink" href="#bitcoin-testnet-app" title="Permalink to this heading"></a></h1>
 <p>Launch the Bitcoin Testnet app, which requires the Bitcoin app:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./speculos.py<span class="w"> </span>./apps/btc-test.elf<span class="w"> </span>-l<span class="w"> </span>Bitcoin:./apps/btc.elf
 </pre></div>
 </div>
 <section id="ocr">
-<h2>OCR<a class="headerlink" href="#ocr" title="Link to this heading"></a></h2>
+<h2>OCR<a class="headerlink" href="#ocr" title="Permalink to this heading"></a></h2>
 <p>OCR is available for NanoX, Nanos S+, Flex and Stax with built in character recognition.</p>
 </section>
 </section>

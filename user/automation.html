@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Automation: press buttons automatically &mdash; Speculos  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
   
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -95,13 +95,13 @@
            <div itemprop="articleBody">
              
   <section id="automation-press-buttons-automatically">
-<h1>Automation: press buttons automatically<a class="headerlink" href="#automation-press-buttons-automatically" title="Link to this heading"></a></h1>
+<h1>Automation: press buttons automatically<a class="headerlink" href="#automation-press-buttons-automatically" title="Permalink to this heading"></a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">--automation</span></code> argument allows to apply a set of actions (eg. button press)
 when a condition is met (usually some text is displayed on the screen). It is
 especially useful to automate app testing.</p>
 <p>A JSON file is expected (either a JSON document or a path prefixed by <code class="docutils literal notranslate"><span class="pre">file:</span></code>).</p>
 <section id="rules">
-<h2>Rules<a class="headerlink" href="#rules" title="Link to this heading"></a></h2>
+<h2>Rules<a class="headerlink" href="#rules" title="Permalink to this heading"></a></h2>
 <p>Rules are a list of rules. Each rule is a dictionary with the following valid
 keys:</p>
 <ul class="simple">
@@ -114,7 +114,7 @@ keys:</p>
 </ul>
 <p>Each key is optional.</p>
 <section id="actions">
-<h3>Actions<a class="headerlink" href="#actions" title="Link to this heading"></a></h3>
+<h3>Actions<a class="headerlink" href="#actions" title="Permalink to this heading"></a></h3>
 <p>4 actions are available:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;button&quot;,</span> <span class="pre">num,</span> <span class="pre">pressed</span> <span class="pre">]</span></code>: press (<code class="docutils literal notranslate"><span class="pre">pressed=true</span></code>) or release
@@ -132,7 +132,7 @@ list.</p>
 discarded (it allows to implement a <em>default</em> rule).</p>
 </section>
 <section id="conditions">
-<h3>Conditions<a class="headerlink" href="#conditions" title="Link to this heading"></a></h3>
+<h3>Conditions<a class="headerlink" href="#conditions" title="Permalink to this heading"></a></h3>
 <p>Conditions are a list of variables of tuple <code class="docutils literal notranslate"><span class="pre">(varname,</span> <span class="pre">value)</span></code> where <code class="docutils literal notranslate"><span class="pre">varname</span></code>
 is a variable name and <code class="docutils literal notranslate"><span class="pre">value</span></code> a boolean. These variables are set by the
 <code class="docutils literal notranslate"><span class="pre">setbool</span></code> action and by default an unset variable is equal to <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
@@ -141,7 +141,7 @@ be met (as well as the other options) to allow the actions to be applied.</p>
 </section>
 </section>
 <section id="example">
-<h2>Example<a class="headerlink" href="#example" title="Link to this heading"></a></h2>
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
 <p>As an example, one can consider the following automation JSON file:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
 <span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>

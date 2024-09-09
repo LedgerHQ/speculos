@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tests &mdash; Speculos  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
   
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -86,9 +86,9 @@
            <div itemprop="articleBody">
              
   <section id="tests">
-<h1>Tests<a class="headerlink" href="#tests" title="Link to this heading"></a></h1>
+<h1>Tests<a class="headerlink" href="#tests" title="Permalink to this heading"></a></h1>
 <section id="how-to-run-tests">
-<h2>How to run tests<a class="headerlink" href="#how-to-run-tests" title="Link to this heading"></a></h2>
+<h2>How to run tests<a class="headerlink" href="#how-to-run-tests" title="Permalink to this heading"></a></h2>
 <p>The application binaries launched by the tests should be placed in <code class="docutils literal notranslate"><span class="pre">apps/</span></code>.
 Every type of app tested should have a dedicated test file that can be launched like this:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-s<span class="w"> </span>-v<span class="w"> </span>tests/apps/
@@ -105,7 +105,7 @@ specific test verbose:</p>
 </div>
 </section>
 <section id="code-coverage">
-<h2>Code coverage<a class="headerlink" href="#code-coverage" title="Link to this heading"></a></h2>
+<h2>Code coverage<a class="headerlink" href="#code-coverage" title="Permalink to this heading"></a></h2>
 <p>In order to build with code coverage instrumentation, the CMake configuration supports <code class="docutils literal notranslate"><span class="pre">CODE_COVERAGE</span></code> macro:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-B<span class="w"> </span>build/<span class="w"> </span>-DCODE_COVERAGE<span class="o">=</span>ON<span class="w"> </span>-S<span class="w"> </span>.
 make<span class="w"> </span>-C<span class="w"> </span>build/<span class="w"> </span>clean

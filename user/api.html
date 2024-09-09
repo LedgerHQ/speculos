@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" data-content_root="../">
+<html class="writer-html5" lang="en">
 <head>
-  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>REST API &mdash; Speculos  documentation</title>
-      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
 
   
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-        <script src="../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-        <script src="../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -91,7 +91,7 @@
            <div itemprop="articleBody">
              
   <section id="rest-api">
-<h1>REST API<a class="headerlink" href="#rest-api" title="Link to this heading"></a></h1>
+<h1>REST API<a class="headerlink" href="#rest-api" title="Permalink to this heading"></a></h1>
 <p>A REST API is available at <a class="reference external" href="http://127.0.0.1:5000">http://127.0.0.1:5000</a> (the port can be changed thanks to <code class="docutils literal notranslate"><span class="pre">--api-port</span></code>) when speculos is running. The specification of the API can be found at this URL, or from the swagger.io <a class="reference external" href="https://petstore.swagger.io/?url=https://raw.githubusercontent.com/LedgerHQ/speculos/master/speculos/api/static/swagger/swagger.json">demo website</a>.</p>
 <p>This API is meant to be used in test environments to automate actions on the device such as:</p>
 <ul class="simple">
@@ -101,7 +101,7 @@
 <li><p>etc.</p></li>
 </ul>
 <section id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
 <p>For instance, pressing the left button is as simple as:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-d<span class="w"> </span><span class="s1">&#39;{&quot;action&quot;:&quot;press-and-release&quot;}&#39;</span><span class="w"> </span>http://127.0.0.1:5000/button/left
 </pre></div>
@@ -112,7 +112,7 @@
 </div>
 </section>
 <section id="web-ui">
-<h2>Web UI<a class="headerlink" href="#web-ui" title="Link to this heading"></a></h2>
+<h2>Web UI<a class="headerlink" href="#web-ui" title="Permalink to this heading"></a></h2>
 <p>There is a web user interface running directly on <a class="reference external" href="http://127.0.0.1:5000">http://127.0.0.1:5000</a>, which communicates with the API:</p>
 <p><img alt="screenshot btc nano s" src="../_images/screenshot-api-nanos-btc.png" /></p>
 </section>
