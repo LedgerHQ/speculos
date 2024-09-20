@@ -106,18 +106,40 @@ def get_elf_infos(app_path, use_bagl):
         svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
 
 
-def get_cx_infos(app_path):
+def get_sharedlib_infos(app_path, apiLevel):
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
         text = elf.get_section_by_name('.text')
-        cxram = elf.get_section_by_name('.cxram')
+        # The name of the section is shram, starting at API Level 23
+        if int(apiLevel) < 23:
+            sharedram = elf.get_section_by_name('.cxram')
+        else:
+            sharedram = elf.get_section_by_name('.shram')
         sh_offset = text['sh_offset']
         sh_size = text['sh_size']
         sh_load = text['sh_addr']
-        cx_ram_load = cxram["sh_addr"]
-        cx_ram_size = cxram["sh_size"]
+        shared_ram_load = sharedram["sh_addr"]
+        shared_ram_size = sharedram["sh_size"]
 
-    return sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load
+        fonts_addr = 0
+        fonts_size = 0
+        pic_init_addr = 0
+        # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
+        if int(apiLevel) >= 23:
+            symtab = elf.get_section_by_name('.symtab')
+            nbgl_fonts_symbol = symtab.get_symbol_by_name('C_nbgl_fonts')
+            if nbgl_fonts_symbol is not None:
+                fonts_addr = nbgl_fonts_symbol[0]['st_value']
+                fonts_size = nbgl_fonts_symbol[0]['st_size']
+                logger.info(f"Found C_nbgl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
+            else:
+                logger.info("Disabling OCR.")
+            # At API Level >= 23, a function called pic_init() needs to be retrieved
+            pic_init_symbol = symtab.get_symbol_by_name("pic_init")
+            if pic_init_symbol is not None:
+                pic_init_addr = pic_init_symbol[0]['st_value']
+
+    return sh_offset, sh_size, sh_load, shared_ram_size, shared_ram_load, fonts_addr, fonts_size, pic_init_addr
 
 
 def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
@@ -141,21 +163,29 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     if args.pki_prod:
         argv += ['-p']
 
-    # load cxlib only if available for the specified api level or sdk
-    if args.apiLevel:
-        cxlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
-    else:
-        cxlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
-    cxlib = str(resources.files(__package__) / cxlib_filepath)
-    if os.path.exists(cxlib):
-        sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
-        cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
-        argv += ['-c', cxlib_args]
-    else:
-        logger.warn(f"Cx lib {cxlib_filepath} not found")
+    fonts_addr = 0
+    fonts_size = 0
+    pic_init_addr = 0
 
-    # for NBGL apps, fonts binary file is mandatory
-    if not use_bagl:
+    # load shared lib only if available for the specified api level or sdk
+    if args.apiLevel:
+        if int(args.apiLevel) < 23:
+            sharedlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
+        else:
+            sharedlib_filepath = f"sharedlib/{args.model}-api-level-shared-{args.apiLevel}.elf"
+    else:
+        sharedlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
+    sharedlib = str(resources.files(__package__) / sharedlib_filepath)
+    if os.path.exists(sharedlib):
+        sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load, fonts_addr, fonts_size, pic_init_addr = \
+            get_sharedlib_infos(sharedlib, args.apiLevel)
+        sharedlib_args = f'{sharedlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
+        argv += ['-c', sharedlib_args]
+    else:
+        logger.warn(f"Shared lib {sharedlib_filepath} not found")
+
+    # for NBGL apps, fonts binary file is mandatory before API Level 23
+    if not use_bagl and int(args.apiLevel) < 23:
         fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
         fonts = str(resources.files(__package__) / fonts_filepath)
         if os.path.exists(fonts):
@@ -170,8 +200,13 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
-            fonts_addr, fonts_size = get_elf_infos(lib_path, use_bagl)
+            app_fonts_addr, app_fonts_size = get_elf_infos(lib_path, use_bagl)
 
+        # if fonts_addr and fonts_size have not been found in shared.elf, use the
+        # ones for app.elf (but it was only for BAGL apps)
+        if fonts_addr == 0:
+            fonts_addr = app_fonts_addr
+            fonts_size = app_fonts_size
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
             arg = f'{ram_addr:#x}:{ram_size:#x}'
@@ -183,6 +218,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
         lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
         lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
+        lib_arg += f':{pic_init_addr:#x}'
         argv.append(lib_arg)
 
     if args.model == 'blue':

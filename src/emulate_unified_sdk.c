@@ -651,6 +651,9 @@ int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
               unsigned int, task_idx,
               os_sched_last_status_2_0);
 
+    SYSCALL0i(os_sched_current_task,
+              os_sched_current_task_2_0);
+
     SYSCALL2(os_serial, "(%p, %u)",
              unsigned char *, serial,
              unsigned int, maxlength);

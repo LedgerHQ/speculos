@@ -138,6 +138,7 @@ unsigned long sys_os_sched_last_status_1_2(unsigned int task_idx);
 unsigned long sys_os_sched_last_status_1_5(void);
 unsigned long sys_os_sched_last_status_1_6(unsigned int task_idx);
 unsigned long sys_os_sched_last_status_2_0(unsigned int task_idx);
+unsigned long sys_os_sched_current_task_2_0(void);
 
 unsigned long sys_check_api_level(void);
 

@@ -1,0 +1,33 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/arm-linux-gnueabihf-gcc",
+      "-DGIT_REVISION=\"7596449\"",
+      "-DNATIVE_64BITS",
+      "-DOS_LITTLE_ENDIAN",
+      "-I/home/abonnaudet/Documents/Code/speculos/sdk",
+      "-I/home/abonnaudet/Documents/Code/speculos/src",
+      "-I/home/abonnaudet/Documents/Code/speculos/build/install/include",
+      "-mthumb",
+      "-W",
+      "-Wall",
+      "-fPIC",
+      "-Wextra",
+      "-Wcast-qual",
+      "-Wshadow",
+      "-Werror",
+      "-Wformat=2",
+      "-Wformat-overflow=2",
+      "-Wformat-truncation=2",
+      "-Wformat-security",
+      "-Wformat-signedness",
+      "-c",
+      "-o",
+      "CMakeFiles/emu.dir/bolos/fonts_info.c.o",
+      "/home/abonnaudet/Documents/Code/speculos/src/bolos/fonts_info.c"
+    ],
+    "directory": "/home/abonnaudet/Documents/Code/speculos/build/src",
+    "file": "/home/abonnaudet/Documents/Code/speculos/src/bolos/fonts_info.c",
+    "output": "/home/abonnaudet/Documents/Code/speculos/build/src/CMakeFiles/emu.dir/bolos/fonts_info.c.o"
+  }
+]

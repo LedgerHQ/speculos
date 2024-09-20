@@ -233,36 +233,44 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   case SDK_API_LEVEL_20:
   case SDK_API_LEVEL_21:
   case SDK_API_LEVEL_22:
+  case SDK_API_LEVEL_23:
     break;
   default:
     // Unsupported API_LEVEL, will not parse fonts!
     return;
   }
-  // With NBGL apps, fonts are loaded at a known location, in the OS
   if (use_nbgl) {
-    switch (hw_model) {
-    case MODEL_STAX:
-      fonts = (void *)STAX_FONTS_ARRAY_ADDR;
-      if (sdk_version >= SDK_API_LEVEL_15) {
-        nb_fonts = STAX_NB_FONTS;
-      } else {
-        nb_fonts = STAX_NB_FONTS_12;
+    // With NBGL apps, before API level 23, fonts are loaded at a known location, in the OS
+    if (sdk_version < SDK_API_LEVEL_23) {
+      switch (hw_model) {
+      case MODEL_STAX:
+        fonts = (void *)STAX_FONTS_ARRAY_ADDR;
+        if (sdk_version >= SDK_API_LEVEL_15) {
+          nb_fonts = STAX_NB_FONTS;
+        } else {
+          nb_fonts = STAX_NB_FONTS_12;
+        }
+        break;
+      case MODEL_FLEX:
+        fonts = (void *)FLEX_FONTS_ARRAY_ADDR;
+        nb_fonts = FLEX_NB_FONTS;
+        break;
+      case MODEL_NANO_SP:
+        fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;
+        nb_fonts = NANO_NB_FONTS;
+        break;
+      case MODEL_NANO_X:
+        fonts = (void *)NANOX_FONTS_ARRAY_ADDR;
+        nb_fonts = NANO_NB_FONTS;
+        break;
+      default:
+        return;
       }
-      break;
-    case MODEL_FLEX:
-      fonts = (void *)FLEX_FONTS_ARRAY_ADDR;
-      nb_fonts = FLEX_NB_FONTS;
-      break;
-    case MODEL_NANO_SP:
-      fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;
-      nb_fonts = NANO_NB_FONTS;
-      break;
-    case MODEL_NANO_X:
-      fonts = (void *)NANOX_FONTS_ARRAY_ADDR;
-      nb_fonts = NANO_NB_FONTS;
-      break;
-    default:
-      return;
+    }
+    // starting at API level 23, fonts are in shared elf, at fonts_addr address
+    else {
+      fonts = (uint32_t*)fonts_addr;
+      nb_fonts = fonts_size / 4;
     }
   } else if (fonts_size != 0) {
     fonts = remap_bagl_addr(code, fonts_addr, text_load_addr);
@@ -298,7 +306,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
 
   // Parse all those fonts and add bitmap/character pairs
   for (uint32_t i = 0; i < nb_fonts; i++) {
-    if (fonts_size == 0) {
+    if (use_nbgl) {
       switch (sdk_version) {
       case SDK_API_LEVEL_12:
       case SDK_API_LEVEL_13:
