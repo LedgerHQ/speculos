@@ -275,7 +275,7 @@ class SeProxyHal(IODevice):
                                                    self.socket_helper.wait_until_tick_is_processed)
         self.time_ticker_thread.start()
 
-        usb_transport = transport if transport in ['hid', 'u2f'] else 'hid'
+        usb_transport = transport if transport.lower() in ['hid', 'u2f'] else 'hid'
         self.usb = usb.USB(self.socket_helper.queue_packet, transport=usb_transport)
 
         self.nfc = nfc.NFC(self.socket_helper.queue_packet)
