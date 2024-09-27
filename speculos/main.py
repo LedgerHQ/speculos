@@ -269,6 +269,7 @@ def main(prog=None) -> int:
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
     parser.add_argument('-u', '--usb', default='hid', help='Configure the USB transport protocol, '
                                                            'either HID (default) or U2F')
+    parser.add_argument('--nfc', action='store_true', help='Use NFC transport instead of USB')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
@@ -473,7 +474,7 @@ def main(prog=None) -> int:
         use_bagl=use_bagl,
         automation=automation_path,
         automation_server=automation_server,
-        transport=args.usb)
+        transport='nfc' if args.nfc else args.usb)
 
     button = None
     if args.button_port:
