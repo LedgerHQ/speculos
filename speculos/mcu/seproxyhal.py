@@ -459,7 +459,7 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.NFC_RAPDU:
             data = self.nfc.handle_rapdu_chunk(data)
-            if data:
+            if data is not None:
                 for c in self.apdu_callbacks:
                     c(data)
                 screen.display.forward_to_apdu_client(data)
