@@ -10,8 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- NFC always enabled on Stax & Flex OSes
-- Starting Speculos with the `--nfc` argument will funel all communications as NFC
+- NFC communication available
+- Starting Speculos with the `--transport` argument allows to choose U2F, HID or NFC transport
+- Flex and Stax OSes emulation always consider NFC to be up (it can't be deactivated for now)
 
 ## [0.11.0] 2024-11-12
 
