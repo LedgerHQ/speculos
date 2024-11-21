@@ -34,7 +34,7 @@ class NFC(TransportLayer):
         # example of data
         # 0000050000002b3330000409312e302e302d72633104e600000008362e312e302d646508352e312e302d6465010001009000
 
-        # only APDU packets are suported
+        # only APDU packets are supported
         if data[2] != 0x05:
             return None
 

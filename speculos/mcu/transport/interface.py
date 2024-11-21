@@ -24,7 +24,7 @@ class TransportLayer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def prepare(self, data: bytes) -> None:
+    def prepare(self, data: bytes) -> Optional[bytes]:
         raise NotImplementedError
 
     @abstractmethod
