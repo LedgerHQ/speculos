@@ -29,6 +29,7 @@ from .mcu.button_tcp import FakeButton
 from .mcu.finger_tcp import FakeFinger
 from .mcu.struct import DisplayArgs, ServerArgs
 from .mcu.vnc import VNC
+from .mcu.transport import TransportType
 from .observer import BroadcastInterface
 from .resources_importer import resources
 
@@ -474,7 +475,7 @@ def main(prog=None) -> int:
         use_bagl=use_bagl,
         automation=automation_path,
         automation_server=automation_server,
-        transport='nfc' if args.nfc else args.usb)
+        transport=TransportType.NFC if args.nfc else TransportType[args.usb.upper()])
 
     button = None
     if args.button_port:
