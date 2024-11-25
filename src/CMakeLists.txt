@@ -48,6 +48,8 @@ add_library(emu
         bolos/cx_hash.c
         bolos/cx_math.c
         bolos/default.c
+        bolos/os_pki.c
+        bolos/os_signature.c
         emulate.c
         emulate_1.2.c
         emulate_1.5.c

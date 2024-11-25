@@ -8,7 +8,7 @@ from socket import socket
 from typing import Callable, List, Optional, Tuple
 
 from speculos.observer import BroadcastInterface, TextEvent
-from . import usb
+from .transport import build_transport, TransportType
 from .automation import Automation
 from .display import DisplayNotifier, IODevice
 from .nbgl import NBGL
@@ -29,6 +29,9 @@ class SephTag(IntEnum):
     SE_POWER_OFF = 0x46
     USB_CONFIG = 0x4f
     USB_EP_PREPARE = 0x50
+
+    NFC_RAPDU = 0x4A
+    NFC_POWER = 0x34
 
     REQUEST_STATUS = 0x52
     RAPDU = 0x53
@@ -253,7 +256,7 @@ class SeProxyHal(IODevice):
                  use_bagl: bool,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
-                 transport: str = 'hid'):
+                 transport: TransportType = TransportType.HID):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -270,7 +273,7 @@ class SeProxyHal(IODevice):
                                                    self.socket_helper.wait_until_tick_is_processed)
         self.time_ticker_thread.start()
 
-        self.usb = usb.USB(self.socket_helper.queue_packet, transport=transport)
+        self.transport = build_transport(self.socket_helper.queue_packet, transport)
 
         self.ocr = OCR(model, use_bagl)
 
@@ -389,10 +392,10 @@ class SeProxyHal(IODevice):
                 c(data)
 
         elif tag == SephTag.USB_CONFIG:
-            self.usb.config(data)
+            self.transport.config(data)
 
         elif tag == SephTag.USB_EP_PREPARE:
-            data = self.usb.prepare(data)
+            data = self.transport.prepare(data)
             if data:
                 for c in self.apdu_callbacks:
                     c(data)
@@ -448,6 +451,13 @@ class SeProxyHal(IODevice):
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
             assert isinstance(screen.display.gl, NBGL)
             screen.display.gl.hal_draw_image_file(data)
+
+        elif tag == SephTag.NFC_RAPDU:
+            data = self.transport.handle_rapdu(data)
+            if data is not None:
+                for c in self.apdu_callbacks:
+                    c(data)
+                screen.display.forward_to_apdu_client(data)
 
         else:
             self.logger.error(f"unknown tag: {tag:#x}")
@@ -506,7 +516,7 @@ class SeProxyHal(IODevice):
             tag, packet = packet[4], packet[5:]
             self.socket_helper.queue_packet(SephTag(tag), packet)
         else:
-            self.usb.xfer(packet)
+            self.transport.send(packet)
 
     def get_tick_count(self):
         return self.socket_helper.get_tick_count()

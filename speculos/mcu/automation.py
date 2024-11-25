@@ -1,8 +1,9 @@
-import importlib.resources
 import json
 import jsonschema
 import logging
 import re
+
+from speculos.resources_importer import get_resources_path
 
 
 class Automation:
@@ -19,7 +20,7 @@ class Automation:
         self.validate()
 
     def validate(self):
-        path = importlib.resources.files(__package__) / "resources" / "automation.schema"
+        path = get_resources_path("mcu", "automation.schema")
         with path.open("rb") as fp:
             schema = json.load(fp)
         jsonschema.validate(instance=self.json, schema=schema)

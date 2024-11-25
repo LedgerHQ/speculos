@@ -7,7 +7,6 @@ Emulate the target app along the SE Proxy Hal server.
 import argparse
 import binascii
 import ctypes
-import importlib.resources
 import logging
 import os
 import re
@@ -30,7 +29,9 @@ from .mcu.button_tcp import FakeButton
 from .mcu.finger_tcp import FakeFinger
 from .mcu.struct import DisplayArgs, ServerArgs
 from .mcu.vnc import VNC
+from .mcu.transport import TransportType
 from .observer import BroadcastInterface
+from .resources_importer import resources
 
 
 DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
@@ -38,7 +39,7 @@ DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover o
 
 logger = logging.getLogger("speculos")
 
-launcher_path = str(importlib.resources.files(__package__) / "resources" / "launcher")
+launcher_path = str(resources.files(__package__) / "resources" / "launcher")
 
 
 def set_pdeath(sig):
@@ -142,7 +143,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         cxlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
     else:
         cxlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
-    cxlib = str(importlib.resources.files(__package__) / cxlib_filepath)
+    cxlib = str(resources.files(__package__) / cxlib_filepath)
     if os.path.exists(cxlib):
         sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
         cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
@@ -153,7 +154,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     # for NBGL apps, fonts binary file is mandatory
     if not use_bagl:
         fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
-        fonts = str(importlib.resources.files(__package__) / fonts_filepath)
+        fonts = str(resources.files(__package__) / fonts_filepath)
         if os.path.exists(fonts):
             argv += ['-f', fonts]
         else:
@@ -268,7 +269,9 @@ def main(prog=None) -> int:
                                                                    'to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
     parser.add_argument('-u', '--usb', default='hid', help='Configure the USB transport protocol, '
-                                                           'either HID (default) or U2F')
+                        'either HID (default) or U2F (DEPRECATED, use `--transport` instead)')
+    parser.add_argument('-T', '--transport', default=None, choices=('HID', 'U2F', 'NFC'),
+                        help='Configure the transport protocol: HID (default), U2F or NFC.')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
@@ -466,6 +469,12 @@ def main(prog=None) -> int:
     qemu_pid = run_qemu(s1, s2, args, use_bagl)
     s1.close()
 
+    # The `--transport` argument takes precedence over `--usb`
+    if args.transport is not None:
+        transport_type = TransportType[args.transport]
+    else:
+        transport_type = TransportType[args.usb.upper()]
+
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
@@ -473,7 +482,7 @@ def main(prog=None) -> int:
         use_bagl=use_bagl,
         automation=automation_path,
         automation_server=automation_server,
-        transport=args.usb)
+        transport=transport_type)
 
     button = None
     if args.button_port:

@@ -9,6 +9,7 @@
 #define OS_SETTING_PLANEMODE_OLD 5
 #define OS_SETTING_PLANEMODE_NEW 6
 #define OS_SETTING_SOUND         9
+#define OS_SETTING_FEATURES      14
 
 #undef PATH_MAX
 #define PATH_MAX 1024
@@ -54,7 +55,7 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
       return 1;
     }
     if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
-        setting_id == OS_SETTING_SOUND) {
+        (setting_id == OS_SETTING_SOUND || setting_id == OS_SETTING_FEATURES)) {
       return 0xff;
     }
   }

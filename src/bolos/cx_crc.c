@@ -2,9 +2,11 @@
 
 #include "cx.h"
 
+#define CX_CRC32_INIT 0xFFFFFFFF
+
 #define cx_crc16_update sys_cx_crc16_update
 
-static const unsigned short cx_ccitt16[] = {
+static const uint16_t cx_ccitt16[] = {
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108,
   0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210,
   0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6, 0x9339, 0x8318, 0xb37b,
@@ -36,13 +38,11 @@ static const unsigned short cx_ccitt16[] = {
   0x2e93, 0x3eb2, 0x0ed1, 0x1ef0,
 };
 
-unsigned short sys_cx_crc16_update(unsigned short crc, const void *buf,
-                                   size_t len)
+uint16_t sys_cx_crc16_update(uint16_t crc, const void *buf, size_t len)
 {
   const uint8_t *p = buf;
-  size_t i;
 
-  for (i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     crc = cx_ccitt16[*p++ ^ (uint16_t)(crc >> 8u)] ^ (uint16_t)(crc << 8u);
   }
   return crc;
@@ -50,7 +50,7 @@ unsigned short sys_cx_crc16_update(unsigned short crc, const void *buf,
 
 #define cx_crc32_update sys_cx_crc32_update
 
-static const unsigned int cx_ccitt32[] = {
+static const uint32_t cx_ccitt32[] = {
   0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
   0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
   0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -96,14 +96,51 @@ static const unsigned int cx_ccitt32[] = {
   0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-unsigned int sys_cx_crc32_update(unsigned int crc, const void *buf, size_t len)
+uint32_t sys_cx_crc32_update(uint32_t crc, const void *buf, size_t len)
 {
   const uint8_t *p = buf;
-  size_t i;
 
-  for (i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     crc = cx_ccitt32[(crc ^ *p++) & 0xff] ^ (crc >> 8u);
   }
 
-  return crc ^ 0xFFFFFFFF;
+  return crc ^ CX_CRC32_INIT;
+}
+
+uint32_t sys_cx_crc32_hw(const void *buf, size_t len)
+{
+  uint32_t crc;
+  crc = sys_cx_crc32_update(CX_CRC32_INIT, buf, len);
+
+  return crc;
+}
+
+static uint32_t reverse_32_bits(uint32_t value)
+{
+  uint32_t reverse_val = 0;
+
+  for (uint8_t i = 0; i < 32; i++) {
+    if ((value & (1 << i))) {
+      reverse_val |= 1 << ((32 - 1) - i);
+    }
+  }
+  return reverse_val;
+}
+
+uint32_t sys_cx_crc_hw(crc_type_t crc_type, uint32_t crc_state, const void *buf,
+                       size_t len)
+{
+  uint32_t crc = 0;
+
+  switch (crc_type) {
+  case CRC_TYPE_CRC16_CCITT_FALSE:
+    crc = sys_cx_crc16_update(crc_state, buf, len);
+    break;
+  case CRC_TYPE_CRC32:
+    crc = sys_cx_crc32_update(reverse_32_bits(crc_state), buf, len);
+    break;
+  default:
+    break;
+  }
+  return crc;
 }

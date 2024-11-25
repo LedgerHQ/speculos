@@ -4,8 +4,8 @@ import jsonschema
 from flask import stream_with_context, Response, request
 from typing import Generator, Optional
 
+from speculos.resources_importer import get_resource_schema_as_json
 from ..mcu.seproxyhal import SeProxyHal
-from .helpers import load_json_schema
 from .restful import SephResource
 
 
@@ -48,7 +48,7 @@ class APDUBridge:
 
 
 class APDU(SephResource):
-    schema = load_json_schema("apdu.schema")
+    schema = get_resource_schema_as_json("api", "apdu.schema")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -52,7 +52,7 @@ class VNC(IODevice):
         '''The framebuffer was updated, forward everything to the VNC server.'''
 
         # int.to_bytes() is super slow, hence the manual encoding
-        buf = bytearray(len(pixels) * 9)
+        buf = bytearray(self._width * self._height * 9)
         i = 0
         for x in range(0, self._width):
             for y in range(0, self._height):

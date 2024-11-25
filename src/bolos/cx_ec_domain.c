@@ -1539,11 +1539,9 @@ int cx_nid_from_curve(cx_curve_t curve)
   case CX_CURVE_BLS12_381_G1:
     nid = NID_undef;
     break;
-#if 0
   case CX_CURVE_SECP521R1:
     nid = NID_secp521r1;
     break;
-#endif
   default:
     nid = -1;
     errx(1, "cx_nid_from_curve unsupported curve");

@@ -118,6 +118,10 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
   }
   size_t len = sizeof(nbgl_area_t) + 1;
   size_t buffer_len = 0;
+
+  // force area bpp with the value from "file" to avoid some issues
+  area->bpp = (buffer[4] >> 4) & 0xF;
+
   switch (compressed) {
   case 0: // no compression
     buffer_len = (area->width * area->height * (area->bpp + 1)) / 8;

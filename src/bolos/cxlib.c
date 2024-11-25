@@ -25,11 +25,3 @@ cx_err_t sys_cx_trng_get_random_data(void *buffer, size_t len)
 
   return CX_OK;
 }
-
-uint32_t sys_cx_crc32_hw(const void *buf, size_t len)
-{
-  uint32_t crc;
-  crc = sys_cx_crc32_update(0xFFFFFFFF, buf, len);
-
-  return crc;
-}

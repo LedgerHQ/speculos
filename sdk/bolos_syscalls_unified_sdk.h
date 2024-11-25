@@ -92,7 +92,8 @@
 #define SYSCALL_cx_ecpoint_is_at_infinity_ID_IN                       0x0200014b
 #define SYSCALL_cx_ecpoint_x25519_ID_IN                               0x0300001b
 #define SYSCALL_cx_ecpoint_x448_ID_IN                                 0x03000060
-#define SYSCALL_cx_crc32_hw_ID_IN                                     0x02000102
+#define SYSCALL_cx_crc32_hw_ID_IN                                     0x02000102 // API levels < 18
+#define SYSCALL_cx_crc_hw_ID_IN                                       0x04000102 // API levels >= 18
 #define SYSCALL_cx_get_random_bytes_ID_IN                             0x02000107
 #define SYSCALL_cx_trng_get_random_data_ID_IN                         0x02000106
 #define SYSCALL_os_perso_erase_all_ID_IN                              0x0000004b
@@ -183,3 +184,7 @@
 #define SYSCALL_cx_hash_to_field_ID_IN                                0x06000104
 #define SYSCALL_cx_bls12381_aggregate_ID_IN                           0x05000105
 #define SYSCALL_cx_bls12381_key_gen_ID_IN                             0x03000108
+
+#define SYSCALL_os_pki_load_certificate_ID_IN                         0x060000aa
+#define SYSCALL_os_pki_verify_ID_IN                                   0x040000ab
+#define SYSCALL_os_pki_get_info_ID_IN                                 0x040000ac

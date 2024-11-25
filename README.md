@@ -18,6 +18,41 @@ Usage example:
 # ... and open a browser on http://127.0.0.1:5000
 ```
 
+## Installation
+
+### From Python `pypi` packages
+
+The easiest, stable way to install Speculos is with `pip`:
+
+```
+pip install speculos
+```
+
+It is advised to use Python virtualenv, otherwise admin rights will probably be
+necessary.
+
+
+### From sources
+
+Installing Speculos from sources is a bit heavier and, depending on the platform,
+complex, due to all the dependency needed for compiling the emulator.
+
+On Debian (10 or later) or Ubuntu (18.04 or later):
+
+```
+sudo apt install \
+    git cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
+    python3-pyqt5 python3-construct python3-flask-restful python3-jsonschema \
+    python3-mnemonic python3-pil python3-pyelftools python3-requests \
+    qemu-user-static libvncserver-dev
+
+# from the root directory of the source repository
+pip install .
+```
+
+Dependency management will vary on other platforms; using Docker images and/or WSL
+should facilitate the installation.
+
 ## Bugs and contributions
 
 Feel free to open issues and create pull requests on this GitHub repository.

@@ -8,6 +8,7 @@
 #define CX_SHA256_SIZE    32
 #define CX_SHA384_SIZE    48
 #define CX_SHA512_SIZE    64
+#define CX_SHA3_256_SIZE  32
 
 #define RIPEMD_BLOCK_SIZE       64
 #define SHA256_BLOCK_SIZE       64
@@ -44,6 +45,8 @@ enum cx_md_e {
   CX_SHAKE128, // any bytes
   /** SHAKE-128 Digest */
   CX_SHAKE256, // any bytes
+  /** SHA3 256*/
+  CX_SHA3_256,
 };
 /** Convenience type. See #cx_md_e. */
 typedef enum cx_md_e cx_md_t;

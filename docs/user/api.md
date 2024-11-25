@@ -31,4 +31,4 @@ curl -o screenshot.png http://127.0.0.1:5000/screenshot
 
 There is a web user interface running directly on [http://127.0.0.1:5000](http://127.0.0.1:5000), which communicates with the API:
 
-![screenshot btc nano s](../screenshot-api-nanos-btc.png)
+![screenshot btc nano s](../_static/screenshot-api-nanos-btc.png)

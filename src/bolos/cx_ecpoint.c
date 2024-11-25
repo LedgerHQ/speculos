@@ -291,6 +291,7 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
   case CX_CURVE_SECP256K1:
   case CX_CURVE_SECP256R1:
   case CX_CURVE_SECP384R1:
+  case CX_CURVE_SECP521R1:
   case CX_CURVE_Stark256:
   case CX_CURVE_BrainPoolP256R1:
   case CX_CURVE_BrainPoolP256T1:
