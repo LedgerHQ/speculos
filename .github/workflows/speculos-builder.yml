@@ -21,7 +21,10 @@ on:
 jobs:
   build:
     name: Build and push speculos-builder image
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        label: [ubuntu-latest, speculos-builder-2c-arm64-ubuntu_2404]
+    runs-on: ${{ matrix.label }}
     permissions:
       packages: write
 
