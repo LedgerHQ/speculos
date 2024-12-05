@@ -27,7 +27,6 @@ jobs:
             runner: ubuntu-latest
           - platform: linux/arm64
             runner: speculos-builder-2c-arm64-ubuntu_2404
-
     runs-on: ${{ matrix.runner }}
     permissions:
       packages: write
