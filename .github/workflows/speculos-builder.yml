@@ -10,6 +10,13 @@ on:
     paths:
       - .github/workflows/speculos-builder.yml
       - build.Dockerfile
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/speculos-builder.yml
+      - build.Dockerfile
+
 
 jobs:
   build:
@@ -22,13 +29,12 @@ jobs:
     - name: Clone
       uses: actions/checkout@v4
 
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
     - name: Build and push speculos-builder to GitHub Packages
-      uses: docker/build-push-action@v1
+      uses: docker/build-push-action@v6
       with:
-        dockerfile: build.Dockerfile
-        repository: ledgerhq/speculos-builder
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        tag_with_sha: true
-        tags: latest
+        push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        file: build.Dockerfile
+        tags: ghcr.io/ledgerhq/speculos-builder:latest
