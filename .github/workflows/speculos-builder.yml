@@ -37,6 +37,13 @@ jobs:
           platform=${{ matrix.platform }}
           echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
+          if [[ "${{ github.event_name }}" == 'push' && "${{ github.ref }}" == 'refs/heads/master' ]]; then
+             PUSH_FLAG='true'
+          else
+             PUSH_FLAG='false'
+          fi
+          echo "PUSH_FLAG=${PUSH_FLAG}" >> $GITHUB_ENV
+
       - name: Clone
         uses: actions/checkout@v4
 
@@ -57,10 +64,9 @@ jobs:
         uses: docker/build-push-action@v6
         id: build
         with:
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
           file: build.Dockerfile
           platforms: ${{ matrix.platform }}
-          outputs: type=image,name=ghcr.io/ledgerhq/speculos-builder,push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=ghcr.io/ledgerhq/speculos-builder,push-by-digest=true,name-canonical=true,push=${{ env.PUSH_FLAG }}
 
       - name: Export digest
         run: |
