@@ -455,7 +455,7 @@ def main(prog=None) -> int:
         # TODO: remove this condition and all associated code in next major version
         logger.warn("--automation-port is deprecated, please use the REST API instead")
         if api_enabled:
-            logger.warn("--automation-port is incompatible with the the API server, disabling the latter")
+            logger.warn("--automation-port is incompatible with the API server, disabling the latter")
             api_enabled = False
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
