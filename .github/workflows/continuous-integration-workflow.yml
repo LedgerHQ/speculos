@@ -206,7 +206,6 @@ jobs:
       uses: docker/build-push-action@v6
       id: buildPush
       with:
-        tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: ${{ matrix.platform }}
         outputs: type=image,name=ghcr.io/ledgerhq/speculos,push-by-digest=true,name-canonical=true,push=${{ env.PUSH_FLAG }}
