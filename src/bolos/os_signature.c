@@ -13,6 +13,19 @@ cx_ecfp_public_key_t const speculos_root_ca_public_key = {
          0xea, 0x66, 0xd8, 0x62, 0x28, 0xae, 0xe5, 0x93, 0x31, 0x72 }
 };
 
+cx_ecfp_public_key_t const root_ca_public_key = {
+  .curve = CX_CURVE_SECP256K1,
+  .W_len = 65,
+  .W = { 0x04, 0xf0, 0xe9, 0x52, 0x7c, 0xae, 0x72, 0x2a, 0xd3, 0x46, 0x15,
+         0x6f, 0x79, 0x9b, 0x89, 0x1c, 0x2c, 0x50, 0x3d, 0x88, 0x08, 0x92,
+         0xae, 0x3b, 0x91, 0x07, 0xae, 0xf2, 0x3c, 0x44, 0x2b, 0xb6, 0xe4,
+         0xc4, 0xe8, 0xe4, 0x70, 0xe3, 0xbb, 0x11, 0x46, 0xdb, 0x1c, 0x92,
+         0xed, 0x20, 0xae, 0xae, 0x47, 0xfc, 0x34, 0x80, 0x1d, 0x09, 0xad,
+         0xc3, 0x99, 0x28, 0xe1, 0xa1, 0xe9, 0x81, 0x4f, 0x5e, 0x95 }
+};
+
+bool pki_prod = false;
+
 cx_err_t cx_ecdsa_internal_init_public_key(cx_curve_t curve,
                                            const unsigned char *rawkey,
                                            unsigned int key_len,
@@ -156,8 +169,14 @@ bool os_ecdsa_verify_with_root_ca(uint8_t key_id, uint8_t *hash,
 {
   bool result = false;
   if (ROOT_CA_V3_KEY_ID == key_id) {
-    result = cx_ecdsa_internal_verify(&speculos_root_ca_public_key, hash,
-                                      hash_len, sig, sig_len);
+    if (pki_prod) {
+      result = cx_ecdsa_internal_verify(&root_ca_public_key, hash, hash_len,
+                                        sig, sig_len);
+    } else {
+      // Verification with test key
+      result = cx_ecdsa_internal_verify(&speculos_root_ca_public_key, hash,
+                                        hash_len, sig, sig_len);
+    }
   }
   return result;
 }

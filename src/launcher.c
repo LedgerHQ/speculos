@@ -76,6 +76,7 @@ static size_t extra_rampage_size;
 sdk_version_t sdk_version = SDK_COUNT;
 hw_model_t hw_model = MODEL_COUNT;
 bool use_nbgl = false;
+extern bool pki_prod;
 
 static struct app_s *current_app;
 
@@ -714,7 +715,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:p")) != -1) {
     switch (opt) {
     case 'f':
       fonts_path = optarg;
@@ -754,6 +755,9 @@ int main(int argc, char *argv[])
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
+      break;
+    case 'p':
+      pki_prod = true;
       break;
     default:
       usage(argv[0]);
