@@ -138,6 +138,9 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     else:
         argv += ['-k', str(args.sdk)]
 
+    if args.pki_prod:
+        argv += ['-p']
+
     # load cxlib only if available for the specified api level or sdk
     if args.apiLevel:
         cxlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
@@ -293,6 +296,7 @@ def main(prog=None) -> int:
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
 
     if prog:
         parser.prog = prog
