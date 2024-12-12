@@ -3,6 +3,7 @@
 // the number of parameters of a syscall is stored in the syscall id
 #define SYSCALL_NUMBER_OF_PARAMETERS(id) (((id) >> 24) & 0xf)
 
+// clang-format off
 #define SYSCALL_get_api_level_ID_IN                                   0x00000001
 #define SYSCALL_halt_ID_IN                                            0x00000002
 #define SYSCALL_nvm_write_ID_IN                                       0x03000003
@@ -106,12 +107,24 @@
 #define SYSCALL_os_perso_derive_node_bip32_ID_IN                      0x05000053
 #define SYSCALL_os_perso_derive_node_with_seed_key_ID_IN              0x080000a6
 #define SYSCALL_os_perso_derive_eip2333_ID_IN                         0x040000a7
-#define SYSCALL_os_endorsement_get_code_hash_ID_IN                    0x01000055
+
+// Endorsement syscalls
+// -- Pre API_LEVEL_23
+#define SYSCALL_os_endorsement_get_code_hash_ID_IN                    0x01000055 
 #define SYSCALL_os_endorsement_get_public_key_ID_IN                   0x03000056
 #define SYSCALL_os_endorsement_get_public_key_certificate_ID_IN       0x03000057
 #define SYSCALL_os_endorsement_key1_get_app_secret_ID_IN              0x01000058
 #define SYSCALL_os_endorsement_key1_sign_data_ID_IN                   0x03000059
 #define SYSCALL_os_endorsement_key2_derive_sign_data_ID_IN            0x0300005a
+// -- API_LEVEL_23 and above
+#define SYSCALL_ENDORSEMENT_get_code_hash_ID_IN                       0x01000055
+#define SYSCALL_ENDORSEMENT_get_public_key_ID_IN                      0x03000056
+#define SYSCALL_ENDORSEMENT_get_public_key_certificate_ID_IN          0x03000057
+#define SYSCALL_ENDORSEMENT_key1_get_app_secret_ID_IN                 0x01000058
+#define SYSCALL_ENDORSEMENT_key1_sign_data_ID_IN                      0x04000059
+#define SYSCALL_ENDORSEMENT_key2_derive_and_sign_data_ID_IN           0x0400005a
+#define SYSCALL_ENDORSEMENT_key1_sign_without_code_hash_ID_IN         0x0400005b
+
 #define SYSCALL_os_perso_set_pin_ID_IN                                0x0300004c
 #define SYSCALL_os_perso_set_current_identity_pin_ID_IN               0x0200004d
 #define SYSCALL_os_global_pin_is_validated_ID_IN                      0x000000a0
@@ -188,3 +201,4 @@
 #define SYSCALL_os_pki_load_certificate_ID_IN                         0x060000aa
 #define SYSCALL_os_pki_verify_ID_IN                                   0x040000ab
 #define SYSCALL_os_pki_get_info_ID_IN                                 0x040000ac
+// clang-format on
