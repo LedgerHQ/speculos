@@ -14,7 +14,7 @@ RUN make -C build
 
 
 # Preparing final image
-FROM docker.io/library/python:3.9-slim
+FROM debian:bookworm-slim
 
 ADD . /speculos
 WORKDIR /speculos
@@ -22,16 +22,21 @@ WORKDIR /speculos
 # Copying artifacts from previous build
 COPY --from=builder /speculos/speculos/resources/ /speculos/speculos/resources/
 
-RUN pip install --upgrade pip pipenv
-RUN pipenv install --deploy --system
-
-
+# Install dependencies
 RUN apt-get update && apt-get install -qy \
     qemu-user-static \
     libvncserver-dev \
     gdb-multiarch \
     binutils-arm-none-eabi \
-    && apt-get clean
+    python3-full \
+    python3-pip \
+    python3-pyqt5
+
+# Install python dependencies
+RUN python3 -m venv /opt/venv --system-site-packages
+ENV PATH="/opt/venv/bin:$PATH"
+RUN pip3 install pipenv && \
+    pipenv install --deploy --system
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/
 
@@ -43,4 +48,4 @@ EXPOSE 40000
 EXPOSE 41000
 EXPOSE 42000
 
-ENTRYPOINT [ "python", "./speculos.py" ]
+ENTRYPOINT [ "python3", "./speculos.py" ]
