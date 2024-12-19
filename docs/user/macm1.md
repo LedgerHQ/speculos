@@ -2,18 +2,10 @@
 
 ## How to build the Docker image
 
-Edit the `Dockerfile` and perform the following modification
+Build the builder docker image using the command:
 
-Replace line #1
-
-```
-FROM ghcr.io/ledgerhq/speculos-builder:latest AS builder
-```
-
-with
-
-```
-FROM ghcr.io/ledgerhq/speculos-builder-aarch64:latest AS builder
+```shell
+docker build -t speculos-builder:latest -f build.Dockerfile .
 ```
 
 Then build the Docker container image with the following command:
@@ -31,20 +23,47 @@ REPOSITORY                                  TAG       IMAGE ID       CREATED    
 speculos                                    latest    634c66a13457   15 minutes ago   593MB
 ```
 
-
 ## How to use the Docker image
 
 Run the image with a few arguments from the root of the speculos project:
 
+1. Using VNC (require a VNC client)
+
 ```shell
-docker run --rm -it -v $(pwd)/apps:/speculos/apps --publish 41000:41000 --publish 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
+docker run --rm -it \
+    -v $(pwd)/apps:/speculos/apps \
+    --publish 41000:41000 \
+    --publish 5001:5001 \
+    speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
 ```
 
 - The app folder (here `$(pwd)/apps/`) is mounted thanks to `-v`
 - The VNC server is available from the host thanks to `--publish`
 
-The image can obviously run an interactive shell with `--entrypoint /bin/bash`.
+2. Using QT
 
+Be sure to have XQuartz running and accepting connections by running `socat` command:
+
+```shell
+socat TCP-LISTEN:6000,reuseaddr,fork UNIX-CLIENT:\"$DISPLAY\"
+```
+
+then, run:
+
+```shell
+docker run --rm -it \
+    -v $(pwd)/apps:/speculos/apps \
+    -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+    -e DISPLAY=host.docker.internal:0 \
+    --publish 41000:41000 \
+    --publish 5001:5001 \
+    speculos --api-port 5001 apps/btc.elf
+```
+
+- The app folder (here `$(pwd)/apps/`) is mounted thanks to `-v`
+- The QT app should be displayed on your screen
+
+The image can obviously run an interactive shell with `--entrypoint /bin/bash`.
 
 ### Arguments
 
@@ -67,6 +86,7 @@ docker run --rm -it -v "$(pwd)"/apps:/speculos/apps -p 1234:1234 -p 5000:5000 -p
 ```shell
 docker-compose up [-d]
 ```
+
 > Default configuration is nanos / 2.0 / btc.elf / seed "secret"
 
 Edit `docker-compose.yml` to configure port forwarding and environment variables that fit your needs.
