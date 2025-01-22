@@ -1,16 +1,7 @@
 name: Documentation generation & update
 
 on:
-  push:
-    tags:
-      - '*'
-    branches:
-      - develop
-      - master
-  pull_request:
-    branches:
-      - develop
-      - master
+  workflow_dispatch:
 
 jobs:
   generate:

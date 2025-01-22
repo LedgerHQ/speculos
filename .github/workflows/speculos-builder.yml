@@ -4,18 +4,6 @@ name: Speculos Builder
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-    paths:
-      - .github/workflows/speculos-builder.yml
-      - build.Dockerfile
-  pull_request:
-    branches:
-      - master
-    paths:
-      - .github/workflows/speculos-builder.yml
-      - build.Dockerfile
 
 jobs:
   build:

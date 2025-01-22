@@ -2,11 +2,6 @@ name: Fast checks
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-      - develop
-  pull_request:
 
 jobs:
   linter-python:
