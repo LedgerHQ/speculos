@@ -105,41 +105,52 @@ def get_elf_infos(app_path, use_bagl):
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, \
         svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
 
+class SharedLib(object):
 
-def get_sharedlib_infos(app_path, apiLevel):
-    with open(app_path, 'rb') as fp:
-        elf = ELFFile(fp)
-        text = elf.get_section_by_name('.text')
-        # The name of the section is shram, starting at API Level 23
-        if int(apiLevel) < 23:
-            sharedram = elf.get_section_by_name('.cxram')
-        else:
-            sharedram = elf.get_section_by_name('.shram')
-        sh_offset = text['sh_offset']
-        sh_size = text['sh_size']
-        sh_load = text['sh_addr']
-        shared_ram_load = sharedram["sh_addr"]
-        shared_ram_size = sharedram["sh_size"]
+    def __init__(self, app_path, apiLevel) -> None:
+        self.fonts_addr = 0
+        self.fonts_size = 0
+        self.pic_init_addr = 0
 
-        fonts_addr = 0
-        fonts_size = 0
-        pic_init_addr = 0
-        # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
-        if int(apiLevel) >= 23:
-            symtab = elf.get_section_by_name('.symtab')
-            nbgl_fonts_symbol = symtab.get_symbol_by_name('C_nbgl_fonts')
-            if nbgl_fonts_symbol is not None:
-                fonts_addr = nbgl_fonts_symbol[0]['st_value']
-                fonts_size = nbgl_fonts_symbol[0]['st_size']
-                logger.info(f"Found C_nbgl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
+        with open(app_path, 'rb') as fp:
+            elf = ELFFile(fp)
+            text = elf.get_section_by_name('.text')
+            # The name of the section is shram, starting at API Level 23
+            if int(apiLevel) < 23:
+                sharedram = elf.get_section_by_name('.cxram')
             else:
-                logger.info("Disabling OCR.")
-            # At API Level >= 23, a function called pic_init() needs to be retrieved
-            pic_init_symbol = symtab.get_symbol_by_name("pic_init")
-            if pic_init_symbol is not None:
-                pic_init_addr = pic_init_symbol[0]['st_value']
-
-    return sh_offset, sh_size, sh_load, shared_ram_size, shared_ram_load, fonts_addr, fonts_size, pic_init_addr
+                sharedram = elf.get_section_by_name('.shram')
+            self.sh_offset = text['sh_offset']
+            self.sh_size = text['sh_size']
+            self.sh_load = text['sh_addr']
+            self.ram_load = sharedram["sh_addr"]
+            self.ram_size = sharedram["sh_size"]
+            # retrieve address of SVC_Call and SVC_cx_call functions
+            symtab = elf.get_section_by_name('.symtab')
+            if symtab is None:
+                self.svc_call_addr = 0
+                self.svc_cx_call_addr = 0
+                return
+            svc_call_symbol = symtab.get_symbol_by_name("SVC_Call")
+            if svc_call_symbol is not None:
+                self.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+            svc_cx_call_symbol = symtab.get_symbol_by_name("SVC_cx_call")
+            if svc_cx_call_symbol is not None:
+                self.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
+           
+            # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
+            if int(apiLevel) >= 23:
+                nbgl_fonts_symbol = symtab.get_symbol_by_name('C_nbgl_fonts')
+                if nbgl_fonts_symbol is not None:
+                    self.fonts_addr = nbgl_fonts_symbol[0]['st_value']
+                    self.fonts_size = nbgl_fonts_symbol[0]['st_size']
+                    logger.info(f"Found C_nbgl_fonts at 0x{self.fonts_addr:X} ({self.fonts_size} bytes)\n")
+                else:
+                    logger.info("Disabling OCR.")
+                # At API Level >= 23, a function called pic_init() needs to be retrieved
+                pic_init_symbol = symtab.get_symbol_by_name("pic_init")
+                if pic_init_symbol is not None:
+                    self.pic_init_addr = pic_init_symbol[0]['st_value']
 
 
 def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
@@ -165,7 +176,6 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
 
     fonts_addr = 0
     fonts_size = 0
-    pic_init_addr = 0
 
     # load shared lib only if available for the specified api level or sdk
     if args.apiLevel:
@@ -177,9 +187,10 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         sharedlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
     sharedlib = str(resources.files(__package__) / sharedlib_filepath)
     if os.path.exists(sharedlib):
-        sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load, fonts_addr, fonts_size, pic_init_addr = \
-            get_sharedlib_infos(sharedlib, args.apiLevel)
-        sharedlib_args = f'{sharedlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
+        sharedLibObj = SharedLib(sharedlib, args.apiLevel)
+        fonts_addr = sharedLibObj.fonts_addr
+        fonts_size = sharedLibObj.fonts_size
+        sharedlib_args = f'{sharedlib}:{sharedLibObj.sh_offset:#x}:{sharedLibObj.sh_size:#x}:{sharedLibObj.sh_load:#x}:{sharedLibObj.ram_size:#x}:{sharedLibObj.ram_load:#x}:{sharedLibObj.pic_init_addr:#x}:{sharedLibObj.svc_call_addr:#x}:{sharedLibObj.svc_cx_call_addr:#x}'
         argv += ['-c', sharedlib_args]
     else:
         logger.warn(f"Shared lib {sharedlib_filepath} not found")
@@ -218,7 +229,6 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
         lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
         lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
-        lib_arg += f':{pic_init_addr:#x}'
         argv.append(lib_arg)
 
     if args.model == 'blue':
@@ -255,7 +265,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     if args.attestation_key:
         os.environ['ATTESTATION_PRIVATE_KEY'] = args.attestation_key
 
-    logger.debug(f"executing qemu: {argv}")
+    logger.warn(f"executing qemu: {argv}")
     try:
         os.execvp(argv[0], argv)
     except FileNotFoundError:
