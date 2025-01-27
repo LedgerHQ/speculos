@@ -92,10 +92,10 @@ uint32_t os_pki_check_value(uint8_t *certificate_value,
   case CERTIFICATE_TAG_CHALLENGE:
     break;
   case CERTIFICATE_TAG_SIGNER_KEY_ID:
-    if ((U2BE(certificate_value, OS_PKI_TLV_VALUE_OFFSET) >=
-         C_os_pki_certificate_tag_info[tag].value) ||
-        (certificate_value[OS_PKI_TLV_LENGTH_OFFSET] !=
-         C_os_pki_certificate_tag_info[tag].field_len)) {
+    // Do not restrict Signer key ID value
+    // any new key ID added to SDK will be accepted
+    if (certificate_value[OS_PKI_TLV_LENGTH_OFFSET] !=
+        C_os_pki_certificate_tag_info[tag].field_len) {
       return 0x4233;
     }
     os_pki.signer_id = U2BE(certificate_value, OS_PKI_TLV_VALUE_OFFSET);
@@ -116,10 +116,10 @@ uint32_t os_pki_check_value(uint8_t *certificate_value,
     }
     break;
   case CERTIFICATE_TAG_PUBLIC_KEY_ID:
-    if ((U2BE(certificate_value, OS_PKI_TLV_VALUE_OFFSET) >=
-         C_os_pki_certificate_tag_info[tag].value) ||
-        (certificate_value[OS_PKI_TLV_LENGTH_OFFSET] !=
-         C_os_pki_certificate_tag_info[tag].field_len)) {
+    // Do not restrict public key ID value
+    // any new key ID added to SDK will be accepted
+    if (certificate_value[OS_PKI_TLV_LENGTH_OFFSET] !=
+        C_os_pki_certificate_tag_info[tag].field_len) {
       return 0x4235;
     }
     break;
@@ -133,10 +133,10 @@ uint32_t os_pki_check_value(uint8_t *certificate_value,
     os_pki.trusted_name_len = certificate_value[OS_PKI_TLV_LENGTH_OFFSET];
     break;
   case CERTIFICATE_TAG_PUBLIC_KEY_USAGE:
-    if ((certificate_value[OS_PKI_TLV_VALUE_OFFSET] >=
-         C_os_pki_certificate_tag_info[tag].value) ||
-        (certificate_value[OS_PKI_TLV_LENGTH_OFFSET] !=
-         C_os_pki_certificate_tag_info[tag].field_len)) {
+    // Do not restrict public key usage value
+    // any new key usage added to SDK will be accepted
+    if (certificate_value[OS_PKI_TLV_LENGTH_OFFSET] !=
+        C_os_pki_certificate_tag_info[tag].field_len) {
       return 0x4236;
     }
     os_pki.key_usage = certificate_value[OS_PKI_TLV_VALUE_OFFSET];
