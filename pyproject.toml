@@ -13,13 +13,14 @@ authors = [{name = "Ledger", email = "hello@ledger.fr"}]
 description = "Ledger Blue, Stax, Flex and Nano S/S+/X application emulator"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS :: MacOS X",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "construct>=2.10.56,<3.0.0",
     "flask>=2.0.0,<3.0.0",
