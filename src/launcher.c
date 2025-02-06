@@ -20,7 +20,7 @@
 #define LOAD_ADDR     ((void *)0x40000000)
 #define LINK_RAM_ADDR (0xda7a0000)
 #define LOAD_RAM_ADDR (0x50000000)
-#define MAX_APP       16
+#define MAX_APP       64
 #define MAIN_APP_NAME "main"
 
 #ifndef GIT_REVISION
