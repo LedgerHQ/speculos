@@ -3,6 +3,7 @@ import threading
 from typing import Any, Dict
 from flask import Flask
 from flask_restful import Api
+from flask_cors import CORS
 
 from speculos.mcu.display import DisplayNotifier, IODevice
 from speculos.mcu.readerror import ReadError
@@ -18,7 +19,6 @@ from .screenshot import Screenshot
 from .swagger import Swagger
 from .web_interface import WebInterface
 from .ticker import Ticker
-
 
 class ApiRunner(IODevice):
     """Run the Speculos API server in a dedicated thread, with a notification when it stops"""
@@ -62,6 +62,7 @@ class ApiWrapper:
         static_folder = str(resources.files(__package__) / "static")
         self._app = Flask(__name__, static_url_path="", static_folder=static_folder)
         self._app.env = "development"
+        CORS(self._app, resources={r"*": {"origins": "*"}}, support_credentials=True)
 
         screen_kwargs = {"screen": screen}
         seph_kwargs = {"seph": seph}
@@ -87,3 +88,9 @@ class ApiWrapper:
     def run(self):
         # threaded must be set to allow serving requests along events streaming
         self._app.run(host="0.0.0.0", port=self._port, threaded=True, use_reloader=False)
+
+def after_request_func(response):
+    print("after_request executing!")
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    response.headers.add("X-custom-mathieu", "MATHIEU COUCOU")
+    return response
