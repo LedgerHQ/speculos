@@ -11,6 +11,10 @@ on:
     branches:
       - master
 
+permissions:
+  id-token: write
+  attestations: write
+
 jobs:
   coverage:
     name: Code coverage
@@ -81,7 +85,7 @@ jobs:
 
   package_python:
     name: Build and deploy Speculos Python Package
-    runs-on: ubuntu-latest
+    runs-on: public-ledgerhq-shared-small
     needs: [build]
     container:
       image: docker://ghcr.io/ledgerhq/speculos-builder:latest
@@ -131,6 +135,46 @@ jobs:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
         TWINE_NON_INTERACTIVE: 1
+
+    - name: Login to Ledger Artifactory
+      if: success() && github.event_name == 'push'
+      timeout-minutes: 10
+      id: jfrog-login
+      uses: LedgerHQ/actions-security/actions/jfrog-login@actions/jfrog-login-1
+
+    - name: Publish Python package on Ledger Artifactory
+      if: success() && github.event_name == 'push'
+      run: ./venv-build/bin/python -m twine upload dist/*
+      env:
+        TWINE_REPOSITORY_URL: https://jfrog.ledgerlabs.net/artifactory/api/pypi/embedded-apps-pypi-prod-green
+        TWINE_USERNAME: ${{ steps.jfrog-login.outputs.oidc-user }}
+        TWINE_PASSWORD: ${{ steps.jfrog-login.outputs.oidc-token }}
+        TWINE_NON_INTERACTIVE: 1
+
+    - name: Generate library build attestations
+      if: success() && github.event_name == 'push'
+      timeout-minutes: 10
+      uses: LedgerHQ/actions-security/actions/attest@actions/attest-1
+      with:
+        subject-path: dist/*
+
+    - name: Sign library artifacts
+      if: success() && github.event_name == 'push'
+      timeout-minutes: 10
+      uses: LedgerHQ/actions-security/actions/sign-blob@actions/sign-blob-1
+      with:
+        path: dist
+
+    - name: Publish a release on the repo
+      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+        automatic_release_tag: "v${{ env.TAG_VERSION }}"
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        files: |
+          LICENSE
+          dist/
 
   package_and_test_docker:
     name: Build and test the Speculos docker
