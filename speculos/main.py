@@ -102,11 +102,16 @@ def get_elf_infos(app_path, use_bagl):
         # App NVRAM handling
         nvram_data_symbol = symtab.get_symbol_by_name('_nvram_data')
         envram_data_symbol = symtab.get_symbol_by_name('_envram_data')
+        envram_symbol = symtab.get_symbol_by_name('_envram')
         app_nvram_addr = 0
         app_nvram_size = 0
-        if nvram_data_symbol is not None and envram_data_symbol is not None:
+        if nvram_data_symbol is not None and (envram_data_symbol is not None or envram_symbol is not None):
             app_nvram_addr = nvram_data_symbol[0]['st_value']
-            app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+            if envram_data_symbol is not None:
+                app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+            else:
+                # Applications built with old SDK version
+                app_nvram_size = envram_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
         else:
             logger.info("The application does not use NVRAM.")
 
