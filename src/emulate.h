@@ -23,8 +23,6 @@ typedef struct try_context_s try_context_t;
 typedef struct cx_ecfp_256_public_key_s cx_ecfp_public_key_t;
 typedef struct cx_ecfp_256_private_key_s cx_ecfp_private_key_t;
 
-struct app_s;
-
 #define SEPH_FILENO 0 /* 0 is stdin fileno */
 
 #ifndef UNUSED
@@ -123,13 +121,6 @@ unsigned long sys_io_seph_is_status_sent(void);
 unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length);
 unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength,
                                unsigned int flags);
-
-void unload_running_app(bool unload_data);
-struct app_s *get_current_app(void);
-void save_current_context(struct sigcontext *sigcontext);
-void replace_current_context(struct sigcontext *sigcontext);
-int replace_current_code(struct app_s *app);
-int run_lib(char *name, unsigned long *parameters);
 
 unsigned long sys_try_context_set(try_context_t *context);
 unsigned long sys_try_context_get(void);

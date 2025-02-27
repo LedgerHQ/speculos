@@ -28,6 +28,8 @@
 #define GIT_REVISION "00000000"
 #endif
 
+#define STORAGE_APP_NAME_LEN 30
+
 struct elf_info_s {
   unsigned long load_offset;
   unsigned long load_size;
@@ -38,10 +40,14 @@ struct elf_info_s {
   unsigned long text_load_addr;
   unsigned long fonts_addr;
   unsigned long fonts_size;
+  unsigned long app_nvram_addr;
+  unsigned long app_nvram_size;
 };
 
 struct app_s {
   char *name;
+  char nvram_file_name[STORAGE_APP_NAME_LEN];
+  bool load_nvram;
   int fd;
   struct elf_info_s elf;
 };
@@ -105,7 +111,8 @@ static struct app_s *search_app_by_name(char *name)
 }
 
 /* open the app file */
-static int open_app(char *name, char *filename, struct elf_info_s *elf)
+static int open_app(char *name, char *filename, struct elf_info_s *elf,
+                    bool load_nvram)
 {
   int fd;
 
@@ -126,6 +133,13 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   }
 
   apps[napp].name = name;
+
+  size_t len = STORAGE_APP_NAME_LEN - 1;
+  strncat(apps[napp].nvram_file_name, name, len);
+  len -= strlen(name);
+  strncat(apps[napp].nvram_file_name, "_nvram.bin", len);
+  apps[napp].load_nvram = load_nvram;
+
   apps[napp].fd = fd;
   apps[napp].elf.load_offset = elf->load_offset;
   apps[napp].elf.load_size = elf->load_size;
@@ -136,6 +150,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf)
   apps[napp].elf.text_load_addr = elf->text_load_addr;
   apps[napp].elf.fonts_addr = elf->fonts_addr;
   apps[napp].elf.fonts_size = elf->fonts_size;
+  apps[napp].elf.app_nvram_addr = elf->app_nvram_addr;
+  apps[napp].elf.app_nvram_size = elf->app_nvram_size;
 
   napp++;
 
@@ -153,9 +169,34 @@ static void reset_memory(bool unload_data)
   }
 }
 
+void *get_memory_code_address(void)
+{
+  return memory.code;
+}
+
 struct app_s *get_current_app(void)
 {
   return current_app;
+}
+
+char *get_app_nvram_file_name(void)
+{
+  return current_app->nvram_file_name;
+}
+
+unsigned long get_app_nvram_address(void)
+{
+  return current_app->elf.app_nvram_addr;
+}
+
+unsigned long get_app_nvram_size(void)
+{
+  return current_app->elf.app_nvram_size;
+}
+
+unsigned long get_app_text_load_addr(void)
+{
+  return current_app->elf.text_load_addr;
 }
 
 // On old versions of the SDK, functions SVC_Call and SVC_cx_call were inlined
@@ -286,6 +327,7 @@ static void *load_app(char *name)
     warnx("failed to find app \"%s\"", name);
     goto error;
   }
+  printf("app name = %s\n", name);
 
   if (fstat(app->fd, &st) != 0) {
     warn("fstat");
@@ -400,6 +442,40 @@ static void *load_app(char *name)
     if (patch_svc(code, app->elf.load_size) != 0) {
       goto error;
     }
+  }
+
+  // App NVRAM data update
+  if (app->load_nvram) {
+    FILE *fptr = fopen(app->nvram_file_name, "rb");
+    if (fptr == NULL) {
+      warnx("App NVRAM file %s is absent\n", app->nvram_file_name);
+      goto error;
+    }
+    fseek(fptr, 0, SEEK_END);
+    long lSize = ftell(fptr);
+    rewind(fptr);
+
+    uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * lSize);
+    if (buffer == NULL) {
+      warnx("Error to allocate memory for app nvram read\n");
+      fclose(fptr);
+      goto error;
+    }
+    size_t res = fread(buffer, 1, lSize, fptr);
+    if (res != (size_t)lSize) {
+      warnx("App nvram file size mismatch\n");
+      free(buffer);
+      fclose(fptr);
+      goto error;
+    }
+
+    // The patch
+    unsigned long app_nvram_offset =
+        app->elf.app_nvram_addr - app->elf.text_load_addr;
+    memcpy(code + app_nvram_offset, buffer, res);
+
+    free(buffer);
+    fclose(fptr);
   }
 
   if (mprotect(code, size, PROT_READ | PROT_EXEC) != 0) {
@@ -607,12 +683,14 @@ int run_lib(char *name, unsigned long *parameters)
 /*
  * Libraries are given with the following format:
  * name:path:load_offset:load_size. eg.
- * Bitcoin:apps/btc.elf:0x1000:0x9fc0:0x20001800:0x1800
+ * Bitcoin:apps/btc.elf:0x1000:0x9fc0:0x20001800:0x1800 ...
  */
-static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
+static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
+                             bool *load_nvram)
 {
   char *libname;
   int ret;
+  int load_nvram_i = 0;
 
   libname = strdup(arg);
   *filename = strdup(arg);
@@ -620,17 +698,21 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf)
     err(1, "strdup");
   }
 
-  ret = sscanf(
-      arg, "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx",
-      libname, *filename, &elf->load_offset, &elf->load_size, &elf->stack_addr,
-      &elf->stack_size, &elf->svc_call_addr, &elf->svc_cx_call_addr,
-      &elf->text_load_addr, &elf->fonts_addr, &elf->fonts_size);
-  if (ret != 11) {
+  ret = sscanf(arg,
+               "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
+               "lx:0x%lx:0x%lx:%d",
+               libname, *filename, &elf->load_offset, &elf->load_size,
+               &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
+               &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
+               &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
+               &load_nvram_i);
+  if (ret != 14) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
     return NULL;
   }
+  *load_nvram = ((load_nvram_i == 1) ? true : false);
 
   return libname;
 }
@@ -639,15 +721,16 @@ static int load_apps(int argc, char *argv[])
 {
   char *filename, *libname;
   struct elf_info_s elf;
+  bool load_nvram = false;
   int i;
 
   for (i = 0; i < argc; i++) {
-    libname = parse_app_infos(argv[i], &filename, &elf);
+    libname = parse_app_infos(argv[i], &filename, &elf, &load_nvram);
     if (libname == NULL) {
       return -1;
     }
 
-    if (open_app(libname, filename, &elf) != 0) {
+    if (open_app(libname, filename, &elf, load_nvram) != 0) {
       return -1;
     }
   }
