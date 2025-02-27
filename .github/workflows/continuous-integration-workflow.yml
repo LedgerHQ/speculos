@@ -11,10 +11,6 @@ on:
     branches:
       - master
 
-permissions:
-  id-token: write
-  attestations: write
-
 jobs:
   coverage:
     name: Code coverage
@@ -87,6 +83,9 @@ jobs:
     name: Build and deploy Speculos Python Package
     runs-on: public-ledgerhq-shared-small
     needs: [build]
+    permissions:
+      id-token: write
+      attestations: write
     container:
       image: docker://ghcr.io/ledgerhq/speculos-builder:latest
 
