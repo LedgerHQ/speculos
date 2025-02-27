@@ -99,11 +99,28 @@ def get_elf_infos(app_path, use_bagl):
         elif use_bagl:
             logger.info("Disabling OCR.")
 
+        # App NVRAM handling
+        nvram_data_symbol = symtab.get_symbol_by_name('_nvram_data')
+        envram_data_symbol = symtab.get_symbol_by_name('_envram_data')
+        envram_symbol = symtab.get_symbol_by_name('_envram')
+        app_nvram_addr = 0
+        app_nvram_size = 0
+        if nvram_data_symbol is not None and (envram_data_symbol is not None or envram_symbol is not None):
+            app_nvram_addr = nvram_data_symbol[0]['st_value']
+            if envram_data_symbol is not None:
+                app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+            else:
+                # Applications built with old SDK version
+                app_nvram_size = envram_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+        else:
+            logger.info("The application does not use NVRAM.")
+
         supp_ram = elf.get_section_by_name('.rfbss')
         ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
     stack_size = estack - stack
     return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, \
-        svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
+        svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size, \
+        app_nvram_addr, app_nvram_size
 
 
 def get_cx_infos(app_path):
@@ -170,7 +187,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         name, lib_path = lib.split(':')
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
-            fonts_addr, fonts_size = get_elf_infos(lib_path, use_bagl)
+            fonts_addr, fonts_size, \
+            app_nvram_addr, app_nvram_size = get_elf_infos(lib_path, use_bagl)
 
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ram_addr, ram_size) != (0, 0):
@@ -183,6 +201,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
         lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
         lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
+        lib_arg += f':{app_nvram_addr:#x}:{app_nvram_size:#x}'
+        lib_arg += f':{1 if args.load_nvram else 0}'
         argv.append(lib_arg)
 
     if args.model == 'blue':
@@ -297,6 +317,7 @@ def main(prog=None) -> int:
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
     group.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
+    group.add_argument('--load-nvram', action='store_true', help='Preload app NVRAM data from file beforehand')
 
     if prog:
         parser.prog = prog
