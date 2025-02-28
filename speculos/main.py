@@ -95,7 +95,6 @@ def get_elf_infos(app_path, use_bagl):
         if bagl_fonts_symbol is not None:
             fonts_addr = bagl_fonts_symbol[0]['st_value']
             fonts_size = bagl_fonts_symbol[0]['st_size']
-            logger.info(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
         elif use_bagl:
             logger.info("Disabling OCR.")
 
