@@ -408,10 +408,10 @@ class SeProxyHal(IODevice):
             pass
 
         elif tag == SephTag.TAG_BLE_RADIO_POWER:
-            self.logger.warn("ignoring BLE tag")
+            self.logger.warning("ignoring BLE tag")
 
         elif tag == SephTag.SE_POWER_OFF:
-            self.logger.warn("received tag SE_POWER_OFF, exiting")
+            self.logger.warning("received tag SE_POWER_OFF, exiting")
             self._cleanup(screen)
             raise ReadError("SE_POWER_OFF")
 
