@@ -262,11 +262,6 @@ class Display(ABC):
     def use_bagl(self) -> bool:
         return self._display_args.use_bagl
 
-    @property
-    @abstractmethod
-    def gl(self) -> GraphicLibrary:
-        pass
-
     @abstractmethod
     def display_status(self, data: bytes) -> List[TextEvent]:
         raise NotImplementedError()

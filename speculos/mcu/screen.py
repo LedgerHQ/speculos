@@ -191,24 +191,27 @@ class Screen(Display):
     def __init__(self, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__(display, server)
         self.app: App
-        self._gl: GraphicLibrary
+        self._bagl_gl: GraphicLibrary
+        self._nbgl_gl: GraphicLibrary
 
     def set_app(self, app: App) -> None:
         self.app = app
         self.app.set_screen(self)
         model = self._display_args.model
-        if self.use_bagl:
-            self._gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
-        else:
-            self._gl = nbgl.NBGL(app.widget, MODELS[model].screen_size, model)
+        self._bagl_gl = bagl.Bagl(app.widget, MODELS[model].screen_size, model)
+        self._nbgl_gl = nbgl.NBGL(app.widget, MODELS[model].screen_size, model)
 
     @property
     def m(self) -> QWidget:
         return self.app.widget
 
     @property
-    def gl(self):
-        return self._gl
+    def bagl_gl(self):
+        return self._bagl_gl
+
+    @property
+    def nbgl_gl(self):
+        return self._nbgl_gl
 
     def _key_event(self, event: QKeyEvent, pressed) -> None:
         key = Qt.Key(event.key())
@@ -223,20 +226,18 @@ class Screen(Display):
             self.app.close()
 
     def display_status(self, data: bytes) -> List[TextEvent]:
-        assert isinstance(self.gl, bagl.Bagl)
-        ret = self.gl.display_status(data)
+        ret = self.bagl_gl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
         return ret
 
     def display_raw_status(self, data: bytes) -> None:
-        assert isinstance(self.gl, bagl.Bagl)
-        self.gl.display_raw_status(data)
+        self.bagl_gl.display_raw_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
     def screen_update(self) -> bool:
-        return self.gl.refresh()
+        return self.bagl_gl.refresh()
 
 
 class QtScreenNotifier(DisplayNotifier):

@@ -120,7 +120,7 @@ def get_cx_infos(app_path):
     return sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load
 
 
-def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> int:
     argv = ['qemu-arm-static']
 
     if args.debug:
@@ -154,20 +154,20 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     else:
         logger.warn(f"Cx lib {cxlib_filepath} not found")
 
-    # for NBGL apps, fonts binary file is mandatory
-    if not use_bagl:
-        fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
-        fonts = str(resources.files(__package__) / fonts_filepath)
-        if os.path.exists(fonts):
-            argv += ['-f', fonts]
-        else:
-            logger.error(f"Fonts {fonts_filepath} not found")
-            sys.exit(1)
+    only_bagl = True
+    # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
+    # manage the cases where it is NOT 'bagl' but the section does not exists yet
+    if args.model in ["stax", "flex"]:
+        only_bagl = False
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
+        binary = LedgerBinaryApp(lib_path)
+        use_bagl = binary.sections.sdk_graphics == "bagl"
+        if not use_bagl:
+            only_bagl = False
         load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
             text_load_addr, svc_call_address, svc_cx_call_address, \
             fonts_addr, fonts_size = get_elf_infos(lib_path, use_bagl)
@@ -184,6 +184,16 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
         lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
         argv.append(lib_arg)
+
+    # for NBGL apps, fonts binary file is mandatory
+    if not only_bagl:
+        fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = str(resources.files(__package__) / fonts_filepath)
+        if os.path.exists(fonts):
+            argv += ['-f', fonts]
+        else:
+            logger.error(f"Fonts {fonts_filepath} not found")
+            sys.exit(1)
 
     if args.model == 'blue':
         if args.rampage:
@@ -470,7 +480,7 @@ def main(prog=None) -> int:
 
     s1, s2 = socket.socketpair()
 
-    qemu_pid = run_qemu(s1, s2, args, use_bagl)
+    qemu_pid = run_qemu(s1, s2, args)
     s1.close()
 
     # The `--transport` argument takes precedence over `--usb`
