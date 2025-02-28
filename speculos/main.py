@@ -148,7 +148,7 @@ def get_cx_infos(app_path):
     return ei
 
 
-def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
+def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> int:
     argv = ['qemu-arm-static']
 
     if args.debug:
@@ -183,20 +183,20 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     else:
         logger.warning(f"Cx lib {cxlib_filepath} not found")
 
-    # for NBGL apps, fonts binary file is mandatory
-    if not use_bagl:
-        fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
-        fonts = str(resources.files(__package__) / fonts_filepath)
-        if os.path.exists(fonts):
-            argv += ['-f', fonts]
-        else:
-            logger.error(f"Fonts {fonts_filepath} not found")
-            sys.exit(1)
+    only_bagl = True
+    # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
+    # manage the cases where it is NOT 'bagl' but the section does not exists yet
+    if args.model in ["stax", "flex"]:
+        only_bagl = False
 
     extra_ram = ''
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
+        binary = LedgerBinaryApp(lib_path)
+        use_bagl = binary.sections.sdk_graphics == "bagl"
+        if not use_bagl:
+            only_bagl = False
         ei = get_elf_infos(lib_path, use_bagl)
 
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
@@ -214,6 +214,16 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         lib_arg += f':{1 if args.load_nvram else 0}'
         lib_arg += f':{1 if args.save_nvram else 0}'
         argv.append(lib_arg)
+
+    # for NBGL apps, fonts binary file is mandatory
+    if not only_bagl:
+        fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
+        fonts = str(resources.files(__package__) / fonts_filepath)
+        if os.path.exists(fonts):
+            argv += ['-f', fonts]
+        else:
+            logger.error(f"Fonts {fonts_filepath} not found")
+            sys.exit(1)
 
     if args.model == 'blue':
         if args.rampage:
@@ -356,13 +366,6 @@ def main(prog=None) -> int:
             sys.exit(1)
         args.model = "nanosp" if binary.sections.target == "nanos2" else binary.sections.target
         logger.warning(f"Device model detected from metadata: {args.model}")
-
-    # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
-    # manage the cases where it is NOT 'bagl' but the section does not exists yet
-    if args.model in ["stax", "flex"]:
-        use_bagl = False
-    else:
-        use_bagl = binary.sections.sdk_graphics == "bagl"
 
     if not args.apiLevel:
         if binary.sections.api_level is not None:
@@ -508,7 +511,7 @@ def main(prog=None) -> int:
 
     s1, s2 = socket.socketpair()
 
-    qemu_pid = run_qemu(s1, s2, args, use_bagl)
+    qemu_pid = run_qemu(s1, s2, args)
     s1.close()
 
     # The `--transport` argument takes precedence over `--usb`
@@ -521,7 +524,6 @@ def main(prog=None) -> int:
     seph = seproxyhal.SeProxyHal(
         s2,
         args.model,
-        use_bagl,
         automation_path,
         automation_server,
         transport_type,
@@ -563,7 +565,7 @@ def main(prog=None) -> int:
         apirun = ApiRunner(args.api_port)
 
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
-                               args.keymap, zoom, x, y, use_bagl)
+                               args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen_notifier = ScreenNotifier(display_args, server_args)
 

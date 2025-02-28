@@ -253,7 +253,6 @@ class SeProxyHal(IODevice):
     def __init__(self,
                  sock: socket,
                  model: str,
-                 use_bagl: bool,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: TransportType = TransportType.HID,
@@ -264,7 +263,8 @@ class SeProxyHal(IODevice):
         self.automation = automation
         self.automation_server = automation_server
         self.events: List[TextEvent] = []
-        self.refreshed = False
+        self.need_nbgl_refresh = False
+        self.is_last_draw_nbgl = False
         self.verbose = verbose
 
         self.status_event = threading.Event()
@@ -277,9 +277,7 @@ class SeProxyHal(IODevice):
 
         self.transport = build_transport(self.socket_helper.queue_packet, transport)
 
-        self.ocr = OCR(model, use_bagl)
-
-        self.use_bagl = use_bagl
+        self.ocr = OCR(model)
 
         # A list of callback methods when an APDU response is received
         self.apdu_callbacks: List[Callable[[bytes], None]] = []
@@ -333,17 +331,17 @@ class SeProxyHal(IODevice):
 
         if tag == SephTag.GENERAL_STATUS:
             if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
-                if self.refreshed:
-                    self.refreshed = False
+                if self.need_nbgl_refresh:
+                    self.need_nbgl_refresh = False
 
                     # Update the screenshot, we'll upload its associated events shortly
-                    screen.display.gl.update_screenshot()
-                    screen.display.gl.update_public_screenshot()
+                    screen.display.nbgl_gl.update_screenshot()
+                    screen.display.nbgl_gl.update_public_screenshot()
 
-                if self.use_bagl and screen.display.screen_update():
+                if self.is_last_draw_nbgl is False and screen.display.screen_update():
                     if screen.display.model in ["nanox", "nanosp"]:
                         self.events += self.ocr.get_events()
-                elif not self.use_bagl:
+                elif self.is_last_draw_nbgl:
                     self.events += self.ocr.get_events()
 
                 # Apply automation rules after having received a GENERAL_STATUS_LAST_COMMAND tag. It allows the
@@ -362,6 +360,7 @@ class SeProxyHal(IODevice):
                      SephTag.DBG_SCREEN_DISPLAY_STATUS,
                      SephTag.BAGL_DRAW_RECT]:
             self.logger.debug(f"DISPLAY_STATUS {data!r}")
+            self.is_last_draw_nbgl = False
             if screen.display.model not in ["nanox", "nanosp"] or tag == SephTag.BAGL_DRAW_RECT:
                 events = screen.display.display_status(data)
                 self.events += events
@@ -371,8 +370,9 @@ class SeProxyHal(IODevice):
         elif tag in [SephTag.SCREEN_DISPLAY_RAW_STATUS, SephTag.BAGL_DRAW_BITMAP]:
             self.logger.debug("SephTag.SCREEN_DISPLAY_RAW_STATUS")
             screen.display.display_raw_status(data)
+            self.is_last_draw_nbgl = False
             if screen.display.model in ["nanox", "nanosp"]:
-                self.ocr.analyze_bitmap(data)
+                self.ocr.analyze_bitmap(data, True)
             if tag != SephTag.BAGL_DRAW_BITMAP:
                 self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
             if screen.display.rendering == RENDER_METHOD.PROGRESSIVE:
@@ -425,34 +425,34 @@ class SeProxyHal(IODevice):
             pass
 
         elif tag == SephTag.NBGL_DRAW_RECT:
-            assert isinstance(screen.display.gl, NBGL)
-            self.events += screen.display.gl.hal_draw_rect(data)
+            assert isinstance(screen.display.nbgl_gl, NBGL)
+            self.events += screen.display.nbgl_gl.hal_draw_rect(data)
 
         elif tag == SephTag.NBGL_REFRESH:
-            assert isinstance(screen.display.gl, NBGL)
-            screen.display.gl.refresh(data)
+            screen.display.nbgl_gl.refresh(data)
             # Stax/Flex only
-            # We have refreshed the screen, remember it for the next time we have SephTag.GENERAL_STATUS
+            # We have need_nbgl_refresh the screen, remember it for the next time we have SephTag.GENERAL_STATUS
             # then we'll perform a screen update and make public the resulting screenshot
-            self.refreshed = True
+            self.need_nbgl_refresh = True
+            self.is_last_draw_nbgl = True
 
         elif tag == SephTag.NBGL_DRAW_LINE:
-            assert isinstance(screen.display.gl, NBGL)
-            screen.display.gl.hal_draw_line(data)
+            assert isinstance(screen.display.nbgl_gl, NBGL)
+            screen.display.nbgl_gl.hal_draw_line(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE:
-            assert isinstance(screen.display.gl, NBGL)
-            self.ocr.analyze_bitmap(data)
-            screen.display.gl.hal_draw_image(data)
+            assert isinstance(screen.display.nbgl_gl, NBGL)
+            self.ocr.analyze_bitmap(data, False)
+            screen.display.nbgl_gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
-            assert isinstance(screen.display.gl, NBGL)
-            self.ocr.analyze_bitmap(data)
-            screen.display.gl.hal_draw_image_rle(data)
+            assert isinstance(screen.display.nbgl_gl, NBGL)
+            self.ocr.analyze_bitmap(data, False)
+            screen.display.nbgl_gl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
-            assert isinstance(screen.display.gl, NBGL)
-            screen.display.gl.hal_draw_image_file(data)
+            assert isinstance(screen.display.nbgl_gl, NBGL)
+            screen.display.nbgl_gl.hal_draw_image_file(data)
 
         elif tag == SephTag.NFC_RAPDU:
             data = self.transport.handle_rapdu(data)

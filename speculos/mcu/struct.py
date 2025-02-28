@@ -32,7 +32,6 @@ class DisplayArgs:
     pixel_size: int
     x: Optional[int]
     y: Optional[int]
-    use_bagl: bool
 
 
 class ServerArgs(NamedTuple):

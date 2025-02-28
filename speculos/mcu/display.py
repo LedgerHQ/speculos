@@ -259,12 +259,13 @@ class Display(ABC):
         return self._display_args.rendering
 
     @property
-    def use_bagl(self) -> bool:
-        return self._display_args.use_bagl
+    @abstractmethod
+    def nbgl_gl(self) -> GraphicLibrary:
+        pass
 
     @property
     @abstractmethod
-    def gl(self) -> GraphicLibrary:
+    def bagl_gl(self) -> GraphicLibrary:
         pass
 
     @abstractmethod
