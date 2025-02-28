@@ -285,7 +285,9 @@ int patch_svc(void *p, size_t size)
     /* undefined instruction */
     memcpy(next, "\xff\xde", 2);
 
-    fprintf(stderr, "[*] patching svc instruction at %p\n", next);
+    if (trace_syscalls) {
+      fprintf(stderr, "[*] patching svc instruction at %p\n", next);
+    }
 
     addr = (unsigned char *)next + 2;
     n_svc_call++;
