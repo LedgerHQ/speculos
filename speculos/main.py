@@ -228,7 +228,14 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
 
 
 def setup_logging(args):
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(name)s: %(message)s', datefmt='%H:%M:%S')
+    logger.info("Setting werkzeug ERROR logging level")
+    args.log_level.append("werkzeug:ERROR")
+    if args.silent:
+        logging.basicConfig(level=logging.INFO, format='%(name)s: %(message)s')
+    else:
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s:%(name)s: %(message)s',
+                            datefmt='%H:%M:%S')
 
     for arg in args.log_level:
         if ":" not in arg:
@@ -275,6 +282,7 @@ def main(prog=None) -> int:
     parser.add_argument('-T', '--transport', default=None, choices=('HID', 'U2F', 'NFC'),
                         help='Configure the transport protocol: HID (default), U2F or NFC.')
     parser.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
+    parser.add_argument('-S', '--silent', action='store_true', help='Limit log traces')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
