@@ -256,7 +256,8 @@ class SeProxyHal(IODevice):
                  use_bagl: bool,
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
-                 transport: TransportType = TransportType.HID):
+                 transport: TransportType = TransportType.HID,
+                 verbose: bool = False):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -264,6 +265,7 @@ class SeProxyHal(IODevice):
         self.automation_server = automation_server
         self.events: List[TextEvent] = []
         self.refreshed = False
+        self.verbose = verbose
 
         self.status_event = threading.Event()
         self.socket_helper = SocketHelper(self._socket, self.status_event)
@@ -475,6 +477,8 @@ class SeProxyHal(IODevice):
         '''Forward finger press/release from the GUI to the app.'''
 
         if pressed:
+            if self.verbose:
+                self.logger.info(f"Finger press at: {x},{y}")
             packet = SephTag.FINGER_EVENT_TOUCH.to_bytes(1, 'big')
         else:
             packet = SephTag.FINGER_EVENT_RELEASE.to_bytes(1, 'big')
