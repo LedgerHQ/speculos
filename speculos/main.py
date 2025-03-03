@@ -274,6 +274,7 @@ def main(prog=None) -> int:
                         'either HID (default) or U2F (DEPRECATED, use `--transport` instead)')
     parser.add_argument('-T', '--transport', default=None, choices=('HID', 'U2F', 'NFC'),
                         help='Configure the transport protocol: HID (default), U2F or NFC.')
+    parser.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
@@ -295,7 +296,6 @@ def main(prog=None) -> int:
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
-    group.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
 
     if prog:
         parser.prog = prog
