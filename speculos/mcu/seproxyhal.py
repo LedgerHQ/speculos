@@ -475,6 +475,7 @@ class SeProxyHal(IODevice):
         '''Forward finger press/release from the GUI to the app.'''
 
         if pressed:
+            self.logger.info(f"Finger press at: {x},{y}")
             packet = SephTag.FINGER_EVENT_TOUCH.to_bytes(1, 'big')
         else:
             packet = SephTag.FINGER_EVENT_RELEASE.to_bytes(1, 'big')
