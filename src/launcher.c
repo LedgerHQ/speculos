@@ -472,7 +472,6 @@ static int load_fonts(char *fonts_path)
   }
 
   void *p = mmap((void *)load_addr, load_size, prot, flags, fd, 0);
-  fprintf(stderr, "[*] loaded fonts at %p\n", p);
 
   if (p == MAP_FAILED) {
     warn("mmap fonts");

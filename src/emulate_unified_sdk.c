@@ -881,6 +881,8 @@ int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,
     return 0;
   }
 
-  fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
+  if (verbose) {
+    fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
+  }
   return 0;
 }
