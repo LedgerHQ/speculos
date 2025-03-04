@@ -20,6 +20,7 @@ from .swagger import Swagger
 from .web_interface import WebInterface
 from .ticker import Ticker
 
+
 class ApiRunner(IODevice):
     """Run the Speculos API server in a dedicated thread, with a notification when it stops"""
     def __init__(self, api_port: int) -> None:
@@ -88,9 +89,3 @@ class ApiWrapper:
     def run(self):
         # threaded must be set to allow serving requests along events streaming
         self._app.run(host="0.0.0.0", port=self._port, threaded=True, use_reloader=False)
-
-def after_request_func(response):
-    print("after_request executing!")
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    response.headers.add("X-custom-mathieu", "MATHIEU COUCOU")
-    return response

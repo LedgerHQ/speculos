@@ -4,7 +4,7 @@
 #
 
 # Building the Speculos environment
-FROM speculos-builder:latest AS builder
+FROM ghcr.io/ledgerhq/speculos-builder:latest AS builder
 
 ADD . /speculos
 WORKDIR /speculos/
