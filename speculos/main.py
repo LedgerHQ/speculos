@@ -95,7 +95,6 @@ def get_elf_infos(app_path, use_bagl):
         if bagl_fonts_symbol is not None:
             fonts_addr = bagl_fonts_symbol[0]['st_value']
             fonts_size = bagl_fonts_symbol[0]['st_size']
-            logger.info(f"Found C_bagl_fonts at 0x{fonts_addr:X} ({fonts_size} bytes)\n")
         elif use_bagl:
             logger.info("Disabling OCR.")
 
@@ -152,7 +151,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
         argv += ['-c', cxlib_args]
     else:
-        logger.warn(f"Cx lib {cxlib_filepath} not found")
+        logger.warning(f"Cx lib {cxlib_filepath} not found")
 
     # for NBGL apps, fonts binary file is mandatory
     if not use_bagl:
@@ -229,7 +228,13 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
 
 
 def setup_logging(args):
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s.%(msecs)03d:%(name)s: %(message)s', datefmt='%H:%M:%S')
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s:%(name)s: %(message)s',
+                            datefmt='%H:%M:%S')
+    else:
+        args.log_level.append("werkzeug:ERROR")
+        logging.basicConfig(level=logging.INFO, format='%(name)s: %(message)s')
 
     for arg in args.log_level:
         if ":" not in arg:
@@ -275,6 +280,8 @@ def main(prog=None) -> int:
                         'either HID (default) or U2F (DEPRECATED, use `--transport` instead)')
     parser.add_argument('-T', '--transport', default=None, choices=('HID', 'U2F', 'NFC'),
                         help='Configure the transport protocol: HID (default), U2F or NFC.')
+    parser.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
+    parser.add_argument('-v', '--verbose', action='store_true', help='Increase verbosity')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
@@ -296,7 +303,6 @@ def main(prog=None) -> int:
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
-    group.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
 
     if prog:
         parser.prog = prog
@@ -315,9 +321,8 @@ def main(prog=None) -> int:
         if binary.sections.target is None:
             logger.error("Device model not detected from elf. Then it must be specified")
             sys.exit(1)
-        else:
-            args.model = "nanosp" if binary.sections.target == "nanos2" else binary.sections.target
-            logger.warn(f"Device model detected from metadata: {args.model}")
+        args.model = "nanosp" if binary.sections.target == "nanos2" else binary.sections.target
+        logger.warning(f"Device model detected from metadata: {args.model}")
 
     # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
     # manage the cases where it is NOT 'bagl' but the section does not exists yet
@@ -329,7 +334,7 @@ def main(prog=None) -> int:
     if not args.apiLevel:
         if binary.sections.api_level is not None:
             args.apiLevel = binary.sections.api_level
-            logger.warn(f"Api level detected from metadata: {args.apiLevel}")
+            logger.warning(f"Api level detected from metadata: {args.apiLevel}")
 
     # Check args.apiLevel, 0 is an invalid value
     if args.apiLevel == "0":
@@ -359,7 +364,7 @@ def main(prog=None) -> int:
                 logger.error("Lib name not detected from elf. Then it must be specified")
                 sys.exit(1)
             else:
-                logger.warn(f"Lib name detected from metadata: {elf_lib_name}")
+                logger.warning(f"Lib name detected from metadata: {elf_lib_name}")
                 lib_name = elf_lib_name
         else:
             if elf_lib_name is not None and elf_lib_name != lib_name:
@@ -451,15 +456,15 @@ def main(prog=None) -> int:
     automation_path: Optional[automation.Automation] = None
     if args.automation:
         # TODO: remove this condition and all associated code in next major version
-        logger.warn("--automation is deprecated, please use the REST API instead")
+        logger.warning("--automation is deprecated, please use the REST API instead")
         automation_path = automation.Automation(args.automation)
 
     automation_server: Optional[BroadcastInterface] = None
     if args.automation_port:
         # TODO: remove this condition and all associated code in next major version
-        logger.warn("--automation-port is deprecated, please use the REST API instead")
+        logger.warning("--automation-port is deprecated, please use the REST API instead")
         if api_enabled:
-            logger.warn("--automation-port is incompatible with the API server, disabling the latter")
+            logger.warning("--automation-port is incompatible with the API server, disabling the latter")
             api_enabled = False
         automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
@@ -482,20 +487,21 @@ def main(prog=None) -> int:
     apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
-        model=args.model,
-        use_bagl=use_bagl,
-        automation=automation_path,
-        automation_server=automation_server,
-        transport=transport_type)
+        args.model,
+        use_bagl,
+        automation_path,
+        automation_server,
+        transport_type,
+        args.verbose)
 
     button = None
     if args.button_port:
-        logger.warn("--button-port is deprecated, please use the REST API instead")
+        logger.warning("--button-port is deprecated, please use the REST API instead")
         button = FakeButton(args.button_port)
 
     finger = None
     if args.finger_port:
-        logger.warn("--finger-port is deprecated, please use the REST API instead")
+        logger.warning("--finger-port is deprecated, please use the REST API instead")
         finger = FakeFinger(args.finger_port)
 
     vnc = None

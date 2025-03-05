@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Allow CORS in order to be used directly from external website (ie: [DMK Playground](https://app.devicesdk.ledger.com/))
 
+### Fixed
+
+- Fixed `prod-pki` option in helper usage in the good group
+- Fixed `logger.warn` deprecated API
+
+### Added
+
+- Add `-v/--verbose` to increase verbosity. Default behavior now is to limit _werkzeug_ logs and remove timestamp from logs
+
 ## [0.15.0] 2025-02-24
 
 ### Added
