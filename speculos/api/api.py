@@ -63,7 +63,7 @@ class ApiWrapper:
         static_folder = str(resources.files(__package__) / "static")
         self._app = Flask(__name__, static_url_path="", static_folder=static_folder)
         self._app.env = "development"
-        CORS(self._app, resources={r"*": {"origins": "*"}}, support_credentials=True)
+        CORS(self._app, resources={r"*": {"origins": "*"}}, supports_credentials=True)
 
         screen_kwargs = {"screen": screen}
         seph_kwargs = {"seph": seph}
