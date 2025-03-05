@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] 2025-03-05
+
+### Changed
+
+- Allow CORS in order to be used directly from external website (ie: [DMK Playground](https://app.devicesdk.ledger.com/))
+
 ## [0.15.0] 2025-02-24
 
 ### Added
@@ -18,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.14.0] 2025-02-06
 
 ### Changed
+
 - Increase number of sideloaded applications to 64
 
 ## [0.13.1] 2025-01-28
@@ -337,7 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - docker: Add blst library to the docker image
 - launcher: If Speculos is able to determine the location of the SVC_Call and SVC_cx_call symbols in
-            the application elf, it will only try to patch `svc 1` inside the functions.
+  the application elf, it will only try to patch `svc 1` inside the functions.
 
 ## [0.2.1] - 2023-05-30
 
@@ -350,7 +357,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - package: Version is not longer customly incremented, but inferred from tag then bundled into the
-           package thanks to `setuptools_scm`
+  package thanks to `setuptools_scm`
 
 ## [0.1.265] - 2023-05-12
 
