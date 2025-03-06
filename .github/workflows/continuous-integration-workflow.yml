@@ -100,7 +100,7 @@ jobs:
         python3 -m venv venv-test
         ./venv-test/bin/pip install .
         ./venv-test/bin/speculos --help
-        echo "TAG_VERSION=$(python -c 'from speculos import __version__; print(__version__)')" >> "$GITHUB_ENV"
+        echo "TAG_VERSION=$(./venv-test/bin/python -c 'from speculos import __version__; print(__version__)')" >> "$GITHUB_ENV"
 
     - name: Build Speculos python package
       run: |
