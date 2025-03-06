@@ -86,6 +86,7 @@ jobs:
     permissions:
       id-token: write
       attestations: write
+      contents: write
     container:
       image: docker://ghcr.io/ledgerhq/speculos-builder:latest
 
@@ -168,11 +169,12 @@ jobs:
       if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        automatic_release_tag: "v${{ env.TAG_VERSION }}"
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         prerelease: false
         files: |
-          LICENSE
+          COPYING
+          COPYING.LESSER
+          CHANGELOG.md
           dist/
 
   package_and_test_docker:
