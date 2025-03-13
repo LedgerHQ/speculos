@@ -14,6 +14,7 @@ import signal
 import socket
 import sys
 import threading
+from dataclasses import dataclass
 from elftools.elf.elffile import ELFFile
 from ledgered.binary import LedgerBinaryApp
 from mnemonic import mnemonic
@@ -34,6 +35,25 @@ from .observer import BroadcastInterface
 from .resources_importer import resources
 
 
+@dataclass
+class ElfInfo:
+    text_offset: int = 0
+    text_size: int = 0
+    stack_addr: int = 0
+    stack_size: int = 0
+    ram_addr: int = 0
+    ram_size: int = 0
+    text_addr: int = 0
+    svc_call_addr: int = 0
+    svc_cx_call_addr: int = 0
+    fonts_addr: int = 0
+    fonts_size: int = 0
+    app_nvram_addr: int = 0
+    app_nvram_size: int = 0
+    cx_ram_addr: int = 0
+    cx_ram_size: int = 0
+
+
 DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
                 'monster seven myth punch hobby comfort wild raise skin')
 
@@ -51,26 +71,27 @@ def set_pdeath(sig):
 
 
 def get_elf_infos(app_path, use_bagl):
+    ei = ElfInfo()
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
-        text = elf.get_section_by_name('.text')
+        text_section = elf.get_section_by_name('.text')
         for seg in elf.iter_segments():
             if seg['p_type'] != 'PT_LOAD':
                 continue
-            if seg.section_in_segment(text):
+            if seg.section_in_segment(text_section):
                 text_seg = seg
                 break
         else:
             raise RuntimeError("No program header with text section!")
-        symtab = elf.get_section_by_name('.symtab')
-        bss = elf.get_section_by_name('.bss')
-        sh_offset = text_seg['p_offset']
-        sh_size = text_seg['p_filesz']
-        text_load_addr = text['sh_addr']
-        stack = bss['sh_addr']
-        sym_estack = symtab.get_symbol_by_name('_estack')
+        symtab_section = elf.get_section_by_name('.symtab')
+        bss_section = elf.get_section_by_name('.bss')
+        ei.text_offset = text_seg['p_offset']
+        ei.text_size = text_seg['p_filesz']
+        ei.text_addr = text_section['sh_addr']
+        ei.stack_addr = bss_section['sh_addr']
+        sym_estack = symtab_section.get_symbol_by_name('_estack')
         if sym_estack is None:
-            sym_estack = symtab.get_symbol_by_name('END_STACK')
+            sym_estack = symtab_section.get_symbol_by_name('END_STACK')
         if sym_estack is None:
             logger.error('failed to find _estack/END_STACK symbol')
             sys.exit(1)
@@ -78,45 +99,53 @@ def get_elf_infos(app_path, use_bagl):
 
         # Look for the symbols SVC_Call and SVC_cx_call
         # if they are found, save their addresses to patch them to replace the SYSCALL later
-        svc_call_addr = 0
-        svc_cx_call_addr = 0
-        svc_call_symbol = symtab.get_symbol_by_name("SVC_Call")
+        svc_call_symbol = symtab_section.get_symbol_by_name("SVC_Call")
         if svc_call_symbol is not None:
-            svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
-        svc_cx_call_symbol = symtab.get_symbol_by_name("SVC_cx_call")
+            ei.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+        svc_cx_call_symbol = symtab_section.get_symbol_by_name("SVC_cx_call")
         if svc_cx_call_symbol is not None:
-            svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
+            ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
         # Check where are located fonts in .elf file (LNX/LNS+ with BAGL only)
         # (on apps using NBGL, fonts are loaded from a known location: STAX_FONTS_ARRAY_ADDR,
         #  FLEX_FONTS_ARRAY_ADDR, NANOX_FONTS_ARRAY_ADDR or NANOSP_FONTS_ARRAY_ADDR)
-        fonts_addr = 0
-        fonts_size = 0
-        bagl_fonts_symbol = symtab.get_symbol_by_name('C_bagl_fonts')
+        bagl_fonts_symbol = symtab_section.get_symbol_by_name('C_bagl_fonts')
         if bagl_fonts_symbol is not None:
-            fonts_addr = bagl_fonts_symbol[0]['st_value']
-            fonts_size = bagl_fonts_symbol[0]['st_size']
+            ei.fonts_addr = bagl_fonts_symbol[0]['st_value']
+            ei.fonts_size = bagl_fonts_symbol[0]['st_size']
         elif use_bagl:
             logger.info("Disabling OCR.")
 
-        supp_ram = elf.get_section_by_name('.rfbss')
-        ram_addr, ram_size = (supp_ram['sh_addr'], supp_ram['sh_size']) if supp_ram is not None else (0, 0)
-    stack_size = estack - stack
-    return sh_offset, sh_size, stack, stack_size, ram_addr, ram_size, text_load_addr, \
-        svc_call_addr, svc_cx_call_addr, fonts_addr, fonts_size
+        # App NVRAM handling
+        nvram_data_symbol = symtab_section.get_symbol_by_name('_nvram_data')
+        # _envram for applications built with old SDK version
+        envram_data_symbol = symtab_section.get_symbol_by_name('_envram_data') \
+            or symtab_section.get_symbol_by_name('_envram')
+        if nvram_data_symbol is not None and envram_data_symbol is not None:
+            ei.app_nvram_addr = nvram_data_symbol[0]['st_value']
+            ei.app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+        else:
+            logger.info("The application does not use NVRAM.")
+
+        supp_ram_section = elf.get_section_by_name('.rfbss')
+        ei.ram_addr, ei.ram_size = \
+            (supp_ram_section['sh_addr'], supp_ram_section['sh_size']) if supp_ram_section is not None else (0, 0)
+    ei.stack_size = estack - ei.stack_addr
+    return ei
 
 
 def get_cx_infos(app_path):
+    ei = ElfInfo()
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
-        text = elf.get_section_by_name('.text')
-        cxram = elf.get_section_by_name('.cxram')
-        sh_offset = text['sh_offset']
-        sh_size = text['sh_size']
-        sh_load = text['sh_addr']
-        cx_ram_load = cxram["sh_addr"]
-        cx_ram_size = cxram["sh_size"]
+        text_section = elf.get_section_by_name('.text')
+        cxram_section = elf.get_section_by_name('.cxram')
+        ei.text_offset = text_section['sh_offset']
+        ei.text_size = text_section['sh_size']
+        ei.text_addr = text_section['sh_addr']
+        ei.cx_ram_addr = cxram_section["sh_addr"]
+        ei.cx_ram_size = cxram_section["sh_size"]
 
-    return sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load
+    return ei
 
 
 def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use_bagl: bool) -> int:
@@ -147,8 +176,9 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
         cxlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
     cxlib = str(resources.files(__package__) / cxlib_filepath)
     if os.path.exists(cxlib):
-        sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load = get_cx_infos(cxlib)
-        cxlib_args = f'{cxlib}:{sh_offset:#x}:{sh_size:#x}:{sh_load:#x}:{cx_ram_size:#x}:{cx_ram_load:#x}'
+        ei = get_cx_infos(cxlib)
+        cxlib_args = f'{cxlib}:{ei.text_offset:#x}:{ei.text_size:#x}:{ei.text_addr:#x}'
+        cxlib_args += f':{ei.cx_ram_size:#x}:{ei.cx_ram_addr:#x}'
         argv += ['-c', cxlib_args]
     else:
         logger.warning(f"Cx lib {cxlib_filepath} not found")
@@ -167,21 +197,22 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace, use
     app_path = getattr(args, 'app.elf')
     for lib in [f'main:{app_path}'] + args.library:
         name, lib_path = lib.split(':')
-        load_offset, load_size, stack, stack_size, ram_addr, ram_size, \
-            text_load_addr, svc_call_address, svc_cx_call_address, \
-            fonts_addr, fonts_size = get_elf_infos(lib_path, use_bagl)
+        ei = get_elf_infos(lib_path, use_bagl)
 
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
-        if (ram_addr, ram_size) != (0, 0):
-            arg = f'{ram_addr:#x}:{ram_size:#x}'
+        if (ei.ram_addr, ei.ram_size) != (0, 0):
+            arg = f'{ei.ram_addr:#x}:{ei.ram_size:#x}'
             if extra_ram and arg != extra_ram:
                 logger.error("different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
             extra_ram = arg
-        lib_arg = f'{name}:{lib_path}:{load_offset:#x}:{load_size:#x}'
-        lib_arg += f':{stack:#x}:{stack_size:#x}:{svc_call_address:#x}'
-        lib_arg += f':{svc_cx_call_address:#x}:{text_load_addr:#x}'
-        lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
+        lib_arg = f'{name}:{lib_path}:{ei.text_offset:#x}:{ei.text_size:#x}'
+        lib_arg += f':{ei.stack_addr:#x}:{ei.stack_size:#x}:{ei.svc_call_addr:#x}'
+        lib_arg += f':{ei.svc_cx_call_addr:#x}:{ei.text_addr:#x}'
+        lib_arg += f':{ei.fonts_addr:#x}:{ei.fonts_size:#x}'
+        lib_arg += f':{ei.app_nvram_addr:#x}:{ei.app_nvram_size:#x}'
+        lib_arg += f':{1 if args.load_nvram else 0}'
+        lib_arg += f':{1 if args.save_nvram else 0}'
         argv.append(lib_arg)
 
     if args.model == 'blue':
@@ -303,6 +334,8 @@ def main(prog=None) -> int:
                                                         "left button, 'a' right, 's' both). Default: arrow keys")
     group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
     group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
+    group.add_argument('--load-nvram', action='store_true', help='Preload app NVRAM data from file beforehand')
+    group.add_argument('--save-nvram', action='store_true', help='Save app NVRAM data to file')
 
     if prog:
         parser.prog = prog

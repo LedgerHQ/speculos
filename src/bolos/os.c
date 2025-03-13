@@ -4,6 +4,7 @@
 
 #include "emulate.h"
 #include "environment.h"
+#include "launcher.h"
 #include "svc.h"
 
 #define OS_SETTING_PLANEMODE_OLD 5
