@@ -52,6 +52,7 @@ struct app_s {
   bool load_nvram;
   bool save_nvram;
   int fd;
+  bool use_nbgl;
   struct elf_info_s elf;
 };
 
@@ -84,7 +85,6 @@ static size_t extra_rampage_size;
 
 sdk_version_t sdk_version = SDK_COUNT;
 hw_model_t hw_model = MODEL_COUNT;
-bool use_nbgl = false;
 extern bool pki_prod;
 
 static struct app_s *current_app;
@@ -145,6 +145,7 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].save_nvram = save_nvram;
 
   apps[napp].fd = fd;
+  apps[napp].use_nbgl = (elf->fonts_addr == 0);
   apps[napp].elf.load_offset = elf->load_offset;
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
@@ -297,7 +298,7 @@ int replace_current_code(struct app_s *app)
 
   // Parse fonts and build bitmap -> character table
   parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
-              app->elf.fonts_size, use_nbgl);
+              app->elf.fonts_size, app->use_nbgl);
 
   return 0;
 }
@@ -530,7 +531,7 @@ static void *load_app(char *name)
 
   // Parse fonts and build bitmap -> character table
   parse_fonts(memory.code, app->elf.text_load_addr, app->elf.fonts_addr,
-              app->elf.fonts_size, use_nbgl);
+              app->elf.fonts_size, app->use_nbgl);
 
   return code;
 
@@ -983,7 +984,6 @@ int main(int argc, char *argv[])
     if (load_fonts(fonts_path) != 0) {
       return 1;
     }
-    use_nbgl = true;
   }
 
   if (setup_signals() != 0) {

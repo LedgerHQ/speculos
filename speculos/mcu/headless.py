@@ -15,32 +15,32 @@ class Headless(Display):
         super().__init__(display, server)
 
         self.m = HeadlessPaintWidget(self.model, server.vnc)
-        self._gl: GraphicLibrary
-        if display.use_bagl:
-            self._gl = bagl.Bagl(self.m, MODELS[self.model].screen_size, self.model)
-        else:
-            self._gl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, self.model)
+        self._bagl_gl: GraphicLibrary
+        self._nbgl_gl: GraphicLibrary
+        self._bagl_gl = bagl.Bagl(self.m, MODELS[self.model].screen_size, self.model)
+        self._nbgl_gl = nbgl.NBGL(self.m, MODELS[self.model].screen_size, self.model)
 
     @property
-    def gl(self) -> GraphicLibrary:
-        return self._gl
+    def bagl_gl(self):
+        return self._bagl_gl
+
+    @property
+    def nbgl_gl(self):
+        return self._nbgl_gl
 
     def display_status(self, data: bytes) -> List[TextEvent]:
-        assert isinstance(self.gl, bagl.Bagl)
-        ret = self.gl.display_status(data)
+        ret = self.bagl_gl.display_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
         return ret
 
     def display_raw_status(self, data: bytes) -> None:
-        assert isinstance(self.gl, bagl.Bagl)
-        self.gl.display_raw_status(data)
+        self.bagl_gl.display_raw_status(data)
         if MODELS[self.model].name == 'blue':
             self.screen_update()    # Actually, this method doesn't work
 
     def screen_update(self) -> bool:
-        assert isinstance(self.gl, bagl.Bagl)
-        return self.gl.refresh()
+        return self.bagl_gl.refresh()
 
 
 class HeadlessPaintWidget(FrameBuffer):

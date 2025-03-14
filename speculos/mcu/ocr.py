@@ -122,11 +122,10 @@ class OCR:
     MAX_BLANK_SPACE_STAX = 24
     MAX_BLANK_SPACE_FLEX = 26
 
-    def __init__(self, model: str, use_bagl: bool):
+    def __init__(self, model: str):
         self.events: List[TextEvent] = []
         # Store the model of the device
         self.model = model
-        self.use_bagl = use_bagl
         # Maximum space for a letter to be considered part of the same word
         if model == "stax":
             self.max_blank_space = OCR.MAX_BLANK_SPACE_STAX
@@ -212,14 +211,14 @@ class OCR:
         # create a new TextEvent if there are no events yet or if there is a new line
         self.events.append(TextEvent(char, x, y, w, h, False))
 
-    def analyze_bitmap(self, data: bytes) -> None:
+    def analyze_bitmap(self, data: bytes, use_bagl: bool) -> None:
         """
         data contain information about the latest displayed bitmap.
         Since unified SDK, speculos added the displayed character to data.
         For older SKD versions, legacy behaviour is used: parsing internal
         fonts to find a matching bitmap.
         """
-        if not self.use_bagl:
+        if not use_bagl:
             # Can be called via SephTag.NBGL_DRAW_IMAGE or SephTag.NBGL_DRAW_IMAGE_RLE
             # In both cases, data contains:
             # - area (sizeof(nbgl_area_t))
