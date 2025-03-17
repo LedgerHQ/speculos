@@ -44,6 +44,7 @@ struct elf_info_s {
   unsigned long fonts_size;
   unsigned long app_nvram_addr;
   unsigned long app_nvram_size;
+  unsigned long pic_init_addr;
   int use_nbgl;
 };
 
@@ -68,6 +69,8 @@ typedef struct model_sdk_s {
   hw_model_t model;
   char *sdk;
 } MODEL_SDK;
+
+typedef void (*pic_init_t)(void *pic_flash_start, void *pic_ram_start);
 
 static MODEL_SDK sdkmap[SDK_COUNT] = {
   { MODEL_NANO_X, "1.2" },      { MODEL_NANO_X, "2.0" },
@@ -158,6 +161,7 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].elf.fonts_size = elf->fonts_size;
   apps[napp].elf.app_nvram_addr = elf->app_nvram_addr;
   apps[napp].elf.app_nvram_size = elf->app_nvram_size;
+  apps[napp].elf.pic_init_addr = elf->pic_init_addr;
 
   napp++;
 
@@ -667,6 +671,7 @@ static int run_app(char *name, unsigned long *parameters)
   void (*f)(unsigned long *);
   struct app_s *app;
   void *p;
+  pic_init_t pic_init;
 
   p = load_app(name);
   if (p == NULL) {
@@ -683,6 +688,11 @@ static int run_app(char *name, unsigned long *parameters)
     stack_end = LOAD_RAM_ADDR;
   }
   stack_start = stack_end + app->elf.stack_size;
+  if (sdk_version >= SDK_API_LEVEL_23) {
+    // initialize shared library PIC
+    pic_init = (pic_init_t)app->elf.pic_init_addr;
+    pic_init(LOAD_ADDR, (void *)LOAD_RAM_ADDR);
+  }
 
   asm volatile("mov r0, %2\n"
                "mov r9, %1\n"
@@ -740,13 +750,13 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
 
   ret = sscanf(arg,
                "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
-               "lx:0x%lx:0x%lx:%d:%d:%d",
+               "lx:0x%lx:0x%lx:%d:%d:0x%lx:%d",
                libname, *filename, &elf->load_offset, &elf->load_size,
                &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
                &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
                &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
-               &load_nvram_i, &save_nvram_i, &elf->use_nbgl);
-  if (ret != 16) {
+               &load_nvram_i, &save_nvram_i, &elf->pic_init_addr, &elf->use_nbgl);
+  if (ret != 17) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
@@ -925,7 +935,8 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
-        sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22 &&
+        sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -938,7 +949,8 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18 &&
-        sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_22 &&
+        sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
@@ -950,14 +962,16 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13 &&
         sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15 &&
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_22 &&
+        sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
   case MODEL_FLEX:
     if (sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_19 &&
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_22 &&
+        sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Flex");
     }
     break;
