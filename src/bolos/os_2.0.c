@@ -24,6 +24,11 @@ unsigned long sys_os_sched_last_status_2_0(unsigned int task_idx
   return BOLOS_UX_OK; // >2.0 : status is just a char
 }
 
+unsigned long sys_os_sched_current_task_2_0(void)
+{
+ return 2; // = TASK_USER in OS
+}
+
 //-----------------------------------------------------------------------------
 // The functions below are empty, to avoid a crash if an app use them.
 //-----------------------------------------------------------------------------
