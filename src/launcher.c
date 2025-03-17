@@ -44,7 +44,6 @@ struct elf_info_s {
   unsigned long fonts_size;
   unsigned long app_nvram_addr;
   unsigned long app_nvram_size;
-  unsigned long pic_init_addr;
   int use_nbgl;
 };
 
@@ -86,6 +85,9 @@ static struct app_s apps[MAX_APP];
 static unsigned int napp;
 static void *extra_rampage_addr;
 static size_t extra_rampage_size;
+static unsigned long pic_init_addr; // pic_init() addr in Shared lib
+ static unsigned long sh_svc_call_addr; // SVC_Call addr in Shared lib
+ static unsigned long sh_svc_cx_call_addr; // SVC_cx_call addr in Shared lib
 
 sdk_version_t sdk_version = SDK_COUNT;
 hw_model_t hw_model = MODEL_COUNT;
@@ -161,7 +163,6 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].elf.fonts_size = elf->fonts_size;
   apps[napp].elf.app_nvram_addr = elf->app_nvram_addr;
   apps[napp].elf.app_nvram_size = elf->app_nvram_size;
-  apps[napp].elf.pic_init_addr = elf->pic_init_addr;
 
   napp++;
 
@@ -606,10 +607,11 @@ static int load_cxlib(char *cxlib_args)
   char *cxlib_path = strdup(cxlib_args);
   uint32_t sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load;
 
-  int ret = sscanf(cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x", cxlib_path,
-                   &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load);
+  int ret = sscanf(cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x:0x%lx:0x%lx:0x%lx", cxlib_path,
+                   &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load, 
+                   &pic_init_addr, &sh_svc_call_addr, &sh_svc_cx_call_addr);
 
-  if (ret != 6) {
+  if (ret != 9) {
     fprintf(stderr, "sscanf failed: %d", ret);
   }
   // First, try to open the cx.elf file specified (could be the one by default)
@@ -649,7 +651,17 @@ static int load_cxlib(char *cxlib_args)
     return -1;
   }
 
-  if (patch_svc(p, sh_size) != 0) {
+  if (sh_svc_call_addr) {
+    if (patch_svc_instr((unsigned char*)sh_svc_call_addr) != 0) {
+      close(fd);
+      return -1;
+    }
+    if (patch_svc_instr((unsigned char*)sh_svc_cx_call_addr) != 0) {
+      close(fd);
+      return -1;
+    }
+  }
+  else if (patch_svc(p, sh_size) != 0) {
     if (munmap(p, sh_size) != 0) {
       warn("munmap");
     }
@@ -690,7 +702,7 @@ static int run_app(char *name, unsigned long *parameters)
   stack_start = stack_end + app->elf.stack_size;
   if (sdk_version >= SDK_API_LEVEL_23) {
     // initialize shared library PIC
-    pic_init = (pic_init_t)app->elf.pic_init_addr;
+    pic_init = (pic_init_t)pic_init_addr;
     pic_init(LOAD_ADDR, (void *)LOAD_RAM_ADDR);
   }
 
@@ -750,13 +762,13 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
 
   ret = sscanf(arg,
                "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
-               "lx:0x%lx:0x%lx:%d:%d:0x%lx:%d",
+               "lx:0x%lx:0x%lx:%d:%d:%d",
                libname, *filename, &elf->load_offset, &elf->load_size,
                &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
                &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
                &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
-               &load_nvram_i, &save_nvram_i, &elf->pic_init_addr, &elf->use_nbgl);
-  if (ret != 17) {
+               &load_nvram_i, &save_nvram_i, &elf->use_nbgl);
+  if (ret != 16) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);

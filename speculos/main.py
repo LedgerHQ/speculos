@@ -156,6 +156,15 @@ def get_sharedlib_infos(app_path, apiLevel):
         ei.text_addr = text_section['sh_addr']
         ei.shared_ram_addr = sharedram_section["sh_addr"]
         ei.shared_ram_size = sharedram_section["sh_size"]
+        # Look for the symbols SVC_Call and SVC_cx_call
+        # if they are found, save their addresses to patch them to replace the SYSCALL later
+        symtab_section = elf.get_section_by_name('.symtab')
+        svc_call_symbol = symtab_section.get_symbol_by_name("SVC_Call")
+        if svc_call_symbol is not None:
+            ei.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+        svc_cx_call_symbol = symtab_section.get_symbol_by_name("SVC_cx_call")
+        if svc_cx_call_symbol is not None:
+            ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
         # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
         if int(apiLevel) >= 23:
             symtab = elf.get_section_by_name('.symtab')
@@ -197,7 +206,6 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
     fonts_addr = 0
     fonts_size = 0
-    pic_init_addr = 0
  
     # load shared lib only if available for the specified api level or sdk    if args.apiLevel:
     if args.apiLevel:
@@ -212,10 +220,11 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         ei = get_sharedlib_infos(sharedlib, args.apiLevel)
         sharedlib_args = f'{sharedlib}:{ei.text_offset:#x}:{ei.text_size:#x}:{ei.text_addr:#x}'
         sharedlib_args += f':{ei.shared_ram_size:#x}:{ei.shared_ram_addr:#x}'
+        sharedlib_args += f':{ei.pic_init_addr:#x}'
+        sharedlib_args += f':{ei.svc_call_addr:#x}:{ei.svc_cx_call_addr:#x}'
         argv += ['-c', sharedlib_args]
         fonts_addr = ei.fonts_addr
         fonts_size = ei.fonts_size
-        pic_init_addr = ei.pic_init_addr
     else:
         logger.warn(f"Shared lib {sharedlib_filepath} not found")
 
@@ -254,7 +263,6 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         lib_arg += f':{ei.app_nvram_addr:#x}:{ei.app_nvram_size:#x}'
         lib_arg += f':{1 if args.load_nvram else 0}'
         lib_arg += f':{1 if args.save_nvram else 0}'
-        lib_arg += f':{pic_init_addr:#x}'
         lib_arg += f':{1 if not use_bagl else 0}'
         argv.append(lib_arg)
 

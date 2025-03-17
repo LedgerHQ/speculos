@@ -275,6 +275,11 @@ int patch_svc(void *p, size_t size)
       addr = (unsigned char *)next + 1;
       continue;
     }
+    /* next instruction must be either CMP R1 0x2900 or BX LR 0x4770 */
+    if (memcmp(next+2, "\x00\x29", 2) && memcmp(next+2, "\x70\x47", 2)) {
+      addr = (unsigned char *)next + 2;
+      continue;
+    }
 
     svc_addr = realloc(svc_addr, (n_svc_call + 1) * sizeof(unsigned long));
     if (svc_addr == NULL) {
@@ -300,3 +305,46 @@ int patch_svc(void *p, size_t size)
 
   return ret;
 }
+
+
+ /*
+  * Replace the SVC instruction with an undefined instruction.
+  *
+  * It generates a SIGILL upon execution, which is caught to handle that
+  * syscall.
+  */
+ int patch_svc_instr(unsigned char *addr)
+ {
+   int ret = 0;
+   if (memcmp(addr, "\x01\xdf", 2)) {
+     warnx("wrong instruction");
+     return -1;
+   }
+ 
+   /* instructions are aligned on 2 bytes */
+   if ((unsigned long)addr & 1) {
+     warnx("wrong aligment");
+     return -1;
+   }
+ 
+   svc_addr = realloc(svc_addr, (n_svc_call + 1) * sizeof(unsigned long));
+   if (svc_addr == NULL) {
+     err(1, "realloc");
+   }
+   svc_addr[n_svc_call] = (unsigned long)addr;
+ 
+   /* undefined instruction */
+   memcpy(addr, "\xff\xde", 2);
+ 
+   fprintf(stderr, "[*] patching svc instruction at %p\n", addr);
+ 
+   n_svc_call++;
+ 
+   if (n_svc_call == 0) {
+     warnx("failed to find SVC_call");
+     return -1;
+   }
+ 
+   return ret;
+ }
+ 
