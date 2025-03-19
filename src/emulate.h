@@ -17,7 +17,61 @@
 #include "sdk.h"
 
 /* TODO */
-typedef void bolos_ux_params_t;
+// Enumeration of the UX events usable by the UX library.
+typedef enum bolos_ux_e {
+  BOLOS_UX_INITIALIZE = 0,
+  BOLOS_UX_EVENT,
+  BOLOS_UX_KEYBOARD,
+  BOLOS_UX_WAKE_UP,
+  BOLOS_UX_STATUS_BAR,
+
+  BOLOS_UX_VALIDATE_PIN,
+  BOLOS_UX_ASYNCHMODAL_PAIRING_REQUEST,  // ask the ux to display a modal to accept/reject the
+                                         // current pairing request
+  BOLOS_UX_ASYNCHMODAL_PAIRING_CANCEL,
+  BOLOS_UX_IO_RESET,
+  BOLOS_UX_LAST_ID,
+
+  BOLOS_UX_DELAY_LOCK = 20  // delay the power-off/lock timer (this ID is only valid with OS not
+                            // in CI mode, with API level 22)
+} bolos_ux_t;
+
+// Structure that defines the parameters to exchange with the BOLOS UX application
+typedef struct bolos_ux_params_s {
+  // Event identifier.
+  bolos_ux_t ux_id;
+  // length of parameters in the u union to be copied during the syscall.
+  unsigned int len;
+
+  union {
+
+      struct {
+          enum {
+              BOLOS_UX_ASYNCHMODAL_PAIRING_REQUEST_PASSKEY,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_REQUEST_NUMCOMP,
+          } type;
+          unsigned int pairing_info_len;
+          char         pairing_info[16];
+      } pairing_request;
+
+      struct {
+          enum {
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_CONFIRM_CODE_YES,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_CONFIRM_CODE_NO,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_ACCEPT_PASSKEY,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_CANCEL_PASSKEY,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_SUCCESS,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_TIMEOUT,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_FAILED,
+              BOLOS_UX_ASYNCHMODAL_PAIRING_STATUS_CANCELLED_FROM_REMOTE,
+          } pairing_ok;
+      } pairing_status;  // sent in BOLOS_UX_ASYNCHMODAL_PAIRING_CANCEL message
+      struct {           // for BOLOS_UX_DELAY_LOCK command
+          uint32_t delay_ms;
+      } lock_delay;
+  } u;
+} bolos_ux_params_t;
+
 typedef struct try_context_s try_context_t;
 
 typedef struct cx_ecfp_256_public_key_s cx_ecfp_public_key_t;

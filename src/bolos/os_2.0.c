@@ -1,10 +1,18 @@
+#include <stdio.h>
 #include "emulate.h"
 
 #define BOLOS_UX_OK 0xAA
 
 /* TODO */
-unsigned long sys_os_ux_2_0(bolos_ux_params_t *UNUSED(params))
+unsigned long sys_os_ux_2_0(bolos_ux_params_t *params)
 {
+  if (params->ux_id == BOLOS_UX_DELAY_LOCK) {
+    fprintf(stderr, "sys_os_ux_2_0, received BOLOS_UX_DELAY_LOCK, delay = %u ms\n", params->u.lock_delay.delay_ms);
+  }
+  else {
+    fprintf(stderr, "sys_os_ux_2_0, ux_id = %u\n", params->ux_id);
+  }
+  
   return BOLOS_UX_OK;
 }
 
