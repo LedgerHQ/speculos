@@ -24,12 +24,18 @@ int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len)
   void *p;
 
   /* Checking the destination boundaries */
-  unsigned long app_nvram_offset =
-      get_app_nvram_address() - get_app_text_load_addr();
-  if ((dst_addr < get_memory_code_address() + app_nvram_offset) ||
-      (dst_addr + src_len >=
-       get_memory_code_address() + app_nvram_offset + get_app_nvram_size())) {
-    errx(1, "App NVRAM write attempt out of boundaries\n");
+  unsigned long app_nvram_offset = 0;
+  unsigned long app_nvram_addr = get_app_nvram_address();
+  if (app_nvram_addr != 0) {
+    /* Attempt to write to NVRAM without declaring it might be an error
+     * or it is a Rust app whose NVRAM access checking is not handled yet.
+     */
+    app_nvram_offset = app_nvram_addr - get_app_text_load_addr();
+    if ((dst_addr < get_memory_code_address() + app_nvram_offset) ||
+        (dst_addr + src_len >=
+         get_memory_code_address() + app_nvram_offset + get_app_nvram_size())) {
+      errx(1, "App NVRAM write attempt out of boundaries\n");
+    }
   }
   p = (void *)((unsigned long)dst_addr & (~(PAGE_SIZE - 1)));
   diff = (ptrdiff_t)dst_addr - (ptrdiff_t)p;
@@ -49,7 +55,7 @@ int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len)
     err(1, "nvm_write: mprotect(PROT_READ | PROT_EXEC)");
   }
 
-  if (get_app_save_nvram()) {
+  if ((app_nvram_addr != 0) && (get_app_save_nvram())) {
     /* Writing data to host file */
     FILE *fptr = fopen(get_app_nvram_file_name(), "r+");
     if (fptr == NULL) {
