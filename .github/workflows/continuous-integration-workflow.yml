@@ -186,6 +186,16 @@ jobs:
       test_dir: tests
       speculos_app_branch_name: ${{ github.ref }}
 
+  package_and_test_docker_rust:
+    name: Build and test the Speculos docker with a Rust app
+    uses: ./.github/workflows/reusable_ragger_tests_latest_speculos.yml
+    with:
+      app_repository: LedgerHQ/app-boilerplate-rust
+      app_branch_name: main
+      test_dir: tests
+      speculos_app_branch_name: ${{ github.ref }}
+      is_rust: true
+
   package_and_test_docker_for_nanos:
     name: Build and test the Speculos docker for Nano S
     uses: ./.github/workflows/reusable_ragger_tests_latest_speculos.yml
