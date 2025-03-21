@@ -70,7 +70,7 @@ def set_pdeath(sig):
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
 
-def get_elf_infos(app_path, use_bagl):
+def get_elf_infos(app_path, use_bagl, args):
     ei = ElfInfo()
     with open(app_path, 'rb') as fp:
         elf = ELFFile(fp)
@@ -116,15 +116,22 @@ def get_elf_infos(app_path, use_bagl):
             logger.info("Disabling OCR.")
 
         # App NVRAM handling
-        nvram_data_symbol = symtab_section.get_symbol_by_name('_nvram_data')
-        # _envram for applications built with old SDK version
-        envram_data_symbol = symtab_section.get_symbol_by_name('_envram_data') \
-            or symtab_section.get_symbol_by_name('_envram')
-        if nvram_data_symbol is not None and envram_data_symbol is not None:
-            ei.app_nvram_addr = nvram_data_symbol[0]['st_value']
-            ei.app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+        if elf.get_section_by_name('.nvm_data') is not None:
+            # This is a Rust app
+            if args.load_nvram or args.save_nvram:
+                logger.error("NVRAM data save and load functionality is not yet implemented for Rust apps.")
+                sys.exit(1)
         else:
-            logger.info("The application does not use NVRAM.")
+            # This is a C app
+            nvram_data_symbol = symtab_section.get_symbol_by_name('_nvram_data')
+            # _envram for applications built with old SDK version
+            envram_data_symbol = symtab_section.get_symbol_by_name('_envram_data') \
+                or symtab_section.get_symbol_by_name('_envram')
+            if nvram_data_symbol is not None and envram_data_symbol is not None:
+                ei.app_nvram_addr = nvram_data_symbol[0]['st_value']
+                ei.app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+            else:
+                logger.info("The application does not use NVRAM.")
 
         supp_ram_section = elf.get_section_by_name('.rfbss')
         ei.ram_addr, ei.ram_size = \
@@ -197,7 +204,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         use_bagl = binary.sections.sdk_graphics == "bagl"
         if not use_bagl:
             only_bagl = False
-        ei = get_elf_infos(lib_path, use_bagl)
+        ei = get_elf_infos(lib_path, use_bagl, args)
 
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ei.ram_addr, ei.ram_size) != (0, 0):

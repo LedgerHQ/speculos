@@ -454,63 +454,66 @@ static void *load_app(char *name)
   }
 
   // App NVRAM data update
-  unsigned long app_nvram_offset =
-      app->elf.app_nvram_addr - app->elf.text_load_addr;
-  memset(code + app_nvram_offset, 0, app->elf.app_nvram_size);
-  size_t preload_file_size = 0;
+  if (app->elf.app_nvram_addr != 0) {
+    unsigned long app_nvram_offset =
+        app->elf.app_nvram_addr - app->elf.text_load_addr;
+    memset(code + app_nvram_offset, 0, app->elf.app_nvram_size);
+    size_t preload_file_size = 0;
 
-  if (app->load_nvram) {
-    FILE *fptr = fopen(app->nvram_file_name, "rb");
-    if (fptr == NULL) {
-      warnx("App NVRAM file %s is absent\n", app->nvram_file_name);
-      goto error;
-    }
-    fseek(fptr, 0, SEEK_END);
-    long lSize = ftell(fptr);
-    rewind(fptr);
+    if (app->load_nvram) {
+      FILE *fptr = fopen(app->nvram_file_name, "rb");
+      if (fptr == NULL) {
+        warnx("App NVRAM file %s is absent\n", app->nvram_file_name);
+        goto error;
+      }
+      fseek(fptr, 0, SEEK_END);
+      long lSize = ftell(fptr);
+      rewind(fptr);
 
-    uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * lSize);
-    if (buffer == NULL) {
-      warnx("Error to allocate memory for app nvram read\n");
-      fclose(fptr);
-      goto error;
-    }
-    preload_file_size = fread(buffer, 1, lSize, fptr);
-    if (preload_file_size != (size_t)lSize) {
-      warnx("App nvram file size mismatch\n");
+      uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * lSize);
+      if (buffer == NULL) {
+        warnx("Error to allocate memory for app nvram read\n");
+        fclose(fptr);
+        goto error;
+      }
+      preload_file_size = fread(buffer, 1, lSize, fptr);
+      if (preload_file_size != (size_t)lSize) {
+        warnx("App nvram file size mismatch\n");
+        free(buffer);
+        fclose(fptr);
+        goto error;
+      }
+
+      // The patch
+      memcpy(code + app_nvram_offset, buffer, preload_file_size);
+
       free(buffer);
       fclose(fptr);
-      goto error;
     }
 
-    // The patch
-    memcpy(code + app_nvram_offset, buffer, preload_file_size);
+    if (app->save_nvram) {
+      /* Let's rename and thus backup the current file if present */
+      char backup_file_name[STORAGE_APP_NAME_LEN + sizeof(STORAGE_BACKUP)] = {
+        0
+      };
 
-    free(buffer);
-    fclose(fptr);
-  }
+      strcpy(backup_file_name, app->nvram_file_name);
+      strcat(backup_file_name, STORAGE_BACKUP);
+      rename(app->nvram_file_name, backup_file_name);
 
-  if (app->save_nvram) {
-    /* Let's rename and thus backup the current file if present */
-    char backup_file_name[STORAGE_APP_NAME_LEN + sizeof(STORAGE_BACKUP)] = {
-      0
-    };
-
-    strcpy(backup_file_name, app->nvram_file_name);
-    strcat(backup_file_name, STORAGE_BACKUP);
-    rename(app->nvram_file_name, backup_file_name);
-
-    if (preload_file_size > 0) {
-      /* Let's save the initial content to the new file */
-      FILE *fptr = fopen(app->nvram_file_name, "w");
-      if (fptr == NULL) {
-        err(1, "Failed to open the app NVRAM file %s\n", app->nvram_file_name);
+      if (preload_file_size > 0) {
+        /* Let's save the initial content to the new file */
+        FILE *fptr = fopen(app->nvram_file_name, "w");
+        if (fptr == NULL) {
+          err(1, "Failed to open the app NVRAM file %s\n",
+              app->nvram_file_name);
+        }
+        if (fwrite(code + app_nvram_offset, 1, preload_file_size, fptr) !=
+            preload_file_size) {
+          errx(1, "App NVRAM write attempt failed\n");
+        }
+        fclose(fptr);
       }
-      if (fwrite(code + app_nvram_offset, 1, preload_file_size, fptr) !=
-          preload_file_size) {
-        errx(1, "App NVRAM write attempt failed\n");
-      }
-      fclose(fptr);
     }
   }
 

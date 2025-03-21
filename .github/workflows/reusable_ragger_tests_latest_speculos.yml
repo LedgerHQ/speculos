@@ -18,6 +18,11 @@ on:
         required: false
         default: master
         type: string
+      is_rust:
+        description: '"true" if the app is using Rust SDK, else "false"'
+        required: false
+        default: false
+        type: string
 
 jobs:
   build_application:
@@ -27,6 +32,7 @@ jobs:
       app_repository: ${{ inputs.app_repository }}
       app_branch_name: ${{ inputs.app_branch_name }}
       upload_app_binaries_artifact: compiled_app_binaries-${{ inputs.app_branch_name }}
+      builder: ledger-app-builder
 
   build_docker_image:
     name: Build Speculos Docker image
@@ -109,9 +115,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: compiled_app_binaries-${{ inputs.app_branch_name }}
-        path: ${{ github.workspace }}/app/build
+        path: ${{ github.workspace }}/app/${{ inputs.is_rust == 'false' && 'build' || 'target' }}
 
-    - name: Run and test Speculos docker
+    - name: Run and test Speculos docker for C apps
+      if: ${{ inputs.is_rust == 'false' }}
       uses: addnab/docker-run-action@v3
       with:
         image: ledgerhq/speculos:test
@@ -120,3 +127,15 @@ jobs:
             apt-get update && apt-get install -y gcc
             pip install --extra-index-url https://test.pypi.org/simple/ -r /app/${{ inputs.test_dir }}/requirements.txt
             pytest /app/${{ inputs.test_dir }}/ --tb=short -v --device ${{ matrix.device }}
+
+    - name: Run and test Speculos docker for Rust apps
+      if: ${{ inputs.is_rust == 'true' }}
+      uses: addnab/docker-run-action@v3
+      with:
+        image: ledgerhq/speculos:test
+        options: -v ${{ github.workspace }}/app:/app
+        run: |
+            apt-get update && apt-get install -y gcc && apt-get install -y cargo
+            pip install --extra-index-url https://test.pypi.org/simple/ -r /app/${{ inputs.test_dir }}/requirements.txt
+            # test_version requires Cargo.toml
+            pytest /app/${{ inputs.test_dir }}/ --tb=short -v --device ${{ matrix.device }} -k "not test_version"
