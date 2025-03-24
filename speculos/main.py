@@ -220,6 +220,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         lib_arg += f':{ei.app_nvram_addr:#x}:{ei.app_nvram_size:#x}'
         lib_arg += f':{1 if args.load_nvram else 0}'
         lib_arg += f':{1 if args.save_nvram else 0}'
+        lib_arg += f':{1 if not use_bagl else 0}'
         argv.append(lib_arg)
 
     # for NBGL apps, fonts binary file is mandatory
