@@ -44,6 +44,7 @@ struct elf_info_s {
   unsigned long fonts_size;
   unsigned long app_nvram_addr;
   unsigned long app_nvram_size;
+  int use_nbgl;
 };
 
 struct app_s {
@@ -145,7 +146,7 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].save_nvram = save_nvram;
 
   apps[napp].fd = fd;
-  apps[napp].use_nbgl = (elf->fonts_addr == 0);
+  apps[napp].use_nbgl = (elf->use_nbgl != 0);
   apps[napp].elf.load_offset = elf->load_offset;
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
@@ -739,13 +740,13 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
 
   ret = sscanf(arg,
                "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
-               "lx:0x%lx:0x%lx:%d:%d",
+               "lx:0x%lx:0x%lx:%d:%d:%d",
                libname, *filename, &elf->load_offset, &elf->load_size,
                &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
                &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
                &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
-               &load_nvram_i, &save_nvram_i);
-  if (ret != 15) {
+               &load_nvram_i, &save_nvram_i, &elf->use_nbgl);
+  if (ret != 16) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
