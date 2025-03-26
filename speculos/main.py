@@ -159,12 +159,13 @@ def get_sharedlib_infos(app_path, apiLevel):
         # Look for the symbols SVC_Call and SVC_cx_call
         # if they are found, save their addresses to patch them to replace the SYSCALL later
         symtab_section = elf.get_section_by_name('.symtab')
-        svc_call_symbol = symtab_section.get_symbol_by_name("SVC_Call")
-        if svc_call_symbol is not None:
-            ei.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
-        svc_cx_call_symbol = symtab_section.get_symbol_by_name("SVC_cx_call")
-        if svc_cx_call_symbol is not None:
-            ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
+        if symtab_section is not None:
+            svc_call_symbol = symtab_section.get_symbol_by_name("SVC_Call")
+            if svc_call_symbol is not None:
+                ei.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+            svc_cx_call_symbol = symtab_section.get_symbol_by_name("SVC_cx_call")
+            if svc_cx_call_symbol is not None:
+                ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
         # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
         if int(apiLevel) >= 23:
             symtab = elf.get_section_by_name('.symtab')
