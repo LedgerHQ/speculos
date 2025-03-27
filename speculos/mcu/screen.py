@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow
-from PyQt5.QtGui import QPainter, QColor, QPixmap
-from PyQt5.QtGui import QIcon, QKeyEvent, QMouseEvent
-from PyQt5.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
-from PyQt5.sip import voidptr
+from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow
+from PyQt6.QtGui import QPainter, QColor, QPixmap
+from PyQt6.QtGui import QIcon, QKeyEvent, QMouseEvent
+from PyQt6.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
+from PyQt6.sip import voidptr
 from typing import List, Optional
 
 from speculos.observer import TextEvent
@@ -32,7 +32,7 @@ class PaintWidget(FrameBuffer, QWidget):
     def paintEvent(self, event: QEvent):
         if self.pixels or self.draw_default_color:
             pixmap = QPixmap(self.size() / self.pixel_size)
-            pixmap.fill(Qt.white)
+            pixmap.fill(Qt.GlobalColor.white)
             painter = QPainter(pixmap)
             painter.drawPixmap(0, 0, self.mPixmap)
             self._redraw(painter)
@@ -167,7 +167,7 @@ class App(QMainWindow):
         if x >= 0 and x < self._width and y >= 0 and y < self._height:
             self.seph.handle_finger(x, y, True)
 
-        QApplication.setOverrideCursor(Qt.DragMoveCursor)
+        QApplication.setOverrideCursor(Qt.CursorShape.DragMoveCursor)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         self.mouse_offset = event.pos()
@@ -215,14 +215,14 @@ class Screen(Display):
 
     def _key_event(self, event: QKeyEvent, pressed) -> None:
         key = Qt.Key(event.key())
-        if key in [Qt.Key_Left, Qt.Key_Right]:
-            buttons = {Qt.Key_Left: BUTTON_LEFT, Qt.Key_Right: BUTTON_RIGHT}
+        if key in [Qt.Key.Key_Left, Qt.Key.Key_Right]:
+            buttons = {Qt.Key.Key_Left: BUTTON_LEFT, Qt.Key.Key_Right: BUTTON_RIGHT}
             # forward this event to seph
             self.seph.handle_button(buttons[key], pressed)
-        elif key == Qt.Key_Down:
+        elif key == Qt.Key.Key_Down:
             self.seph.handle_button(BUTTON_LEFT, pressed)
             self.seph.handle_button(BUTTON_RIGHT, pressed)
-        elif key == Qt.Key_Q and not pressed:
+        elif key == Qt.Key.Key_Q and not pressed:
             self.app.close()
 
     def display_status(self, data: bytes) -> List[TextEvent]:
@@ -257,7 +257,7 @@ class QtScreenNotifier(DisplayNotifier):
             self._app_widget.close()
 
     def add_notifier(self, device: IODevice) -> None:
-        n = QSocketNotifier(voidptr(device.fileno), QSocketNotifier.Read, self._qapp)
+        n = QSocketNotifier(voidptr(device.fileno), QSocketNotifier.Type.Read, self._qapp)
         n.activated.connect(lambda _: self._can_read(device))
         assert device.fileno not in self.notifiers
         self.notifiers[device.fileno] = n
@@ -273,5 +273,5 @@ class QtScreenNotifier(DisplayNotifier):
         n.disconnect()
 
     def run(self):
-        self._qapp.exec_()
+        self._qapp.exec()
         self._qapp.quit()
