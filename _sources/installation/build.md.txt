@@ -6,12 +6,12 @@ sort: 1
 
 ## Requirements
 
-For Debian (version 10 "Buster" or later) and Ubuntu (version 18.04 or later):
+For Debian (version 12 "Bookworm" or later) and Ubuntu (version 24.04 or later):
 
 ```shell
 sudo apt install \
     git cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
-    python3-pyqt5 python3-construct python3-flask-restful python3-jsonschema \
+    python3-pyqt6 python3-construct python3-flask-restful python3-jsonschema \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
     qemu-user-static libvncserver-dev
 ```
