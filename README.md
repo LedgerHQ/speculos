@@ -42,7 +42,7 @@ On Debian (10 or later) or Ubuntu (18.04 or later):
 ```
 sudo apt install \
     git cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
-    python3-pyqt5 python3-construct python3-flask-restful python3-jsonschema \
+    python3-pyqt6 python3-construct python3-flask-restful python3-jsonschema \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
     qemu-user-static libvncserver-dev
 
