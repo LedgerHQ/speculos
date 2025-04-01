@@ -7,6 +7,10 @@ on:
       - master
       - develop
   pull_request:
+# Cancel previous runs on this reference
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   linter-python:
