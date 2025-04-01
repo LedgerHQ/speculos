@@ -10,6 +10,10 @@ on:
   pull_request:
     branches:
       - master
+# Cancel previous runs on this reference
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   coverage:

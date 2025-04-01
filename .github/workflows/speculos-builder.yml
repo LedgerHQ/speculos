@@ -16,6 +16,10 @@ on:
     paths:
       - .github/workflows/speculos-builder.yml
       - build.Dockerfile
+# Cancel previous runs on this reference
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
