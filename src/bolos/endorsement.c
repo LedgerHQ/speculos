@@ -142,6 +142,25 @@ unsigned long sys_os_endorsement_key1_sign_data(uint8_t *data,
   return signature[1] + 2;
 }
 
+unsigned long sys_os_endorsement_key1_sign_without_code_hash(uint8_t *data,
+                                                             size_t dataLength,
+                                                             uint8_t *signature)
+{
+  uint8_t hash[32];
+  cx_sha256_t sha256;
+
+  sys_cx_sha256_init(&sha256);
+  sys_cx_hash((cx_hash_t *)&sha256, CX_LAST, data, dataLength, hash, 32);
+  /* XXX: CX_RND_TRNG is set but actually ignored by speculos'
+   *      sys_cx_ecdsa_sign implementation */
+  sys_cx_ecdsa_sign(env_get_user_private_key(1), CX_LAST | CX_RND_TRNG,
+                    CX_SHA256, hash,
+                    sizeof(hash),          // size of SHA256 hash
+                    signature, 6 + 33 * 2, /*3TL+2V*/
+                    NULL);
+  return signature[1] + 2;
+}
+
 // API_LEVEL_23 and above
 
 bolos_err_t sys_ENDORSEMENT_get_public_key(ENDORSEMENT_slot_t slot,

@@ -44,6 +44,9 @@ unsigned int sys_os_endorsement_get_public_key_new(uint8_t index,
 unsigned long sys_os_endorsement_key1_sign_data(uint8_t *data,
                                                 size_t dataLength,
                                                 uint8_t *signature);
+unsigned long
+sys_os_endorsement_key1_sign_without_code_hash(uint8_t *data, size_t dataLength,
+                                               uint8_t *signature);
 
 unsigned int sys_os_endorsement_get_code_hash(uint8_t *buffer);
 
