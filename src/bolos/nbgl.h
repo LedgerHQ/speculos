@@ -80,8 +80,8 @@ typedef uint8_t nbgl_transformation_t;
 typedef uint8_t nbgl_color_map_t;
 
 typedef struct __attribute__((__packed__)) nbgl_area_s {
-  int16_t x0;     ///< horizontal position of the upper left point of the area
-  int16_t y0;     ///< vertical position of the upper left point of the area
+  int16_t x0;      ///< horizontal position of the upper left point of the area
+  int16_t y0;      ///< vertical position of the upper left point of the area
   uint16_t width;  ///< width of the area, in pixels
   uint16_t height; ///< height of the area, in pixels
   uint8_t backgroundColor; ///< color (usually background) to be applied

@@ -187,18 +187,24 @@ class NBGL(GraphicLibrary):
                     else:
                         y = area.y0
                         x = x - 1
+                        if x < area.x0:
+                            return
                 elif transformation == 1:  # h mirror
                     if y > area.y0:
                         y = y - 1
                     else:
                         y = area.y0 + area.height - 1
                         x = x - 1
+                        if x < area.x0:
+                            return
                 elif transformation == 2:  # v mirror
                     if y < area.y0 + area.height - 1:
                         y = y + 1
                     else:
                         y = area.y0
                         x = x + 1
+                        if x >= area.x0 + area.width:
+                            return
                 elif transformation == 3:  # hw mirror
                     if y > area.y0:
                         y = y - 1
@@ -206,11 +212,13 @@ class NBGL(GraphicLibrary):
                         y = area.y0 + area.height - 1
                         x = x + 1
                 elif transformation == 4:  # 90 clockwise
-                    if x < area.x0 + area.width:
+                    if x < area.x0 + area.width - 1:
                         x = x + 1
                     else:
                         x = area.x0
                         y = y + 1
+                        if y >= area.y0 + area.height:
+                            return
                 else:
                     # error
                     pass

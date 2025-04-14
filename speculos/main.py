@@ -147,7 +147,7 @@ def get_sharedlib_infos(app_path, apiLevel):
         elf = ELFFile(fp)
         text_section = elf.get_section_by_name('.text')
         # The name of the section is shram, starting at API Level 23
-        if int(apiLevel) < 23:
+        if apiLevel is None or int(apiLevel) < 23:
             sharedram_section = elf.get_section_by_name('.cxram')
         else:
             sharedram_section = elf.get_section_by_name('.shram')
@@ -167,7 +167,7 @@ def get_sharedlib_infos(app_path, apiLevel):
             if svc_cx_call_symbol is not None:
                 ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
         # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
-        if int(apiLevel) >= 23:
+        if apiLevel is not None and int(apiLevel) >= 23:
             symtab = elf.get_section_by_name('.symtab')
             nbgl_fonts_symbol = symtab.get_symbol_by_name('C_nbgl_fonts')
             if nbgl_fonts_symbol is not None:
@@ -180,7 +180,7 @@ def get_sharedlib_infos(app_path, apiLevel):
             pic_init_symbol = symtab.get_symbol_by_name("pic_init")
             if pic_init_symbol is not None:
                 ei.pic_init_addr = pic_init_symbol[0]['st_value']
- 
+
     return ei
 
 
@@ -207,8 +207,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
     fonts_addr = 0
     fonts_size = 0
- 
-    # load shared lib only if available for the specified api level or sdk    if args.apiLevel:
+
+    # load shared lib only if available for the specified api level or sdk
     if args.apiLevel:
         if int(args.apiLevel) < 23:
             sharedlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
@@ -250,7 +250,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         if fonts_addr == 0:
             fonts_addr = ei.fonts_addr
             fonts_size = ei.fonts_size
-         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
+        # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ei.ram_addr, ei.ram_size) != (0, 0):
             arg = f'{ei.ram_addr:#x}:{ei.ram_size:#x}'
             if extra_ram and arg != extra_ram:

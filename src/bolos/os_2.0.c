@@ -26,7 +26,7 @@ unsigned long sys_os_sched_last_status_2_0(unsigned int task_idx
 
 unsigned long sys_os_sched_current_task_2_0(void)
 {
- return 2; // = TASK_USER in OS
+  return 2; // = TASK_USER in OS
 }
 
 //-----------------------------------------------------------------------------

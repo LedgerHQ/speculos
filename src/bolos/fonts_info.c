@@ -240,7 +240,8 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     return;
   }
   if (use_nbgl) {
-    // With NBGL apps, before API level 23, fonts are loaded at a known location, in the OS
+    // With NBGL apps, before API level 23, fonts are loaded at a known
+    // location, in the OS
     if (sdk_version < SDK_API_LEVEL_23) {
       switch (hw_model) {
       case MODEL_STAX:
@@ -269,7 +270,7 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     }
     // starting at API level 23, fonts are in shared elf, at fonts_addr address
     else {
-      fonts = (uint32_t*)fonts_addr;
+      fonts = (uint32_t *)fonts_addr;
       nb_fonts = fonts_size / 4;
     }
   } else if (fonts_size != 0) {

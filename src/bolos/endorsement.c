@@ -36,7 +36,7 @@
 static char CODE_HASH[] = "12345678abcdef0000fedcba8765432";
 
 /**********************
- *  STATIC FONCTIONS
+ *  STATIC FUNCTIONS
  **********************/
 
 /**********************

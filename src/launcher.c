@@ -85,9 +85,9 @@ static struct app_s apps[MAX_APP];
 static unsigned int napp;
 static void *extra_rampage_addr;
 static size_t extra_rampage_size;
-static unsigned long pic_init_addr; // pic_init() addr in Shared lib
- static unsigned long sh_svc_call_addr; // SVC_Call addr in Shared lib
- static unsigned long sh_svc_cx_call_addr; // SVC_cx_call addr in Shared lib
+static unsigned long pic_init_addr;       // pic_init() addr in Shared lib
+static unsigned long sh_svc_call_addr;    // SVC_Call addr in Shared lib
+static unsigned long sh_svc_cx_call_addr; // SVC_cx_call addr in Shared lib
 
 sdk_version_t sdk_version = SDK_COUNT;
 hw_model_t hw_model = MODEL_COUNT;
@@ -607,9 +607,10 @@ static int load_cxlib(char *cxlib_args)
   char *cxlib_path = strdup(cxlib_args);
   uint32_t sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load;
 
-  int ret = sscanf(cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x:0x%lx:0x%lx:0x%lx", cxlib_path,
-                   &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load, 
-                   &pic_init_addr, &sh_svc_call_addr, &sh_svc_cx_call_addr);
+  int ret = sscanf(
+      cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x:0x%lx:0x%lx:0x%lx",
+      cxlib_path, &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load,
+      &pic_init_addr, &sh_svc_call_addr, &sh_svc_cx_call_addr);
 
   if (ret != 9) {
     fprintf(stderr, "sscanf failed: %d", ret);
@@ -652,16 +653,15 @@ static int load_cxlib(char *cxlib_args)
   }
 
   if (sh_svc_call_addr) {
-    if (patch_svc_instr((unsigned char*)sh_svc_call_addr) != 0) {
+    if (patch_svc_instr((unsigned char *)sh_svc_call_addr) != 0) {
       close(fd);
       return -1;
     }
-    if (patch_svc_instr((unsigned char*)sh_svc_cx_call_addr) != 0) {
+    if (patch_svc_instr((unsigned char *)sh_svc_cx_call_addr) != 0) {
       close(fd);
       return -1;
     }
-  }
-  else if (patch_svc(p, sh_size) != 0) {
+  } else if (patch_svc(p, sh_size) != 0) {
     if (munmap(p, sh_size) != 0) {
       warn("munmap");
     }
@@ -961,8 +961,7 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18 &&
-        sdk_version != SDK_API_LEVEL_22 &&
-        sdk_version != SDK_API_LEVEL_23) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
@@ -974,16 +973,14 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13 &&
         sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15 &&
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22 &&
-        sdk_version != SDK_API_LEVEL_23) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
   case MODEL_FLEX:
     if (sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_19 &&
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22 &&
-        sdk_version != SDK_API_LEVEL_23) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Flex");
     }
     break;
