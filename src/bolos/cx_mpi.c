@@ -1122,6 +1122,15 @@ cx_err_t cx_mpi_mod_pow(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *e,
   return error;
 }
 
+static inline int cx_mpi_openssl_is_prime(const cx_mpi_t *p)
+{
+#if OPENSSL_VERSION_MAJOR >= 3
+    return BN_check_prime(p, local_bn_ctx, NULL);
+#else
+    return BN_is_prime_ex(p, 64, local_bn_ctx, NULL);
+#endif
+}
+
 cx_err_t cx_mpi_is_prime(cx_mpi_t *x, bool *prime)
 {
   cx_err_t error;
@@ -1130,7 +1139,7 @@ cx_err_t cx_mpi_is_prime(cx_mpi_t *x, bool *prime)
   *prime = false;
   error = CX_OK;
 
-  if ((is_prime = BN_is_prime_ex(x, 64, local_bn_ctx, NULL)) == 1) {
+  if ((is_prime = cx_mpi_openssl_is_prime(x)) == 1) {
     *prime = true;
   } else if (is_prime < 0) {
     error = CX_INTERNAL_ERROR;
@@ -1154,7 +1163,7 @@ cx_err_t cx_mpi_next_prime(cx_mpi_t *x)
   error = CX_OK;
   do {
     if (!BN_add_word(x, 2) || (cx_mpi_nbytes(x) > x_size) ||
-        ((is_prime = BN_is_prime_ex(x, 64, local_bn_ctx, NULL)) < 0)) {
+        ((is_prime = cx_mpi_openssl_is_prime(x)) < 0)) {
 
       if (cx_mpi_nbytes(x) > x_size)
         error = CX_OVERFLOW;
