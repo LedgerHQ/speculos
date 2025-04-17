@@ -56,8 +56,15 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
       return 1;
     }
     if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
-        (setting_id == OS_SETTING_SOUND || setting_id == OS_SETTING_FEATURES)) {
+        setting_id == OS_SETTING_FEATURES) {
       return 0xff;
+    }
+
+    if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
+        (setting_id == OS_SETTING_SOUND)) {
+      const bool tap_enabled = true;
+      const bool notif_enabled = true;
+      return (!tap_enabled) | ((!notif_enabled) << 1);
     }
   }
 

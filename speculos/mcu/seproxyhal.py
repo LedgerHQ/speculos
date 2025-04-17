@@ -422,6 +422,26 @@ class SeProxyHal(IODevice):
             pass
 
         elif tag == SephTag.PLAY_TUNE:
+
+            TUNES_NAMES = {
+                1: "TUNE_BOOT",
+                2: "TUNE_CHARGING",
+                3: "TUNE_LEDGER_MOMENT",
+                4: "TUNE_ERROR",
+                5: "TUNE_NEUTRAL",
+                6: "TUNE_LOCK",
+                7: "TUNE_SUCCESS",
+                8: "TUNE_LOOK_AT_ME",
+                9: "TUNE_TAP_CASUAL",
+                10: "TUNE_TAP_NEXT",
+                11: "TUNE_CARD_CONNECT"
+            }
+
+            tune_id = data[0]
+
+            # Ignore invalid tune id
+            if tune_id in TUNES_NAMES:
+                self.logger.info(f"🔊 Play tune: {TUNES_NAMES[tune_id]}")
             pass
 
         elif tag == SephTag.NBGL_DRAW_RECT:
