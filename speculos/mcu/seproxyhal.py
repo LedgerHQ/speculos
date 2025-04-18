@@ -258,7 +258,8 @@ class SeProxyHal(IODevice):
                  automation: Optional[Automation] = None,
                  automation_server: Optional[BroadcastInterface] = None,
                  transport: TransportType = TransportType.HID,
-                 verbose: bool = False):
+                 verbose: bool = False,
+                 sound: bool = False):
         self._socket = sock
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
@@ -268,6 +269,7 @@ class SeProxyHal(IODevice):
         self.need_nbgl_refresh = False
         self.is_last_draw_nbgl = False
         self.verbose = verbose
+        self.sound = sound
 
         self.status_event = threading.Event()
         self.socket_helper = SocketHelper(self._socket, self.status_event)
@@ -444,14 +446,16 @@ class SeProxyHal(IODevice):
             # Ignore invalid tune id
             if tune_id in TUNES_NAMES:
                 self.logger.info(f"🔊 Play tune: {TUNES_NAMES[tune_id]}")
-                wavefile = f"{Path(__file__).parent}/tunes/{TUNES_NAMES[tune_id]}.wav"
-                if Path(wavefile).exists():
-                    try:
-                        pygame.mixer.init()
-                        my_sound = pygame.mixer.Sound(wavefile)
-                        my_sound.play()
-                    except pygame.error as err:
-                        self.logger.warning(f"Unable to play {wavefile}: {err}")
+                if self.sound:
+                    # Play the tune
+                    wavefile = f"{Path(__file__).parent}/tunes/{TUNES_NAMES[tune_id]}.wav"
+                    if Path(wavefile).exists():
+                        try:
+                            pygame.mixer.init()
+                            my_sound = pygame.mixer.Sound(wavefile)
+                            my_sound.play()
+                        except pygame.error as err:
+                            self.logger.warning(f"Unable to play {wavefile}: {err}")
             else:
                 self.logger.warning(f"Unknown tune id: {tune_id}")
 

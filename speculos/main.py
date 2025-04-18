@@ -375,6 +375,7 @@ def main(prog=None) -> int:
                         help='Configure the transport protocol: HID (default), U2F or NFC.')
     parser.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
     parser.add_argument('-v', '--verbose', action='store_true', help='Increase verbosity')
+    parser.add_argument('-S', '--sound', action='store_true', help='Activate Tune playing')
 
     group = parser.add_argument_group('network arguments')
     group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
@@ -579,7 +580,8 @@ def main(prog=None) -> int:
         automation_path,
         automation_server,
         transport_type,
-        args.verbose)
+        args.verbose,
+        args.sound)
 
     button = None
     if args.button_port:
