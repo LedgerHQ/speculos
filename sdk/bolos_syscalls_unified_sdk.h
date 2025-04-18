@@ -112,6 +112,7 @@
 #define SYSCALL_os_endorsement_key1_get_app_secret_ID_IN              0x01000058
 #define SYSCALL_os_endorsement_key1_sign_data_ID_IN                   0x03000059
 #define SYSCALL_os_endorsement_key2_derive_sign_data_ID_IN            0x0300005a
+#define SYSCALL_os_endorsement_key1_sign_without_code_hash_ID_IN      0x0300005b
 #define SYSCALL_os_perso_set_pin_ID_IN                                0x0300004c
 #define SYSCALL_os_perso_set_current_identity_pin_ID_IN               0x0200004d
 #define SYSCALL_os_global_pin_is_validated_ID_IN                      0x000000a0

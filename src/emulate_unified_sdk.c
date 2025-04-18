@@ -812,6 +812,11 @@ int emulate_syscall_endorsement(unsigned long syscall,
            size_t,    dataLength,
            uint8_t *, signature);
 
+  SYSCALL3(os_endorsement_key1_sign_without_code_hash, "(%p, %u, %p)",
+           uint8_t *, data,
+           size_t,    dataLength,
+           uint8_t *, signature);
+
   SYSCALL3i(os_endorsement_get_public_key, "(%d, %p, %p)",
            uint8_t,   index,
            uint8_t *, buffer,
