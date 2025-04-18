@@ -69,6 +69,8 @@ typedef struct model_sdk_s {
   char *sdk;
 } MODEL_SDK;
 
+typedef void (*pic_init_t)(void *pic_flash_start, void *pic_ram_start);
+
 static MODEL_SDK sdkmap[SDK_COUNT] = {
   { MODEL_NANO_X, "1.2" },      { MODEL_NANO_X, "2.0" },
   { MODEL_NANO_X, "2.0.2" },    { MODEL_NANO_S, "1.5" },
@@ -83,6 +85,9 @@ static struct app_s apps[MAX_APP];
 static unsigned int napp;
 static void *extra_rampage_addr;
 static size_t extra_rampage_size;
+static unsigned long pic_init_addr;       // pic_init() addr in Shared lib
+static unsigned long sh_svc_call_addr;    // SVC_Call addr in Shared lib
+static unsigned long sh_svc_cx_call_addr; // SVC_cx_call addr in Shared lib
 
 sdk_version_t sdk_version = SDK_COUNT;
 hw_model_t hw_model = MODEL_COUNT;
@@ -602,10 +607,12 @@ static int load_cxlib(char *cxlib_args)
   char *cxlib_path = strdup(cxlib_args);
   uint32_t sh_offset, sh_size, sh_load, cx_ram_size, cx_ram_load;
 
-  int ret = sscanf(cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x", cxlib_path,
-                   &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load);
+  int ret = sscanf(
+      cxlib_args, "%[^:]:0x%x:0x%x:0x%x:0x%x:0x%x:0x%lx:0x%lx:0x%lx",
+      cxlib_path, &sh_offset, &sh_size, &sh_load, &cx_ram_size, &cx_ram_load,
+      &pic_init_addr, &sh_svc_call_addr, &sh_svc_cx_call_addr);
 
-  if (ret != 6) {
+  if (ret != 9) {
     fprintf(stderr, "sscanf failed: %d", ret);
   }
   // First, try to open the cx.elf file specified (could be the one by default)
@@ -645,7 +652,16 @@ static int load_cxlib(char *cxlib_args)
     return -1;
   }
 
-  if (patch_svc(p, sh_size) != 0) {
+  if (sh_svc_call_addr) {
+    if (patch_svc_instr((unsigned char *)sh_svc_call_addr) != 0) {
+      close(fd);
+      return -1;
+    }
+    if (patch_svc_instr((unsigned char *)sh_svc_cx_call_addr) != 0) {
+      close(fd);
+      return -1;
+    }
+  } else if (patch_svc(p, sh_size) != 0) {
     if (munmap(p, sh_size) != 0) {
       warn("munmap");
     }
@@ -667,6 +683,7 @@ static int run_app(char *name, unsigned long *parameters)
   void (*f)(unsigned long *);
   struct app_s *app;
   void *p;
+  pic_init_t pic_init;
 
   p = load_app(name);
   if (p == NULL) {
@@ -683,6 +700,11 @@ static int run_app(char *name, unsigned long *parameters)
     stack_end = LOAD_RAM_ADDR;
   }
   stack_start = stack_end + app->elf.stack_size;
+  if (sdk_version >= SDK_API_LEVEL_23) {
+    // initialize shared library PIC
+    pic_init = (pic_init_t)pic_init_addr;
+    pic_init(LOAD_ADDR, (void *)LOAD_RAM_ADDR);
+  }
 
   asm volatile("mov r0, %2\n"
                "mov r9, %1\n"
@@ -925,7 +947,8 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
-        sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22 &&
+        sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -938,7 +961,7 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18 &&
-        sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
@@ -950,14 +973,14 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13 &&
         sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15 &&
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
   case MODEL_FLEX:
     if (sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_19 &&
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Flex");
     }
     break;

@@ -651,6 +651,9 @@ int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
               unsigned int, task_idx,
               os_sched_last_status_2_0);
 
+    SYSCALL0i(os_sched_current_task,
+              os_sched_current_task_2_0);
+
     SYSCALL2(os_serial, "(%p, %u)",
              unsigned char *, serial,
              unsigned int, maxlength);
@@ -793,10 +796,10 @@ int emulate_syscall_os_perso(unsigned long syscall, unsigned long *parameters,
 
 /* Handle endorsement related syscalls which behavior are defined in
  * src/bolos/endorsement.c a */
-int emulate_syscall_endorsement(unsigned long syscall,
-                                unsigned long *parameters, unsigned long *ret,
-                                bool verbose, sdk_version_t version,
-                                hw_model_t model)
+
+int emulate_syscall_endorsement_pre_api_level_23(
+    unsigned long syscall, unsigned long *parameters, unsigned long *ret,
+    bool verbose, sdk_version_t version, hw_model_t model)
 {
   (void)version;
   (void)model;
@@ -830,6 +833,59 @@ int emulate_syscall_endorsement(unsigned long syscall,
   }
 
   return SYSCALL_HANDLED;
+}
+
+int emulate_syscall_endorsement_after_api_level_23(
+    unsigned long syscall, unsigned long *parameters, unsigned long *ret,
+    bool verbose, sdk_version_t version, hw_model_t model)
+{
+  (void)version;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+        SYSCALL3(ENDORSEMENT_get_public_key, "(%d, %p, %p)", 
+                  uint8_t,   slot,
+                  uint8_t *, out_public_key,
+                  uint8_t *, out_public_key_length);
+
+        SYSCALL4(ENDORSEMENT_key1_sign_data, "(%p, %u, %p, %p)", 
+                  uint8_t *, data,
+                  uint32_t, data_length,
+                  uint8_t *, out_signature,
+                  uint32_t *, out_signature_length);
+
+        SYSCALL1(ENDORSEMENT_get_code_hash, "(%p)", 
+                  uint8_t *, out_hash);
+
+        SYSCALL3(ENDORSEMENT_get_public_key_certificate, "(%d, %p, %p)", 
+                  uint8_t, slot,
+                  uint8_t *, out_buffer,
+                  uint8_t *, out_length);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+int emulate_syscall_endorsement(unsigned long syscall,
+                                unsigned long *parameters, unsigned long *ret,
+                                bool verbose, sdk_version_t version,
+                                hw_model_t model)
+{
+  (void)version;
+  (void)model;
+
+  if (version <= SDK_API_LEVEL_22) {
+    return emulate_syscall_endorsement_pre_api_level_23(
+        syscall, parameters, ret, verbose, version, model);
+  } else {
+    return emulate_syscall_endorsement_after_api_level_23(
+        syscall, parameters, ret, verbose, version, model);
+  }
 }
 
 int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,

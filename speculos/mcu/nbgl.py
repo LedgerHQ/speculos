@@ -1,7 +1,7 @@
 import gzip
 import logging
 import sys
-from construct import Struct, Int8ul, Int16ul
+from construct import Struct, Int8ul, Int16ul, Int16sl
 from enum import IntEnum
 from speculos.observer import TextEvent
 try:
@@ -25,8 +25,8 @@ class NbglColor(IntEnum):
 
 
 nbgl_area_t = Struct(
-    "x0" / Int16ul,
-    "y0" / Int16ul,
+    "x0" / Int16sl,
+    "y0" / Int16sl,
     "width" / Int16ul,
     "height" / Int16ul,
     "color" / Int8ul,
@@ -57,6 +57,9 @@ class NBGL(GraphicLibrary):
     def __assert_area(self, area) -> None:
         if area.x0 > self.SCREEN_WIDTH or (area.x0+area.width) > self.SCREEN_WIDTH:
             raise AssertionError("left edge (%d) or right edge (%d) out of screen" % (area.x0, (area.x0 + area.width)))
+        # on Nano, it's allowed to have y0 < 0 or y0 > HEIGHT (in menu list)
+        if self.SCREEN_HEIGHT == 64:
+            return
         if area.y0 > self.SCREEN_HEIGHT or (area.y0+area.height) > self.SCREEN_HEIGHT:
             raise AssertionError("top edge (%d) or bottom edge (%d) out of screen" % (area.y0, (area.y0 + area.height)))
 
@@ -184,18 +187,24 @@ class NBGL(GraphicLibrary):
                     else:
                         y = area.y0
                         x = x - 1
+                        if x < area.x0:
+                            return
                 elif transformation == 1:  # h mirror
                     if y > area.y0:
                         y = y - 1
                     else:
                         y = area.y0 + area.height - 1
                         x = x - 1
+                        if x < area.x0:
+                            return
                 elif transformation == 2:  # v mirror
                     if y < area.y0 + area.height - 1:
                         y = y + 1
                     else:
                         y = area.y0
                         x = x + 1
+                        if x >= area.x0 + area.width:
+                            return
                 elif transformation == 3:  # hw mirror
                     if y > area.y0:
                         y = y - 1
@@ -203,11 +212,13 @@ class NBGL(GraphicLibrary):
                         y = area.y0 + area.height - 1
                         x = x + 1
                 elif transformation == 4:  # 90 clockwise
-                    if x < area.x0 + area.width:
+                    if x < area.x0 + area.width - 1:
                         x = x + 1
                     else:
                         x = area.x0
                         y = y + 1
+                        if y >= area.y0 + area.height:
+                            return
                 else:
                     # error
                     pass
