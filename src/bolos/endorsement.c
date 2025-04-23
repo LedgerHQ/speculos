@@ -212,6 +212,25 @@ bolos_err_t sys_ENDORSEMENT_key1_sign_data(uint8_t *data, uint32_t data_length,
   return 0;
 }
 
+bolos_err_t
+sys_ENDORSEMENT_key1_sign_without_code_hash(uint8_t *data, uint32_t data_length,
+                                            uint8_t *out_signature,
+                                            uint32_t *out_signature_length)
+{
+  cx_ecfp_private_key_t *private_key =
+      env_get_user_private_key(ENDORSEMENT_SLOT_1);
+
+  if (private_key->d_len == 0) {
+    // No private key set in slot 1
+    return 0x4117;
+  }
+
+  // Perform signature
+  *out_signature_length = sys_os_endorsement_key1_sign_without_code_hash(
+      data, data_length, out_signature);
+  return 0;
+}
+
 bolos_err_t sys_ENDORSEMENT_get_code_hash(uint8_t *out_hash)
 {
   if (out_hash) {
