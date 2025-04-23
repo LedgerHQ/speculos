@@ -44,6 +44,9 @@ unsigned int sys_os_endorsement_get_public_key_new(uint8_t index,
 unsigned long sys_os_endorsement_key1_sign_data(uint8_t *data,
                                                 size_t dataLength,
                                                 uint8_t *signature);
+unsigned long
+sys_os_endorsement_key1_sign_without_code_hash(uint8_t *data, size_t dataLength,
+                                               uint8_t *signature);
 
 unsigned int sys_os_endorsement_get_code_hash(uint8_t *buffer);
 
@@ -63,6 +66,11 @@ bolos_err_t sys_ENDORSEMENT_get_public_key(ENDORSEMENT_slot_t slot,
 bolos_err_t sys_ENDORSEMENT_key1_sign_data(uint8_t *data, uint32_t data_length,
                                            uint8_t *out_signature,
                                            uint32_t *out_signature_length);
+
+bolos_err_t
+sys_ENDORSEMENT_key1_sign_without_code_hash(uint8_t *data, size_t dataLength,
+                                            uint8_t *signature,
+                                            uint32_t *out_signature_length);
 
 bolos_err_t sys_ENDORSEMENT_get_code_hash(uint8_t *out_hash);
 
