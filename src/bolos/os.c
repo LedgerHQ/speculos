@@ -55,7 +55,8 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
     if (setting_id == OS_SETTING_PLANEMODE_NEW) {
       return 1;
     }
-    if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
+    if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX) ||
+         (hw_model == MODEL_APEX_P)) &&
         setting_id == OS_SETTING_FEATURES) {
       return 0xff;
     }

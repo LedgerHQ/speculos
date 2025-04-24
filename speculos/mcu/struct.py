@@ -19,6 +19,7 @@ MODELS: Dict[str, Model] = {
     'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
     'stax': Model('Stax', (400, 672), (13, 13), (26, 26)),
     'flex': Model('Flex', (480, 600), (13, 13), (26, 26)),
+    'apex_p': Model('Apex P', (300, 400), (13, 13), (26, 26)),
 }
 
 

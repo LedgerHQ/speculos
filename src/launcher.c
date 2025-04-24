@@ -587,6 +587,9 @@ static int load_fonts(char *fonts_path)
   case MODEL_NANO_X:
     load_addr = NANOX_FONTS_ARRAY_ADDR;
     break;
+  case MODEL_APEX_P:
+    load_addr = APEX_P_FONTS_ARRAY_ADDR;
+    break;
   default:
     warnx("hw_model %u not supported", hw_model);
     return -1;
@@ -900,6 +903,8 @@ int main(int argc, char *argv[])
         hw_model = MODEL_STAX;
       } else if (strcmp(optarg, "flex") == 0) {
         hw_model = MODEL_FLEX;
+      } else if (strcmp(optarg, "apex_p") == 0) {
+        hw_model = MODEL_APEX_P;
       } else {
         errx(1, "invalid model \"%s\"", optarg);
       }
@@ -982,6 +987,11 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
         sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
       errx(1, "invalid SDK version for the Ledger Flex");
+    }
+    break;
+  case MODEL_APEX_P:
+    if (sdk_version != SDK_API_LEVEL_23) {
+      errx(1, "invalid SDK version for the Ledger Apex P");
     }
     break;
   default:
