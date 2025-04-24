@@ -51,6 +51,7 @@ typedef enum {
   MODEL_BLUE,
   MODEL_STAX,
   MODEL_FLEX,
+  MODEL_APEX_P,
   MODEL_COUNT
 } hw_model_t;
 

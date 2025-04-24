@@ -620,7 +620,8 @@ def main(prog=None) -> int:
             "nanosp": 2,
             "blue": 1,
             "stax": 1,
-            "flex": 1
+            "flex": 1,
+            "apex_p": 1
         }
         zoom = default_zoom.get(args.model)
 
