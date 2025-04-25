@@ -229,6 +229,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         logger.warn(f"Shared lib {sharedlib_filepath} not found")
 
+    no_fonts_in_shared_library = (fonts_addr == 0)
+
     only_bagl = True
     # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
     # manage the cases where it is NOT 'bagl' but the section does not exists yet
@@ -247,7 +249,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
         # if fonts_addr and fonts_size have not been found in shared.elf, use the
         # ones for app.elf (but it was only for BAGL apps)
-        if fonts_addr == 0:
+        if no_fonts_in_shared_library:
             fonts_addr = ei.fonts_addr
             fonts_size = ei.fonts_size
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
