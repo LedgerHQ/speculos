@@ -116,7 +116,7 @@
 #define SYSCALL_os_endorsement_key1_get_app_secret_ID_IN              0x01000058
 #define SYSCALL_os_endorsement_key1_sign_data_ID_IN                   0x03000059
 #define SYSCALL_os_endorsement_key2_derive_sign_data_ID_IN            0x0300005a
-#define SYSCALL_os_endorsement_key1_sign_without_code_hash_ID_IN      0x0400005b
+#define SYSCALL_os_endorsement_key1_sign_without_code_hash_ID_IN      0x0300005b
 // -- API_LEVEL_23 and above
 #define SYSCALL_ENDORSEMENT_get_code_hash_ID_IN                       0x01000055
 #define SYSCALL_ENDORSEMENT_get_public_key_ID_IN                      0x03000056
