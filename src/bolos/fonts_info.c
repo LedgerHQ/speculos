@@ -287,12 +287,6 @@ void parse_fonts(void *code, unsigned long text_load_addr,
     return;
   }
 
-  // Checks that fonts & nb_fonts are coherent
-  if (fonts[nb_fonts] != nb_fonts) {
-    fprintf(stdout, "ERROR: Expecting nb_fonts=%u and found %u instead!\n",
-            nb_fonts, fonts[nb_fonts]);
-    return;
-  }
   if (sdk_version > SDK_API_LEVEL_14) {
     if (nb_fonts > MAX_NB_FONTS) {
       fprintf(stdout,
