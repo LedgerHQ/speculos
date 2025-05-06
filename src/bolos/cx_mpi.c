@@ -1112,7 +1112,7 @@ cx_err_t cx_mpi_mod_pow(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *e,
   cx_err_t error;
 
   // N must be odd
-  if ((cx_mpi_is_odd(n)) == 0 || cx_mpi_is_zero(e)) {
+  if (cx_mpi_is_odd(n) == 0) {
     error = CX_INVALID_PARAMETER;
   } else if (BN_mod_exp(r, a, e, n, local_bn_ctx) == 0) {
     error = CX_INTERNAL_ERROR;
