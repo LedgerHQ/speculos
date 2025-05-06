@@ -76,6 +76,8 @@ class FrameBuffer:
         "nanosp": 0xdddddd,
         "stax": 0xdddddd,
         "flex": 0xdddddd,
+        "apex_p": 0xffffff,
+        "apex_m": 0xffffff
     }
 
     def __init__(self, model: str):
