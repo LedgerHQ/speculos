@@ -7,12 +7,13 @@
 #include "nbgl.h"
 #include "nbgl_rle.h"
 
-#define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0xFA
-#define SEPROXYHAL_TAG_NBGL_REFRESH         0xFB
-#define SEPROXYHAL_TAG_NBGL_DRAW_LINE       0xFC
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0xFD
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0xFE
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE  0xFF
+#define SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE 0xF9
+#define SEPROXYHAL_TAG_NBGL_DRAW_RECT            0xFA
+#define SEPROXYHAL_TAG_NBGL_REFRESH              0xFB
+#define SEPROXYHAL_TAG_NBGL_DRAW_LINE            0xFC
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE           0xFD
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE      0xFE
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE       0xFF
 
 unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area)
 {
@@ -36,6 +37,8 @@ unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
   uint8_t header[3];
   size_t len = sizeof(nbgl_area_t) + 2;
 
+  // TODO: up to API LEVEL 24 (before Apex), use SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE, 
+  // but after use SEPROXYHAL_TAG_NBGL_DRAW_LINE
   header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
   header[1] = (len >> 8) & 0xff;
   header[2] = len & 0xff;
