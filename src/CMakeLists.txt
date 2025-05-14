@@ -50,6 +50,7 @@ add_library(emu
         bolos/default.c
         bolos/os_pki.c
         bolos/os_signature.c
+        bolos/os_io.c
         emulate.c
         emulate_1.2.c
         emulate_1.5.c
