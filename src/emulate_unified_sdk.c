@@ -10,6 +10,7 @@
 #include "bolos/nbgl.h"
 #include "bolos/os_pki.h"
 #include "bolos/touch.h"
+#include "bolos/os_io.h"
 #include "emulate.h"
 
 #include "bolos_syscalls_unified_sdk.h"
@@ -674,7 +675,7 @@ int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
 
     SYSCALL4(os_pki_get_info, "(%p, %p, %p, %p)",
              uint8_t *, key_usage,
-             uint8_t *, trusted_name, 
+             uint8_t *, trusted_name,
              size_t *, trusted_name_len,
              cx_ecfp_384_public_key_t *, public_key);
 
@@ -849,21 +850,21 @@ int emulate_syscall_endorsement_after_api_level_23(
 
   switch (syscall) {
     /* clang-format off */
-        SYSCALL3(ENDORSEMENT_get_public_key, "(%d, %p, %p)", 
+        SYSCALL3(ENDORSEMENT_get_public_key, "(%d, %p, %p)",
                   uint8_t,   slot,
                   uint8_t *, out_public_key,
                   uint8_t *, out_public_key_length);
 
-        SYSCALL4(ENDORSEMENT_key1_sign_data, "(%p, %u, %p, %p)", 
+        SYSCALL4(ENDORSEMENT_key1_sign_data, "(%p, %u, %p, %p)",
                   uint8_t *, data,
                   uint32_t, data_length,
                   uint8_t *, out_signature,
                   uint32_t *, out_signature_length);
 
-        SYSCALL1(ENDORSEMENT_get_code_hash, "(%p)", 
+        SYSCALL1(ENDORSEMENT_get_code_hash, "(%p)",
                   uint8_t *, out_hash);
 
-        SYSCALL3(ENDORSEMENT_get_public_key_certificate, "(%d, %p, %p)", 
+        SYSCALL3(ENDORSEMENT_get_public_key_certificate, "(%d, %p, %p)",
                   uint8_t, slot,
                   uint8_t *, out_buffer,
                   uint8_t *, out_length);
@@ -891,6 +892,56 @@ int emulate_syscall_endorsement(unsigned long syscall,
     return emulate_syscall_endorsement_after_api_level_23(
         syscall, parameters, ret, verbose, version, model);
   }
+}
+
+int emulate_syscall_os_io(unsigned long syscall,
+                          unsigned long *parameters, unsigned long *ret,
+                          bool verbose, sdk_version_t version,
+                          hw_model_t model)
+{
+  (void)model;
+
+  if (version < SDK_API_LEVEL_24) {
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  switch (syscall) {
+    /* clang-format off */
+    SYSCALL1(os_io_init, "(%p)",
+             os_io_init_t *, init);
+
+    SYSCALL0(os_io_start);
+
+    SYSCALL0(os_io_stop);
+
+    SYSCALL3(os_io_rx_evt, "(%p %u %p)",
+             unsigned char *, buffer,
+             unsigned short, buffer_max_length,
+             unsigned int *, timeout_ms);
+
+    SYSCALL4(os_io_tx_cmd, "(%u %p %u %p)",
+             unsigned char, type,
+             unsigned char *, buffer,
+             unsigned short, length,
+             unsigned int *, timeout_ms);
+
+    SYSCALL3(os_io_seph_tx, "(%p %u %p)",
+             unsigned char *, buffer,
+             unsigned short, length,
+             unsigned int *, timeout_ms);
+
+    SYSCALL5(os_io_seph_se_rx_event, "(%p %u %p %i %u)",
+             unsigned char *, buffer,
+             unsigned short, max_length,
+             unsigned int  *, timeout_ms,
+             bool, check_se_event,
+             unsigned int, flags);
+
+    /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+  return SYSCALL_HANDLED;
 }
 
 int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,
@@ -939,6 +990,11 @@ int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,
 
   if (emulate_syscall_endorsement(syscall, parameters, ret, verbose, version,
                                   model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_os_io(syscall, parameters, ret, verbose, version,
+                            model) == SYSCALL_HANDLED) {
     return 0;
   }
 
