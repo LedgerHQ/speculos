@@ -1,0 +1,14 @@
+/** @page nfc_mainpage NFC API
+
+@section nfc_mainpage_intro Introduction
+
+This page describes the API of NFC (Near-Field Communication) Stack (only available on \b Stax product).
+
+@note TO BE COMPLETED
+
+@section activation_of_nfc Activation of NFC
+
+NFC can be enabled by compiling the application with \b HAVE_NFC flag (only available on \b Stax product).
+
+
+*/
