@@ -5,9 +5,12 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "bolos/os_io.h"
+#include "seproxyhal_protocol.h"
+#include "os_utils.h"
+#include "bolos/io/io.h"
 #include "bolos/touch.h"
 #include "emulate.h"
+
 
 enum seph_state_t {
   SEPH_STATE_IDLE = 0,
@@ -15,7 +18,6 @@ enum seph_state_t {
   SEPH_STATE_SEND_CMD,
 };
 
-#define OS_IO_SEPH_BUFFER_SIZE 272
 
 typedef struct {
   uint16_t tx_packet_length;
@@ -30,19 +32,7 @@ typedef struct {
   uint8_t rx_packet[OS_IO_SEPH_BUFFER_SIZE];
 } seph_info_t;
 
-#define SEPROXYHAL_TAG_STATUS_MASK    (0xF0)
-#define SEPROXYHAL_TAG_GENERAL_STATUS (0x60)
-
-#define SEPROXYHAL_TAG_BUTTON_PUSH_EVENT (0x05)
-#define SEPROXYHAL_TAG_FINGER_EVENT      (0x0C)
-
-#define OS_IO_FLAG_CACHE  1
-
-typedef enum {
-  OS_IO_PACKET_TYPE_NONE = 0x00,
-  OS_IO_PACKET_TYPE_SEPH = 0x01,
-  OS_IO_PACKET_TYPE_SE_EVT = 0x02,
-} os_io_packet_type_t;
+#define OS_IO_FLAG_CACHE 1
 
 static seph_info_t G_seph_info = {
   .state = SEPH_STATE_SEND_CMD,
@@ -54,10 +44,7 @@ static seph_info_t G_seph_info = {
   .rx_packet_max_length = OS_IO_SEPH_BUFFER_SIZE,
 };
 
-static inline uint16_t U2BE(const uint8_t *buf, size_t off)
-{
-  return (buf[off] << 8) | buf[off + 1];
-}
+
 
 static ssize_t readall(int fd, void *buf, size_t count)
 {
@@ -112,39 +99,29 @@ static ssize_t writeall(int fd, const void *buf, size_t count)
 
 int sys_os_io_init(os_io_init_t *init)
 {
-  init->init = 1;
-  return 0;
+  return os_io_init(init);
 }
 
 int sys_os_io_start(void)
 {
-  return 0;
+  return os_io_start();
 }
 
 int sys_os_io_stop(void)
 {
-  return 0;
+  return os_io_stop();
 }
 
 int sys_os_io_rx_evt(unsigned char *buffer, unsigned short buffer_max_length,
                      unsigned int *timeout_ms)
 {
-  assert(false);
-  (void)buffer;
-  (void)buffer_max_length;
-  (void)timeout_ms;
-  return 0;
+  return os_io_rx_evt(buffer, buffer_max_length, timeout_ms, false);
 }
 
 int sys_os_io_tx_cmd(unsigned char type, const unsigned char *buffer,
                      unsigned short length, unsigned int *timeout_ms)
 {
-  assert(false);
-  (void)type;
-  (void)buffer;
-  (void)length;
-  (void)timeout_ms;
-  return 0;
+  return os_io_tx_cmd(type, buffer, length, timeout_ms);
 }
 
 int sys_os_io_seph_tx(const unsigned char *buffer, unsigned short length,
