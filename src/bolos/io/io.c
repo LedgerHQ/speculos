@@ -113,9 +113,9 @@ int sys_os_io_stop(void)
 }
 
 int sys_os_io_rx_evt(unsigned char *buffer, unsigned short buffer_max_length,
-                     unsigned int *timeout_ms)
+                     unsigned int *timeout_ms, bool check_se_event)
 {
-  return os_io_rx_evt(buffer, buffer_max_length, timeout_ms, false);
+  return os_io_rx_evt(buffer, buffer_max_length, timeout_ms, check_se_event);
 }
 
 int sys_os_io_tx_cmd(unsigned char type, const unsigned char *buffer,
