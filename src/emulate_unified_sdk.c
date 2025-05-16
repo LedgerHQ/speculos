@@ -10,7 +10,7 @@
 #include "bolos/nbgl.h"
 #include "bolos/os_pki.h"
 #include "bolos/touch.h"
-#include "bolos/os_io.h"
+#include "bolos/io/io.h"
 #include "emulate.h"
 
 #include "bolos_syscalls_unified_sdk.h"
