@@ -914,10 +914,11 @@ int emulate_syscall_os_io(unsigned long syscall,
 
     SYSCALL0(os_io_stop);
 
-    SYSCALL3(os_io_rx_evt, "(%p %u %p)",
+    SYSCALL4(os_io_rx_evt, "(%p %u %p %i)",
              unsigned char *, buffer,
              unsigned short, buffer_max_length,
-             unsigned int *, timeout_ms);
+             unsigned int *, timeout_ms,
+             bool, check_se_event);
 
     SYSCALL4(os_io_tx_cmd, "(%u %p %u %p)",
              unsigned char, type,
