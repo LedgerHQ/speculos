@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 import threading
@@ -7,7 +8,6 @@ from collections import namedtuple
 from enum import IntEnum
 from socket import socket
 from typing import Callable, List, Optional, Tuple
-import pygame
 
 from speculos.observer import BroadcastInterface, TextEvent
 from .transport import build_transport, TransportType
@@ -449,6 +449,9 @@ class SeProxyHal(IODevice):
                     # Play the tune
                     wavefile = f"{Path(__file__).parent}/tunes/{TUNES_NAMES[tune_id]}.wav"
                     if Path(wavefile).exists():
+                        # to hide its initialization message
+                        os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+                        import pygame.mixer
                         try:
                             pygame.mixer.init()
                             my_sound = pygame.mixer.Sound(wavefile)
