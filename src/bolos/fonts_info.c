@@ -284,7 +284,8 @@ void parse_fonts(void *code, unsigned long text_load_addr,
   }
 
   // Checks that fonts & nb_fonts are coherent
-  if (fonts[nb_fonts] != nb_fonts) {
+  // (on some devices, symbol C_nbgl_fonts_count is before C_nbgl_fonts)
+  if (fonts[nb_fonts] != nb_fonts && *(fonts - 1) != nb_fonts) {
     fprintf(stdout, "ERROR: Expecting nb_fonts=%u and found %u instead!\n",
             nb_fonts, fonts[nb_fonts]);
     return;
