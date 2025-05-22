@@ -202,4 +202,14 @@
 #define SYSCALL_os_pki_load_certificate_ID_IN                         0x060000aa
 #define SYSCALL_os_pki_verify_ID_IN                                   0x040000ab
 #define SYSCALL_os_pki_get_info_ID_IN                                 0x040000ac
+
+// API level 24 io-revamp
+#define SYSCALL_os_io_init_ID_IN                                      0x01000084
+#define SYSCALL_os_io_start_ID_IN                                     0x01000085
+#define SYSCALL_os_io_stop_ID_IN                                      0x01000086
+#define SYSCALL_os_io_tx_cmd_ID_IN                                    0x04000088
+#define SYSCALL_os_io_rx_evt_ID_IN                                    0x03000089
+#define SYSCALL_os_io_seph_tx_ID_IN                                   0x03000082
+#define SYSCALL_os_io_seph_se_rx_event_ID_IN                          0x05000083
+
 // clang-format on
