@@ -277,9 +277,11 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
     uint8_t x[32], y[32], out[32];
     sys_cx_ecpoint_export(ec_P, x, sizeof(x), y, sizeof(y));
     if (memcmp(X25519_GEN, y, 32) != 0) {
-      errx(1, "X25519 scalar mult TODO");
-      error = CX_INTERNAL_ERROR;
-      goto cleanup;
+      if (scalarmult_curve25519(out, k, x) != 0) {
+        errx(1, "X25519 scalar mult ERROR");
+        error = CX_INTERNAL_ERROR;
+        goto cleanup;
+      }
     }
     public_from_private_curve25519(out, k);
     Qy = NULL;
