@@ -266,6 +266,31 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
   cx_mpi_t *Qx, *Qy, *e;
 
   CX_CHECK(cx_mpi_ecpoint_from_ecpoint(&P, ec_P));
+
+  if (ec_P->curve == CX_CURVE_Curve25519) {
+    uint8_t x[32], y[32], out[32];
+    sys_cx_ecpoint_export(ec_P, x, sizeof(x), y, sizeof(y));
+
+    if (scalarmult_curve25519(out, k, x) != 0) {
+      errx(1, "X25519 scalar mult ERROR");
+      error = CX_INTERNAL_ERROR;
+      goto cleanup;
+    }
+    Qy = NULL;
+    e = NULL;
+    Qx = BN_new();
+    if (Qx == NULL) {
+      error = CX_MEMORY_FULL;
+      goto cleanup;
+    }
+    if (BN_bin2bn(out, 32, Qx) == NULL) {
+      error = CX_INTERNAL_ERROR;
+      goto cleanup;
+    }
+    BN_copy(P.x, Qx);
+    goto cleanup;
+  }
+
   // TODO Check if ec_P point is on curve.
   // TODO (?) use internal alloc, to update/check count & total memory.
   Qx = BN_new();
