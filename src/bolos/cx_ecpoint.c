@@ -261,9 +261,10 @@ end:
 cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
                                   size_t k_len)
 {
-  cx_err_t error;
+  cx_err_t error = CX_INTERNAL_ERROR;
   cx_mpi_ecpoint_t P;
   cx_mpi_t *Qx, *Qy, *e;
+  uint8_t x[32], y[32], out[32];
 
   CX_CHECK(cx_mpi_ecpoint_from_ecpoint(&P, ec_P));
   // TODO Check if ec_P point is on curve.
@@ -308,6 +309,22 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
     }
     break;
   }
+  case CX_CURVE_Curve25519:
+    CX_CHECK(sys_cx_ecpoint_export(ec_P, x, sizeof(x), y, sizeof(y)));
+
+    if (scalarmult_curve25519(out, k, x) != 0) {
+      errx(1, "X25519 scalar mult ERROR");
+      error = CX_INTERNAL_ERROR;
+      goto cleanup;
+    }
+    CX_CHECK(sys_cx_ecpoint_decompress(ec_P, out, sizeof(out), 0));
+    CX_CHECK(sys_cx_ecpoint_export(ec_P, x, sizeof(x), y, sizeof(y)));
+    if ((BN_bin2bn(x, sizeof(x), Qx) == NULL) ||
+        (BN_bin2bn(y, sizeof(x), Qy) == NULL)) {
+      error = CX_INTERNAL_ERROR;
+      goto cleanup;
+    }
+    break;
   default: {
     error = CX_EC_INVALID_CURVE;
     goto cleanup;
