@@ -258,7 +258,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         if ei.fonts_addr != 0 and args.model not in ["stax", "flex"]:
             fonts_addr = ei.fonts_addr
             fonts_size = ei.fonts_size
-        elif sharedlib_ei and sharedlib_ei.fonts_addr != 0:
+        elif sharedlib_ei and sharedlib_ei.fonts_addr != 0 and not use_bagl:
             fonts_addr = sharedlib_ei.fonts_addr
             fonts_size = sharedlib_ei.fonts_size
         else:
