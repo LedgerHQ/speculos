@@ -17,8 +17,8 @@
 #include "sdk.h"
 
 typedef struct {
-    unsigned int ux_id;
-    unsigned int len;
+  unsigned int ux_id;
+  unsigned int len;
 } bolos_ux_params_t;
 
 typedef struct try_context_s try_context_t;

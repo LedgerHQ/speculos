@@ -5,19 +5,17 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "seproxyhal_protocol.h"
-#include "os_utils.h"
 #include "bolos/io/io.h"
 #include "bolos/touch.h"
 #include "emulate.h"
-
+#include "os_utils.h"
+#include "seproxyhal_protocol.h"
 
 enum seph_state_t {
   SEPH_STATE_IDLE = 0,
   SEPH_STATE_WAIT_EVENT,
   SEPH_STATE_SEND_CMD,
 };
-
 
 typedef struct {
   uint16_t tx_packet_length;
@@ -43,8 +41,6 @@ static seph_info_t G_seph_info = {
   .rx_packet_length = 0,
   .rx_packet_max_length = OS_IO_SEPH_BUFFER_SIZE,
 };
-
-
 
 static ssize_t readall(int fd, void *buf, size_t count)
 {

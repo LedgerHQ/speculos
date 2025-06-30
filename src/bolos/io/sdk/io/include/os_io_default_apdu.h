@@ -3,13 +3,13 @@
 #pragma once
 
 /* Includes ------------------------------------------------------------------*/
-#include "os_types.h"
 #include "os_io.h"
+#include "os_types.h"
 
 /* Exported enumerations -----------------------------------------------------*/
 typedef enum {
-    OS_IO_APDU_POST_ACTION_NONE,
-    OS_IO_APDU_POST_ACTION_EXIT,
+  OS_IO_APDU_POST_ACTION_NONE,
+  OS_IO_APDU_POST_ACTION_EXIT,
 } os_io_apdu_post_action_t;
 
 /* Exported types, structures, unions ----------------------------------------*/
@@ -27,8 +27,8 @@ typedef enum {
 /* Exported variables --------------------------------------------------------*/
 
 /* Exported functions prototypes--------------------------------------------- */
-bolos_err_t os_io_handle_default_apdu(uint8_t                  *buffer_in,
-                                      size_t                    buffer_in_length,
-                                      uint8_t                  *buffer_out,
-                                      size_t                   *buffer_out_length,
+bolos_err_t os_io_handle_default_apdu(uint8_t *buffer_in,
+                                      size_t buffer_in_length,
+                                      uint8_t *buffer_out,
+                                      size_t *buffer_out_length,
                                       os_io_apdu_post_action_t *post_action);

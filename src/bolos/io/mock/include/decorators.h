@@ -52,10 +52,11 @@
 #endif
 
 #ifndef FALL_THROUGH
-#if defined(__GNUC__) && __GNUC__ >= 7 || defined(__clang__) && __clang_major__ >= 12
+#if defined(__GNUC__) && __GNUC__ >= 7 ||                                      \
+    defined(__clang__) && __clang_major__ >= 12
 #define FALL_THROUGH __attribute__((fallthrough))
 #else
-#define FALL_THROUGH ((void) 0)
+#define FALL_THROUGH ((void)0)
 #endif
 #endif
 

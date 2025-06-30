@@ -4,10 +4,10 @@
 #define USBD_CONF_H
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 #include "os.h"
 
@@ -26,4 +26,4 @@
 
 /* Exported functions prototypes--------------------------------------------- */
 
-#endif  // USBD_CONF_H
+#endif // USBD_CONF_H

@@ -7,10 +7,10 @@
 #include "bolos/cx_aes.h"
 #include "bolos/cxlib.h"
 #include "bolos/endorsement.h"
+#include "bolos/io/io.h"
 #include "bolos/nbgl.h"
 #include "bolos/os_pki.h"
 #include "bolos/touch.h"
-#include "bolos/io/io.h"
 #include "emulate.h"
 
 #include "bolos_syscalls_unified_sdk.h"
@@ -894,10 +894,9 @@ int emulate_syscall_endorsement(unsigned long syscall,
   }
 }
 
-int emulate_syscall_os_io(unsigned long syscall,
-                          unsigned long *parameters, unsigned long *ret,
-                          bool verbose, sdk_version_t version,
-                          hw_model_t model)
+int emulate_syscall_os_io(unsigned long syscall, unsigned long *parameters,
+                          unsigned long *ret, bool verbose,
+                          sdk_version_t version, hw_model_t model)
 {
   (void)model;
 
