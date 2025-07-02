@@ -948,7 +948,7 @@ int main(int argc, char *argv[])
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
         sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22 &&
-        sdk_version != SDK_API_LEVEL_23) {
+        sdk_version != SDK_API_LEVEL_23 && sdk_version != SDK_API_LEVEL_24) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -961,26 +961,20 @@ int main(int argc, char *argv[])
     if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18 &&
-        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
+        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23 &&
+        sdk_version != SDK_API_LEVEL_24) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
   case MODEL_STAX:
-    if (sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_3 &&
-        sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_7 &&
-        sdk_version != SDK_API_LEVEL_8 && sdk_version != SDK_API_LEVEL_9 &&
-        sdk_version != SDK_API_LEVEL_10 && sdk_version != SDK_API_LEVEL_11 &&
-        sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_13 &&
-        sdk_version != SDK_API_LEVEL_14 && sdk_version != SDK_API_LEVEL_15 &&
-        sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
+    if (sdk_version < SDK_API_LEVEL_7 &&
+        (sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_3 &&
+         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_7)) {
       errx(1, "invalid SDK version for the Ledger Stax");
     }
     break;
   case MODEL_FLEX:
-    if (sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_19 &&
-        sdk_version != SDK_API_LEVEL_20 && sdk_version != SDK_API_LEVEL_21 &&
-        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23) {
+    if (sdk_version < SDK_API_LEVEL_18) {
       errx(1, "invalid SDK version for the Ledger Flex");
     }
     break;

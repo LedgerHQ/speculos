@@ -26,6 +26,7 @@ class SephTag(IntEnum):
     CAPDU_EVENT = 0x16
 
     MCU = 0x31
+    TAG_NFC_POWER = 0x34
     TAG_BLE_SEND = 0x38
     TAG_BLE_RADIO_POWER = 0x44
     SE_POWER_OFF = 0x46
@@ -408,6 +409,9 @@ class SeProxyHal(IODevice):
                 screen.display.forward_to_apdu_client(data)
 
         elif tag == SephTag.MCU:
+            pass
+
+        elif tag == SephTag.TAG_NFC_POWER:
             pass
 
         elif tag == SephTag.TAG_BLE_SEND:

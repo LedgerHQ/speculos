@@ -50,6 +50,24 @@ add_library(emu
         bolos/default.c
         bolos/os_pki.c
         bolos/os_signature.c
+        bolos/io/io.c
+        bolos/io/sdk/protocol/src/ledger_protocol.c
+        bolos/io/sdk/lib_stusb/src/usbd_conf.c
+        bolos/io/sdk/lib_stusb/src/usbd_core.c
+        bolos/io/sdk/lib_stusb/src/usbd_ctlreq.c
+        bolos/io/sdk/lib_stusb/src/usbd_desc.c
+        bolos/io/sdk/lib_stusb/src/usbd_ioreq.c
+        bolos/io/sdk/lib_stusb/src/usbd_ledger_hid_u2f.c
+        bolos/io/sdk/lib_stusb/src/usbd_ledger_hid.c
+        bolos/io/sdk/lib_stusb/src/usbd_ledger_webusb.c
+        bolos/io/sdk/lib_stusb/src/usbd_ledger.c
+        bolos/io/sdk/lib_nfc/src/nfc_ledger.c
+        bolos/io/sdk/lib_nfc/src/nfc_ndef.c
+        bolos/io/sdk/io/src/os_io_default_apdu.c
+        bolos/io/sdk/io/src/os_io_seph_cmd.c
+        bolos/io/sdk/io/src/os_io_seph_ux.c
+        bolos/io/sdk/io/src/os_io.c
+        bolos/io/mock/src/mock.c
         emulate.c
         emulate_1.2.c
         emulate_1.5.c
@@ -60,6 +78,22 @@ add_library(emu
         emulate_unified_sdk.c
         environment.c
         svc.c)
+
+include_directories(emu
+bolos/io/mock/include
+bolos/io/sdk/include
+bolos/io/sdk/io/include
+bolos/io/sdk/protocol/include
+bolos/io/sdk/lib_stusb/include
+bolos/io/sdk/lib_nfc/include)
+
+add_compile_definitions(emu
+HAVE_BOLOS=1
+VERSION="1.0.0"
+OS_IO_SEPH_BUFFER_SIZE=272
+IO_USB_MAX_ENDPOINTS=6
+HAVE_NBGL=1
+HAVE_IO_USB=1)
 
 add_dependencies(emu openssl)
 
