@@ -113,6 +113,8 @@ def get_elf_infos(app_path, use_bagl, args):
         if bagl_fonts_symbol is not None:
             ei.fonts_addr = bagl_fonts_symbol[0]['st_value']
             ei.fonts_size = bagl_fonts_symbol[0]['st_size']
+            logger.info(f"Found C_bagl_fonts in app {os.path.basename(app_path)} "
+                        f"at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n")
         elif use_bagl:
             logger.info("Disabling OCR.")
 
@@ -173,7 +175,8 @@ def get_sharedlib_infos(app_path, apiLevel):
             if nbgl_fonts_symbol is not None:
                 ei.fonts_addr = nbgl_fonts_symbol[0]['st_value']
                 ei.fonts_size = nbgl_fonts_symbol[0]['st_size']
-                logger.info(f"Found C_nbgl_fonts at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n")
+                logger.info(f"Found C_nbgl_fonts in sharedlib {os.path.basename(app_path)} "
+                            f"at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n")
             else:
                 logger.info("Disabling OCR.")
             # At API Level >= 23, a function called pic_init() needs to be retrieved
@@ -218,18 +221,21 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         sharedlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
     sharedlib = str(resources.files(__package__) / sharedlib_filepath)
     if os.path.exists(sharedlib):
-        ei = get_sharedlib_infos(sharedlib, args.apiLevel)
-        sharedlib_args = f'{sharedlib}:{ei.text_offset:#x}:{ei.text_size:#x}:{ei.text_addr:#x}'
-        sharedlib_args += f':{ei.shared_ram_size:#x}:{ei.shared_ram_addr:#x}'
-        sharedlib_args += f':{ei.pic_init_addr:#x}'
-        sharedlib_args += f':{ei.svc_call_addr:#x}:{ei.svc_cx_call_addr:#x}'
+        sharedlib_ei = get_sharedlib_infos(sharedlib, args.apiLevel)
+        sharedlib_args = f'{sharedlib}:{sharedlib_ei.text_offset:#x}'
+        sharedlib_args += f':{sharedlib_ei.text_size:#x}'
+        sharedlib_args += f':{sharedlib_ei.text_addr:#x}'
+        sharedlib_args += f':{sharedlib_ei.shared_ram_size:#x}'
+        sharedlib_args += f':{sharedlib_ei.shared_ram_addr:#x}'
+        sharedlib_args += f':{sharedlib_ei.pic_init_addr:#x}'
+        sharedlib_args += f':{sharedlib_ei.svc_call_addr:#x}'
+        sharedlib_args += f':{sharedlib_ei.svc_cx_call_addr:#x}'
         argv += ['-c', sharedlib_args]
-        fonts_addr = ei.fonts_addr
-        fonts_size = ei.fonts_size
+        fonts_addr = sharedlib_ei.fonts_addr
+        fonts_size = sharedlib_ei.fonts_size
     else:
+        sharedlib_ei = None
         logger.warn(f"Shared lib {sharedlib_filepath} not found")
-
-    no_fonts_in_shared_library = (fonts_addr == 0)
 
     only_bagl = True
     # 'bagl' is the default value of the binary.sections.sdk_graphics. We need to
@@ -247,11 +253,17 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
             only_bagl = False
         ei = get_elf_infos(lib_path, use_bagl, args)
 
-        # if fonts_addr and fonts_size have not been found in shared.elf, use the
-        # ones for app.elf (but it was only for BAGL apps)
-        if no_fonts_in_shared_library:
+        # If the application has been linked with 'C_bagl_fonts' symbol,
+        # then use the fonts in the .ELF file (except for touch devices).
+        if ei.fonts_addr != 0 and args.model not in ["stax", "flex"]:
             fonts_addr = ei.fonts_addr
             fonts_size = ei.fonts_size
+        elif sharedlib_ei and sharedlib_ei.fonts_addr != 0 and not use_bagl:
+            fonts_addr = sharedlib_ei.fonts_addr
+            fonts_size = sharedlib_ei.fonts_size
+        else:
+            fonts_addr = 0
+            fonts_size = 0
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ei.ram_addr, ei.ram_size) != (0, 0):
             arg = f'{ei.ram_addr:#x}:{ei.ram_size:#x}'

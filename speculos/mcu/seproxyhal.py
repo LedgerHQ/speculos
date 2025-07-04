@@ -1,3 +1,4 @@
+import os
 import logging
 import sys
 import threading
@@ -7,7 +8,6 @@ from collections import namedtuple
 from enum import IntEnum
 from socket import socket
 from typing import Callable, List, Optional, Tuple
-import pygame
 
 from speculos.observer import BroadcastInterface, TextEvent
 from .transport import build_transport, TransportType
@@ -26,6 +26,7 @@ class SephTag(IntEnum):
     CAPDU_EVENT = 0x16
 
     MCU = 0x31
+    TAG_NFC_POWER = 0x34
     TAG_BLE_SEND = 0x38
     TAG_BLE_RADIO_POWER = 0x44
     SE_POWER_OFF = 0x46
@@ -410,6 +411,9 @@ class SeProxyHal(IODevice):
         elif tag == SephTag.MCU:
             pass
 
+        elif tag == SephTag.TAG_NFC_POWER:
+            pass
+
         elif tag == SephTag.TAG_BLE_SEND:
             pass
 
@@ -449,6 +453,9 @@ class SeProxyHal(IODevice):
                     # Play the tune
                     wavefile = f"{Path(__file__).parent}/tunes/{TUNES_NAMES[tune_id]}.wav"
                     if Path(wavefile).exists():
+                        # to hide its initialization message
+                        os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+                        import pygame.mixer
                         try:
                             pygame.mixer.init()
                             my_sound = pygame.mixer.Sound(wavefile)
