@@ -16,8 +16,11 @@
 
 #include "sdk.h"
 
-/* TODO */
-typedef void bolos_ux_params_t;
+typedef struct {
+  unsigned int ux_id;
+  unsigned int len;
+} bolos_ux_params_t;
+
 typedef struct try_context_s try_context_t;
 
 typedef struct cx_ecfp_256_public_key_s cx_ecfp_public_key_t;
