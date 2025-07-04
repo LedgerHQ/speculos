@@ -16,12 +16,25 @@ from .display import IODevice, DisplayNotifier
 
 
 class ApduServer(IODevice):
-    def __init__(self, host: str = '127.0.0.1', port: int = 9999, hid: bool = False):
+    def __init__(self, host: str = '127.0.0.1', port: int = 9999):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind((host, port))  # lgtm [py/bind-socket-all-network-interfaces]
-        self.socket.listen()
+        self.logger = logging.getLogger("apdu")
         self.client: Optional[ApduClient] = None
+
+        try:
+            self.socket.bind((host, port))  # lgtm [py/bind-socket-all-network-interfaces]
+            self.socket.listen()
+        except OSError as err:
+            if err.errno == errno.EADDRINUSE:
+                self.logger.warning(f"Port {port} is in use. Trying a random available port...")
+                self.socket.bind((host, 0))  # Bind to a random available port
+                self.socket.listen()
+                _, port = self.socket.getsockname()
+            else:
+                self.logger.error(f"Failed to bind to {host}:{port}: {err}")
+                raise
+        self.logger.info(f"Server started on {host}:{port}")
 
     @property
     def file(self):

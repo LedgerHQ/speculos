@@ -230,7 +230,7 @@ jobs:
         platform=${{ matrix.platform }}
         echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
 
-        if [[ "${{ github.event_name }}" == 'push' && ( "${{ github.ref }}" == 'refs/heads/master' || "${{ github.ref }}" =~ '^refs/tags/.*' ) ]]; then
+        if [[ "${{ github.event_name }}" == 'push' && ( "${{ github.ref }}" == 'refs/heads/master' || "${{ github.ref }}" =~ ^refs/tags/.* ) ]]; then
            PUSH_FLAG='true'
         else
            PUSH_FLAG='false'

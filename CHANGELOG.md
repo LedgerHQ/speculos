@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.24.0] 2025-07-xx
+
+### Added
+
+- Automatically try to find an available apdu port
+- Stax/Flex navigation with keyboard:
+  - Arrow Left / Right keys: Previous / Next actions in bottom right corner
+  - Return: Approve button in center
+  - Escape: Cancel button (review) in bottom left corner
+  - Backspace: Back button in top left corner
+  - M: Menu (Setting/Info) in top right corner
+
+### Fix
+
+- Deploy workflow: regex to correctly set the `PUSH_FLAG`
+
 ## [0.23.0] 2025-07-02
 
 ### Added
