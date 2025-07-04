@@ -5,18 +5,74 @@ from PyQt6.QtGui import QPainter, QColor, QPixmap
 from PyQt6.QtGui import QIcon, QKeyEvent, QMouseEvent
 from PyQt6.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
 from PyQt6.sip import voidptr
-from typing import List, Optional
+from typing import Dict, List, Optional, Union
+from enum import IntEnum
 
 from speculos.observer import TextEvent
 from . import bagl
 from . import nbgl
 from .display import COLORS, Display, DisplayNotifier, FrameBuffer, GraphicLibrary, IODevice
 from .readerror import ReadError
-from .struct import DisplayArgs, MODELS, ServerArgs
+from dataclasses import dataclass
+from .struct import DisplayArgs, MODELS, ServerArgs, Pixel
 from .vnc import VNC
 
-BUTTON_LEFT = 1
-BUTTON_RIGHT = 2
+
+class NanoButtons(IntEnum):
+    LEFT = 1
+    RIGHT = 2
+
+
+@dataclass
+class ButtonMapping:
+    keys: Dict[Qt.Key, list[NanoButtons]]
+
+
+@dataclass
+class TouchMapping:
+    keys: Dict[Qt.Key, Pixel]
+
+
+# For Nano, the arrow keys are mapped to physical buttons
+#  - Arrow Left key: Button 1
+#  - Arrow Right key: Button 2
+#  - Arrow Down key: Both buttons pressed together
+# For touchable devices, the keys are mapped to touch coordinates:
+#  - Arrow Left / Right keys: Previous / Next actions in bottom right corner
+#  - Return: Approve button in center
+#  - Escape: Cancel button (review) in bottom left corner
+#  - Backspace: Back button in top left corner
+#  - M: Menu (Setting/Info) in top right corner
+KEYS_BINDINGS: Dict[str, Union[ButtonMapping, TouchMapping]] = {
+    'nanox': ButtonMapping({
+        Qt.Key.Key_Left: [NanoButtons.LEFT],
+        Qt.Key.Key_Right: [NanoButtons.RIGHT],
+        Qt.Key.Key_Down: [NanoButtons.LEFT, NanoButtons.RIGHT],
+    }),
+    'nanosp': ButtonMapping({
+        Qt.Key.Key_Left: [NanoButtons.LEFT],
+        Qt.Key.Key_Right: [NanoButtons.RIGHT],
+        Qt.Key.Key_Down: [NanoButtons.LEFT, NanoButtons.RIGHT],
+    }),
+    'stax': TouchMapping({
+        Qt.Key.Key_Left: (240, 625),
+        Qt.Key.Key_Right: (360, 625),
+        Qt.Key.Key_Return: (200, 530),
+        Qt.Key.Key_Escape: (80, 625),
+        Qt.Key.Key_Backspace: (35, 35),
+        Qt.Key.Key_M: (330, 65),
+    }),
+    'flex': TouchMapping({
+        Qt.Key.Key_Left: (290, 550),
+        Qt.Key.Key_Right: (430, 550),
+        Qt.Key.Key_Return: (250, 430),
+        Qt.Key.Key_Escape: (80, 550),
+        Qt.Key.Key_Backspace: (35, 35),
+        Qt.Key.Key_M: (400, 65),
+    }),
+}
+
+
 DEFAULT_WINDOW_X = 10
 DEFAULT_WINDOW_Y = 10
 
@@ -215,15 +271,28 @@ class Screen(Display):
 
     def _key_event(self, event: QKeyEvent, pressed) -> None:
         key = Qt.Key(event.key())
-        if key in [Qt.Key.Key_Left, Qt.Key.Key_Right]:
-            buttons = {Qt.Key.Key_Left: BUTTON_LEFT, Qt.Key.Key_Right: BUTTON_RIGHT}
-            # forward this event to seph
-            self.seph.handle_button(buttons[key], pressed)
-        elif key == Qt.Key.Key_Down:
-            self.seph.handle_button(BUTTON_LEFT, pressed)
-            self.seph.handle_button(BUTTON_RIGHT, pressed)
-        elif key == Qt.Key.Key_Q and not pressed:
+
+        if event.isAutoRepeat():
+            # Ignore auto-repeat events
+            # (e.g. when holding a key, because the event would be sent multiple times)
+            return
+        if key == Qt.Key.Key_Q and not pressed:
             self.app.close()
+            return
+        if self._display_args.model not in KEYS_BINDINGS or \
+           key not in KEYS_BINDINGS[self._display_args.model].keys:
+            # Ignore unhandled events
+            return
+
+        if self._display_args.model.startswith('nano'):
+            # Forward the event to seph
+            kl = KEYS_BINDINGS[self._display_args.model].keys[key]
+            for k in kl:
+                self.seph.handle_button(k, pressed)
+        else:
+            # Forward the event to seph
+            x, y = KEYS_BINDINGS[self._display_args.model].keys[key]
+            self.seph.handle_finger(x, y, pressed)
 
     def display_status(self, data: bytes) -> List[TextEvent]:
         ret = self.bagl_gl.display_status(data)
