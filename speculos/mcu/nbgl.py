@@ -76,7 +76,7 @@ class NBGL(GraphicLibrary):
     def hal_draw_horizontal_line(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
-        
+
         mask = data[-2]
         color = data[-1]
 
@@ -92,7 +92,7 @@ class NBGL(GraphicLibrary):
     def hal_draw_line(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
-        
+
         dotStartIndex = data[-2]
         color = data[-1]
 
@@ -105,16 +105,14 @@ class NBGL(GraphicLibrary):
             # if vertical line
             if area.width == 1:
                 for y in range(area.y0, area.y0+area.height):
-                    if (y-area.y0)%3 == dotStartIndex:
+                    if ((y - area.y0) % 3) == dotStartIndex:
                         self.fb.draw_point(area.x0, y, NBGL.to_screen_color(0, 2))
-                    
+
             # if horizontal line
             elif area.height == 1:
                 for x in range(area.x0, area.x0+area.width):
-                    if ((x-area.x0)%3) == dotStartIndex:
+                    if ((x - area.x0) % 3) == dotStartIndex:
                         self.fb.draw_point(x, area.y0, NBGL.to_screen_color(0, 2))
-                    
-
 
     @staticmethod
     @cache

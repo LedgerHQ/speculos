@@ -984,7 +984,7 @@ int main(int argc, char *argv[])
     }
     break;
   case MODEL_APEX_P:
-    if (sdk_version != SDK_API_LEVEL_23) {
+    if (sdk_version < SDK_API_LEVEL_25) {
       errx(1, "invalid SDK version for the Ledger Apex P");
     }
     break;

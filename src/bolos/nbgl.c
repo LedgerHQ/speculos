@@ -37,9 +37,14 @@ unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
   uint8_t header[3];
   size_t len = sizeof(nbgl_area_t) + 2;
 
-  // TODO: up to API LEVEL 24 (before Apex), use SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE, 
-  // but after use SEPROXYHAL_TAG_NBGL_DRAW_LINE
-  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
+  // up to API LEVEL 24 (before Apex), use
+  // SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE, but after use
+  // SEPROXYHAL_TAG_NBGL_DRAW_LINE
+  if (sdk_version <= SDK_API_LEVEL_24) {
+    header[0] = SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE;
+  } else {
+    header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
+  }
   header[1] = (len >> 8) & 0xff;
   header[2] = len & 0xff;
 
