@@ -11,18 +11,6 @@ on:
         required: false
         default: ${{ github.ref }}
         type: string
-      test_dir:
-        required: true
-        type: string
-      speculos_app_branch_name:
-        required: false
-        default: master
-        type: string
-      is_rust:
-        description: '"true" if the app is using Rust SDK, else "false"'
-        required: false
-        default: false
-        type: string
 
 jobs:
   build_application:
@@ -37,13 +25,10 @@ jobs:
   build_docker_image:
     name: Build Speculos Docker image
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
     steps:
     - name: Clone
       uses: actions/checkout@v4
       with:
-          ref: ${{ inputs.speculos_app_branch_name }}
           submodules: recursive
           fetch-depth: 0
 
@@ -97,6 +82,25 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
+    - name: Prepare test conditions
+      shell: bash
+      run: |
+        pip install ledgered
+
+        # Get Test directory from manifest
+        TEST_DIR=$(ledger-manifest -otp "./app/ledger_app.toml")
+        if [ -z "${TEST_DIR}" ]; then
+          echo "No test directory found" && exit 1
+        fi
+        echo "TEST_DIR=${TEST_DIR}" >> $GITHUB_ENV
+
+        # Get SDK from manifest
+        SDK=$(ledger-manifest -os "./app/ledger_app.toml")
+        if [ -z "${SDK}" ]; then
+          echo "No sdk defined" && exit 1
+        fi
+        echo "SDK=${SDK,,}" >> $GITHUB_ENV
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -115,27 +119,27 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: compiled_app_binaries-${{ inputs.app_branch_name }}
-        path: ${{ github.workspace }}/app/${{ inputs.is_rust == 'false' && 'build' || 'target' }}
+        path: ${{ github.workspace }}/app/${{ env.SDK == 'c' && 'build' || 'target' }}
 
     - name: Run and test Speculos docker for C apps
-      if: ${{ inputs.is_rust == 'false' }}
+      if: ${{ env.SDK == 'c' }}
       uses: addnab/docker-run-action@v3
       with:
         image: ledgerhq/speculos:test
         options: -v ${{ github.workspace }}/app:/app
         run: |
             apt-get update && apt-get install -y gcc
-            pip install --extra-index-url https://test.pypi.org/simple/ -r /app/${{ inputs.test_dir }}/requirements.txt
-            pytest /app/${{ inputs.test_dir }}/ --tb=short -v --device ${{ matrix.device }}
+            pip install -r /app/${{ env.TEST_DIR }}/requirements.txt
+            pytest /app/${{ env.TEST_DIR }}/ --tb=short -v --device ${{ matrix.device }}
 
     - name: Run and test Speculos docker for Rust apps
-      if: ${{ inputs.is_rust == 'true' }}
+      if: ${{ env.SDK == 'rust' }}
       uses: addnab/docker-run-action@v3
       with:
         image: ledgerhq/speculos:test
         options: -v ${{ github.workspace }}/app:/app
         run: |
             apt-get update && apt-get install -y gcc && apt-get install -y cargo
-            pip install --extra-index-url https://test.pypi.org/simple/ -r /app/${{ inputs.test_dir }}/requirements.txt
+            pip install -r /app/${{ env.TEST_DIR }}/requirements.txt
             # test_version requires Cargo.toml
-            pytest /app/${{ inputs.test_dir }}/ --tb=short -v --device ${{ matrix.device }} -k "not test_version"
+            pytest /app/${{ env.TEST_DIR }}/ --tb=short -v --device ${{ matrix.device }} -k "not test_version"
