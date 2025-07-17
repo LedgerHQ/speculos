@@ -73,9 +73,10 @@ class NBGL(GraphicLibrary):
         self.__assert_area(area)
         return self.fb.update(area.x0, area.y0, area.width, area.height)
 
-    def hal_draw_line(self, data: bytes) -> None:
+    def hal_draw_horizontal_line(self, data: bytes) -> None:
         area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
         self.__assert_area(area)
+
         mask = data[-2]
         color = data[-1]
 
@@ -87,6 +88,31 @@ class NBGL(GraphicLibrary):
                 self.fb.draw_horizontal_line(area.x0, y, area.width, front_color)
             else:
                 self.fb.draw_horizontal_line(area.x0, y, area.width, back_color)
+
+    def hal_draw_line(self, data: bytes) -> None:
+        area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
+        self.__assert_area(area)
+
+        dotStartIndex = data[-2]
+        color = data[-1]
+
+        front_color = NBGL.to_screen_color(color, 2)
+
+        if self.model == "stax" or self.model == "flex" or color == 0 or color == 3:
+            self.fb.draw_rect(area.x0, area.y0, area.width, area.height, front_color)
+        else:
+            # APEX and gray color
+            # if vertical line
+            if area.width == 1:
+                for y in range(area.y0, area.y0+area.height):
+                    if ((y - area.y0) % 3) == dotStartIndex:
+                        self.fb.draw_point(area.x0, y, NBGL.to_screen_color(0, 2))
+
+            # if horizontal line
+            elif area.height == 1:
+                for x in range(area.x0, area.x0+area.width):
+                    if ((x - area.x0) % 3) == dotStartIndex:
+                        self.fb.draw_point(x, area.y0, NBGL.to_screen_color(0, 2))
 
     @staticmethod
     @cache

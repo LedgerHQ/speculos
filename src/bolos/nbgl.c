@@ -7,12 +7,13 @@
 #include "nbgl.h"
 #include "nbgl_rle.h"
 
-#define SEPROXYHAL_TAG_NBGL_DRAW_RECT       0xFA
-#define SEPROXYHAL_TAG_NBGL_REFRESH         0xFB
-#define SEPROXYHAL_TAG_NBGL_DRAW_LINE       0xFC
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE      0xFD
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE 0xFE
-#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE  0xFF
+#define SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE 0xF9
+#define SEPROXYHAL_TAG_NBGL_DRAW_RECT            0xFA
+#define SEPROXYHAL_TAG_NBGL_REFRESH              0xFB
+#define SEPROXYHAL_TAG_NBGL_DRAW_LINE            0xFC
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE           0xFD
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_FILE      0xFE
+#define SEPROXYHAL_TAG_NBGL_DRAW_IMAGE_RLE       0xFF
 
 unsigned long sys_nbgl_front_draw_rect(nbgl_area_t *area)
 {
@@ -36,7 +37,14 @@ unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
   uint8_t header[3];
   size_t len = sizeof(nbgl_area_t) + 2;
 
-  header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
+  // up to API LEVEL 24 (before Apex), use
+  // SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE, but after use
+  // SEPROXYHAL_TAG_NBGL_DRAW_LINE
+  if (sdk_version <= SDK_API_LEVEL_24) {
+    header[0] = SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE;
+  } else {
+    header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
+  }
   header[1] = (len >> 8) & 0xff;
   header[2] = len & 0xff;
 
@@ -150,6 +158,11 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
   return 0;
 }
 
+/**
+ * @brief Return pointer to font associated to @p fontId
+ *
+ * @param fontId ID of font to be fetched.
+ */
 unsigned long sys_nbgl_get_font(unsigned int fontId)
 {
   switch (hw_model) {
@@ -172,6 +185,18 @@ unsigned long sys_nbgl_get_font(unsigned int fontId)
       return 0;
     } else {
       return *((unsigned int *)(FLEX_FONTS_ARRAY_ADDR + (4 * fontId)));
+    }
+  case MODEL_APEX_P:
+    // Convert fontId into actual index of font in OS.
+    if (fontId == 4) {
+      fontId = 2;
+    } else {
+      fontId -= 17; // BAGL_FONT_INTER_MEDIUM_18px_1bpp
+    }
+    if (fontId >= APEX_P_NB_FONTS) {
+      return 0;
+    } else {
+      return *((unsigned int *)(APEX_P_FONTS_ARRAY_ADDR + (4 * fontId)));
     }
   case MODEL_NANO_SP:
     fontId -= 8; // BAGL_FONT_OPEN_SANS_EXTRABOLD_11px_1bpp

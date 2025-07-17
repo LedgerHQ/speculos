@@ -57,6 +57,7 @@ class SephTag(IntEnum):
     BAGL_DRAW_BITMAP = 0xF2
 
     # Speculos only, defined in speculos/src/bolos/nbgl.c
+    NBGL_DRAW_HORIZONTAL_LINE = 0xF9
     NBGL_DRAW_RECT = 0xFA
     NBGL_REFRESH = 0xFB
     NBGL_DRAW_LINE = 0xFC
@@ -476,6 +477,10 @@ class SeProxyHal(IODevice):
             # then we'll perform a screen update and make public the resulting screenshot
             self.need_nbgl_refresh = True
             self.is_last_draw_nbgl = True
+
+        elif tag == SephTag.NBGL_DRAW_HORIZONTAL_LINE:
+            assert isinstance(screen.display.nbgl_gl, NBGL)
+            screen.display.nbgl_gl.hal_draw_horizontal_line(data)
 
         elif tag == SephTag.NBGL_DRAW_LINE:
             assert isinstance(screen.display.nbgl_gl, NBGL)

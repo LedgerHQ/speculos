@@ -257,6 +257,10 @@ void parse_fonts(void *code, unsigned long text_load_addr,
         fonts = (void *)FLEX_FONTS_ARRAY_ADDR;
         nb_fonts = FLEX_NB_FONTS;
         break;
+      case MODEL_APEX_P:
+        fonts = (void *)APEX_P_FONTS_ARRAY_ADDR;
+        nb_fonts = APEX_P_NB_FONTS;
+        break;
       case MODEL_NANO_SP:
         fonts = (void *)NANOSP_FONTS_ARRAY_ADDR;
         nb_fonts = NANO_NB_FONTS;

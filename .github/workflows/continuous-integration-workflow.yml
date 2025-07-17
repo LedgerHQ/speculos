@@ -190,7 +190,7 @@ jobs:
     with:
       app_repository: LedgerHQ/app-boilerplate
       app_branch_name: master
-      test_dir: tests
+      test_dir: tests/standalone
       speculos_app_branch_name: ${{ github.ref }}
 
   package_and_test_docker_rust:
