@@ -14,6 +14,10 @@ static inline void U2BE_ENCODE(uint8_t *buf, size_t off, uint32_t value)
   buf[off + 1] = value & 0xFF;
 }
 
+// strlcpy was added to glibc in version 2.38; this is a fallback implementation
+// only for previous versions
+#if !(defined(__GLIBC__) && defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 38))
+
 static inline size_t strlcpy(char *dst, const char *src, size_t size)
 {
   size_t srclen;
@@ -28,3 +32,5 @@ static inline size_t strlcpy(char *dst, const char *src, size_t size)
 
   return (srclen);
 }
+
+#endif
