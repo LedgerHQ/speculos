@@ -499,3 +499,136 @@ cx_err_t sys_cx_bn_gf2_n_mul(cx_bn_t bn_r, const cx_bn_t bn_a,
 end:
   return error;
 }
+
+/* ========================================================================= */
+/* ===                   MONTGOMERY  MODULAR ARITHMETIC                  === */
+/* ========================================================================= */
+
+#define _2POWB                                                                 \
+  {                                                                            \
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,    \
+        0x00, 0x00, 0x00, 0x00, 0x00                                           \
+  } /*2^128*/
+#define _2POWBm1                                                               \
+  {                                                                            \
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,    \
+        0xff, 0xff, 0xff, 0xff                                                 \
+  } /* 2^128-1*/
+
+cx_err_t sys_cx_mont_alloc(cx_bn_mont_ctx_t *ctx, size_t length)
+{
+  cx_err_t error;
+
+  CX_CHECK(sys_cx_bn_alloc(&ctx->n, length));
+  CX_CHECK(sys_cx_bn_alloc(&ctx->h, length));
+
+end:
+  return error;
+}
+
+cx_err_t sys_cx_mont_init(cx_bn_mont_ctx_t *ctx, const cx_bn_t n)
+{
+  cx_err_t error;
+  size_t sizen;
+  uint8_t tu8_basis[] = _2POWB;
+  uint8_t tu8_basism1[] = _2POWBm1;
+  cx_bn_t basis, temp;
+
+  CX_CHECK(sys_cx_bn_nbytes(n, &sizen));
+  CX_CHECK(sys_cx_bn_alloc_init(&basis, sizen, tu8_basis,
+                                (size_t)sizeof(tu8_basis)));
+  CX_CHECK(sys_cx_bn_alloc(&temp, sizen));
+
+  /* copy modulus*/
+  CX_CHECK(sys_cx_bn_copy((ctx->n), n));
+  /* -p^-1 mod 2^sizeword*/
+  CX_CHECK(sys_cx_bn_reduce(temp, n, basis));
+
+  CX_CHECK(sys_cx_bn_mod_pow(ctx->h, temp, tu8_basism1, sizeof(tu8_basism1),
+                             basis)); /*1/P mod 2^n*/
+
+  /* 2^bitsizeof(n) mod n */
+  CX_CHECK(sys_cx_bn_xor(basis, basis, basis)); /* zero*/
+  CX_CHECK(sys_cx_bn_set_bit(
+      basis,
+      (sizen << 3) - 1)); /*2^(sizeofp)-1 to fit in memory before reduction*/
+  CX_CHECK(sys_cx_bn_mod_add(temp, basis, basis, n)); /* 2^(bitsize(p))*/
+  CX_CHECK(sys_cx_bn_mod_mul(ctx->h, temp, temp, n)); /* 2^(bitsize(p))^2*/
+
+  sys_cx_bn_destroy(&temp);
+  sys_cx_bn_destroy(&basis);
+
+end:
+  return error;
+}
+
+cx_err_t sys_cx_mont_init2(cx_bn_mont_ctx_t *ctx, const cx_bn_t n,
+                           const cx_bn_t h)
+{
+  cx_err_t error = CX_OK; // By default, until some error occurs
+
+  CX_CHECK(sys_cx_bn_copy((ctx->n), n));
+  CX_CHECK(sys_cx_bn_copy((ctx->h), h));
+
+end:
+  return error;
+}
+
+/* a horrible emulation of cx_mont_mul, not present in speculos, compute
+ * aR*bR=abR mod p*/
+/* todo: integrate some decent Montgomery implementation (maybe OpenSSL
+ * BN_mod_mul_montgomery()) */
+cx_err_t sys_cx_mont_mul(cx_bn_t r, const cx_bn_t a, const cx_bn_t b,
+                         const cx_bn_mont_ctx_t *ctx)
+{
+  cx_err_t error = CX_OK; // By default, until some error occurs
+  size_t field;
+
+  cx_bn_t temp;
+
+  CX_CHECK(sys_cx_bn_nbytes(ctx->n, &field));
+
+  CX_CHECK(sys_cx_bn_alloc(&temp, field));
+
+  CX_CHECK(sys_cx_bn_mod_invert_nprime(
+      temp, ctx->h,
+      ctx->n)); /* R^-1 (yes an inversion to emulate a mul, god forgive me)*/
+
+  CX_CHECK(sys_cx_bn_mod_mul(temp, a, temp, ctx->n));
+  CX_CHECK(sys_cx_bn_mod_mul(r, b, temp, ctx->n));
+
+  sys_cx_bn_destroy(&temp);
+
+end:
+  return error;
+}
+
+cx_err_t sys_cx_mont_to_montgomery(cx_bn_t x, const cx_bn_t z,
+                                   const cx_bn_mont_ctx_t *ctx)
+{
+  cx_err_t error = CX_OK; // By default, until some error occurs
+
+  CX_CHECK(sys_cx_bn_mod_mul(x, ctx->h, z, ctx->n));
+
+end:
+  return error;
+}
+
+cx_err_t sys_cx_mont_from_montgomery(cx_bn_t z, const cx_bn_t x,
+                                     const cx_bn_mont_ctx_t *ctx)
+{
+  cx_err_t error = CX_OK; // By default, until some error occurs
+  cx_bn_t temp;
+  size_t field;
+
+  CX_CHECK(sys_cx_bn_nbytes(ctx->h, &field));
+  CX_CHECK(sys_cx_bn_alloc(&temp, field));
+
+  CX_CHECK(sys_cx_bn_set_u32(temp, 1));
+  CX_CHECK(sys_cx_mont_mul(z, temp, x, ctx));
+
+  CX_CHECK(sys_cx_bn_destroy(&temp));
+
+end:
+  return error;
+}
