@@ -14,6 +14,7 @@ import signal
 import socket
 import sys
 import threading
+import time
 from dataclasses import dataclass
 from elftools.elf.elffile import ELFFile
 from ledgered.binary import LedgerBinaryApp
@@ -67,8 +68,26 @@ def set_pdeath(sig):
     '''Set the parent death signal of the calling process.'''
 
     PR_SET_PDEATHSIG = 1
-    libc = ctypes.cdll.LoadLibrary('libc.so.6')
-    libc.prctl(PR_SET_PDEATHSIG, sig)
+    if sys.platform.startswith('linux'):
+        libc = ctypes.cdll.LoadLibrary('libc.so.6')
+        libc.prctl(PR_SET_PDEATHSIG, sig)
+    elif sys.platform == 'darwin':
+        libc = ctypes.cdll.LoadLibrary('libSystem.dylib')
+        parent_pid = os.getppid()
+        def monitor_parent():
+            while True:
+                try:
+                    result = libc.kill(parent_pid, 0)
+                    if result != 0:
+                        libc.kill(os.getpid(), sig)
+                        break
+                except:
+                    libc.kill(os.getpid(), sig)
+                    break
+                time.sleep(1)
+        monitor_thread = threading.Thread(target=monitor_parent, daemon=True)
+        monitor_thread.start()
+
 
 
 def get_elf_infos(app_path, use_bagl, args):
