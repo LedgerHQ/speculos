@@ -4,6 +4,8 @@ import sys
 from construct import Struct, Int8ul, Int16ul, Int16sl
 from enum import IntEnum
 from speculos.observer import TextEvent
+import time
+
 try:
     from functools import cache
 except ImportError:
@@ -69,6 +71,8 @@ class NBGL(GraphicLibrary):
         return self.fb.draw_rect(area.x0, area.y0, area.width, area.height, NBGL.to_screen_color(area.color, 2))
 
     def refresh(self, data: bytes) -> bool:
+        if self.model == "apex_p":
+            time.sleep(0.1)  # Let ragger win the race with speculos
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
         return self.fb.update(area.x0, area.y0, area.width, area.height)
