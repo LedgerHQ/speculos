@@ -75,6 +75,12 @@ class NBGL(GraphicLibrary):
             time.sleep(0.1)  # Let ragger win the race with speculos
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
+        # for an unknown reason, partial refreshes are not supported on NanoSP and NanoX
+        if self.model.startswith("nano"):
+            area.x0 = 0
+            area.y0 = 0
+            area.width = self.SCREEN_WIDTH
+            area.height = self.SCREEN_HEIGHT
         return self.fb.update(area.x0, area.y0, area.width, area.height)
 
     def hal_draw_horizontal_line(self, data: bytes) -> None:
