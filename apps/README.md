@@ -1,6 +1,9 @@
 The files in these folder are consumed by the tests to ensure that speculos
 works correctly across various devices and apps.
 
+DO NOT use them to test apps or your integrations, as these  binaries are old
+and unmantained. Rather, follow the instructions in the app's repository
+in order to build the most recent version.
 
 ### Naming
 
