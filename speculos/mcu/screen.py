@@ -70,6 +70,14 @@ KEYS_BINDINGS: Dict[str, Union[ButtonMapping, TouchMapping]] = {
         Qt.Key.Key_Backspace: (35, 35),
         Qt.Key.Key_M: (400, 65),
     }),
+    'apex_p': TouchMapping({
+        Qt.Key.Key_Left: (170, 360),
+        Qt.Key.Key_Right: (270, 360),
+        Qt.Key.Key_Return: (140, 280),
+        Qt.Key.Key_Escape: (20, 360),
+        Qt.Key.Key_Backspace: (20, 20),
+        Qt.Key.Key_M: (255, 45),
+    }),
 }
 
 

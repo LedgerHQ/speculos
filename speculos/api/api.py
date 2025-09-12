@@ -4,6 +4,7 @@ from typing import Any, Dict
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
+import flask.cli
 
 from speculos.mcu.display import DisplayNotifier, IODevice
 from speculos.mcu.readerror import ReadError
@@ -61,6 +62,8 @@ class ApiWrapper:
                  automation_server: BroadcastInterface):
         self._port = api_port
         static_folder = str(resources.files(__package__) / "static")
+        # Remove the Flask startup banner
+        flask.cli.show_server_banner = lambda *a: None
         self._app = Flask(__name__, static_url_path="", static_folder=static_folder)
         self._app.env = "development"
         CORS(self._app, resources={r"*": {"origins": "*"}}, supports_credentials=True)
