@@ -335,13 +335,11 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
 
 def setup_logging(args):
-    if args.verbose:
-        logging.basicConfig(level=logging.INFO,
-                            format='%(asctime)s:%(name)s: %(message)s',
-                            datefmt='%H:%M:%S')
-    else:
-        args.log_level.append("werkzeug:ERROR")
-        logging.basicConfig(level=logging.INFO, format='%(name)s: %(message)s')
+    if not args.verbose:
+        # Remove Werkzeug logger
+        log = logging.getLogger('werkzeug')
+        log.disabled = True
+    logging.basicConfig(level=logging.INFO, format='%(name)s: %(message)s')
 
     for arg in args.log_level:
         if ":" not in arg:
