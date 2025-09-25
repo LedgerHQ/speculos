@@ -320,7 +320,11 @@ int sys_cx_math_is_prime(const uint8_t *r, unsigned int len)
   rr = BN_new();
   BN_bin2bn(r, len, rr);
 
+#if OPENSSL_VERSION_MAJOR >= 3
+  ret = BN_check_prime(rr, ctx, NULL);
+#else
   ret = BN_is_prime_ex(rr, 64, ctx, NULL);
+#endif
 
   BN_free(rr);
   BN_CTX_free(ctx);
