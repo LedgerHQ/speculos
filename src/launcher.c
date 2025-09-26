@@ -953,7 +953,8 @@ int main(int argc, char *argv[])
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
         sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22 &&
-        sdk_version != SDK_API_LEVEL_23 && sdk_version != SDK_API_LEVEL_24) {
+        sdk_version != SDK_API_LEVEL_23 && sdk_version != SDK_API_LEVEL_24 &&
+        sdk_version != SDK_API_LEVEL_25) {
       errx(1, "invalid SDK version for the Ledger Nano X");
     }
     break;
@@ -967,7 +968,7 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
         sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18 &&
         sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23 &&
-        sdk_version != SDK_API_LEVEL_24) {
+        sdk_version != SDK_API_LEVEL_24 && sdk_version != SDK_API_LEVEL_25) {
       errx(1, "invalid SDK version for the Ledger NanoSP");
     }
     break;
