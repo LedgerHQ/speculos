@@ -50,8 +50,6 @@ int emulate_1_6(unsigned long syscall, unsigned long *parameters,
                 unsigned long *ret, bool verbose);
 int emulate_2_0(unsigned long syscall, unsigned long *parameters,
                 unsigned long *ret, bool verbose);
-int emulate_blue_2_2_5(unsigned long syscall, unsigned long *parameters,
-                       unsigned long *ret, bool verbose);
 int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
                        unsigned long *ret, bool verbose);
 int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,

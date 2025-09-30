@@ -9,7 +9,6 @@ import binascii
 import ctypes
 import logging
 import os
-import re
 import signal
 import socket
 import sys
@@ -291,12 +290,6 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
             logger.error(f"Fonts {fonts_filepath} not found")
             sys.exit(1)
 
-    if args.model == 'blue':
-        if args.rampage:
-            extra_ram = args.rampage
-        if extra_ram:
-            argv.extend(['-r', extra_ram])
-
     pid = os.fork()
     if pid != 0:
         return pid
@@ -356,7 +349,7 @@ def setup_logging(args):
 
 def main(prog=None) -> int:
 
-    parser = argparse.ArgumentParser(description='Emulate Ledger Nano/Blue apps.')
+    parser = argparse.ArgumentParser(description='Emulate Ledger Nano S+, X, Stax, Flex, Apex+ apps.')
     parser.add_argument('app.elf', type=str, help='application path')
     parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
                                                        'to specify a path')
@@ -376,8 +369,6 @@ def main(prog=None) -> int:
     parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
                                                                          'can be specified multiple times')
     parser.add_argument('-m', '--model', choices=list(display.MODELS.keys()))
-    parser.add_argument('-r', '--rampage', help='Additional RAM page and size available to the app (eg. '
-                                                '0x123000:0x100). Supersedes the internal probing for such page.')
     parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: '
                                                                    'to use a hex seed, prefix it with "hex:"')
     parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
@@ -495,15 +486,7 @@ def main(prog=None) -> int:
     if args.progressive:
         rendering = seproxyhal.RENDER_METHOD.PROGRESSIVE
 
-    if args.rampage:
-        if args.model != 'blue':
-            logger.error("extra RAM page arguments -r (--rampage) require '-m blue'")
-            sys.exit(1)
-        if not re.match('(0x)?[0-9a-fA-F]+:(0x)?[0-9a-fA-F]+$', args.rampage):
-            logger.error("invalid ram page argument")
-            sys.exit(1)
-
-    if args.display == 'text' and args.model not in ['nanos', 'nanox', 'nanosp']:
+    if args.display == 'text' and args.model not in ['nanox', 'nanosp']:
         logger.error(f"unsupported model '{args.model}' with argument --display text")
         sys.exit(1)
 
@@ -541,9 +524,7 @@ def main(prog=None) -> int:
 
     if args.apiLevel is None and args.sdk is None:
         default_sdk = {
-            "nanos": "2.1",
             "nanox": "2.0.2",
-            "blue": "blue-2.2.5",
             "nanosp": "1.0.4"
         }
         args.sdk = default_sdk.get(args.model)
@@ -613,10 +594,8 @@ def main(prog=None) -> int:
     zoom = args.zoom
     if zoom is None:
         default_zoom = {
-            "nanos": 2,
             "nanox": 2,
             "nanosp": 2,
-            "blue": 1,
             "stax": 1,
             "flex": 1,
             "apex_p": 1

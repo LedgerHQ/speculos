@@ -71,14 +71,11 @@ typedef struct model_sdk_s {
 
 typedef void (*pic_init_t)(void *pic_flash_start, void *pic_ram_start);
 
-static MODEL_SDK sdkmap[SDK_COUNT] = {
-  { MODEL_NANO_X, "1.2" },      { MODEL_NANO_X, "2.0" },
-  { MODEL_NANO_X, "2.0.2" },    { MODEL_NANO_S, "1.5" },
-  { MODEL_NANO_S, "1.6" },      { MODEL_NANO_S, "2.0" },
-  { MODEL_NANO_S, "2.1" },      { MODEL_BLUE, "1.5" },
-  { MODEL_BLUE, "blue-2.2.5" }, { MODEL_NANO_SP, "1.0" },
-  { MODEL_NANO_SP, "1.0.3" }
-};
+static MODEL_SDK sdkmap[SDK_COUNT] = { { MODEL_NANO_X, "1.2" },
+                                       { MODEL_NANO_X, "2.0" },
+                                       { MODEL_NANO_X, "2.0.2" },
+                                       { MODEL_NANO_SP, "1.0" },
+                                       { MODEL_NANO_SP, "1.0.3" } };
 
 static struct memory_s memory;
 static struct app_s apps[MAX_APP];
@@ -221,10 +218,6 @@ unsigned long get_app_text_load_addr(void)
 static bool is_svc_inlined(void)
 {
   switch (sdk_version) {
-  case SDK_BLUE_1_5:
-  case SDK_BLUE_2_2_5:
-  case SDK_NANO_S_1_5:
-  case SDK_NANO_S_1_6:
   case SDK_NANO_X_1_2:
     return true;
     break;
@@ -391,11 +384,6 @@ static void *load_app(char *name)
     /* initialize .bss (and the stack) to 0xa5 to mimic BOLOS behavior in older
      * FW versions, even if it violates section 3.5.7 of the C89 standard */
     switch (sdk_version) {
-    case SDK_BLUE_1_5:
-    case SDK_BLUE_2_2_5:
-    case SDK_NANO_S_1_5:
-    case SDK_NANO_S_1_6:
-    case SDK_NANO_S_2_0:
     case SDK_NANO_X_1_2:
       memset(data_addr, 0xa5, data_size);
       break;
@@ -635,19 +623,17 @@ static int load_cxlib(char *cxlib_args)
     return -1;
   }
 
-  // Map CXRAM on non NanoS devices
-  if (hw_model != MODEL_NANO_S) {
-    // Make sure cr_ram is aligned
-    if (cx_ram_load % sysconf(_SC_PAGESIZE)) {
-      cx_ram_size += cx_ram_load % sysconf(_SC_PAGESIZE);
-      cx_ram_load -= (cx_ram_load % sysconf(_SC_PAGESIZE));
-    }
+  // Map CXRAM on devices
+  // Make sure cr_ram is aligned
+  if (cx_ram_load % sysconf(_SC_PAGESIZE)) {
+    cx_ram_size += cx_ram_load % sysconf(_SC_PAGESIZE);
+    cx_ram_load -= (cx_ram_load % sysconf(_SC_PAGESIZE));
+  }
 
-    if (mmap((void *)cx_ram_load, cx_ram_size, PROT_READ | PROT_WRITE,
-             MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
-      warn("mmap cxram %x, %x", cx_ram_load, cx_ram_size);
-      return -1;
-    }
+  if (mmap((void *)cx_ram_load, cx_ram_size, PROT_READ | PROT_WRITE,
+           MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
+    warn("mmap cxram %x, %x", cx_ram_load, cx_ram_size);
+    return -1;
   }
 
   if (mprotect(p, sh_size, PROT_READ | PROT_WRITE) != 0) {
@@ -843,7 +829,7 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
-                        ted. Currently supports \"nanos\", \"nanosp\", \"nanox\", \"stax\", \"flex\" and \"blue\".\n\
+                        ted. Currently supports \"nanosp\", \"nanox\", \"stax\", \"flex\" and \"apex_p\".\n\
   -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n\
   -a <api_level>:       A string representing the SDK api level to be used, like \"1\".\n");
   exit(EXIT_FAILURE);
@@ -891,12 +877,8 @@ int main(int argc, char *argv[])
       break;
     case 'm':
       model_str = optarg;
-      if (strcmp(optarg, "nanos") == 0) {
-        hw_model = MODEL_NANO_S;
-      } else if (strcmp(optarg, "nanox") == 0) {
+      if (strcmp(optarg, "nanox") == 0) {
         hw_model = MODEL_NANO_X;
-      } else if (strcmp(optarg, "blue") == 0) {
-        hw_model = MODEL_BLUE;
       } else if (strcmp(optarg, "nanosp") == 0) {
         hw_model = MODEL_NANO_SP;
       } else if (strcmp(optarg, "stax") == 0) {
@@ -942,12 +924,6 @@ int main(int argc, char *argv[])
   }
 
   switch (hw_model) {
-  case MODEL_NANO_S:
-    if (sdk_version != SDK_NANO_S_1_5 && sdk_version != SDK_NANO_S_1_6 &&
-        sdk_version != SDK_NANO_S_2_0 && sdk_version != SDK_NANO_S_2_1) {
-      errx(1, "invalid SDK version for the Ledger Nano S");
-    }
-    break;
   case MODEL_NANO_X:
     if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
         sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
@@ -956,11 +932,6 @@ int main(int argc, char *argv[])
         sdk_version != SDK_API_LEVEL_23 && sdk_version != SDK_API_LEVEL_24 &&
         sdk_version != SDK_API_LEVEL_25) {
       errx(1, "invalid SDK version for the Ledger Nano X");
-    }
-    break;
-  case MODEL_BLUE:
-    if (sdk_version != SDK_BLUE_1_5 && sdk_version != SDK_BLUE_2_2_5) {
-      errx(1, "invalid SDK version for the Ledger Blue");
     }
     break;
   case MODEL_NANO_SP:
@@ -1001,8 +972,7 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-      sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
+  if (sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
       sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3 ||
       ((sdk_version >= SDK_API_LEVEL_1) && (sdk_version < SDK_COUNT))) {
     if (load_cxlib(cxlib_path) != 0) {

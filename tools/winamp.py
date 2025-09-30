@@ -6,7 +6,7 @@ VNC client with skin support.
 Speculos must be launched with the --vnc-port argument in order to expose the
 VNC server. Usage example:
 
-  $ ./speculos.py ./apps/nanos#btc#1.5#00000000.elf --vnc-port 5902 --headless &
+  $ ./speculos.py ./apps/nanosp#btc#1.5#00000000.elf --vnc-port 5902 --headless &
   $ ./tools/winamp.py --skin tools/skins/nano-blue.png
 
 This script is highly experimental. Skins are PNG files where the first black

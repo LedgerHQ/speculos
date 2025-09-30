@@ -167,6 +167,6 @@ unsigned long sys_screen_update(void)
 
 unsigned long sys_screen_clear(void)
 {
-  // assume 64 pixels height even on Nano S (no impact)
+  // assume 64 pixels height
   return sys_bagl_hal_draw_rect(0, 0, 0, 128, 64);
 }

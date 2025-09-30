@@ -18,15 +18,6 @@ int emulate(unsigned long syscall, unsigned long *parameters,
   case SDK_NANO_X_1_2:
     retid = emulate_1_2(syscall, parameters, ret, verbose);
     break;
-  case SDK_BLUE_1_5:
-  case SDK_NANO_S_1_5:
-    retid = emulate_1_5(syscall, parameters, ret, verbose);
-    break;
-  case SDK_NANO_S_1_6:
-    retid = emulate_1_6(syscall, parameters, ret, verbose);
-    break;
-  case SDK_NANO_S_2_0:
-  case SDK_NANO_S_2_1:
   case SDK_NANO_X_2_0:
   case SDK_NANO_X_2_0_2:
     retid = emulate_2_0(syscall, parameters, ret, verbose);
@@ -34,9 +25,6 @@ int emulate(unsigned long syscall, unsigned long *parameters,
   case SDK_NANO_SP_1_0:
   case SDK_NANO_SP_1_0_3:
     retid = emulate_nanosp_1_0(syscall, parameters, ret, verbose);
-    break;
-  case SDK_BLUE_2_2_5:
-    retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
     break;
   default:
     if ((version >= SDK_API_LEVEL_1) && (version < SDK_COUNT)) {

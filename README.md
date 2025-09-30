@@ -5,7 +5,7 @@
 
 ![screenshot btc nano s](https://raw.githubusercontent.com/LedgerHQ/speculos/master/docs/screenshot-api-nanos-btc.png)
 
-The goal of this project is to emulate Ledger Nano S/S+, Nano X, Blue, Flex and Stax apps on
+The goal of this project is to emulate Ledger Nano S+, Nano X, Apex+, Flex and Stax apps on
 standard desktop computers, without any hardware device. More information can
 be found here in the
 [documentation website](https://ledgerhq.github.io/speculos) (or in the
@@ -14,7 +14,7 @@ be found here in the
 Usage example:
 
 ```shell
-./speculos.py apps/btc.elf --model nanos
+./speculos.py apps/btc.elf --model nanosp
 # ... and open a browser on http://127.0.0.1:5000
 ```
 
@@ -86,7 +86,7 @@ Speculos.
 ### Memory alignment
 
 Attempts to perform unaligned accesses when not allowed (eg. dereferencing a
-misaligned pointer) will cause an alignment fault on a Ledger Nano S device but
+misaligned pointer) will cause an alignment fault on a Ledger Nano S+ device but
 not on Speculos. Note that such unaligned accesses are supported by other
 Ledger devices.
 
@@ -102,7 +102,7 @@ PRINTF("display_value: %d\n", display_value);
 
 ### Watchdog
 
-NanoX, Flex and Stax devices use an internal watchdog enforcing usage of regular
+NanoX, Flex, Apex+ and Stax devices use an internal watchdog enforcing usage of regular
 calls to `io_seproxyhal_io_heartbeat();`. This watchdog is not emulated on
 Speculos.
 

@@ -42,29 +42,20 @@ def test_btc_get_version(client):
 def test_btc_get_public_key_with_user_approval(client, app):
     """Ask for the public key, compare screenshots and press reject."""
 
-    if app.model == "nanos" and app.hash == "00000000":
-        pytest.skip(f"skipped on model {app.model} because of animated text")
-
     bip32_path = bytes.fromhex("8000002C80000000800000000000000000000000")
     payload = bytes([len(bip32_path) // 4]) + bip32_path
 
     with client.apdu_exchange_nowait(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01) as response:
-        if app.model == "blue":
-            client.wait_for_text_event("CONFIRM ACCOUNT")
-        else:
-            event = client.wait_for_text_event("Address")
-            while "Reject" not in event["text"]:
-                client.press_and_release("right")
-                event = client.get_next_event()
+        event = client.wait_for_text_event("Address")
+        while "Reject" not in event["text"]:
+            client.press_and_release("right")
+            event = client.get_next_event()
 
         screenshot = client.get_screenshot()
         path = importlib.resources.files(__package__) / "resources" / f"btc_getpubkey_{app.model}.png"
         assert speculos.client.screenshot_equal(path, io.BytesIO(screenshot))
 
-        if app.model == "blue":
-            client.finger_touch(110, 440)
-        else:
-            client.press_and_release("both")
+        client.press_and_release("both")
 
         with pytest.raises(speculos.client.ApduException) as e:
             response.receive()
@@ -73,9 +64,6 @@ def test_btc_get_public_key_with_user_approval(client, app):
 
 def test_btc_automation(client, app):
     """Retrieve the pubkey, which requires a validation"""
-
-    if app.model == "nanos" and app.hash == "00000000":
-        pytest.skip(f"skipped on model {app.model} and revision {app.hash}")
 
     rules = read_automation_rules(f"btc_getpubkey_{app.model}.json")
     client.set_automation_rules(rules)

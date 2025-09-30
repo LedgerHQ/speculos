@@ -13,10 +13,8 @@ class Model:
 
 
 MODELS: Dict[str, Model] = {
-    'nanos': Model('Nano S', (128, 32), (20, 13), (100, 26)),
     'nanox': Model('Nano X', (128, 64), (5, 5), (10, 10)),
     'nanosp': Model('Nano SP', (128, 64), (5, 5), (10, 10)),
-    'blue': Model('Blue', (320, 480), (13, 13), (26, 26)),
     'stax': Model('Stax', (400, 672), (13, 13), (26, 26)),
     'flex': Model('Flex', (480, 600), (13, 13), (26, 26)),
     'apex_p': Model('Apex P', (300, 400), (13, 13), (26, 26)),

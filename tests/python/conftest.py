@@ -14,8 +14,8 @@ AppInfo = namedtuple("AppInfo", ["filepath", "model", "name", "sdk", "hash"])
 
 
 def app_info_from_path(path: Path) -> AppInfo:
-    # name example: nanos#btc#1.5#5b6693b8.elf
-    app_regexp = re.compile(r"^(nanos|nanox|blue|nanosp)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]*)\.elf$")
+    # name example: nanosp#btc#1.5#5b6693b8.elf
+    app_regexp = re.compile(r"^(nanox|nanosp)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]*)\.elf$")
     matching = re.match(app_regexp, path.name)
     if not matching:
         return None
@@ -35,7 +35,7 @@ def list_apps_to_test() -> List[AppInfo]:
 
     A typical application path looks like:
 
-    'apps/nanos#btc#1.5#5b6693b8.elf'
+    'apps/nanosp#btc#1.5#5b6693b8.elf'
     """
     all_apps = []
     for appfile in APP_DIR.iterdir():
@@ -101,13 +101,6 @@ def client_btc_testnet(request):
 
     with client_instance(request.param, additional_args=args) as _client:
         yield _client
-
-
-@pytest.fixture(scope="module", params=get_apps("ram-page"), ids=idfn)
-def client_ram_page(request):
-    with client_instance(request.param) as _client:
-        yield _client
-
 
 @pytest.fixture(scope="function", params=default_btc_app(), ids=idfn)
 def client_vnc(request):

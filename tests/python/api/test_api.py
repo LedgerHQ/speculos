@@ -97,11 +97,11 @@ class TestApi:
                         assert re.match(text, event["text"])
 
             texts = [
-                '{"events": [{"text": "Bitcoin", "x": 41, "y": 3, "w": 128, "h": 32, "clear": false}, '
-                '{"text": "is ready", "x": 41, "y": 17, "w": 128, "h": 32, "clear": false}]}\n',
-                '{"events": [{"text": "Version", "x": 43, "y": 3, "w": 79, "h": 32, "clear": false}, '
-                '{"text": "2.0.1", "x": 52, "y": 17, "w": 70, "h": 32, "clear": false}]}\n',
-                '{"events": [{"text": "About", "x": 47, "y": 19, "w": 81, "h": 32, "clear": false}]}\n'
+                '{"events": [{"text": "Bitcoin", "x": 46, "y": 28, "w": 7, "h": 13, "clear": false}, '
+                '{"text": "is ready", "x": 44, "y": 42, "w": 3, "h": 14, "clear": false}]}\n',
+                '{"events": [{"text": "Version", "x": 43, "y": 20, "w": 6, "h": 12, "clear": false}, '
+                '{"text": "2.0.1", "x": 52, "y": 34, "w": 6, "h": 12, "clear": false}]}\n',
+                '{"events": [{"text": "About", "x": 47, "y": 35, "w": 8, "h": 12, "clear": false}]}\n'
             ]
             for text in texts:
                 content = get_current_screen_content(r)

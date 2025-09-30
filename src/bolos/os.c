@@ -44,10 +44,8 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
                                  uint8_t *UNUSED(value), size_t UNUSED(maxlen))
 {
   // Since Nano X SDK 2.0 & Nano S SDK 2.1, OS_SETTING_PLANEMODE is 6!
-  if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_S_1_5 ||
-      sdk_version == SDK_NANO_S_1_6 || sdk_version == SDK_NANO_S_2_0 ||
-      sdk_version == SDK_BLUE_1_5 || sdk_version == SDK_BLUE_2_2_5 ||
-      sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3) {
+  if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_SP_1_0 ||
+      sdk_version == SDK_NANO_SP_1_0_3) {
     if (setting_id == OS_SETTING_PLANEMODE_OLD) {
       return 1;
     }

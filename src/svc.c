@@ -110,12 +110,8 @@ static bool is_os_lib_call(unsigned long syscall)
    */
   if (sdk_version >= SDK_API_LEVEL_1) {
     os_lib_call_id = 0x01000067;
-  } else if (sdk_version == SDK_NANO_S_1_5 || sdk_version == SDK_BLUE_1_5) {
-    os_lib_call_id = 0x6000650b;
   } else if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_X_2_0 ||
-             sdk_version == SDK_NANO_X_2_0_2 || sdk_version == SDK_NANO_S_1_6 ||
-             sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-             sdk_version == SDK_BLUE_2_2_5) {
+             sdk_version == SDK_NANO_X_2_0_2) {
     os_lib_call_id = 0x6000670d;
   } else if (sdk_version == SDK_NANO_SP_1_0 ||
              sdk_version == SDK_NANO_SP_1_0_3) {
@@ -166,11 +162,7 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
   if (sdk_version >= SDK_API_LEVEL_1) {
     context->uc_mcontext.arm_r0 = ret;
     context->uc_mcontext.arm_r1 = 0;
-  } else if (sdk_version == SDK_NANO_S_1_5 || sdk_version == SDK_BLUE_1_5) {
-    context->uc_mcontext.arm_r0 = retid;
-    context->uc_mcontext.arm_r1 = ret;
-  } else if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-             sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
+  } else if (sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
              sdk_version == SDK_NANO_SP_1_0 ||
              sdk_version == SDK_NANO_SP_1_0_3) {
     context->uc_mcontext.arm_r0 = ret;

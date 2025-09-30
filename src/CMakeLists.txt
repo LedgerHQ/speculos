@@ -73,7 +73,6 @@ add_library(emu
         emulate_1.5.c
         emulate_1.6.c
         emulate_2.0.c
-        emulate_blue_2.2.5.c
         emulate_lnsp_1.0.c
         emulate_unified_sdk.c
         environment.c
