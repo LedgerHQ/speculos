@@ -5,22 +5,14 @@
 #include <cmocka.h>
 
 #include "../utils.h"
+#include "bolos_syscalls.h"
 #include "emulate.h"
 #include "sdk.h"
 
 #define os_os_global_pin_is_validated sys_os_global_pin_is_validated
 
-/* BOLOS_UX_OK varies across SDK versions */
-#define BOLOS_UX_OK_1_2 0xB0105011
-#define BOLOS_UX_OK_1_5 0xB0105011
-#define BOLOS_UX_OK_1_6 0xAA
-
-#define SYSCALL_PIN_1_2 0x60005b89
-#define SYSCALL_PIN_1_5 0x60005b89
-#define SYSCALL_PIN_1_6 0x6000a03c
-
 hw_model_t hw_model = MODEL_COUNT;
-sdk_version_t sdk_version = SDK_COUNT;
+int g_api_level = 0;
 
 void *get_memory_code_address(void)
 {
@@ -73,19 +65,15 @@ int run_lib(char *UNUSED(name), unsigned long *UNUSED(parameters))
 
 struct testcase_s {
   hw_model_t hw_model;
-  sdk_version_t sdk_version;
+  int api_level;
   unsigned long syscall;
   long unsigned int expected;
 };
 
 void test_os_global_pin_is_validated(void **UNUSED(state))
 {
-  assert_int_equal(sys_os_global_pin_is_validated_1_2(), BOLOS_UX_OK_1_2);
-  assert_int_equal(sys_os_global_pin_is_validated_1_5(), BOLOS_UX_OK_1_5);
-  assert_int_equal(sys_os_global_pin_is_validated_1_6(), BOLOS_UX_OK_1_6);
-
   struct testcase_s testcases[] = {
-    { MODEL_NANO_X, SDK_NANO_X_1_2, SYSCALL_PIN_1_2, BOLOS_UX_OK_1_2 },
+    { MODEL_NANO_X, 22, SYSCALL_os_global_pin_is_validated_ID_IN, 0xAA },
   };
 
   for (size_t i = 0; i < ARRAY_SIZE(testcases); i++) {
@@ -93,7 +81,7 @@ void test_os_global_pin_is_validated(void **UNUSED(state))
     unsigned long parameters[] = {};
     long unsigned int ret;
 
-    emulate(test->syscall, parameters, &ret, false, test->sdk_version,
+    emulate(test->syscall, parameters, &ret, false, test->api_level,
             test->hw_model);
     assert_int_equal(ret, test->expected);
   }

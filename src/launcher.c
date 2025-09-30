@@ -71,22 +71,14 @@ typedef struct model_sdk_s {
 
 typedef void (*pic_init_t)(void *pic_flash_start, void *pic_ram_start);
 
-static MODEL_SDK sdkmap[SDK_COUNT] = { { MODEL_NANO_X, "1.2" },
-                                       { MODEL_NANO_X, "2.0" },
-                                       { MODEL_NANO_X, "2.0.2" },
-                                       { MODEL_NANO_SP, "1.0" },
-                                       { MODEL_NANO_SP, "1.0.3" } };
-
 static struct memory_s memory;
 static struct app_s apps[MAX_APP];
 static unsigned int napp;
-static void *extra_rampage_addr;
-static size_t extra_rampage_size;
 static unsigned long pic_init_addr;       // pic_init() addr in Shared lib
 static unsigned long sh_svc_call_addr;    // SVC_Call addr in Shared lib
 static unsigned long sh_svc_cx_call_addr; // SVC_cx_call addr in Shared lib
 
-sdk_version_t sdk_version = SDK_COUNT;
+int g_api_level = 0;
 hw_model_t hw_model = MODEL_COUNT;
 extern bool pki_prod;
 
@@ -212,21 +204,6 @@ unsigned long get_app_text_load_addr(void)
   return current_app->elf.text_load_addr;
 }
 
-// On old versions of the SDK, functions SVC_Call and SVC_cx_call were inlined
-// In this case we can't look for the symbols in the elf to only patch the SVC_1
-// inside of these functions
-static bool is_svc_inlined(void)
-{
-  switch (sdk_version) {
-  case SDK_NANO_X_1_2:
-    return true;
-    break;
-  default:
-    return false;
-    break;
-  }
-}
-
 int replace_current_code(struct app_s *app)
 {
   int flags, prot;
@@ -258,8 +235,7 @@ int replace_current_code(struct app_s *app)
 
   // If the syscall functions are not inlined and their symbols have been found
   // in the elf file, patch the elf at this address to remove the SVC 1 call
-  if (!is_svc_inlined() &&
-      (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0)) {
+  if (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0) {
     if (app->elf.svc_call_addr != 0) {
       uint32_t start = app->elf.svc_call_addr - app->elf.text_load_addr;
 
@@ -324,8 +300,8 @@ static void *load_app(char *name)
   struct app_s *app;
   struct stat st;
   size_t size;
-  void *data_addr, *extra_addr = NULL;
-  size_t data_size, extra_size = 0;
+  void *data_addr;
+  size_t data_size;
   size_t page_size = sysconf(_SC_PAGESIZE);
 
   code = MAP_FAILED;
@@ -381,40 +357,6 @@ static void *load_app(char *name)
       warn("mmap data");
       goto error;
     }
-    /* initialize .bss (and the stack) to 0xa5 to mimic BOLOS behavior in older
-     * FW versions, even if it violates section 3.5.7 of the C89 standard */
-    switch (sdk_version) {
-    case SDK_NANO_X_1_2:
-      memset(data_addr, 0xa5, data_size);
-      break;
-    /* In newer FW versions the app RAM (.bss and stack) is zeroized.
-     * This is done by mmap thanks to the MAP_ANONYMOUS flag. */
-    default:
-      break;
-    }
-  }
-
-  /* setup extra page as additional RAM available to the app */
-  if (extra_rampage_addr != NULL && extra_rampage_size != 0) {
-    extra_addr = get_lower_page_aligned_addr((uintptr_t)extra_rampage_addr);
-    extra_size = get_upper_page_aligned_size(extra_rampage_size);
-
-    if (extra_addr != NULL && extra_size != 0) {
-      if (mmap(extra_addr, extra_size, PROT_READ | PROT_WRITE,
-               MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
-        warn("mmap extra RAM page");
-        goto error;
-      }
-      fprintf(stderr, "[*] using extra RAM page [@=%p, size=%u bytes]",
-              extra_addr, extra_size);
-      if (extra_addr != extra_rampage_addr ||
-          extra_size != extra_rampage_size) {
-        fprintf(stderr, ", realigned from [@=%p, size=%u bytes]\n",
-                extra_rampage_addr, extra_rampage_size);
-      } else {
-        fprintf(stderr, "\n");
-      }
-    }
   }
 
   if (mprotect(code, size, PROT_READ | PROT_WRITE) != 0) {
@@ -424,8 +366,7 @@ static void *load_app(char *name)
 
   // If the syscall functions are not inlined and their symbols have been found
   // in the elf file, patch the elf at this address to remove the SVC 1 call
-  if (!is_svc_inlined() &&
-      (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0)) {
+  if (app->elf.svc_call_addr != 0 || app->elf.svc_cx_call_addr != 0) {
     if (app->elf.svc_call_addr != 0) {
       uint32_t start = app->elf.svc_call_addr - app->elf.text_load_addr;
 
@@ -689,7 +630,7 @@ static int run_app(char *name, unsigned long *parameters)
     stack_end = LOAD_RAM_ADDR;
   }
   stack_start = stack_end + app->elf.stack_size;
-  if (sdk_version >= SDK_API_LEVEL_23) {
+  if (g_api_level >= 23) {
     // initialize shared library PIC
     pic_init = (pic_init_t)pic_init_addr;
     pic_init(LOAD_ADDR, (void *)LOAD_RAM_ADDR);
@@ -792,46 +733,16 @@ static int load_apps(int argc, char *argv[])
   return 0;
 }
 
-static sdk_version_t apilevelstr2sdkver(const char *api_level_arg)
-{
-  int api_level = atoi(api_level_arg);
-  int _sdk_version = api_level - 1 + SDK_API_LEVEL_1;
-
-  if ((api_level <= 0) || (_sdk_version >= SDK_COUNT)) {
-    warnx("Invalid api level (\"%s\")", api_level_arg);
-    return SDK_COUNT;
-  }
-
-  return _sdk_version;
-}
-
-static sdk_version_t sdkstr2sdkver(const char *sdk_arg)
-{
-  sdk_version_t version;
-
-  for (version = 0; version < SDK_COUNT; version++) {
-    if (sdkmap[version].model == hw_model &&
-        strcmp(sdkmap[version].sdk, sdk_arg) == 0) {
-      break;
-    }
-  }
-
-  return version;
-}
-
 static void usage(char *argv0)
 {
   fprintf(stderr,
-          "Usage: %s [-t] [-r <rampage:ramsize> -k <sdk_version> -a "
-          "<api_level>] <app.elf> "
+          "Usage: %s -m <model> [-t] [-a <api_level>] <app.elf> "
           "[libname:lib.elf:0x1000:0x9fc0:0x20001800:0x1800 ...]\n",
           argv0);
   fprintf(stderr, "\n\
-  -r <rampage:ramsize>: Address and size of extra ram (both in hex) to map app.elf memory.\n\
   -m <model>:           Optional string representing the device model being emula-\n\
                         ted. Currently supports \"nanosp\", \"nanox\", \"stax\", \"flex\" and \"apex_p\".\n\
-  -k <sdk_version>:     A string representing the SDK version to be used, like \"1.6\".\n\
-  -a <api_level>:       A string representing the SDK api level to be used, like \"1\".\n");
+  -a <api_level>:       A string representing the SDK api level to be used, like \"22\".\n");
   exit(EXIT_FAILURE);
 }
 
@@ -844,11 +755,7 @@ int main(int argc, char *argv[])
 
   trace_syscalls = false;
   char *model_str = NULL;
-  char *sdk = NULL;
-  char *api_level = NULL;
-
-  extra_rampage_addr = NULL;
-  extra_rampage_size = 0;
+  char *api_level_str = NULL;
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
@@ -860,20 +767,11 @@ int main(int argc, char *argv[])
     case 'c':
       cxlib_path = optarg;
       break;
-    case 'k':
-      sdk = optarg;
-      break;
     case 'a':
-      api_level = optarg;
+      api_level_str = optarg;
       break;
     case 't':
       trace_syscalls = true;
-      break;
-    case 'r':
-      if (sscanf(optarg, "%p:%x", &extra_rampage_addr, &extra_rampage_size) !=
-          2) {
-        errx(1, "invalid extram ram page/size\n");
-      }
       break;
     case 'm':
       model_str = optarg;
@@ -908,61 +806,16 @@ int main(int argc, char *argv[])
     errx(1, "invalid model");
   }
 
-  if (api_level != NULL) {
-    sdk_version = apilevelstr2sdkver(api_level);
-    if (sdk_version == SDK_COUNT) {
-      errx(1, "invalid SDK api_level: %s", api_level);
+  if (api_level_str != NULL) {
+    g_api_level = atoi(api_level_str);
+    if ((g_api_level < FIRST_SUPPORTED_API_LEVEL) ||
+        (g_api_level > LAST_SUPPORTED_API_LEVEL)) {
+      errx(1, "invalid SDK api_level: %d", g_api_level);
     }
-    fprintf(stderr, "[*] using API_LEVEL version %s on %s\n", api_level,
+    fprintf(stderr, "[*] using API_LEVEL version %d on %s\n", g_api_level,
             model_str);
   } else {
-    sdk_version = sdkstr2sdkver(sdk);
-    if (sdk_version == SDK_COUNT) {
-      errx(1, "invalid SDK version: %s", sdk);
-    }
-    fprintf(stderr, "[*] using SDK version %s on %s\n", sdk, model_str);
-  }
-
-  switch (hw_model) {
-  case MODEL_NANO_X:
-    if (sdk_version != SDK_NANO_X_1_2 && sdk_version != SDK_NANO_X_2_0 &&
-        sdk_version != SDK_NANO_X_2_0_2 && sdk_version != SDK_API_LEVEL_1 &&
-        sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_12 &&
-        sdk_version != SDK_API_LEVEL_18 && sdk_version != SDK_API_LEVEL_22 &&
-        sdk_version != SDK_API_LEVEL_23 && sdk_version != SDK_API_LEVEL_24 &&
-        sdk_version != SDK_API_LEVEL_25) {
-      errx(1, "invalid SDK version for the Ledger Nano X");
-    }
-    break;
-  case MODEL_NANO_SP:
-    if (sdk_version != SDK_NANO_SP_1_0 && sdk_version != SDK_NANO_SP_1_0_3 &&
-        sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_5 &&
-        sdk_version != SDK_API_LEVEL_12 && sdk_version != SDK_API_LEVEL_18 &&
-        sdk_version != SDK_API_LEVEL_22 && sdk_version != SDK_API_LEVEL_23 &&
-        sdk_version != SDK_API_LEVEL_24 && sdk_version != SDK_API_LEVEL_25) {
-      errx(1, "invalid SDK version for the Ledger NanoSP");
-    }
-    break;
-  case MODEL_STAX:
-    if (sdk_version < SDK_API_LEVEL_7 &&
-        (sdk_version != SDK_API_LEVEL_1 && sdk_version != SDK_API_LEVEL_3 &&
-         sdk_version != SDK_API_LEVEL_5 && sdk_version != SDK_API_LEVEL_7)) {
-      errx(1, "invalid SDK version for the Ledger Stax");
-    }
-    break;
-  case MODEL_FLEX:
-    if (sdk_version < SDK_API_LEVEL_18) {
-      errx(1, "invalid SDK version for the Ledger Flex");
-    }
-    break;
-  case MODEL_APEX_P:
-    if (sdk_version < SDK_API_LEVEL_25) {
-      errx(1, "invalid SDK version for the Ledger Apex P");
-    }
-    break;
-  default:
-    usage(argv[0]);
-    break;
+    errx(1, "missing SDK api_level argument");
   }
 
   make_openssl_random_deterministic();
@@ -972,12 +825,8 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if (sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
-      sdk_version == SDK_NANO_SP_1_0 || sdk_version == SDK_NANO_SP_1_0_3 ||
-      ((sdk_version >= SDK_API_LEVEL_1) && (sdk_version < SDK_COUNT))) {
-    if (load_cxlib(cxlib_path) != 0) {
-      return 1;
-    }
+  if (load_cxlib(cxlib_path) != 0) {
+    return 1;
   }
 
   init_environment();

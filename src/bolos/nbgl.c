@@ -40,7 +40,7 @@ unsigned long sys_nbgl_front_draw_horizontal_line(nbgl_area_t *area,
   // up to API LEVEL 24 (before Apex), use
   // SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE, but after use
   // SEPROXYHAL_TAG_NBGL_DRAW_LINE
-  if (sdk_version <= SDK_API_LEVEL_24) {
+  if (g_api_level <= 24) {
     header[0] = SEPROXYHAL_TAG_NBGL_DRAW_HORIZONTAL_LINE;
   } else {
     header[0] = SEPROXYHAL_TAG_NBGL_DRAW_LINE;
@@ -91,8 +91,10 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
                                        character);
 }
 
-unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area)
+unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area,
+                                          nbgl_post_refresh_t post_refresh)
 {
+  (void)post_refresh;
   uint8_t header[3];
   size_t len = sizeof(nbgl_area_t);
 
@@ -104,13 +106,6 @@ unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area)
   sys_io_seph_send((const uint8_t *)area, sizeof(nbgl_area_t));
 
   return 0;
-}
-
-unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area,
-                                          nbgl_post_refresh_t post_refresh)
-{
-  (void)post_refresh;
-  return sys_nbgl_front_refresh_area_legacy(area);
 }
 
 unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
@@ -167,13 +162,7 @@ unsigned long sys_nbgl_get_font(unsigned int fontId)
 {
   switch (hw_model) {
   case MODEL_STAX: {
-    unsigned int maxNbFonts;
-    if (sdk_version >= SDK_API_LEVEL_15) {
-      maxNbFonts = STAX_NB_FONTS;
-    } else {
-      maxNbFonts = STAX_NB_FONTS_12;
-    }
-    if (fontId >= maxNbFonts) {
+    if (fontId >= STAX_NB_FONTS) {
       return 0;
     } else {
       return *((unsigned int *)(STAX_FONTS_ARRAY_ADDR + (4 * fontId)));
@@ -220,34 +209,6 @@ unsigned long sys_nbgl_get_font(unsigned int fontId)
 unsigned long sys_nbgl_screen_reinit(void)
 {
   return 0;
-}
-
-uint8_t uncompress_rle_buffer[SCREEN_HEIGHT * SCREEN_WIDTH / 2];
-
-unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
-                                                 uint8_t *buffer,
-                                                 uint32_t buffer_len,
-                                                 color_t fore_color)
-{
-  // Try to find the character corresponding to provided bitmap
-  uint32_t character = get_character_from_bitmap(buffer);
-
-  // Uncompress input buffer
-  nbgl_uncompress_rle(area, buffer, buffer_len, uncompress_rle_buffer,
-                      sizeof(uncompress_rle_buffer));
-
-  // Now send it as if it was an uncompressed image
-  nbgl_front_draw_img_character(area, uncompress_rle_buffer, NO_TRANSFORMATION,
-                                fore_color, character);
-
-  return 0;
-}
-
-unsigned long sys_nbgl_front_draw_img_rle_10(nbgl_area_t *area, uint8_t *buffer,
-                                             uint32_t buffer_len,
-                                             color_t fore_color)
-{
-  return sys_nbgl_front_draw_img_rle(area, buffer, buffer_len, fore_color, 0);
 }
 
 unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,

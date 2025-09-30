@@ -18,13 +18,13 @@ CLA = 0xE0
 
 
 class Ins(IntEnum):
-    GET_PUBLIC_KEY = 0x40
-    GET_VERSION = 0xC4
+    GET_PUBLIC_KEY = 0x05
+    GET_VERSION = 0x03
 
 
 @pytest.fixture(scope="module")
-def client(client_btc):
-    return client_btc
+def client(client_boil):
+    return client_boil
 
 
 def read_automation_rules(name):
@@ -34,25 +34,24 @@ def read_automation_rules(name):
     return rules
 
 
-def test_btc_get_version(client):
-    """Send a get_version APDU to the BTC app."""
+def test_boil_get_version(client):
+    """Send a get_version APDU to the Boilerplate app."""
     client.apdu_exchange(CLA, Ins.GET_VERSION, b"")
 
 
-def test_btc_get_public_key_with_user_approval(client, app):
+def test_boil_get_public_key_with_user_approval(client, app):
     """Ask for the public key, compare screenshots and press reject."""
 
-    bip32_path = bytes.fromhex("8000002C80000000800000000000000000000000")
-    payload = bytes([len(bip32_path) // 4]) + bip32_path
+    payload = bytes.fromhex("058000002c80000001800000000000000000000000")
 
     with client.apdu_exchange_nowait(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01) as response:
-        event = client.wait_for_text_event("Address")
-        while "Reject" not in event["text"]:
+        event = client.wait_for_text_event("Verify BOL address")
+        while "Cancel" not in event["text"]:
             client.press_and_release("right")
             event = client.get_next_event()
-
+ 
         screenshot = client.get_screenshot()
-        path = importlib.resources.files(__package__) / "resources" / f"btc_getpubkey_{app.model}.png"
+        path = importlib.resources.files(__package__) / "resources" / f"boil_getpubkey_{app.model}.png"
         assert speculos.client.screenshot_equal(path, io.BytesIO(screenshot))
 
         client.press_and_release("both")
@@ -62,11 +61,11 @@ def test_btc_get_public_key_with_user_approval(client, app):
         assert e.value.sw == 0x6985
 
 
-def test_btc_automation(client, app):
+def test_boil_automation(client, app):
     """Retrieve the pubkey, which requires a validation"""
 
-    rules = read_automation_rules(f"btc_getpubkey_{app.model}.json")
+    rules = read_automation_rules(f"boil_getpubkey_{app.model}.json")
     client.set_automation_rules(rules)
 
-    payload = bytes.fromhex("058000003180000000800000000000000000000000")
-    client.apdu_exchange(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01, p2=0x01)
+    payload = bytes.fromhex("058000002c80000001800000000000000000000000")
+    client.apdu_exchange(CLA, Ins.GET_PUBLIC_KEY, payload, p1=0x01, p2=0x00)

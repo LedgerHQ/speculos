@@ -2,14 +2,21 @@
     "version": 1,
     "rules": [
         {
-            "regexp": "Address \\(\\d/\\d\\)",
+            "regexp": "Verify BOL address",
             "actions": [
                 [ "button", 2, true ],
                 [ "button", 2, false ]
             ]
         },
         {
-            "text": "Approve",
+            "regexp": "Address.*",
+            "actions": [
+                [ "button", 2, true ],
+                [ "button", 2, false ]
+            ]
+        },
+        {
+            "text": "Confirm",
             "actions": [
                 [ "button", 1, true ],
                 [ "button", 2, true ],

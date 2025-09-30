@@ -38,10 +38,6 @@ add_library(emu
         bolos/endorsement.c
         bolos/seproxyhal.c
         bolos/os.c
-        bolos/os_1.2.c
-        bolos/os_1.5.c
-        bolos/os_1.6.c
-        bolos/os_2.0.c
         bolos/os_bip32.c
         bolos/os_eip2333.c
         bolos/cx.c
@@ -69,12 +65,6 @@ add_library(emu
         bolos/io/sdk/io/src/os_io.c
         bolos/io/mock/src/mock.c
         emulate.c
-        emulate_1.2.c
-        emulate_1.5.c
-        emulate_1.6.c
-        emulate_2.0.c
-        emulate_lnsp_1.0.c
-        emulate_unified_sdk.c
         environment.c
         svc.c)
 

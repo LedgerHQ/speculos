@@ -199,10 +199,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 
     argv += ['-m', args.model]
 
-    if args.apiLevel:
-        argv += ['-a', str(args.apiLevel)]
-    else:
-        argv += ['-k', str(args.sdk)]
+    argv += ['-a', str(args.apiLevel)]
 
     if args.pki_prod:
         argv += ['-p']
@@ -210,14 +207,11 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     fonts_addr = 0
     fonts_size = 0
 
-    # load shared lib only if available for the specified api level or sdk
-    if args.apiLevel:
-        if int(args.apiLevel) < 23:
-            sharedlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
-        else:
-            sharedlib_filepath = f"sharedlib/{args.model}-api-level-shared-{args.apiLevel}.elf"
+    # load shared lib only if available for the specified api level
+    if int(args.apiLevel) < 23:
+        sharedlib_filepath = f"cxlib/{args.model}-api-level-cx-{args.apiLevel}.elf"
     else:
-        sharedlib_filepath = f"cxlib/{args.model}-cx-{args.sdk}.elf"
+        sharedlib_filepath = f"sharedlib/{args.model}-api-level-shared-{args.apiLevel}.elf"
     sharedlib = str(resources.files(__package__) / sharedlib_filepath)
     if os.path.exists(sharedlib):
         sharedlib_ei = get_sharedlib_infos(sharedlib, args.apiLevel)
@@ -361,7 +355,6 @@ def main(prog=None) -> int:
                         help='32B in hex format, will be used as the user private keys')
     parser.add_argument('--attestation-key', default='', help='32B in hex format, will be used as the private '
                                                               'attestation key')
-    parser.add_argument('-k', '--sdk', type=str, help='SDK version')
     parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
     parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
                         'Bitcoin:app/btc.elf) which can be called through os_lib_call'
@@ -517,21 +510,6 @@ def main(prog=None) -> int:
         from .mcu.headless import HeadlessNotifier as ScreenNotifier
     else:
         from .mcu.screen import QtScreenNotifier as ScreenNotifier
-
-    if args.sdk and args.apiLevel:
-        logger.error("Either SDK version or api level should be specified")
-        sys.exit(1)
-
-    if args.apiLevel is None and args.sdk is None:
-        default_sdk = {
-            "nanox": "2.0.2",
-            "nanosp": "1.0.4"
-        }
-        args.sdk = default_sdk.get(args.model)
-
-    if args.model == "nanosp" and args.sdk == "1.0.4":
-        # NanoS+ 1.0.4 OS can be emulated as 1.0.3 OS
-        args.sdk = "1.0.3"
 
     api_enabled = (args.api_port != 0)
 

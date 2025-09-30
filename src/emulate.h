@@ -37,39 +37,15 @@ typedef struct cx_ecfp_256_private_key_s cx_ecfp_private_key_t;
 #endif
 
 int emulate(unsigned long syscall, unsigned long *parameters,
-            unsigned long *ret, bool verbose, sdk_version_t version,
-            hw_model_t model);
-int emulate_common(unsigned long syscall, unsigned long *parameters,
-                   unsigned long *ret, bool verbose);
-
-int emulate_1_2(unsigned long syscall, unsigned long *parameters,
-                unsigned long *ret, bool verbose);
-int emulate_1_5(unsigned long syscall, unsigned long *parameters,
-                unsigned long *ret, bool verbose);
-int emulate_1_6(unsigned long syscall, unsigned long *parameters,
-                unsigned long *ret, bool verbose);
-int emulate_2_0(unsigned long syscall, unsigned long *parameters,
-                unsigned long *ret, bool verbose);
-int emulate_nanosp_1_0(unsigned long syscall, unsigned long *parameters,
-                       unsigned long *ret, bool verbose);
-int emulate_unified_sdk(unsigned long syscall, unsigned long *parameters,
-                        unsigned long *ret, bool verbose, sdk_version_t version,
-                        hw_model_t model);
+            unsigned long *ret, bool verbose, int api_level, hw_model_t model);
 
 unsigned long sys_os_version(uint8_t *buffer, unsigned int len);
 unsigned int sys_os_serial(unsigned char *serial, unsigned int maxlength);
 unsigned long sys_os_seph_version(uint8_t *buffer, size_t len);
 unsigned long sys_os_lib_call(unsigned long *parameters);
 unsigned long sys_os_lib_end(void);
-unsigned long sys_os_global_pin_is_validated_1_2(void);
-unsigned long sys_os_global_pin_is_validated_1_5(void);
-unsigned long sys_os_global_pin_is_validated_1_6(void);
-unsigned long sys_os_global_pin_is_validated_2_0(void);
-unsigned long sys_os_global_pin_invalidate(void);
-unsigned long sys_os_perso_isonboarded_1_2(void);
-unsigned long sys_os_perso_isonboarded_1_5(void);
-unsigned long sys_os_perso_isonboarded_1_6(void);
-unsigned long sys_os_perso_isonboarded_2_0(void);
+unsigned long sys_os_global_pin_is_validated(void);
+unsigned long sys_os_perso_isonboarded(void);
 unsigned long sys_os_flags(void);
 int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len);
 int sys_nvm_erase(void *dst_addr, size_t src_len);
@@ -84,12 +60,6 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int mode, cx_curve_t curve, const unsigned int *path,
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
     unsigned char *seed_key, unsigned int seed_key_length);
-unsigned long sys_os_perso_derive_node_bip32_seed_key(
-    unsigned int mode, cx_curve_t curve, const unsigned int *path,
-    unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
-    unsigned char *seed_key, unsigned int seed_key_length);
-unsigned int sys_os_perso_seed_cookie(unsigned char *seed_cookie,
-                                      unsigned int seed_cookie_length);
 unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
                                           const unsigned int *path,
                                           unsigned int pathLength,
@@ -100,11 +70,7 @@ unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *value,
 unsigned long sys_os_registry_get_current_app_tag(unsigned int tag,
                                                   uint8_t *buffer,
                                                   size_t length);
-unsigned long sys_os_ux_1_2(bolos_ux_params_t *params);
-unsigned long sys_os_ux_1_5(bolos_ux_params_t *params);
-unsigned long sys_os_ux_1_6(bolos_ux_params_t *params);
-unsigned long sys_os_ux_2_0(bolos_ux_params_t *params);
-
+unsigned long sys_os_ux(bolos_ux_params_t *params);
 unsigned long sys_cx_hash(cx_hash_t *hash, int mode, const uint8_t *in,
                           size_t len, uint8_t *out, size_t out_len);
 unsigned long sys_cx_rng(uint8_t *buffer, unsigned int length);
@@ -126,11 +92,8 @@ unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength,
 unsigned long sys_try_context_set(try_context_t *context);
 unsigned long sys_try_context_get(void);
 
-unsigned long sys_os_sched_last_status_1_2(unsigned int task_idx);
-unsigned long sys_os_sched_last_status_1_5(void);
-unsigned long sys_os_sched_last_status_1_6(unsigned int task_idx);
-unsigned long sys_os_sched_last_status_2_0(unsigned int task_idx);
-unsigned long sys_os_sched_current_task_2_0(void);
+unsigned long sys_os_sched_last_status(unsigned int task_idx);
+unsigned long sys_os_sched_current_task(void);
 
 unsigned long sys_check_api_level(void);
 
@@ -153,14 +116,7 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     }                                                                          \
   } while (0)
 
-#ifdef _SDK_2_0_
 #define GET_RETID(name)
-#else //_SDK_2_0__
-#define GET_RETID(name)                                                        \
-  do {                                                                         \
-    retid = name;                                                              \
-  } while (0)
-#endif //_SDK_2_0_
 
 #define SYSCALL0(_name)                                                        \
   case SYSCALL_##_name##_ID_IN: {                                              \

@@ -17,6 +17,8 @@
 
 #define MAX_LIBCALL 3
 
+#define BOLOS_UX_OK 0xAA
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 struct libcall_s {
@@ -44,27 +46,20 @@ unsigned long sys_os_setting_get(unsigned int setting_id,
                                  uint8_t *UNUSED(value), size_t UNUSED(maxlen))
 {
   // Since Nano X SDK 2.0 & Nano S SDK 2.1, OS_SETTING_PLANEMODE is 6!
-  if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_SP_1_0 ||
-      sdk_version == SDK_NANO_SP_1_0_3) {
-    if (setting_id == OS_SETTING_PLANEMODE_OLD) {
-      return 1;
-    }
-  } else {
-    if (setting_id == OS_SETTING_PLANEMODE_NEW) {
-      return 1;
-    }
-    if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX) ||
-         (hw_model == MODEL_APEX_P)) &&
-        setting_id == OS_SETTING_FEATURES) {
-      return 0xff;
-    }
+  if (setting_id == OS_SETTING_PLANEMODE_NEW) {
+    return 1;
+  }
+  if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX) ||
+       (hw_model == MODEL_APEX_P)) &&
+      setting_id == OS_SETTING_FEATURES) {
+    return 0xff;
+  }
 
-    if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
-        (setting_id == OS_SETTING_SOUND)) {
-      const bool tap_enabled = true;
-      const bool notif_enabled = true;
-      return (!tap_enabled) | ((!notif_enabled) << 1);
-    }
+  if (((hw_model == MODEL_STAX) || (hw_model == MODEL_FLEX)) &&
+      (setting_id == OS_SETTING_SOUND)) {
+    const bool tap_enabled = true;
+    const bool notif_enabled = true;
+    return (!tap_enabled) | ((!notif_enabled) << 1);
   }
 
   fprintf(stderr, "os_setting_get not implemented for 0x%x\n", setting_id);
@@ -201,4 +196,48 @@ unsigned long sys_os_lib_throw(unsigned int exception)
   fprintf(stderr, "[*] os_lib_throw(0x%x) unhandled\n", exception);
   _exit(1);
   return 0;
+}
+
+unsigned long sys_os_ux(bolos_ux_params_t *UNUSED(params))
+{
+  return BOLOS_UX_OK;
+}
+
+unsigned long sys_os_global_pin_is_validated(void)
+{
+  return BOLOS_UX_OK;
+}
+
+unsigned long sys_os_sched_last_status(unsigned int task_idx
+                                       __attribute__((unused)))
+{
+  return BOLOS_UX_OK;
+}
+
+unsigned long sys_os_sched_current_task(void)
+{
+  return 2; // = TASK_USER in OS
+}
+
+//-----------------------------------------------------------------------------
+// The functions below are empty, to avoid a crash if an app use them.
+//-----------------------------------------------------------------------------
+
+unsigned int sys_os_perso_seed_cookie(unsigned char *seed_cookie
+                                      __attribute__((unused)),
+                                      unsigned int seed_cookie_length
+                                      __attribute__((unused)))
+{
+  return 0;
+}
+
+unsigned int sys_os_serial(unsigned char *serial, unsigned int maxlength)
+{
+  char *sn = "1.2.3.4";
+  size_t size = strlen(sn);
+  if (maxlength < size) {
+    size = maxlength;
+  }
+  memcpy(serial, sn, size);
+  return size;
 }
