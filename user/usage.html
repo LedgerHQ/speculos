@@ -101,10 +101,9 @@
 </pre></div>
 </div>
 <p>The docker image can also be used directly, as detailed in the specific <a class="reference internal" href="docker.html"><span class="std std-doc">docker documentation page</span></a>.</p>
-<p>With applications built by recent SDKs, Speculos can automatically detect the targeted device. Otherwise, the Nano S is the default; the Nano X, Nano S+, Flex, Stax and Blue can be specified on the command line:</p>
+<p>With applications built by recent SDKs, Speculos can automatically detect the targeted device. The Nano X, Nano S+, Flex, Stax and Apex+ can be specified on the command line:</p>
 <div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./speculos.py<span class="w"> </span>--model<span class="w"> </span>nanox<span class="w"> </span>apps/nanox#btc#2.0.2#1c8db8da.elf
 ./speculos.py<span class="w"> </span>--model<span class="w"> </span>nanosp<span class="w"> </span>apps/nanosp#btc#1.0.3#17bf7619.elf
-./speculos.py<span class="w"> </span>--model<span class="w"> </span>blue<span class="w"> </span>--sdk<span class="w"> </span><span class="m">1</span>.5<span class="w"> </span>apps/blue#btc#1.5#00000000.elf
 ./speculos.py<span class="w"> </span>--model<span class="w"> </span>stax<span class="w"> </span>apps/btc.elf.elf
 ./speculos.py<span class="w"> </span>--model<span class="w"> </span>flex<span class="w"> </span>apps/btc.elf.elf
 </pre></div>
@@ -113,7 +112,7 @@
 be specified if the target app is not build against the last version of the SDK,
 thanks to the <code class="docutils literal notranslate"><span class="pre">-k</span></code>/<code class="docutils literal notranslate"><span class="pre">--sdk</span></code> argument. For instance, to launch an app built
 against the SDK <code class="docutils literal notranslate"><span class="pre">1.5</span></code> on the Nano S:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./speculos.py<span class="w"> </span>--sdk<span class="w"> </span><span class="m">1</span>.5<span class="w"> </span>--model<span class="w"> </span>nanos<span class="w"> </span>apps/btc.elf
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>./speculos.py<span class="w"> </span>--sdk<span class="w"> </span><span class="m">1</span>.5<span class="w"> </span>--model<span class="w"> </span>nanosp<span class="w"> </span>apps/btc.elf
 </pre></div>
 </div>
 <p>Supported SDK values for each device are defined in <a class="reference external" href="https://github.com/LedgerHQ/speculos/blob/master/src/sdk.h">src/sdk.h</a>.
@@ -121,18 +120,14 @@ You main choose the SDK using <code class="docutils literal notranslate"><span c
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p></p></th>
-<th class="head"><p>Nano S</p></th>
 <th class="head"><p>Nano S+</p></th>
 <th class="head"><p>Nano X</p></th>
-<th class="head"><p>Blue</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>SDK</p></td>
-<td><p>1.5, 1.6, 2.0, 2.1</p></td>
 <td><p>1.0, 1.0.3</p></td>
 <td><p>1.2, 2.0, 2.0.2</p></td>
-<td><p>1.5, blue-2.2.5</p></td>
 </tr>
 </tbody>
 </table>
@@ -189,7 +184,7 @@ $<span class="w"> </span><span class="nb">echo</span><span class="w"> </span><sp
 </div>
 <section id="ocr">
 <h2>OCR<a class="headerlink" href="#ocr" title="Permalink to this heading"></a></h2>
-<p>OCR is available for NanoX, Nanos S+, Flex and Stax with built in character recognition.</p>
+<p>OCR is available for NanoX, Nanos S+, Flex, Stax and Apex+ with built in character recognition.</p>
 </section>
 </section>
 
