@@ -107,7 +107,7 @@ class Bagl(GraphicLibrary):
             xx, yy = restore
 
         bitmap = list(bitmap)
-        while bitmap or (yy < requested_yh and self.model != "blue"):
+        while bitmap or (yy < requested_yh):
             if bitmap:
                 ch = bitmap.pop(0)
             else:

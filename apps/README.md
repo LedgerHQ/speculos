@@ -9,8 +9,7 @@ in order to build the most recent version.
 
 Examples:
 
-- `nanos#btc#1.5#5b6693b8.elf`
-- `blue#vault#blue-2.2.5#ca89b330.elf`
+- `nanosp#btc#1.5#5b6693b8.elf`
 
 If the examples aren't enough, here is the naming convention that should be
 used:
@@ -21,5 +20,5 @@ device model # app name # SDK version # git revision .elf
 
 where:
 
-- `device model` is one of the following: `nanos`, `blue`
+- `device model` is one of the following: `nanosp`, `stax`
 - `git revision` is the short hash (8 bytes) of the last commit

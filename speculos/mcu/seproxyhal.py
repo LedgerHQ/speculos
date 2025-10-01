@@ -391,8 +391,6 @@ class SeProxyHal(IODevice):
                     self.printf_queue = ''
                 else:
                     self.printf_queue += b
-            if screen.display.model in ["blue"]:
-                self.socket_helper.send_packet(SephTag.DISPLAY_PROCESSED_EVENT)
 
         elif tag == SephTag.RAPDU:
             screen.display.forward_to_apdu_client(data)

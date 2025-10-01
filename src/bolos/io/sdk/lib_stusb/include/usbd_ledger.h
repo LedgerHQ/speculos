@@ -11,13 +11,12 @@
 
 /* Exported enumerations -----------------------------------------------------*/
 typedef enum {
-  USBD_LEDGER_PRODUCT_BLUE = 0x0000,
-  USBD_LEDGER_PRODUCT_NANOS = 0x1000,
-  USBD_LEDGER_PRODUCT_HW2 = 0x3000,
   USBD_LEDGER_PRODUCT_NANOX = 0x4000,
   USBD_LEDGER_PRODUCT_NANOS_PLUS = 0x5000,
   USBD_LEDGER_PRODUCT_STAX = 0x6000,
   USBD_LEDGER_PRODUCT_FLEX = 0x7000,
+  USBD_LEDGER_PRODUCT_APEX_P = 0x8000,
+  USBD_LEDGER_PRODUCT_APEX_M = 0x9000,
 } usbd_ledger_product_e;
 
 typedef enum {

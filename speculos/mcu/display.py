@@ -71,7 +71,6 @@ class FrameBuffer:
     """
 
     COLORS = {
-        "nanos": 0x00fffb,
         "nanox": 0xdddddd,
         "nanosp": 0xdddddd,
         "stax": 0xdddddd,
@@ -96,7 +95,7 @@ class FrameBuffer:
 
     @cache
     def check_color(self, color: int) -> int:
-        # There are only 2 colors on the Nano S and the Nano X but the one
+        # There are only 2 colors on the Nano S+ and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
         if self.model != 'stax' and self.model != 'flex':
             if color != 0x000000:

@@ -52,7 +52,7 @@ paths:
 
   /button/{button}:
     post:
-      summary: "Press or release a button (Nano S and Nano X)"
+      summary: "Press or release a button (Nano S+ and Nano X)"
       parameters:
       - name: "button"
         description: "Button to press"
@@ -114,7 +114,7 @@ paths:
 
   /finger:
     post:
-      summary: "Touch the screen (Blue)"
+      summary: "Touch the screen (Stax/Flex/Apex+)"
       requestBody:
         required: true
         content:

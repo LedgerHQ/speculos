@@ -113,8 +113,6 @@ unsigned long sys_nbgl_front_draw_img(nbgl_area_t *area, uint8_t *buffer,
                                       nbgl_transformation_t transformation,
                                       nbgl_color_map_t colorMap);
 
-unsigned long sys_nbgl_front_refresh_area_legacy(nbgl_area_t *area);
-
 unsigned long sys_nbgl_front_refresh_area(nbgl_area_t *area,
                                           nbgl_post_refresh_t post_refresh);
 
@@ -125,15 +123,6 @@ unsigned long sys_nbgl_front_draw_img_file(nbgl_area_t *area, uint8_t *buffer,
 unsigned long sys_nbgl_get_font(unsigned int fontId);
 
 unsigned long sys_nbgl_screen_reinit(void);
-
-unsigned long sys_nbgl_front_draw_img_rle_10(nbgl_area_t *area, uint8_t *buffer,
-                                             uint32_t buffer_len,
-                                             color_t fore_color);
-
-unsigned long sys_nbgl_front_draw_img_rle_legacy(nbgl_area_t *area,
-                                                 uint8_t *buffer,
-                                                 uint32_t buffer_len,
-                                                 color_t fore_color);
 
 unsigned long sys_nbgl_front_draw_img_rle(nbgl_area_t *area, uint8_t *buffer,
                                           uint32_t buffer_len,

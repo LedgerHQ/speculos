@@ -82,14 +82,14 @@ class TestApi:
             with r.get(f"{API_URL}/events?stream=true", stream=True) as stream:
                 assert stream.status_code == 200
 
-                texts = [("Version", ".*"), ("About",), ("Quit",)]
-                for i in range(0, 3):
+                texts = [("App settings",), ("App info",), ("Quit app",)]
+                for i in range(len(texts)):
                     TestApi.press_button("right")
                     for text in texts[i]:
                         event = get_next_event(stream)
                         assert re.match(text, event["text"])
 
-                texts = [("About",), ("Version", ".*"), ("Bitcoin", "is ready")]
+                texts = [("App info",), ("App settings",), ("Boilerplate", "app is ready")]
                 for i in range(len(texts)):
                     TestApi.press_button("left")
                     for text in texts[i]:
@@ -97,17 +97,14 @@ class TestApi:
                         assert re.match(text, event["text"])
 
             texts = [
-                '{"events": [{"text": "Bitcoin", "x": 41, "y": 3, "w": 128, "h": 32, "clear": false}, '
-                '{"text": "is ready", "x": 41, "y": 17, "w": 128, "h": 32, "clear": false}]}\n',
-                '{"events": [{"text": "Version", "x": 43, "y": 3, "w": 79, "h": 32, "clear": false}, '
-                '{"text": "2.0.1", "x": 52, "y": 17, "w": 70, "h": 32, "clear": false}]}\n',
-                '{"events": [{"text": "About", "x": 47, "y": 19, "w": 81, "h": 32, "clear": false}]}\n'
+                '{"events": [{"text": "Boilerplate", "x": 34, "y": 29, "w": 63, "h": 11, "clear": false}, '
+                '{"text": "app is ready", "x": 34, "y": 44, "w": 62, "h": 12, "clear": false}]}\n',
+                '{"events": [{"text": "App settings", "x": 29, "y": 36, "w": 72, "h": 12, "clear": false}]}\n'
             ]
             for text in texts:
                 content = get_current_screen_content(r)
                 assert content == text
                 TestApi.press_button("right")
-
                 # Wait for the screen to be updated and parsed
                 while content == get_current_screen_content(r):
                     time.sleep(1)
@@ -128,11 +125,11 @@ class TestApi:
             assert response.content.startswith(b"\x89PNG")
 
     def test_apdu(self):
-        # Send GET_RANDOM APDU to get 16 bytes of random
-        with requests.post(f"{API_URL}/apdu", json={"data": "e0c0000010"}) as response:
+        # Send GET_VERSION to get 16 bytes of random
+        with requests.post(f"{API_URL}/apdu", json={"data": "e003000000"}) as response:
             assert response.status_code == 200
             data = bytes.fromhex(response.json()["data"])
-            assert len(data) == 18 and data[-2:] == b"\x90\x00"
+            assert len(data) == 5 and data[-2:] == b"\x90\x00"
 
     def test_apdu_invalid_data(self):
         with requests.post(f"{API_URL}/apdu", json={"data": "xyz"}) as response:

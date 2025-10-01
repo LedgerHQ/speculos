@@ -29,8 +29,6 @@ typedef enum {
 } usb_ledger_state_t;
 
 /* Private defines------------------------------------------------------------*/
-#define USBD_BLUE_PRODUCT_STRING       ("Blue")
-#define USBD_NANOS_PRODUCT_STRING      ("Nano S")
 #define USBD_NANOX_PRODUCT_STRING      ("Nano X")
 #define USBD_NANOS_PLUS_PRODUCT_STRING ("Nano S+")
 #define USBD_STAX_PRODUCT_STRING       ("Stax")
@@ -457,12 +455,6 @@ void USBD_LEDGER_start(void)
 
     // Fill the name
     if (!strlen(usbd_ledger_init_data.name)) {
-      strlcpy(usbd_ledger_init_data.name, USBD_BLUE_PRODUCT_STRING,
-              sizeof(usbd_ledger_data.name));
-#if defined(TARGET_NANOS)
-      strlcpy(usbd_ledger_init_data.name, USBD_NANOS_PRODUCT_STRING,
-              sizeof(usbd_ledger_data.name));
-#endif // TARGET_NANOS
 #if defined(TARGET_NANOX)
       strlcpy(usbd_ledger_init_data.name, USBD_NANOX_PRODUCT_STRING,
               sizeof(usbd_ledger_data.name));
@@ -471,10 +463,10 @@ void USBD_LEDGER_start(void)
       strlcpy(usbd_ledger_init_data.name, USBD_NANOS_PLUS_PRODUCT_STRING,
               sizeof(usbd_ledger_data.name));
 #endif // TARGET_NANOS2
-#if defined(TARGET_FATSTACKS) || defined(TARGET_STAX)
+#if defined(TARGET_STAX)
       strlcpy(usbd_ledger_init_data.name, USBD_STAX_PRODUCT_STRING,
               sizeof(usbd_ledger_data.name));
-#endif // TARGET_FATSTACKS || TARGET_STAX
+#endif // TARGET_STAX
 #if defined(TARGET_FLEX)
       strlcpy(usbd_ledger_init_data.name, USBD_FLEX_PRODUCT_STRING,
               sizeof(usbd_ledger_data.name));
@@ -484,19 +476,15 @@ void USBD_LEDGER_start(void)
             sizeof(usbd_ledger_data.name));
 
     // Fill the product type
-    usbd_ledger_data.product = USBD_LEDGER_PRODUCT_BLUE;
-#if defined(TARGET_NANOS)
-    usbd_ledger_data.product = USBD_LEDGER_PRODUCT_NANOS;
-#endif // TARGET_NANOS
 #if defined(TARGET_NANOX)
     usbd_ledger_data.product = USBD_LEDGER_PRODUCT_NANOX;
 #endif // TARGET_NANOX
 #if defined(TARGET_NANOS2)
     usbd_ledger_data.product = USBD_LEDGER_PRODUCT_NANOS_PLUS;
 #endif // TARGET_NANOS2
-#if defined(TARGET_FATSTACKS) || defined(TARGET_STAX)
+#if defined(TARGET_STAX)
     usbd_ledger_data.product = USBD_LEDGER_PRODUCT_STAX;
-#endif // TARGET_FATSTACKS || TARGET_STAX
+#endif // TARGET_STAX
 #if defined(TARGET_FLEX)
     usbd_ledger_data.product = USBD_LEDGER_PRODUCT_FLEX;
 #endif // TARGET_FLEX

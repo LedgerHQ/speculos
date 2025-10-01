@@ -10,17 +10,17 @@ from speculos.client import SpeculosClient
 
 # going back from...(conftest.py \ python \ tests \ git root) / 'apps'
 APP_DIR = Path(__file__).resolve().parent.  parent. parent    / "apps"
-AppInfo = namedtuple("AppInfo", ["filepath", "model", "name", "sdk", "hash"])
+AppInfo = namedtuple("AppInfo", ["filepath", "model", "name", "api_level", "hash"])
 
 
 def app_info_from_path(path: Path) -> AppInfo:
-    # name example: nanos#btc#1.5#5b6693b8.elf
-    app_regexp = re.compile(r"^(nanos|nanox|blue|nanosp)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]*)\.elf$")
+    # name example: nanosp#boil#1.5#5b6693b8.elf
+    app_regexp = re.compile(r"^(nanox|nanosp)#([^#]+)#([^#][\d\w\-.]+)#([a-f0-9]*)\.elf$")
     matching = re.match(app_regexp, path.name)
     if not matching:
         return None
     assert len(matching.groups()) == 4
-    return AppInfo(filepath=path, model=matching.group(1), name=matching.group(2), sdk=matching.group(3),
+    return AppInfo(filepath=path, model=matching.group(1), name=matching.group(2), api_level=matching.group(3),
                    hash=matching.group(4))
 
 
@@ -28,14 +28,14 @@ def list_apps_to_test() -> List[AppInfo]:
     """
     List apps matching the pattern:
 
-        <device>#<app_name>#<sdk_version>#<commit_hash>.elf
+        <device>#<app_name>#<api_level>#<commit_hash>.elf
 
     in the apps/ directory and return a list of APDUClient
     objects for these applications.
 
     A typical application path looks like:
 
-    'apps/nanos#btc#1.5#5b6693b8.elf'
+    'apps/nanosp#boil#1.5#5b6693b8.elf'
     """
     all_apps = []
     for appfile in APP_DIR.iterdir():
@@ -61,9 +61,9 @@ def get_apps(name: str) -> List[AppInfo]:
     return [app for app in list_apps_to_test() if app.name == name]
 
 
-def default_btc_app() -> List[AppInfo]:
-    filepath = (APP_DIR / "btc.elf").resolve()
-    apps = get_apps("btc")
+def default_boil_app() -> List[AppInfo]:
+    filepath = (APP_DIR / "boil.elf").resolve()
+    apps = get_apps("boil")
     return [app for app in apps if app.filepath == filepath]
 
 
@@ -80,36 +80,19 @@ def idfn(app: Path) -> str:
 
 
 def client_instance(app, additional_args=None):
-    args = ["--model", app.model, "--sdk", app.sdk]
+    args = ["--model", app.model, "--apiLevel", app.api_level]
     if additional_args is not None:
         args += additional_args
     return SpeculosClient(str(app.filepath), args=args)
 
 
-@pytest.fixture(scope="module", params=get_apps("btc"), ids=idfn)
-def client_btc(request):
+@pytest.fixture(scope="module", params=get_apps("boil"), ids=idfn)
+def client_boil(request):
     with client_instance(request.param) as _client:
         yield _client
 
 
-@pytest.fixture(scope="module", params=get_apps("btc-test"), ids=idfn)
-def client_btc_testnet(request):
-    app = request.param
-    btc_app = app.filepath.parent / app.filepath.name.replace("btc-test", "btc")
-    assert btc_app.is_file()
-    args = ["-l", "Bitcoin:%s" % str(btc_app)]
-
-    with client_instance(request.param, additional_args=args) as _client:
-        yield _client
-
-
-@pytest.fixture(scope="module", params=get_apps("ram-page"), ids=idfn)
-def client_ram_page(request):
-    with client_instance(request.param) as _client:
-        yield _client
-
-
-@pytest.fixture(scope="function", params=default_btc_app(), ids=idfn)
+@pytest.fixture(scope="function", params=default_boil_app(), ids=idfn)
 def client_vnc(request):
     # Pytest has changed its API in version 4: https://github.com/pytest-dev/pytest/pull/4564
     if hasattr(request.node, "get_closest_marker"):
@@ -123,9 +106,9 @@ def client_vnc(request):
 
 @pytest.fixture(scope="class")
 def client(request):
-    """Run the API tests on the default btc.elf app."""
+    """Run the API tests on the default boil.elf app."""
 
-    info = app_info_from_path((APP_DIR / "btc.elf").resolve())
-    args = ["--model", info.model, "--sdk", info.sdk]
+    info = app_info_from_path((APP_DIR / "boil.elf").resolve())
+    args = ["--model", info.model, "--apiLevel", info.api_level]
     with SpeculosClient(app=str(info.filepath), args=args) as _client:
         yield _client

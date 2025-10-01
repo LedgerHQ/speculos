@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "bolos_syscalls.h"
 #include "emulate.h"
 #include "svc.h"
 
@@ -101,38 +102,10 @@ static void update_svc_stack(bool push)
   }
 }
 
-static bool is_os_lib_call(unsigned long syscall)
-{
-  unsigned long os_lib_call_id = 0;
-
-  /* Treat all unified SDK versions the same way, but keep compatibility for
-   * old versions that had different SYSCALL_os_lib_call_ID_IN values
-   */
-  if (sdk_version >= SDK_API_LEVEL_1) {
-    os_lib_call_id = 0x01000067;
-  } else if (sdk_version == SDK_NANO_S_1_5 || sdk_version == SDK_BLUE_1_5) {
-    os_lib_call_id = 0x6000650b;
-  } else if (sdk_version == SDK_NANO_X_1_2 || sdk_version == SDK_NANO_X_2_0 ||
-             sdk_version == SDK_NANO_X_2_0_2 || sdk_version == SDK_NANO_S_1_6 ||
-             sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-             sdk_version == SDK_BLUE_2_2_5) {
-    os_lib_call_id = 0x6000670d;
-  } else if (sdk_version == SDK_NANO_SP_1_0 ||
-             sdk_version == SDK_NANO_SP_1_0_3) {
-    os_lib_call_id = 0x01000067;
-  } else {
-    fprintf(stderr, "Failed to determine os_lib_call_id for sdk_version %u\n",
-            sdk_version);
-  }
-
-  return syscall == os_lib_call_id;
-}
-
 static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 {
   unsigned long pc, syscall, ret;
   unsigned long *parameters;
-  int retid;
 
   context = (ucontext_t *)vcontext;
   syscall = context->uc_mcontext.arm_r0;
@@ -151,34 +124,17 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
   update_svc_stack(true);
 
   ret = 0;
-  retid =
-      emulate(syscall, parameters, &ret, trace_syscalls, sdk_version, hw_model);
+  emulate(syscall, parameters, &ret, trace_syscalls, g_api_level, hw_model);
 
   /* handle the os_lib_call syscall specially since it modifies the context
    * directly */
-  if (is_os_lib_call(syscall)) {
+  if (syscall == SYSCALL_os_lib_call_ID_IN) {
     return;
   }
 
-  /* Treat all unified SDK versions the same way, but keep compatibility for
-   * old versions
-   */
-  if (sdk_version >= SDK_API_LEVEL_1) {
-    context->uc_mcontext.arm_r0 = ret;
-    context->uc_mcontext.arm_r1 = 0;
-  } else if (sdk_version == SDK_NANO_S_1_5 || sdk_version == SDK_BLUE_1_5) {
-    context->uc_mcontext.arm_r0 = retid;
-    context->uc_mcontext.arm_r1 = ret;
-  } else if (sdk_version == SDK_NANO_S_2_0 || sdk_version == SDK_NANO_S_2_1 ||
-             sdk_version == SDK_NANO_X_2_0 || sdk_version == SDK_NANO_X_2_0_2 ||
-             sdk_version == SDK_NANO_SP_1_0 ||
-             sdk_version == SDK_NANO_SP_1_0_3) {
-    context->uc_mcontext.arm_r0 = ret;
-    context->uc_mcontext.arm_r1 = 0;
-  } else {
-    parameters[0] = retid;
-    parameters[1] = ret;
-  }
+  /* Treat all unified SDK versions the same way */
+  context->uc_mcontext.arm_r0 = ret;
+  context->uc_mcontext.arm_r1 = 0;
 
   /* skip undefined (originally svc) instruction */
   context->uc_mcontext.arm_pc += 2;
@@ -276,7 +232,7 @@ int patch_svc(void *p, size_t size)
       continue;
     }
     /* next instruction must be either CMP R1 0x2900 or BX LR 0x4770 */
-    if ((sdk_version >= SDK_API_LEVEL_23) && memcmp(next + 2, "\x00\x29", 2) &&
+    if ((g_api_level >= 23) && memcmp(next + 2, "\x00\x29", 2) &&
         memcmp(next + 2, "\x70\x47", 2)) {
       addr = (unsigned char *)next + 2;
       continue;

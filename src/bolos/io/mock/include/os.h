@@ -33,4 +33,4 @@ enum task_unsecure_id_e {
 #define os_io_seph_se_rx_event sys_os_io_seph_se_rx_event
 #define os_io_seph_tx          sys_os_io_seph_tx
 
-#define os_sched_last_status sys_os_sched_last_status_2_0
+#define os_sched_last_status sys_os_sched_last_status

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.25.7] 2025-10-01
+
+### Changed
+
+- Remove support of old devices: Nano S & Blue
+- Remove support of old SDK versions (lower than API Level 22)
+
+- Last tag supporting Nano S & Blue is `NanoS_Blue_baseline`
+
 ## [0.25.6] 2025-09-25
 
 ### Added

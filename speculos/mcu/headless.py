@@ -30,14 +30,10 @@ class Headless(Display):
 
     def display_status(self, data: bytes) -> List[TextEvent]:
         ret = self.bagl_gl.display_status(data)
-        if MODELS[self.model].name == 'blue':
-            self.screen_update()    # Actually, this method doesn't work
         return ret
 
     def display_raw_status(self, data: bytes) -> None:
         self.bagl_gl.display_raw_status(data)
-        if MODELS[self.model].name == 'blue':
-            self.screen_update()    # Actually, this method doesn't work
 
     def screen_update(self) -> bool:
         return self.bagl_gl.refresh()

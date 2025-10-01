@@ -3,6 +3,7 @@
 // the number of parameters of a syscall is stored in the syscall id
 #define SYSCALL_NUMBER_OF_PARAMETERS(id) (((id) >> 24) & 0xf)
 
+// clang-format off
 #define SYSCALL_get_api_level_ID_IN                                   0x00000001
 #define SYSCALL_halt_ID_IN                                            0x00000002
 #define SYSCALL_nvm_write_ID_IN                                       0x03000003
@@ -92,7 +93,7 @@
 #define SYSCALL_cx_ecpoint_is_at_infinity_ID_IN                       0x0200014b
 #define SYSCALL_cx_ecpoint_x25519_ID_IN                               0x0300001b
 #define SYSCALL_cx_ecpoint_x448_ID_IN                                 0x03000060
-#define SYSCALL_cx_crc32_hw_ID_IN                                     0x02000102
+#define SYSCALL_cx_crc_hw_ID_IN                                       0x04000102
 #define SYSCALL_cx_get_random_bytes_ID_IN                             0x02000107
 #define SYSCALL_cx_trng_get_random_data_ID_IN                         0x02000106
 #define SYSCALL_os_perso_erase_all_ID_IN                              0x0000004b
@@ -105,12 +106,25 @@
 #define SYSCALL_os_perso_derive_node_bip32_ID_IN                      0x05000053
 #define SYSCALL_os_perso_derive_node_with_seed_key_ID_IN              0x080000a6
 #define SYSCALL_os_perso_derive_eip2333_ID_IN                         0x040000a7
+
+// Endorsement syscalls
+// -- Pre API_LEVEL_23
 #define SYSCALL_os_endorsement_get_code_hash_ID_IN                    0x01000055
-#define SYSCALL_os_endorsement_get_public_key_ID_IN                   0x02000056
-#define SYSCALL_os_endorsement_get_public_key_certificate_ID_IN       0x02000057
+#define SYSCALL_os_endorsement_get_public_key_ID_IN                   0x03000056
+#define SYSCALL_os_endorsement_get_public_key_certificate_ID_IN       0x03000057
 #define SYSCALL_os_endorsement_key1_get_app_secret_ID_IN              0x01000058
 #define SYSCALL_os_endorsement_key1_sign_data_ID_IN                   0x03000059
 #define SYSCALL_os_endorsement_key2_derive_sign_data_ID_IN            0x0300005a
+#define SYSCALL_os_endorsement_key1_sign_without_code_hash_ID_IN      0x0300005b
+// -- API_LEVEL_23 and above
+#define SYSCALL_ENDORSEMENT_get_code_hash_ID_IN                       0x01000055
+#define SYSCALL_ENDORSEMENT_get_public_key_ID_IN                      0x03000056
+#define SYSCALL_ENDORSEMENT_get_public_key_certificate_ID_IN          0x03000057
+#define SYSCALL_ENDORSEMENT_key1_get_app_secret_ID_IN                 0x01000058
+#define SYSCALL_ENDORSEMENT_key1_sign_data_ID_IN                      0x04000059
+#define SYSCALL_ENDORSEMENT_key2_derive_and_sign_data_ID_IN           0x0400005a
+#define SYSCALL_ENDORSEMENT_key1_sign_without_code_hash_ID_IN         0x0400005b
+
 #define SYSCALL_os_perso_set_pin_ID_IN                                0x0300004c
 #define SYSCALL_os_perso_set_current_identity_pin_ID_IN               0x0200004d
 #define SYSCALL_os_global_pin_is_validated_ID_IN                      0x000000a0
@@ -165,3 +179,33 @@
 #define SYSCALL_bagl_hal_draw_rect_ID_IN                              0x0500007d
 #define SYSCALL_io_button_read_ID_IN                                  0x0000008f
 #define SYSCALL_os_seph_serial_ID_IN                                  0x0200006d
+
+#define SYSCALL_nbgl_front_draw_rect_ID_IN                            0x01fa0000
+#define SYSCALL_nbgl_front_draw_horizontal_line_ID_IN                 0x03fa0001
+#define SYSCALL_nbgl_front_draw_img_ID_IN                             0x04fa0002
+#define SYSCALL_nbgl_front_refresh_area_ID_IN                         0x03fa0003
+#define SYSCALL_nbgl_front_draw_img_file_ID_IN                        0x05fa0004
+#define SYSCALL_touch_get_last_info_ID_IN                             0x01fa000b
+#define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
+#define SYSCALL_nbgl_screen_reinit_ID_IN                              0x00fa000d
+#define SYSCALL_nbgl_front_draw_img_rle_ID_IN                         0x05fa0010
+
+#define SYSCALL_ox_bls12381_sign_ID_IN                                0x05000103
+#define SYSCALL_cx_hash_to_field_ID_IN                                0x06000104
+#define SYSCALL_cx_bls12381_aggregate_ID_IN                           0x05000105
+#define SYSCALL_cx_bls12381_key_gen_ID_IN                             0x03000108
+
+#define SYSCALL_os_pki_load_certificate_ID_IN                         0x060000aa
+#define SYSCALL_os_pki_verify_ID_IN                                   0x040000ab
+#define SYSCALL_os_pki_get_info_ID_IN                                 0x040000ac
+
+// API level 24 io-revamp
+#define SYSCALL_os_io_init_ID_IN                                      0x01000084
+#define SYSCALL_os_io_start_ID_IN                                     0x01000085
+#define SYSCALL_os_io_stop_ID_IN                                      0x01000086
+#define SYSCALL_os_io_tx_cmd_ID_IN                                    0x04000088
+#define SYSCALL_os_io_rx_evt_ID_IN                                    0x03000089
+#define SYSCALL_os_io_seph_tx_ID_IN                                   0x03000082
+#define SYSCALL_os_io_seph_se_rx_event_ID_IN                          0x05000083
+
+// clang-format on

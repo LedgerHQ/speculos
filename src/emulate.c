@@ -1,363 +1,790 @@
+#define _SDK_2_0_
 #include <err.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-#include "bolos/cx.h"
-#include "bolos/cx_utils.h"
+#include "bolos/bagl.h"
+#include "bolos/cx_aes.h"
+#include "bolos/cxlib.h"
 #include "bolos/endorsement.h"
+#include "bolos/io/io.h"
+#include "bolos/nbgl.h"
+#include "bolos/os_pki.h"
+#include "bolos/touch.h"
 #include "emulate.h"
 
-// This header needs to point to the oldest available SDK
-#include "bolos_syscalls_1.5.h"
+#include "bolos_syscalls.h"
 
-int emulate(unsigned long syscall, unsigned long *parameters,
-            unsigned long *ret, bool verbose, sdk_version_t version,
-            hw_model_t model)
+#define SYSCALL_HANDLED     1
+#define SYSCALL_NOT_HANDLED 0
+
+// Indicates whether the XOR in the CBC mode is implemented in the CX lib
+// or in the AES low level function
+extern bool hdw_cbc;
+
+/* Handle bagl related syscalls which behavior are defined in src/bolos/bagl.c
+ */
+int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
+                         unsigned long *ret, bool verbose, int api_level,
+                         hw_model_t model)
 {
-  int retid = 0;
-  switch (version) {
-  case SDK_NANO_X_1_2:
-    retid = emulate_1_2(syscall, parameters, ret, verbose);
-    break;
-  case SDK_BLUE_1_5:
-  case SDK_NANO_S_1_5:
-    retid = emulate_1_5(syscall, parameters, ret, verbose);
-    break;
-  case SDK_NANO_S_1_6:
-    retid = emulate_1_6(syscall, parameters, ret, verbose);
-    break;
-  case SDK_NANO_S_2_0:
-  case SDK_NANO_S_2_1:
-  case SDK_NANO_X_2_0:
-  case SDK_NANO_X_2_0_2:
-    retid = emulate_2_0(syscall, parameters, ret, verbose);
-    break;
-  case SDK_NANO_SP_1_0:
-  case SDK_NANO_SP_1_0_3:
-    retid = emulate_nanosp_1_0(syscall, parameters, ret, verbose);
-    break;
-  case SDK_BLUE_2_2_5:
-    retid = emulate_blue_2_2_5(syscall, parameters, ret, verbose);
-    break;
-  default:
-    if ((version >= SDK_API_LEVEL_1) && (version < SDK_COUNT)) {
-      retid = emulate_unified_sdk(syscall, parameters, ret, verbose, version,
-                                  model);
-      break;
-    }
-    errx(1, "Unsupported SDK version %u", version);
-    break;
+  (void)api_level;
+
+  if ((model == MODEL_STAX) || (model == MODEL_FLEX) ||
+      (model == MODEL_APEX_P)) {
+    return SYSCALL_NOT_HANDLED;
   }
-  return retid;
-}
-
-int emulate_common(unsigned long syscall, unsigned long *parameters,
-                   unsigned long *ret, bool verbose)
-{
-  int retid;
 
   switch (syscall) {
     /* clang-format off */
-  SYSCALL0(check_api_level);
 
-  SYSCALL6(cx_aes, "(%p, 0x%x, %p, %u, %p, %u)",
-           const cx_aes_key_t *, key,
-           unsigned int,         mode,
-           const uint8_t *,      in,
-           unsigned int,         len,
-           uint8_t *,            out,
-           unsigned int,         out_len);
+    SYSCALL9(bagl_hal_draw_bitmap_within_rect, "(%d, %d, %u, %u, %u, %p, %u, %p, %u)",
+             int,                  x,
+             int,                  y,
+             unsigned int,         width,
+             unsigned int,         height,
+             unsigned int,         color_count,
+             const unsigned int *, colors,
+             unsigned int,         bit_per_pixel,
+             const uint8_t *,      bitmap,
+             unsigned int,         bitmap_length_bits);
 
-  SYSCALL8(cx_aes_iv, "(%p, 0x%x, %p, %u, %p, %u, %p, %u)",
-           const cx_aes_key_t *, key,
-           unsigned int,         mode,
-           const uint8_t *,      iv,
-           unsigned int,         iv_len,
-           const uint8_t *,      in,
-           unsigned int,         len,
-           uint8_t *,            out,
-           unsigned int,         out_len);
+    SYSCALL5(bagl_hal_draw_rect, "(0x%08x, %d, %d, %u, %u)",
+             unsigned int, color,
+             int,          x,
+             int,          y,
+             unsigned int, width,
+             unsigned int, height);
 
-  SYSCALL3(cx_aes_init_key, "(%p, %u, %p)",
-           const uint8_t *, raw_key,
-           unsigned int,    key_len,
-           cx_aes_key_t *,  key);
+    SYSCALL0(screen_clear);
 
-  SYSCALL2(cx_blake2b_init, "(%p, %u)",
-           cx_blake2b_t *, hash,
-           unsigned int,   size);
+    SYSCALL0(screen_update);
 
-  SYSCALL6(cx_blake2b_init2, "(%p, %u, %p, %u, %p, %u)",
-           cx_blake2b_t *, hash,
-           unsigned int,   size,
-           uint8_t *,      salt,
-           unsigned int,   salt_len,
-           uint8_t *,      perso,
-           unsigned int,   perso_len);
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
 
-  SYSCALL3(cx_crc16_update, "(%u, %p, %u)",
-           unsigned short, crc, const void *, b, size_t, len);
+  return SYSCALL_HANDLED;
+}
 
-  SYSCALL6(cx_ecdh, "(%p, %d, %p, %u, %p, %u)",
-          const cx_ecfp_private_key_t *, key,
-          int,                           mode,
-          const uint8_t *,               public_point,
-          size_t,                        P_len,
-          uint8_t *,                     secret,
-          size_t,                        secret_len);
+/* Handle nbgl related syscalls which behavior are defined in src/bolos/nbgl.c
+ */
+int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
+                         unsigned long *ret, bool verbose, int api_level,
+                         hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
 
-  SYSCALL8(cx_ecdsa_sign, "(%p, 0x%x, %u, %p, %u, %p, %u, %p)",
-           const cx_ecfp_private_key_t *, key,
-           unsigned int,                  mode,
-           cx_md_t,                       hashID,
-           const uint8_t *,               hash,
-           unsigned int,                  hash_len,
-           uint8_t *,                     sig,
-           unsigned int,                  sig_len,
-           unsigned int *,                info);
+  switch (syscall) {
+    /* clang-format off */
 
-  SYSCALL7(cx_ecdsa_verify, "(%p, 0x%x, %u, %p, %u, %p, %u)",
-           const cx_ecfp_public_key_t *, key,
-           unsigned int,                 mode,
-           cx_md_t,                      hashID,
-           const uint8_t *,              hash,
-           unsigned int,                 hash_len,
-           const uint8_t *,              sig,
-           unsigned int,                 sig_len);
+    SYSCALL1(nbgl_front_draw_rect, "%p",
+             nbgl_area_t *, area);
 
-  SYSCALL5(cx_ecfp_add_point, "(0x%x, %p, %p, %p, %u)",
-           cx_curve_t, curve,
-           uint8_t *,  R,
-           uint8_t *,  P,
-           uint8_t *,  Q,
-           size_t,     X_len);
+    SYSCALL2(nbgl_front_refresh_area, "%p, %u",
+             nbgl_area_t *, area,
+             nbgl_post_refresh_t, post_refresh);
 
-  SYSCALL4(cx_ecfp_generate_pair, "(0x%x, %p, %p, %d)",
-           cx_curve_t,              curve,
-           cx_ecfp_public_key_t *,  public_key,
-           cx_ecfp_private_key_t *, private_key,
-           int,                     keep_private);
+    SYSCALL3(nbgl_front_draw_horizontal_line, "%p, %d, %d",
+             nbgl_area_t *, area,
+             uint8_t,       mask,
+             uint8_t,       lineColor);
 
-  SYSCALL5(cx_ecfp_generate_pair2, "(0x%x, %p, %p, %d, %u)",
-          cx_curve_t,              curve,
-          cx_ecfp_public_key_t *,  public_key,
-          cx_ecfp_private_key_t *, private_key,
-          int,                     keep_private,
-          cx_md_t,                 hashID);
+    SYSCALL4(nbgl_front_draw_img, "%p, %p, %d, %d",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             uint8_t,          transformation,
+             nbgl_color_map_t, colorMap);
 
-  SYSCALL4(cx_ecfp_init_private_key, "(0x%x, %p, %u, %p)",
-           cx_curve_t,              curve,
-           const uint8_t *,         raw_key,
-           unsigned int,            key_len,
-           cx_ecfp_private_key_t *, key);
+    SYSCALL4(nbgl_front_draw_img_file, "%p, %p, %d, %p",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             nbgl_color_map_t, colorMap,
+             uint8_t *,        uzlib_buffer);
 
-  SYSCALL4(cx_ecfp_init_public_key, "(0x%x, %p, %u, %p)",
-           cx_curve_t,              curve,
-           const uint8_t *,         raw_key,
-           unsigned int,            key_len,
-           cx_ecfp_public_key_t *,  key);
+    SYSCALL1(nbgl_get_font, "%u",
+             unsigned int, fontId);
 
-  SYSCALL5(cx_ecfp_scalar_mult, "(0x%x, %p, %u, %p, %u)",
-           cx_curve_t,            curve,
-           unsigned char *,       P,
-           unsigned int,          P_len,
-           const unsigned char *, k,
-           unsigned int,          k_len);
+    SYSCALL0(nbgl_screen_reinit);
 
-  SYSCALL3(cx_eddsa_get_public_key, "(%p, 0x%x, %p)",
-           const cx_ecfp_private_key_t *, pvkey,
-           cx_md_t,                       hashID,
-           cx_ecfp_public_key_t *,        pu_key);
+    SYSCALL5(nbgl_front_draw_img_rle, "%p, %p, %u, %u, %u",
+             nbgl_area_t *,    area,
+             uint8_t *,        buffer,
+             unsigned int,     buffer_len,
+             color_t,          fore_color,
+             uint8_t,          nb_skipped_bytes);
 
-  SYSCALL10(cx_eddsa_sign, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u, %p)",
-            const cx_ecfp_private_key_t *, pvkey,
-            unsigned int,                  mode,
-            cx_md_t,                       hashID,
-            const unsigned char *,         hash,
-            unsigned int,                  hash_len,
-            const unsigned char *,         ctx,
-            unsigned int,                  ctx_len,
-            unsigned char *,               sig,
-            unsigned int,                  sig_len,
-            unsigned int *,                info);
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
 
-  SYSCALL9(cx_eddsa_verify, "(%p, 0x%x, 0x%x, %p, %u, %p, %u, %p, %u)",
-           const cx_ecfp_public_key_t *, pu_key,
-           unsigned int,                 mode,
-           cx_md_t,                      hashID,
-           const unsigned char *,        hash,
-           unsigned int,                 hash_len,
-           const unsigned char *,        ctx,
-           unsigned int,                 ctx_len,
-           const unsigned char *,        sig,
-           unsigned int,                 sig_len);
+  return SYSCALL_HANDLED;
+}
 
-  SYSCALL3(cx_edward_compress_point, "(0x%x, %p, %u)",
-           cx_curve_t, curve,
-           uint8_t *,  P,
-           size_t,     P_len);
+/* Handle touch related syscalls which behavior are defined in src/bolos/touch.c
+ */
+int emulate_syscall_touch(unsigned long syscall, unsigned long *parameters,
+                          unsigned long *ret, bool verbose, int api_level,
+                          hw_model_t model)
+{
+  (void)api_level;
 
-  SYSCALL3(cx_edward_decompress_point, "(0x%x, %p, %u)",
-           cx_curve_t, curve,
-           uint8_t *,  P,
-           size_t,     P_len);
+  if ((model != MODEL_STAX) && (model != MODEL_FLEX) &&
+      (model != MODEL_APEX_P)) {
+    return SYSCALL_NOT_HANDLED;
+  }
 
-  SYSCALL6(cx_hash, "(%p, 0x%x, %p, %u, %p, %u)",
-           cx_hash_t *,     hash,
-           unsigned int,    mode,
-           const uint8_t *, in,
-           size_t,          len,
-           uint8_t *,       out,
-           size_t,          out_len);
+  switch (syscall) {
+    /* clang-format off */
 
-  SYSCALL4(cx_hash_sha256, "(%p, %u, %p, %u)",
-           const uint8_t *, in,
-           size_t,          len,
-           uint8_t *,       out,
-           size_t,          out_len);
+    SYSCALL1(touch_get_last_info, "%p",
+             io_touch_info_t *, info);
 
-  SYSCALL4(cx_hash_sha512, "(%p, %u, %p, %u)",
-           const uint8_t *, in,
-           size_t,          len,
-           uint8_t *,       out,
-           size_t,          out_len);
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
 
-  SYSCALL6(cx_hmac, "(%p, 0x%x, %p, %u, %p, %u)",
-           cx_hmac_t *,     hmac,
-           unsigned int,    mode,
-           const uint8_t *, in,
-           unsigned int,    len,
-           uint8_t *,       out,
-           unsigned int,    out_len);
+  return SYSCALL_HANDLED;
+}
 
-  SYSCALL6(cx_hmac_sha256, "(%p, %u, %p, %u, %p, %u)",
-           const uint8_t *, key,
-           unsigned int,    key_len,
-           const uint8_t *, in,
-           unsigned int,    len,
-           uint8_t *,       out,
-           unsigned int,    out_len);
+/* Handle cx related syscalls which behavior are defined in src/bolos/cx*.c */
+int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
+                       unsigned long *ret, bool verbose, int api_level,
+                       hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
 
-  SYSCALL2(cx_keccak_init, "(%p, %u)",
-          cx_sha3_t *,      hash,
-          unsigned int,     size);
+  // the XOR operation of the CBC mode
+  // is not in CX LIB anymore
+  // CBC mode must be implemented
+  // in the AES low level functions
+  hdw_cbc = true;
 
-  SYSCALL3(cx_hmac_sha256_init, "(%p, %p, %u)",
-           cx_hmac_sha256_t *, hmac,
-           const uint8_t *,    key,
-           unsigned int,       key_len);
+  switch (syscall) {
+    /* clang-format off */
+    SYSCALL0(get_api_level);
 
-  SYSCALL4(cx_math_add, "(%p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, b,
-           unsigned int,    len);
+    SYSCALL2(cx_get_random_bytes, "(%p %u)",
+             uint8_t *, buffer,
+             size_t,    len);
 
-  SYSCALL5(cx_math_addm, "(%p, %p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, b,
-           const uint8_t *, m,
-           unsigned int,    len);
+    SYSCALL2(cx_trng_get_random_data, "(%p %u)",
+             uint8_t *, buffer,
+             size_t,    len);
 
-  SYSCALL3(cx_math_cmp, "(%p, %p, %u)",
-           const uint8_t *, a,
-           const uint8_t *, b,
-           unsigned int,    len);
+    SYSCALL4(cx_crc_hw, "(0x%x, %u, %p, %u)",
+             crc_type_t,   crc_type,
+             uint32_t,     crc_state,
+             const void *, buf,
+             size_t,       len);
 
-  SYSCALL4(cx_math_invintm, "(%p, %u, %p, %u)",
-           uint8_t *,       r,
-           uint32_t,        a,
-           const uint8_t *, m,
-           size_t,          len);
+    SYSCALL2(cx_aes_set_key_hw, "(%p %u)",
+             void *,    key,
+             uint32_t,  mode);
 
-  SYSCALL4(cx_math_invprimem, "(%p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, m,
-           unsigned int,    len);
+    SYSCALL2(cx_aes_block_hw, "(%p %p)",
+             uint8_t *, in,
+             uint8_t *, out);
 
-  SYSCALL2(cx_math_is_prime, "(%p, %u)",
-           const uint8_t *, r,
-           unsigned int,    len);
+    SYSCALL0v(cx_aes_reset_hw);
 
-  SYSCALL2(cx_math_is_zero, "(%p, %u)",
-           const uint8_t *, a,
-           unsigned int,    len);
+    SYSCALL2(cx_ecdomain_size, "(%u %p)",
+             unsigned int, cv,
+             size_t *,     length);
 
-  SYSCALL4(cx_math_modm, "(%p, %u, %p, %u)",
-           uint8_t *,       v,
-           unsigned int,    len_v,
-           const uint8_t *, m,
-           unsigned int,    len_m);
+    SYSCALL2(cx_ecdomain_parameters_length, "(%u %p)",
+             unsigned int, cv,
+             size_t *,     length);
 
-  SYSCALL4(cx_math_mult, "(%p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, b,
-           unsigned int,    len);
+    SYSCALL4(cx_ecdomain_generator, "(%u %p %p %u)",
+             unsigned int, cv,
+             void *,       Gx,
+             void *,       Gy,
+             size_t,       len);
 
-  SYSCALL5(cx_math_multm, "(%p, %p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, b,
-           const uint8_t *, m,
-           unsigned int,    len);
+    SYSCALL2(cx_ecdomain_generator_bn, "(%u %p)",
+             unsigned int, cv,
+             void *,       P);
 
-  SYSCALL2(cx_math_next_prime, "(%p, %u)",
-           uint8_t *,          buf,
-           unsigned int,       len);
+    SYSCALL3(cx_ecdomain_parameter_bn, "(%u, %d, %u)",
+             unsigned int, cv,
+             int,          id,
+             uint32_t,     p);
 
-  SYSCALL1(cx_ripemd160_init, "(%p)", cx_ripemd160_t *, hash);
+    SYSCALL4(cx_ecdomain_parameter, "(0x%x, %u, %p, %u)",
+             cx_curve_t,           curve,
+             cx_curve_dom_param_t, id,
+             uint8_t *,            p,
+             uint32_t,             p_len);
 
-  SYSCALL2(cx_rng, "(%p, %u)",
-           uint8_t *,    buffer,
-           unsigned int, length);
+    SYSCALL2(cx_ecpoint_alloc, "(%p %u)",
+             void *,     p,
+             cx_curve_t, cv);
 
-  SYSCALL0(cx_rng_u8);
+    SYSCALL1(cx_ecpoint_destroy, "(%p)",
+             void *, P);
 
-  SYSCALL1(cx_sha224_init, "(%p)", cx_sha256_t *, hash);
+    SYSCALL5(cx_ecpoint_init, "(%p, %p, %u, %p, %u)", void *, p, uint8_t *, x,
+             size_t,    x_len,
+             uint8_t *, y,
+             size_t,    y_len);
 
-  SYSCALL1(cx_sha256_init, "(%p)", cx_sha256_t *, hash);
+    SYSCALL3(cx_ecpoint_init_bn, "(%p, %u, %u)",
+             void *,   p,
+             uint32_t, x,
+             uint32_t, y);
 
-  SYSCALL1(cx_sha512_init, "(%p)", cx_sha512_t *, hash);
+    SYSCALL3(cx_ecpoint_export_bn, "(%p, %p, %p)",
+             void *,     p,
+             uint32_t *, x,
+             uint32_t *, y);
 
-  SYSCALL2(cx_sha3_init, "(%p, %u)",
-          cx_sha3_t *, hash,
-          unsigned int, size);
+    SYSCALL5(cx_ecpoint_export, "(%p, %p, %u, %p, %u)",
+             void *,    p,
+             uint8_t *, x,
+             size_t,    x_len,
+             uint8_t *, y,
+             size_t,    y_len);
 
-  SYSCALL3(cx_sha3_xof_init, "(%p, %u, %u)",
-          cx_sha3_t *, hash,
-          unsigned int, size,
-          unsigned int, out_length);
+    SYSCALL4(cx_ecpoint_compress, "(%p, %p, %u, %p)",
+             void *,     p,
+             uint8_t *,  xy_compressed,
+             size_t,     xy_compressed_len,
+             uint32_t *, sign);
 
-  SYSCALL6(cx_math_powm,    "(%p, %p, %p, %u, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, e,
-           size_t,          len_e,
-           const uint8_t *, m,
-           size_t,          len);
+    SYSCALL4(cx_ecpoint_decompress, "(%p, %p, %u, %u)",
+             void *,    p,
+             uint8_t *, xy_compressed,
+             size_t,    xy_compressed_len,
+             uint32_t,  sign);
 
-  SYSCALL4(cx_math_sub,     "(%p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, b,
-           size_t,          len);
+    SYSCALL3(cx_ecpoint_add, "(%p, %p, %p)",
+             void *, eR,
+             void *, eP,
+             void *, eQ);
 
-  SYSCALL5(cx_math_subm,    "(%p, %p, %p, %p, %u)",
-           uint8_t *,       r,
-           const uint8_t *, a,
-           const uint8_t *, b,
-           const uint8_t *, m,
-           size_t,          len);
+    SYSCALL1(cx_ecpoint_neg, "(%p)",
+             void *, eP);
 
-  SYSCALL3(nvm_write,  "(%p, %p, %u)",
-           void *, dst_addr,
-           void *, src_addr,
-           size_t, src_len);
+    SYSCALL3(cx_ecpoint_cmp, "(%p, %p, %p)",
+             void *, eP,
+             void *, eQ,
+             bool *, is_equal);
 
-  SYSCALL2(os_endorsement_get_public_key, "(%d, %p)",
-           uint8_t,   index,
+    SYSCALL3(cx_ecpoint_scalarmul, "(%p, %p, %u)",
+             void *,    p,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL2(cx_ecpoint_scalarmul_bn, "(%p, %u)",
+             void *,   ec_P,
+             uint32_t, bn_k);
+
+    SYSCALL3(cx_ecpoint_rnd_scalarmul, "(%p, %p, %u)",
+             void *,    p,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL2(cx_ecpoint_rnd_scalarmul_bn, "(%p, %u)",
+             void *,   ec_P,
+             uint32_t, bn_k);
+
+    SYSCALL3(cx_ecpoint_rnd_fixed_scalarmul, "(%p, %p, %u)",
+             void *,    p,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL7(cx_ecpoint_double_scalarmul, "(%p, %p, %p, %p, %u, %p, %u)",
+             void *,    eR,
+             void *,    eP,
+             void *,    eQ,
+             uint8_t *, k,
+             size_t,    k_len,
+             uint8_t *, r,
+             size_t,    r_len);
+
+    SYSCALL5(cx_ecpoint_double_scalarmul_bn, "(%p, %p, %p, %u, %u)",
+             void *,   eR,
+             void *,   eP,
+             void *,   eQ,
+             uint32_t, k,
+             uint32_t, r);
+
+    SYSCALL2(cx_ecpoint_is_at_infinity, "(%p, %p)",
+             void *, ec_P,
+             bool *, is_infinite);
+
+    SYSCALL2(cx_ecpoint_is_on_curve, "(%p, %p)",
+             void *, ec_P,
+             bool *, is_on_curve);
+
+    SYSCALL3(cx_ecpoint_x25519, "(%u, %p, %u)",
+             uint32_t,  bn_u,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL3(cx_ecpoint_x448, "(%u, %p, %u)",
+             uint32_t,  bn_u,
+             uint8_t *, k,
+             size_t,    k_len);
+
+    SYSCALL0(cx_bn_is_locked);
+
+    SYSCALL2(cx_bn_lock, "(%u %u)",
+             size_t,   word_nbytes,
+             uint32_t, flags);
+
+    SYSCALL0(cx_bn_unlock);
+
+    SYSCALL2(cx_bn_alloc, "(%p %u)",
+             void *, x,
+             size_t, nbytes);
+
+    SYSCALL2(cx_bn_copy, "(%u %u)",
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL4(cx_bn_alloc_init, "(%p, %u, %p, %u)",
+             void *,    x,
+             size_t,    nbytes,
+             uint8_t *, value,
+             size_t,    value_nbytes);
+
+    SYSCALL1(cx_bn_destroy, "(%p)",
+             void *, x);
+
+    SYSCALL2(cx_bn_nbytes, "(%u, %p)",
+             uint32_t, x,
+             size_t *, nbytes);
+
+    SYSCALL3(cx_bn_init, "(%u, %p, %u)",
+             uint32_t,  x,
+             uint8_t *, value,
+             size_t,    value_nbytes);
+
+    SYSCALL1(cx_bn_rand, "(%u)",
+             uint32_t, x);
+
+    SYSCALL2(cx_bn_rng, "(%u, %u)",
+             uint32_t, r,
+             uint32_t, n);
+
+    SYSCALL3(cx_bn_tst_bit, "(%u, %u, %p)",
+             uint32_t, a,
+             uint32_t, b,
+             bool *,   set);
+
+    SYSCALL2(cx_bn_set_bit, "(%u, %u)",
+             uint32_t, r,
+             uint32_t, n);
+
+    SYSCALL2(cx_bn_clr_bit, "(%u, %u)",
+             uint32_t, r,
+             uint32_t, n);
+
+    SYSCALL2(cx_bn_shr, "(%u, %u)",
+             uint32_t, r,
+             uint32_t, n);
+
+    SYSCALL2(cx_bn_shl, "(%u, %u)",
+             uint32_t, r,
+             uint32_t, n);
+
+    SYSCALL3(cx_bn_mod_invert_nprime, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, n);
+
+    SYSCALL3(cx_bn_mod_u32_invert, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, n);
+
+    SYSCALL3(cx_bn_export, "(%u, %p, %u)",
+             uint32_t,  x,
+             uint8_t *, bytes,
+             size_t,    nbytes);
+
+    SYSCALL2(cx_bn_set_u32, "(%u %u)",
+             uint32_t, x,
+             uint32_t, n);
+
+    SYSCALL2(cx_bn_get_u32, "(%u %p)",
+             uint32_t,   x,
+             uint32_t *, n);
+
+    SYSCALL2(cx_bn_cnt_bits, "(%u %p)",
+             uint32_t,   x,
+             uint32_t *, nbits);
+
+    SYSCALL2(cx_bn_is_odd, "(%u, %p)",
+             uint32_t, a,
+             bool *,   ptr);
+
+    SYSCALL3(cx_bn_cmp, "(%u, %u, %p)",
+             uint32_t, a,
+             uint32_t, b,
+             int *,    ptr);
+
+    SYSCALL3(cx_bn_cmp_u32, "(%u, %u, %p)",
+             uint32_t, a,
+             uint32_t, b,
+             int *,    ptr);
+
+    SYSCALL3(cx_bn_xor, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL3(cx_bn_or, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL3(cx_bn_and, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL3(cx_bn_add, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL3(cx_bn_sub, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL3(cx_bn_mul, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b);
+
+    SYSCALL4(cx_bn_mod_add, "(%u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             uint32_t, n);
+
+    SYSCALL4(cx_bn_mod_sub, "(%u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             uint32_t, n);
+
+    SYSCALL4(cx_bn_mod_mul, "(%u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             uint32_t, n);
+
+    SYSCALL4(cx_bn_mod_sqrt, "(%u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             uint32_t, n);
+
+    SYSCALL3(cx_bn_reduce, "(%u, %u, %u)",
+             uint32_t, r,
+             uint32_t, d,
+             uint32_t, n);
+
+    SYSCALL5(cx_bn_mod_pow, "(%u, %u, %p, %u, %u)",
+             uint32_t,  r,
+             uint32_t,  a,
+             uint8_t *, e,
+             size_t,    len_e,
+             uint32_t,  n);
+
+    SYSCALL5(cx_bn_mod_pow2, "(%u, %u, %p, %u, %u)",
+             uint32_t,  r,
+             uint32_t,  a,
+             uint8_t *, e,
+             size_t,    len_e,
+             uint32_t,  n);
+
+    SYSCALL4(cx_bn_mod_pow_bn, "(%u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, e,
+             uint32_t, n);
+
+    SYSCALL2(cx_bn_is_prime, "(%u, %p)",
+             uint32_t, a,
+             bool *,   ptr);
+
+    SYSCALL1(cx_bn_next_prime, "(%u)",
+             uint32_t, a);
+
+    SYSCALL5(cx_bn_gf2_n_mul, "(%u, %u, %u, %u, %u)",
+             uint32_t, r,
+             uint32_t, a,
+             uint32_t, b,
+             uint32_t, n,
+             uint32_t, h);
+
+    SYSCALL10(cx_bls12381_key_gen, "(%u, %p, %u, %p, %u, %p, %u, %p, %p, %u)",
+              uint8_t, mode,
+              uint8_t *, secret,
+              size_t, secret_len,
+              uint8_t *, salt,
+              size_t, salt_len,
+              uint8_t *, key_info,
+              size_t, key_info_len,
+              void *, private_key,
+              uint8_t *, public_key,
+              size_t, public_key_len);
+
+    SYSCALL6(cx_hash_to_field, "(%p, %u, %p, %u, %p, %u)",
+             uint8_t *, msg,
+             size_t, msg_len,
+             uint8_t *, dst,
+             size_t, dst_len,
+             uint8_t *, hash,
+             size_t, hash_len);
+
+    SYSCALL5(ox_bls12381_sign, "(%p, %p, %u, %p, %u)",
+             cx_ecfp_384_private_key_t *, key,
+             uint8_t *, msg,
+             size_t, msg_len,
+             uint8_t *, sign,
+             size_t, sign_len);
+
+    SYSCALL5(cx_bls12381_aggregate, "(%p, %u, %d, %p, %u)",
+             uint8_t *, in,
+             size_t, in_len,
+             bool, first,
+             uint8_t *, agg_sign,
+             size_t, sign_len);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+/* Handle os related syscalls which behavior are defined in src/bolos/os*.c */
+int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
+                       unsigned long *ret, bool verbose, int api_level,
+                       hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+
+    /* Syscall from os.c */
+    SYSCALL0(os_flags);
+
+    SYSCALL3(os_setting_get, "(0x%x, %p, %u)",
+             unsigned int, setting_id,
+             uint8_t *,    value,
+             size_t,       maxlen);
+
+    SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
+             unsigned int, tag,
+             uint8_t *,    buffer,
+             size_t,       length);
+
+    SYSCALL1(os_lib_call, "(%p)",
+             unsigned long *, call_parameters);
+
+    SYSCALL2(os_version, "(%p, %u)",
+             uint8_t *, buffer,
+             size_t,    length);
+
+    SYSCALL2(os_seph_version, "(%p %u)",
+             uint8_t *, buffer,
+             size_t,    length);
+
+    SYSCALL0(os_lib_end);
+
+    SYSCALL1(try_context_set, "(%p)",
+             try_context_t *, context);
+
+    SYSCALL0(try_context_get);
+
+    SYSCALL1(os_sched_exit, "(%u)",
+             unsigned int, code);
+
+    /* Syscall from os_2.0.c */
+    SYSCALL1(os_ux, "(%p)",
+              bolos_ux_params_t *, params);
+
+    SYSCALL0(os_global_pin_is_validated);
+
+    SYSCALL0(os_perso_isonboarded);
+
+    SYSCALL1(os_sched_last_status, "(%u)",
+              unsigned int, task_idx);
+
+    SYSCALL0(os_sched_current_task);
+
+    SYSCALL2(os_serial, "(%p, %u)",
+             unsigned char *, serial,
+             unsigned int, maxlength);
+
+    SYSCALL6(os_pki_load_certificate, "(%u, %p, %u, %p, %p, %p)",
+             uint8_t, expected_key_usage,
+             uint8_t *, certificate,
+             size_t, certificate_len,
+             uint8_t *, trusted_name,
+             size_t *, trusted_name_len,
+             cx_ecfp_384_public_key_t *, public_key);
+
+    SYSCALL4(os_pki_verify, "(%p, %u, %p, %u)",
+             uint8_t *, descriptor_hash,
+             size_t, descriptor_hash_len,
+             uint8_t *, signature,
+             size_t, signature_len);
+
+    SYSCALL4(os_pki_get_info, "(%p, %p, %p, %p)",
+             uint8_t *, key_usage,
+             uint8_t *, trusted_name,
+             size_t *, trusted_name_len,
+             cx_ecfp_384_public_key_t *, public_key);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+/* Handle default related syscalls which behavior are defined in
+ * src/bolos/default.c */
+int emulate_syscall_default(unsigned long syscall, unsigned long *parameters,
+                            unsigned long *ret, bool verbose, int api_level,
+                            hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+
+    SYSCALL3(nvm_write, "(%p, %p, %u)",
+             void *, dst_addr,
+             void *, src_addr,
+             size_t, src_len);
+
+    SYSCALL2(nvm_erase, "(%p, %u)",
+             void *, dst_addr,
+             size_t, src_len);
+
+    SYSCALL1(nvm_erase_page, "(%u)",
+             unsigned int, page_addr);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+/* Handle seph related syscalls which behavior are defined in
+ * src/bolos/seproxyhal.c */
+int emulate_syscall_seph(unsigned long syscall, unsigned long *parameters,
+                         unsigned long *ret, bool verbose, int api_level,
+                         hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+
+    SYSCALL0(io_seph_is_status_sent);
+
+    SYSCALL2(io_seph_send, "(%p, %u)",
+             uint8_t *, buffer,
+             uint16_t,  length);
+
+    SYSCALL3(io_seph_recv, "(%p, %u, 0x%x)",
+             uint8_t *,    buffer,
+             uint16_t,     maxlength,
+             unsigned int, flags);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+/* Handle os_perso related syscalls which behavior are defined in
+ * src/bolos/os_{bip32, eip2333}.c a */
+int emulate_syscall_os_perso(unsigned long syscall, unsigned long *parameters,
+                             unsigned long *ret, bool verbose, int api_level,
+                             hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+
+    /* Syscall from os_bip32.c */
+    SYSCALL8(os_perso_derive_node_with_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
+             unsigned int,         mode,
+             cx_curve_t,           curve,
+             const unsigned int *, path,
+             unsigned int,         pathLength,
+             unsigned char *,      privateKey,
+             unsigned char *,      chain,
+             unsigned char *,      seed_key,
+             unsigned int,         seed_key_length);
+
+    SYSCALL5(os_perso_derive_node_bip32, "(0x%x, %p, %u, %p, %p)",
+             cx_curve_t,       curve,
+             const uint32_t *, path,
+             size_t,           length,
+             uint8_t *,        private_key,
+             uint8_t *,        chain);
+
+    /* Syscall from os_eip2333.c */
+    SYSCALL4(os_perso_derive_eip2333, "(0x%x, %p, %u, %p)",
+             cx_curve_t,           curve,
+             const unsigned int *, path,
+             unsigned int,         pathLength,
+             unsigned char *,      privateKey);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+/* Handle endorsement related syscalls which behavior are defined in
+ * src/bolos/endorsement.c a */
+
+int emulate_syscall_endorsement_pre_api_level_23(unsigned long syscall,
+                                                 unsigned long *parameters,
+                                                 unsigned long *ret,
+                                                 bool verbose, int api_level,
+                                                 hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+
+  SYSCALL1(os_endorsement_get_code_hash, "(%p)",
            uint8_t *, buffer);
 
   SYSCALL3(os_endorsement_key1_sign_data, "(%p, %u, %p)",
@@ -365,66 +792,190 @@ int emulate_common(unsigned long syscall, unsigned long *parameters,
            size_t,    dataLength,
            uint8_t *, signature);
 
-  SYSCALL0(os_flags);
+  SYSCALL3(os_endorsement_key1_sign_without_code_hash, "(%p, %u, %p)",
+           uint8_t *, data,
+           size_t,    dataLength,
+           uint8_t *, signature);
 
-  SYSCALL1(os_lib_throw, "(0x%x)",
-           unsigned int, exception);
+  SYSCALL3i(os_endorsement_get_public_key, "(%d, %p, %p)",
+           uint8_t,   index,
+           uint8_t *, buffer,
+           uint8_t *, length,
+           os_endorsement_get_public_key_new);
 
-  SYSCALL5(os_perso_derive_node_bip32, "(0x%x, %p, %u, %p, %p)",
-           cx_curve_t,       curve,
-           const uint32_t *, path,
-           size_t,           length,
-           uint8_t*,         private_key,
-           uint8_t *,        chain
-           );
-
-  SYSCALL0(os_perso_isonboarded);
-
-  SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
-           unsigned int, tag,
-           uint8_t *,    buffer,
-           size_t,       length);
-
-  SYSCALL0(try_context_get);
-
-  SYSCALL1(try_context_set, "(%p)",
-           try_context_t *, context);
-
-  SYSCALL1(os_endorsement_get_code_hash, "(%p)", uint8_t *, buffer);
-
-  SYSCALL2(os_endorsement_get_public_key_certificate, "(%d, %p)",
+  SYSCALL3i(os_endorsement_get_public_key_certificate, "(%d, %p, %p)",
            unsigned char,   index,
-           unsigned char *, buffer);
+           unsigned char *, buffer,
+           unsigned char *, length,
+           os_endorsement_get_public_key_certificate_new);
 
-  SYSCALL6(cx_hmac_sha512, "(%p, %u, %p, %u, %p, %u)",
-           const unsigned char *, key,
-           unsigned int,          key_len,
-           const unsigned char *, in,
-           unsigned int,          len,
-           unsigned char *,       out,
-           unsigned int,          out_len);
-
-  SYSCALL3(cx_hmac_sha512_init, "(%p, %p, %u)",
-           cx_hmac_sha256_t *, hmac,
-           const uint8_t *,    key,
-           unsigned int,       key_len);
-
-  SYSCALL8(os_perso_derive_node_bip32_seed_key, "(0x%x, 0x%x, %p, %u, %p, %p, %p, %u)",
-           unsigned int,         mode,
-           cx_curve_t,           curve,
-           const unsigned int *, path,
-           unsigned int,         pathLength,
-           unsigned char *,      privateKey,
-           unsigned char *,      chain,
-           unsigned char *,      seed_key,
-           unsigned int,         seed_key_length);
-  /* clang-format off */
-
+  /* clang-format on */
   default:
-
-    errx(1, "failed to emulate syscall 0x%08lx", syscall);
-    break;
+    return SYSCALL_NOT_HANDLED;
   }
 
-  return retid;
+  return SYSCALL_HANDLED;
+}
+
+int emulate_syscall_endorsement_after_api_level_23(unsigned long syscall,
+                                                   unsigned long *parameters,
+                                                   unsigned long *ret,
+                                                   bool verbose, int api_level,
+                                                   hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  switch (syscall) {
+    /* clang-format off */
+        SYSCALL3(ENDORSEMENT_get_public_key, "(%d, %p, %p)",
+                  uint8_t,   slot,
+                  uint8_t *, out_public_key,
+                  uint8_t *, out_public_key_length);
+
+        SYSCALL4(ENDORSEMENT_key1_sign_data, "(%p, %u, %p, %p)",
+                  uint8_t *, data,
+                  uint32_t, data_length,
+                  uint8_t *, out_signature,
+                  uint32_t *, out_signature_length);
+
+        SYSCALL1(ENDORSEMENT_get_code_hash, "(%p)",
+                  uint8_t *, out_hash);
+
+        SYSCALL3(ENDORSEMENT_get_public_key_certificate, "(%d, %p, %p)",
+                  uint8_t, slot,
+                  uint8_t *, out_buffer,
+                  uint8_t *, out_length);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+int emulate_syscall_endorsement(unsigned long syscall,
+                                unsigned long *parameters, unsigned long *ret,
+                                bool verbose, int api_level, hw_model_t model)
+{
+  (void)api_level;
+  (void)model;
+
+  if (api_level <= 22) {
+    return emulate_syscall_endorsement_pre_api_level_23(
+        syscall, parameters, ret, verbose, api_level, model);
+  } else {
+    return emulate_syscall_endorsement_after_api_level_23(
+        syscall, parameters, ret, verbose, api_level, model);
+  }
+}
+
+int emulate_syscall_os_io(unsigned long syscall, unsigned long *parameters,
+                          unsigned long *ret, bool verbose, int api_level,
+                          hw_model_t model)
+{
+  (void)model;
+
+  if (api_level < 24) {
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  switch (syscall) {
+    /* clang-format off */
+    SYSCALL1(os_io_init, "(%p)",
+             os_io_init_t *, init);
+
+    SYSCALL0(os_io_start);
+
+    SYSCALL0(os_io_stop);
+
+    SYSCALL4(os_io_rx_evt, "(%p %u %p %i)",
+             unsigned char *, buffer,
+             unsigned short, buffer_max_length,
+             unsigned int *, timeout_ms,
+             bool, check_se_event);
+
+    SYSCALL4(os_io_tx_cmd, "(%u %p %u %p)",
+             unsigned char, type,
+             unsigned char *, buffer,
+             unsigned short, length,
+             unsigned int *, timeout_ms);
+
+    SYSCALL3(os_io_seph_tx, "(%p %u %p)",
+             unsigned char *, buffer,
+             unsigned short, length,
+             unsigned int *, timeout_ms);
+
+    SYSCALL5(os_io_seph_se_rx_event, "(%p %u %p %i %u)",
+             unsigned char *, buffer,
+             unsigned short, max_length,
+             unsigned int  *, timeout_ms,
+             bool, check_se_event,
+             unsigned int, flags);
+
+    /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+  return SYSCALL_HANDLED;
+}
+
+int emulate(unsigned long syscall, unsigned long *parameters,
+            unsigned long *ret, bool verbose, int api_level, hw_model_t model)
+{
+  if (emulate_syscall_bagl(syscall, parameters, ret, verbose, api_level,
+                           model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_nbgl(syscall, parameters, ret, verbose, api_level,
+                           model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_touch(syscall, parameters, ret, verbose, api_level,
+                            model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_cx(syscall, parameters, ret, verbose, api_level, model) ==
+      SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_os(syscall, parameters, ret, verbose, api_level, model) ==
+      SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_default(syscall, parameters, ret, verbose, api_level,
+                              model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_seph(syscall, parameters, ret, verbose, api_level,
+                           model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_os_perso(syscall, parameters, ret, verbose, api_level,
+                               model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_endorsement(syscall, parameters, ret, verbose, api_level,
+                                  model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_os_io(syscall, parameters, ret, verbose, api_level,
+                            model) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (verbose) {
+    fprintf(stderr, "syscall 0x%08lx not handled\n", syscall);
+  }
+  return 0;
 }

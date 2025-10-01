@@ -32,4 +32,4 @@ typedef struct ux_seph_s {
 extern ux_seph_os_and_app_t G_ux_os;
 extern bolos_ux_params_t G_ux_params;
 
-#define os_ux sys_os_ux_2_0
+#define os_ux sys_os_ux

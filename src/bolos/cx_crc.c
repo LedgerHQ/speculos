@@ -107,14 +107,6 @@ uint32_t sys_cx_crc32_update(uint32_t crc, const void *buf, size_t len)
   return crc ^ CX_CRC32_INIT;
 }
 
-uint32_t sys_cx_crc32_hw(const void *buf, size_t len)
-{
-  uint32_t crc;
-  crc = sys_cx_crc32_update(CX_CRC32_INIT, buf, len);
-
-  return crc;
-}
-
 static uint32_t reverse_32_bits(uint32_t value)
 {
   uint32_t reverse_val = 0;

@@ -10,5 +10,5 @@ set -e
 CLANG_FORMAT="${CLANG_FORMAT:-clang-format}"
 
 # use xargs to quit if clang-format terminates with a non-zero exit status
-find src/ tests/ vnc/ -name '*.[ch]' -print0 \
+find src/ tests/ -name '*.[ch]' -print0 \
      | xargs -0 -L1 ${CLANG_FORMAT} -i -style=file
