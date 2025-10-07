@@ -48,6 +48,8 @@
 #define CX_EC_INVALID_POINT  0xFFFFFFA2
 #define CX_EC_INVALID_CURVE  0xFFFFFFA3
 
+#define BLS12_377_SIZE_u8 48
+
 typedef uint32_t cx_err_t;
 
 #define CX_APILEVEL 12
