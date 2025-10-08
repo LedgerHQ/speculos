@@ -382,6 +382,10 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
       goto cleanup;
     }
     break;
+  case CX_CURVE_EdBLS12:
+    error = cx_twisted_edwards_mul_point(&P, k, k_len);
+    goto cleanup;
+    break;
   default: {
     error = CX_EC_INVALID_CURVE;
     goto cleanup;

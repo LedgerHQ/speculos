@@ -313,3 +313,5 @@ void cx_mpi_ecpoint_copy(cx_mpi_ecpoint_t *P, const cx_mpi_ecpoint_t *Q);
 cx_err_t cx_twisted_edwards_add_point(cx_mpi_ecpoint_t *R,
                                       const cx_mpi_ecpoint_t *P,
                                       const cx_mpi_ecpoint_t *Q);
+cx_err_t cx_twisted_edwards_mul_point(cx_mpi_ecpoint_t *P, const uint8_t *k,
+                                      uint32_t k_len);
