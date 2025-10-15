@@ -48,6 +48,9 @@
 #define CX_EC_INVALID_POINT  0xFFFFFFA2
 #define CX_EC_INVALID_CURVE  0xFFFFFFA3
 
+#define BLS12_377_SIZE_u8   48
+#define EDBLS12_377_SIZE_u8 32
+
 typedef uint32_t cx_err_t;
 
 #define CX_APILEVEL 12
@@ -138,6 +141,9 @@ cx_err_t cx_mpi_gf2_n_mul(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *b,
                           const cx_mpi_t *n, const cx_mpi_t *h);
 void cx_mpi_reverse(cx_mpi_t *x, uint32_t nbytes);
 void cx_mpi_swap(cx_mpi_t *a, cx_mpi_t *b, const int c);
+
+cx_err_t cx_mpi_ecpoint_normalize(cx_mpi_ecpoint_t *P);
+;
 
 // cx_bn.c
 bool sys_cx_bn_is_locked(void);
@@ -303,3 +309,9 @@ cx_err_t sys_ox_bls12381_sign(const cx_ecfp_384_private_key_t *key,
 cx_err_t sys_cx_bls12381_aggregate(const uint8_t *in, size_t in_len, bool first,
                                    uint8_t *aggregated_signature,
                                    size_t signature_len);
+void cx_mpi_ecpoint_copy(cx_mpi_ecpoint_t *P, const cx_mpi_ecpoint_t *Q);
+cx_err_t cx_twisted_edwards_add_point(cx_mpi_ecpoint_t *R,
+                                      const cx_mpi_ecpoint_t *P,
+                                      const cx_mpi_ecpoint_t *Q);
+cx_err_t cx_twisted_edwards_mul_point(cx_mpi_ecpoint_t *P, const uint8_t *k,
+                                      uint32_t k_len);
