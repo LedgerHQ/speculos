@@ -50,6 +50,7 @@
 
 #define BLS12_377_SIZE_u8   48
 #define EDBLS12_377_SIZE_u8 32
+#define PASTA_SIZE_u8       32
 
 typedef uint32_t cx_err_t;
 
