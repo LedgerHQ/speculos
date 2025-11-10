@@ -7,6 +7,7 @@
 
 #include "bolos/exception.h"
 #include "cx.h"
+#include "cx_ec.h"
 #include "cx_utils.h"
 #include "emulate.h"
 #include "environment.h"
@@ -484,4 +485,81 @@ unsigned long sys_os_perso_derive_node_bip32(cx_curve_t curve,
 {
   return sys_os_perso_derive_node_with_seed_key(HDW_NORMAL, curve, path, length,
                                                 private_key, chain, NULL, 0);
+}
+
+unsigned long sys_os_perso_get_master_key_identifier(uint8_t *identifier,
+                                                     size_t identifier_length)
+{
+  /* Input parameters verification */
+  if (identifier == NULL) {
+    errx(1, "%s: identifier is NULL", __func__);
+    THROW(EXCEPTION);
+  }
+  if (identifier_length < CX_RIPEMD160_SIZE) {
+    errx(1, "%s: wrong input length", __func__);
+    THROW(EXCEPTION);
+  }
+  unsigned char raw_private_key[64] = { 0 };
+  /* Required for sys_os_perso_derive_node_with_seed_key() */
+  unsigned int path = 0;
+
+  /* Getting raw private key */
+  unsigned long ret = sys_os_perso_derive_node_with_seed_key(
+      HDW_NORMAL, CX_CURVE_SECP256K1, &path, 0, raw_private_key, NULL, NULL, 0);
+  if (ret != 0) {
+    errx(1, "%s: sys_os_perso_derive_node_with_seed_key() failed with %lu",
+         __func__, ret);
+    THROW(EXCEPTION);
+  }
+
+  /* Converting it to structure form */
+  cx_ecfp_private_key_t private_key;
+  sys_cx_ecfp_init_private_key(CX_CURVE_SECP256K1, raw_private_key, 32,
+                               &private_key);
+
+  /* Getting corresponding public key */
+  cx_ecfp_public_key_t public_key;
+  sys_cx_ecfp_generate_pair(CX_CURVE_SECP256K1, &public_key, &private_key, 1);
+  if (public_key.W_len != 65) {
+    errx(1, "perso_get_master_key_identifier: wrong output public key length");
+    THROW(EXCEPTION);
+  }
+
+  /* Getting raw public key */
+  uint8_t raw_pubkey[65] = { 0 };
+  memcpy(raw_pubkey, public_key.W, public_key.W_len);
+
+  /* Compressing public key */
+  uint8_t compressed_pubkey[33] = { 0 };
+  if (raw_pubkey[0] != 0x04) {
+    errx(1, "perso_get_master_key_identifier: wrong public key");
+    THROW(EXCEPTION);
+  }
+  compressed_pubkey[0] = (raw_pubkey[64] % 2 == 1) ? 0x03 : 0x02;
+  memcpy(compressed_pubkey + 1, raw_pubkey + 1, 32); // copy x
+
+  /* Getting sha256 hash of public key */
+  uint8_t sha256_hash[CX_SHA256_SIZE];
+  int res =
+      sys_cx_hash_sha256(compressed_pubkey, 33, sha256_hash, CX_SHA256_SIZE);
+  if (res != CX_SHA256_SIZE) {
+    errx(1, "perso_get_master_key_identifier: unexpected error in sha256 "
+            "computation");
+    THROW(EXCEPTION);
+  }
+
+  /* Getting ripemd160 hash of sha256 hash */
+  uint8_t ripemd160_hash[CX_RIPEMD160_SIZE];
+  res = sys_cx_hash_ripemd160(sha256_hash, CX_SHA256_SIZE, ripemd160_hash,
+                              CX_RIPEMD160_SIZE);
+  if (res != CX_RIPEMD160_SIZE) {
+    errx(1, "perso_get_master_key_identifier: unexpected error in ripemd160 "
+            "computation");
+    THROW(EXCEPTION);
+  }
+
+  /* Copying the result */
+  memcpy(identifier, ripemd160_hash, CX_RIPEMD160_SIZE);
+
+  return 0;
 }

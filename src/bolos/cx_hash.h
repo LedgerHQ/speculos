@@ -225,6 +225,9 @@ int spec_cx_ripemd160_update(cx_ripemd160_t *ctx, const uint8_t *data,
 int spec_cx_ripemd160_final(cx_ripemd160_t *ctx, uint8_t *digest);
 int cx_ripemd160_validate_context(const cx_ripemd160_t *ctx);
 
+int sys_cx_hash_ripemd160(const uint8_t *in, size_t in_len, uint8_t *out,
+                          size_t out_len);
+
 int cx_sha3_init(cx_sha3_t *hash, unsigned int size);
 int cx_keccak_init(cx_sha3_t *hash, unsigned int size);
 int cx_shake128_init(cx_sha3_t *hash, unsigned int out_size);
