@@ -761,6 +761,10 @@ int emulate_syscall_os_perso(unsigned long syscall, unsigned long *parameters,
              unsigned int,         pathLength,
              unsigned char *,      privateKey);
 
+    SYSCALL2(os_perso_get_master_key_identifier, "(%p, %u)",
+             uint8_t *, identifier,
+             size_t, identifier_length);
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;

@@ -286,3 +286,14 @@ int cx_ripemd160_validate_context(const cx_ripemd160_t *ctx)
 {
   return ctx->blen < 64;
 }
+
+int sys_cx_hash_ripemd160(const unsigned char *in, size_t len,
+                          unsigned char *out)
+{
+  cx_ripemd160_t hash;
+
+  cx_ripemd160_init(&hash);
+  spec_cx_ripemd160_update(&hash, in, len);
+  spec_cx_ripemd160_final(&hash, out);
+  return CX_RIPEMD160_SIZE;
+}

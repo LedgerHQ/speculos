@@ -101,6 +101,7 @@
 #define SYSCALL_os_perso_derive_and_set_seed_ID_IN                    0x0700004f
 #define SYSCALL_os_perso_set_words_ID_IN                              0x02000050
 #define SYSCALL_os_perso_finalize_ID_IN                               0x00000051
+#define SYSCALL_os_perso_get_master_key_identifier_ID_IN              0x02000055
 #define SYSCALL_os_perso_isonboarded_ID_IN                            0x0000009f
 #define SYSCALL_os_perso_setonboardingstatus_ID_IN                    0x04000094
 #define SYSCALL_os_perso_derive_node_bip32_ID_IN                      0x05000053
