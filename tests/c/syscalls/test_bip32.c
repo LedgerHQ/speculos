@@ -697,11 +697,28 @@ static void test_derive(void **state __attribute__((unused)))
   }
 }
 
+static void test_get_master_key_identifier(void **state __attribute__((unused)))
+{
+  unsetenv("SPECULOS_SEED");
+  init_environment();
+
+  uint8_t expected_identifier[CX_RIPEMD160_SIZE] = { 0 };
+  assert_int_equal(hexstr2bin(("f5acc2fd5c60b7263c4a459541c1473bc29e58f4"),
+                              expected_identifier, CX_RIPEMD160_SIZE),
+                   CX_RIPEMD160_SIZE);
+  uint8_t identifier[CX_RIPEMD160_SIZE] = { 0 };
+
+  assert_int_equal(
+      0, sys_os_perso_get_master_key_identifier(identifier, CX_RIPEMD160_SIZE));
+  assert_memory_equal(expected_identifier, identifier, CX_RIPEMD160_SIZE);
+}
+
 int main(void)
 {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test(test_bip32),
     cmocka_unit_test(test_derive),
+    cmocka_unit_test(test_get_master_key_identifier),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
