@@ -53,9 +53,13 @@ static int cx_weierstrass_mult(cx_curve_t curve, cx_mpi_t *qx, cx_mpi_t *qy,
 }
 
 //-----------------------------------------------------------------------------
-static cx_err_t cx_mpi_ecpoint_normalize(cx_mpi_ecpoint_t *P)
+cx_err_t cx_mpi_ecpoint_normalize(cx_mpi_ecpoint_t *P)
 {
   const cx_curve_domain_t *domain;
+  cx_mpi_t *invz, *p, *tmp1, *tmp2;
+  cx_bn_t bn_invz, bn_p, bn_tmp1, bn_tmp2;
+  uint32_t sz;
+  cx_err_t error = CX_OK;
 
   domain = cx_ecdomain(P->curve);
   if (domain == NULL) {
@@ -67,12 +71,64 @@ static cx_err_t cx_mpi_ecpoint_normalize(cx_mpi_ecpoint_t *P)
     cx_mpi_set_u32(P->z, 0);
     return CX_EC_INFINITE_POINT;
   }
-  if (cx_mpi_cmp_u32(P->z, 1) != 0) {
-    errx(1, "cx_mpi_ecpoint_normalize: TODO: unsupported curve (P->z=%u)",
-         cx_mpi_get_u32(P->z));
-    return CX_INTERNAL_ERROR;
+  if (cx_mpi_cmp_u32(P->z, 1) == 0) {
+    return CX_OK;
   }
-  return CX_OK;
+
+  // Normalize
+  sz = domain->length;
+  if (((p = cx_mpi_alloc_init(&bn_p, sz, domain->p, sz)) == NULL) ||
+      ((invz = cx_mpi_alloc(&bn_invz, sz)) == NULL) ||
+      ((tmp1 = cx_mpi_alloc(&bn_tmp1, sz)) == NULL) ||
+      ((tmp2 = cx_mpi_alloc(&bn_tmp2, sz)) == NULL)) {
+    error = CX_MEMORY_FULL;
+    goto end;
+  }
+  cx_mpi_mod_invert_nprime(invz, P->z, p);
+
+  if (CX_CURVE_RANGE(P->curve, WEIERSTRASS)) {
+    // affine_x = P.x * inv_z²
+    CX_CHECK(cx_mpi_mod_mul(tmp1, invz, invz, p));
+    CX_CHECK(cx_mpi_mod_mul(tmp2, P->x, tmp1, p));
+    CX_CHECK(cx_mpi_copy(P->x, tmp2));
+    // affine_y = P.y * inv_z³
+    CX_CHECK(cx_mpi_mod_mul(P->z, tmp1, invz, p));
+    CX_CHECK(cx_mpi_mod_mul(tmp2, P->y, P->z, p));
+    CX_CHECK(cx_mpi_copy(P->y, tmp2));
+    goto end;
+  }
+
+  if (CX_CURVE_RANGE(P->curve, TWISTED_EDWARDS)) {
+    // affine_x = P.x * inv_z
+    CX_CHECK(cx_mpi_mod_mul(tmp1, P->x, invz, p));
+    CX_CHECK(cx_mpi_copy(P->x, tmp1));
+    // affine_y = P.y * inv_z
+    CX_CHECK(cx_mpi_mod_mul(tmp1, P->y, invz, p));
+    CX_CHECK(cx_mpi_copy(P->y, tmp1));
+    goto end;
+  }
+
+  if (CX_CURVE_RANGE(P->curve, MONTGOMERY)) {
+    // affine_x = P.x * l
+    CX_CHECK(cx_mpi_mod_mul(tmp1, P->x, invz, p));
+    CX_CHECK(cx_mpi_copy(P->x, tmp1));
+    // affine_y = P.y * l
+    CX_CHECK(cx_mpi_mod_mul(tmp1, P->y, invz, p));
+    CX_CHECK(cx_mpi_copy(P->y, tmp1));
+    goto end;
+  }
+
+  error = CX_EC_INVALID_CURVE;
+
+end:
+  if (error == CX_OK) {
+    cx_mpi_set_u32(P->z, 1);
+  }
+  cx_mpi_destroy(&bn_tmp1);
+  cx_mpi_destroy(&bn_tmp2);
+  cx_mpi_destroy(&bn_invz);
+  cx_mpi_destroy(&bn_p);
+  return error;
 }
 
 //-----------------------------------------------------------------------------
@@ -302,7 +358,8 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
   case CX_CURVE_BrainPoolP384T1:
   case CX_CURVE_BrainPoolP512R1:
   case CX_CURVE_BrainPoolP512T1:
-  case CX_CURVE_BLS12_381_G1: {
+  case CX_CURVE_BLS12_381_G1:
+  case CX_CURVE_BLS12_377_G1: {
     if (cx_weierstrass_mult(ec_P->curve, Qx, Qy, P.x, P.y, e) != 1) {
       error = CX_INTERNAL_ERROR;
       goto cleanup;
@@ -324,6 +381,10 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
       error = CX_INTERNAL_ERROR;
       goto cleanup;
     }
+    break;
+  case CX_CURVE_EdBLS12:
+    error = cx_twisted_edwards_mul_point(&P, k, k_len);
+    goto cleanup;
     break;
   default: {
     error = CX_EC_INVALID_CURVE;
@@ -457,6 +518,14 @@ cx_err_t sys_cx_ecpoint_add(cx_ecpoint_t *ec_R, const cx_ecpoint_t *ec_P,
     if (edwards_add(&R, &P, &Q) != 0) {
       error = CX_INTERNAL_ERROR;
     }
+  } else if (ec_P->curve == CX_CURVE_EdBLS12) {
+    cx_mpi_ecpoint_t mpi_p, mpi_q, mpi_r;
+    cx_mpi_ecpoint_from_ecpoint(&mpi_p, ec_P);
+    cx_mpi_ecpoint_from_ecpoint(&mpi_q, ec_Q);
+    cx_mpi_ecpoint_from_ecpoint(&mpi_r, ec_R);
+    cx_twisted_edwards_add_point(&mpi_r, &mpi_p, &mpi_q);
+    return CX_OK;
+
   } else {
     // Try to use EC_POINT_add:
     if ((nid = cx_nid_from_curve(ec_P->curve)) < 0 ||
@@ -706,4 +775,12 @@ cx_err_t sys_cx_ecpoint_x448(const cx_bn_t bn_u, const uint8_t *k, size_t k_len)
 
 end:
   return error;
+}
+
+void cx_mpi_ecpoint_copy(cx_mpi_ecpoint_t *P, const cx_mpi_ecpoint_t *Q)
+{
+  cx_mpi_copy(P->x, Q->x);
+  cx_mpi_copy(P->y, Q->y);
+  cx_mpi_copy(P->z, Q->z);
+  P->curve = Q->curve;
 }
