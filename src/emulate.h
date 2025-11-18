@@ -64,6 +64,8 @@ unsigned long sys_os_perso_derive_eip2333(cx_curve_t curve,
                                           const unsigned int *path,
                                           unsigned int pathLength,
                                           unsigned char *privateKey);
+unsigned long sys_os_perso_get_master_key_identifier(uint8_t *identifier,
+                                                     size_t identifier_length);
 unsigned long sys_os_perso_isonboarded(void);
 unsigned long sys_os_setting_get(unsigned int setting_id, uint8_t *value,
                                  size_t maxlen);
