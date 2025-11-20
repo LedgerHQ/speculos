@@ -12,6 +12,7 @@
 
 #include "bolos_syscalls.h"
 #include "emulate.h"
+#include "exception.h"
 #include "svc.h"
 
 #define HANDLER_STACK_SIZE (SIGSTKSZ * 4)
@@ -104,7 +105,7 @@ static void update_svc_stack(bool push)
 
 static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 {
-  unsigned long pc, syscall, ret;
+  unsigned long pc, syscall, ret, error_r1 = 0;
   unsigned long *parameters;
 
   context = (ucontext_t *)vcontext;
@@ -124,7 +125,51 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
   update_svc_stack(true);
 
   ret = 0;
-  emulate(syscall, parameters, &ret, trace_syscalls, g_api_level, hw_model);
+
+  // for reentrance reasons, don't use a try/catch mechanism for try_context_set
+  // and try_context_get, like in Bolos. Anyway they cannot throw exceptions
+  if ((syscall == SYSCALL_try_context_set_ID_IN) ||
+      (syscall == SYSCALL_try_context_get_ID_IN)) {
+    emulate(syscall, parameters, &ret, trace_syscalls, g_api_level, hw_model);
+  } else {
+    // for other syscalls, use a try/catch mechanism,
+    // that will end properly the SIGILL processing, but propagate the original
+    // exception through R1
+    try_context_t try_ctx;
+
+    // memorize the context in try_ctx
+    try_ctx.ex = custom_setjmp(try_ctx.jmp_buf);
+    if (try_ctx.ex == 0) {
+      // set try_ctx as current try context and keep the previous one (from
+      // App/SDK)
+      try_ctx.previous = sys_try_context_set(&try_ctx);
+      // if a THROW is called in emulate, it will cause a goto to
+      // "if (try_ctx.ex == 0)" instruction, but with a changed try_ctx.ex
+      // value (the value of the exception)
+      emulate(syscall, parameters, &ret, trace_syscalls, g_api_level, hw_model);
+    } else {
+      exception_t e;
+      // memorize exception
+      e = try_ctx.ex;
+      // cleanup to avoid catching it several time
+      try_ctx.ex = 0;
+      sys_try_context_set(try_ctx.previous);
+      // store error to throw into r1, r0 will be the return value
+      error_r1 = e;
+    }
+    /* has TRY clause ended without nested throw ? */
+    if (sys_try_context_get() == &try_ctx) {
+      /* restore previous context manually (as a throw would have when caught)
+       */
+      sys_try_context_set(try_ctx.previous);
+    }
+
+    /* nested throw not consumed ? (by CATCH* clause) */
+    if (try_ctx.ex != 0) {
+      /* rethrow */
+      THROW(try_ctx.ex);
+    }
+  }
 
   /* handle the os_lib_call syscall specially since it modifies the context
    * directly */
@@ -134,7 +179,7 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
 
   /* Treat all unified SDK versions the same way */
   context->uc_mcontext.arm_r0 = ret;
-  context->uc_mcontext.arm_r1 = 0;
+  context->uc_mcontext.arm_r1 = error_r1;
 
   /* skip undefined (originally svc) instruction */
   context->uc_mcontext.arm_pc += 2;

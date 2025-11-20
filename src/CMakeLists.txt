@@ -37,6 +37,7 @@ add_library(emu
         bolos/touch.c
         bolos/endorsement.c
         bolos/seproxyhal.c
+        bolos/exception.c
         bolos/os.c
         bolos/os_bip32.c
         bolos/os_eip2333.c
@@ -74,7 +75,8 @@ bolos/io/sdk/include
 bolos/io/sdk/io/include
 bolos/io/sdk/protocol/include
 bolos/io/sdk/lib_stusb/include
-bolos/io/sdk/lib_nfc/include)
+bolos/io/sdk/lib_nfc/include
+bolos)
 
 add_compile_definitions(emu
 HAVE_BOLOS=1
@@ -106,3 +108,4 @@ else ()
   message(FATAL_ERROR "Unable to identify the compiler!")
 endif ()
 target_link_libraries(launcher PRIVATE emu)
+

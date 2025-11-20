@@ -159,19 +159,19 @@ unsigned long sys_os_lib_end(void)
   return 0;
 }
 
-unsigned long sys_try_context_set(try_context_t *context)
+try_context_t *sys_try_context_set(try_context_t *context)
 {
   try_context_t *previous_context;
 
   previous_context = try_context;
   try_context = context;
 
-  return (unsigned long)previous_context;
+  return previous_context;
 }
 
-unsigned long sys_try_context_get(void)
+try_context_t *sys_try_context_get(void)
 {
-  return (unsigned long)try_context;
+  return try_context;
 }
 
 unsigned long sys_check_api_level(void)
