@@ -399,6 +399,7 @@ unsigned long sys_os_perso_derive_node_bip32_seed_key(
     unsigned char *seed_key, unsigned int seed_key_length)
     __attribute__((weak, alias("sys_os_perso_derive_node_with_seed_key")));
 
+bool called_from_sys_os_perso_get_master_key_identifier = false;
 unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int mode, cx_curve_t curve, const unsigned int *path,
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
@@ -413,6 +414,28 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
 
   if (path == NULL) {
     THROW(EXCEPTION);
+  }
+
+  /* Bitcoin-specific ad hoc reinforcement to test Derivation Path Hardening,
+   * not supposed to be merged into mainline */
+  if (!called_from_sys_os_perso_get_master_key_identifier) {
+    /* Accepting derivation on root level only when called by
+     * sys_os_perso_get_master_key_identifier() */
+    if (pathLength <= 1) {
+      warnx("%s: ERROR, pathLength is %u", __func__, pathLength);
+      THROW(EXCEPTION);
+    }
+  }
+  called_from_sys_os_perso_get_master_key_identifier = false;
+
+  if (mode == HDW_SLIP21) {
+    /* Checking 2 first values corresponding to WALLET_SLIP0021_LABEL ==
+     * "\0LEDGER-Wallet policy" */
+    if ((pathLength != 21) || (path[0] != 0x44454C00) ||
+        (path[1] != 0x2D524547)) {
+      warnx("%s: ERROR, path[1] is 0x%08X", __func__, path[1]);
+      THROW(EXCEPTION);
+    }
   }
 
   // In SDK2, some curves don't have the same value:
@@ -504,6 +527,7 @@ unsigned long sys_os_perso_get_master_key_identifier(uint8_t *identifier,
   unsigned int path = 0;
 
   /* Getting raw private key */
+  called_from_sys_os_perso_get_master_key_identifier = true;
   unsigned long ret = sys_os_perso_derive_node_with_seed_key(
       HDW_NORMAL, CX_CURVE_SECP256K1, &path, 0, raw_private_key, NULL, NULL, 0);
   if (ret != 0) {
