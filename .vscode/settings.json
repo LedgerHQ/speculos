@@ -2,6 +2,15 @@
     "files.associations": {
         "bolos_syscalls_blue_2.2.5.h": "c",
         "verynice.h": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "bolos_syscalls.h": "c",
+        "exception.h": "c",
+        "numbers": "c",
+        "sdk.h": "c",
+        "stdbool.h": "c",
+        "emulate.h": "c",
+        "os.h": "c",
+        "os_types.h": "c",
+        "errors.h": "c"
     }
 }

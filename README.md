@@ -77,12 +77,6 @@ The emulator handles only a few syscalls made by common apps. For instance,
 syscalls related to app install, firmware update or OS info can't be
 implemented.
 
-Invalid syscall parameters might throw an exception on a real device while
-being ignored on Speculos.
-Notably, this is the case for application allowed derivation path and curve and
-application settings flags which are enforced by the device OS, but ignored by
-Speculos.
-
 ### Memory alignment
 
 Attempts to perform unaligned accesses when not allowed (eg. dereferencing a

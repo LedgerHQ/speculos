@@ -10,20 +10,6 @@
 #include "bolos/cx.h"
 #include "nist_cavp.h"
 
-/*
-// Exception-related functions. Exceptions are not handled, functions are just
-// defined so that tests can compile.
-try_context_t *try_context_get(void) { return NULL; }
-
-void os_longjmp(unsigned int exception) {
-  longjmp(try_context_get()->jmp_buf, exception);
-}
-
-#include "cx_ram.h"
-
-union cx_u G_cx;
-*/
-
 #define CX_MAX_DIGEST_SIZE CX_SHA512_SIZE
 
 void test_cavp_sha3_monte_carlo(cx_md_t md_type, uint8_t *initial_seed,

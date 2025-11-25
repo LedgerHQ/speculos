@@ -1,37 +1,33 @@
 #pragma once
 
+#include "errors.h"
 #include <stdio.h>
 #include <unistd.h>
 
-#define EXCEPTION             1
-#define INVALID_PARAMETER     2
-#define EXCEPTION_OVERFLOW    3
-#define EXCEPTION_SECURITY    4
-#define INVALID_CRC           5
-#define INVALID_CHECKSUM      6
-#define INVALID_COUNTER       7
-#define NOT_SUPPORTED         8
-#define INVALID_STATE         9
-#define TIMEOUT               10
-#define EXCEPTION_PIC         11
-#define EXCEPTION_APPEXIT     12
-#define EXCEPTION_IO_OVERFLOW 13
-#define EXCEPTION_IO_HEADER   14
-#define EXCEPTION_IO_STATE    15
-#define EXCEPTION_IO_RESET    16
-#define EXCEPTION_CXPORT      17
-#define EXCEPTION_SYSTEM      18
-#define NOT_ENOUGH_SPACE      19
+// error type definition
+typedef unsigned short exception_t;
 
-#define THROW(exception)                                                       \
-  do {                                                                         \
-    fprintf(stderr, "\nUnhandled exception %d at %s:%d\n", exception,          \
-            __FILE__, __LINE__);                                               \
-    fprintf(stderr, "Exiting.\n");                                             \
-    _exit(1);                                                                  \
-  } while (0)
+// this is a custom implementation of setjmp and longjmp
+typedef unsigned int jmp_buf_t[10];
 
-typedef struct try_context_s try_context_t;
+typedef struct try_context_s {
+  jmp_buf_t jmp_buf;
 
-unsigned long sys_try_context_set(try_context_t *context);
-unsigned long sys_try_context_get(void);
+  // link to the previous jmp_buf context
+  struct try_context_s *previous;
+
+  // current exception
+  exception_t ex;
+} try_context_t;
+
+#define THROW(x) os_longjmp(x)
+
+void custom_longjmp(jmp_buf_t buf_addr, int val)
+    __attribute__((naked, noreturn));
+int custom_setjmp(jmp_buf_t buf_addr) __attribute__((naked));
+
+// longjmp is marked as no return to avoid too much generated code
+void os_longjmp(unsigned int exception) __attribute__((noreturn));
+
+try_context_t *sys_try_context_set(try_context_t *context);
+try_context_t *sys_try_context_get(void);

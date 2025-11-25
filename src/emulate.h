@@ -14,6 +14,7 @@
 
 #include "bolos/cx.h"
 
+#include "exception.h"
 #include "sdk.h"
 
 typedef struct {
@@ -91,9 +92,6 @@ unsigned long sys_io_seph_send(const uint8_t *buffer, uint16_t length);
 unsigned long sys_io_seph_recv(uint8_t *buffer, uint16_t maxlength,
                                unsigned int flags);
 
-unsigned long sys_try_context_set(try_context_t *context);
-unsigned long sys_try_context_get(void);
-
 unsigned long sys_os_sched_last_status(unsigned int task_idx);
 unsigned long sys_os_sched_current_task(void);
 
@@ -122,7 +120,7 @@ unsigned long sys_os_lib_throw(unsigned int exception);
 
 #define SYSCALL0(_name)                                                        \
   case SYSCALL_##_name##_ID_IN: {                                              \
-    *ret = sys_##_name();                                                      \
+    *ret = (unsigned long)sys_##_name();                                       \
     print_syscall(#_name "(%s)", "");                                          \
     GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     print_ret(*ret);                                                           \
@@ -150,7 +148,7 @@ unsigned long sys_os_lib_throw(unsigned int exception);
   case SYSCALL_##_name##_ID_IN: {                                              \
     _type0 _arg0 = (_type0)parameters[0];                                      \
     print_syscall(#_name "" _fmt, (_type0)_arg0);                              \
-    *ret = sys_##_name(_arg0);                                                 \
+    *ret = (unsigned long)sys_##_name(_arg0);                                  \
     print_ret(*ret);                                                           \
     GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
