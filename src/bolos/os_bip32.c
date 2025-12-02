@@ -5,6 +5,7 @@
 
 #include "os_bip32.h"
 
+#include "appflags.h"
 #include "bolos/exception.h"
 #include "cx.h"
 #include "cx_ec.h"
@@ -31,6 +32,11 @@ static uint8_t const BIP32_ED_SEED[] = { 'e', 'd', '2', '5', '5', '1',
 static uint8_t const SLIP21_SEED[] = { 'S', 'y', 'm', 'm', 'e', 't',
                                        'r', 'i', 'c', ' ', 'k', 'e',
                                        'y', ' ', 's', 'e', 'e', 'd' };
+
+static uint32_t sys_os_perso_derive_node_with_seed_key_internal(
+    uint32_t mode, cx_curve_t curve, const uint32_t *path, uint32_t pathLength,
+    uint8_t *privateKey, uint8_t *chain, uint8_t *seed_key,
+    uint32_t seed_key_length, bool fromApp);
 
 static bool is_hardened_child(uint32_t child)
 {
@@ -404,6 +410,16 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
     unsigned int pathLength, unsigned char *privateKey, unsigned char *chain,
     unsigned char *seed_key, unsigned int seed_key_length)
 {
+  return sys_os_perso_derive_node_with_seed_key_internal(
+      mode, curve, path, pathLength, privateKey, chain, seed_key,
+      seed_key_length, true);
+}
+
+static uint32_t sys_os_perso_derive_node_with_seed_key_internal(
+    uint32_t mode, cx_curve_t curve, const uint32_t *path, uint32_t pathLength,
+    uint8_t *privateKey, uint8_t *chain, uint8_t *seed_key,
+    uint32_t seed_key_length, bool fromApp)
+{
   ssize_t sk_length;
   size_t seed_size;
   uint8_t seed[MAX_SEED_SIZE];
@@ -429,6 +445,21 @@ unsigned long sys_os_perso_derive_node_with_seed_key(
   case 0x82:
     curve = CX_CURVE_Curve448;
     break;
+  }
+
+  // If APPLICATION_FLAG_DERIVE_MASTER is not set for an application, forbid
+  // deriving from seed with a null path
+  if ((mode != HDW_SLIP21) && (fromApp) &&
+      !(app_flags & APPLICATION_FLAG_DERIVE_MASTER)) {
+    uint32_t i;
+    for (i = 0; i < pathLength; i++) {
+      if ((path[i] & 0x80000000) != 0) {
+        break;
+      }
+    }
+    if (i == pathLength) {
+      THROW(EXCEPTION);
+    }
   }
 
   if (seed_key == NULL || seed_key_length == 0) {
@@ -504,10 +535,11 @@ unsigned long sys_os_perso_get_master_key_identifier(uint8_t *identifier,
   unsigned int path = 0;
 
   /* Getting raw private key */
-  unsigned long ret = sys_os_perso_derive_node_with_seed_key(
-      HDW_NORMAL, CX_CURVE_SECP256K1, &path, 0, raw_private_key, NULL, NULL, 0);
+  uint32_t ret = sys_os_perso_derive_node_with_seed_key_internal(
+      HDW_NORMAL, CX_CURVE_SECP256K1, &path, 0, raw_private_key, NULL, NULL, 0,
+      false);
   if (ret != 0) {
-    errx(1, "%s: sys_os_perso_derive_node_with_seed_key() failed with %lu",
+    errx(1, "%s: sys_os_perso_derive_node_with_seed_key() failed with %u",
          __func__, ret);
     THROW(EXCEPTION);
   }

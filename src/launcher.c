@@ -82,6 +82,9 @@ int g_api_level = 0;
 hw_model_t hw_model = MODEL_COUNT;
 extern bool pki_prod;
 
+// app_flags extracted from app
+uint64_t app_flags = 0;
+
 static struct app_s *current_app;
 
 static void *get_lower_page_aligned_addr(uintptr_t vaddr)
@@ -759,7 +762,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:p")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:p:l:")) != -1) {
     switch (opt) {
     case 'f':
       fonts_path = optarg;
@@ -791,6 +794,9 @@ int main(int argc, char *argv[])
       break;
     case 'p':
       pki_prod = true;
+      break;
+    case 'l':
+      app_flags = atol(optarg);
       break;
     default:
       usage(argv[0]);

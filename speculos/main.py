@@ -283,6 +283,15 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         else:
             logger.error(f"Fonts {fonts_filepath} not found")
             sys.exit(1)
+    # retrieve app_flags from a dedicated section in app.elf
+    binary = LedgerBinaryApp(app_path)
+    app_flags = binary.sections.app_flags
+    if app_flags is None:
+        # if not found in app.elf, everything is allowed (old binaries)
+        app_flags = 0xFFFFFFFFFF
+    else:
+        app_flags = int(app_flags, 16)
+    argv += ['-l', str(app_flags)]
 
     pid = os.fork()
     if pid != 0:

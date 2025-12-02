@@ -7,6 +7,9 @@
 hw_model_t hw_model = MODEL_COUNT;
 int g_api_level = 0;
 
+// app_flags extracted from app
+uint64_t app_flags = 0xFFFFFFFF;
+
 void *get_memory_code_address(void)
 {
   return NULL;
