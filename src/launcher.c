@@ -32,6 +32,8 @@
 #define STORAGE_APP_NAME_LEN 30
 const char STORAGE_BACKUP[] = ".backup";
 
+#define DERIVATION_PATH_MAX_LEN 256
+
 struct elf_info_s {
   unsigned long load_offset;
   unsigned long load_size;
@@ -45,6 +47,8 @@ struct elf_info_s {
   unsigned long app_nvram_addr;
   unsigned long app_nvram_size;
   int use_nbgl;
+  uint8_t derivation_path[DERIVATION_PATH_MAX_LEN];
+  int derivation_path_len;
 };
 
 struct app_s {
@@ -155,7 +159,9 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].elf.fonts_size = elf->fonts_size;
   apps[napp].elf.app_nvram_addr = elf->app_nvram_addr;
   apps[napp].elf.app_nvram_size = elf->app_nvram_size;
-
+  apps[napp].elf.derivation_path_len = elf->derivation_path_len;
+  memcpy(apps[napp].elf.derivation_path, elf->derivation_path,
+         elf->derivation_path_len);
   napp++;
 
   return 0;
@@ -205,6 +211,12 @@ unsigned long get_app_nvram_size(void)
 unsigned long get_app_text_load_addr(void)
 {
   return current_app->elf.text_load_addr;
+}
+
+unsigned long get_app_derivation_path(uint8_t **derivationPath)
+{
+  *derivationPath = current_app->elf.derivation_path;
+  return current_app->elf.derivation_path_len;
 }
 
 int replace_current_code(struct app_s *app)
@@ -683,25 +695,27 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
                              bool *load_nvram, bool *save_nvram)
 {
   char *libname;
+  char *derivation_path;
   int ret;
   int load_nvram_i = 0;
   int save_nvram_i = 0;
 
   libname = strdup(arg);
   *filename = strdup(arg);
-  if (libname == NULL || *filename == NULL) {
+  derivation_path = strdup(arg);
+  if (libname == NULL || *filename == NULL || derivation_path == NULL) {
     err(1, "strdup");
   }
 
   ret = sscanf(arg,
                "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
-               "lx:0x%lx:0x%lx:%d:%d:%d",
+               "lx:0x%lx:0x%lx:%d:%d:%d:%[^:]",
                libname, *filename, &elf->load_offset, &elf->load_size,
                &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
                &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
                &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
-               &load_nvram_i, &save_nvram_i, &elf->use_nbgl);
-  if (ret != 16) {
+               &load_nvram_i, &save_nvram_i, &elf->use_nbgl, derivation_path);
+  if (ret != 17) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
@@ -709,6 +723,17 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
   }
   *load_nvram = ((load_nvram_i == 1) ? true : false);
   *save_nvram = ((save_nvram_i == 1) ? true : false);
+
+  // convert derivation path to byte array
+  size_t len = strlen(derivation_path);
+  if (len > 1) {
+    for (size_t i = 0; i < len; i += 2) {
+      sscanf(derivation_path + i, "%2hhx", &elf->derivation_path[i / 2]);
+    }
+    elf->derivation_path_len = len / 2;
+  } else {
+    elf->derivation_path_len = 0;
+  }
 
   return libname;
 }

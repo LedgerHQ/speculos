@@ -12,9 +12,18 @@
 #include "cx_utils.h"
 #include "emulate.h"
 #include "environment.h"
+#include "launcher.h"
 
 #define BIP32_HARDEN_MASK      0x80000000
 #define BIP32_SECP_SEED_LENGTH 12
+
+#define DERIVE_AUTH_256K1      0x01
+#define DERIVE_AUTH_256R1      0x02
+#define DERIVE_AUTH_ED25519    0x04
+#define DERIVE_AUTH_SLIP21     0x08
+#define DERIVE_AUTH_BLS12381G1 0x10
+
+#define BIP32_WILDCARD_VALUE (0x7fffffff)
 
 #define cx_ecfp_generate_pair     sys_cx_ecfp_generate_pair
 #define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
@@ -77,6 +86,94 @@ static ssize_t get_seed_key_slip21(const uint8_t **sk)
   sk_length = sizeof(SLIP21_SEED);
 
   return sk_length;
+}
+
+static void os_perso_derive_node_bip32_check_path(unsigned int mode,
+                                                  cx_curve_t curve,
+                                                  const unsigned int *path,
+                                                  unsigned int pathLength,
+                                                  bool fromApp)
+{
+  unsigned char pathValid = 0;
+  unsigned int derive_path_length;
+  unsigned char *derive_path;
+
+  // TODO : Harden against glitches
+  // Check the path against the current application path
+  derive_path_length = (fromApp) ? get_app_derivation_path(&derive_path) : 0;
+
+  // No information specified, everything is valid
+  if (derive_path_length != 0) {
+    unsigned char curveMask;
+    unsigned int checkOffset = 1;
+    // Abort if not authorized to operate on this curve
+    if (mode == HDW_SLIP21) {
+      curveMask = DERIVE_AUTH_SLIP21;
+    } else {
+      switch (curve) {
+      case CX_CURVE_256K1:
+        curveMask = DERIVE_AUTH_256K1;
+        break;
+      case CX_CURVE_256R1:
+        curveMask = DERIVE_AUTH_256R1;
+        break;
+      case CX_CURVE_Ed25519:
+        curveMask = DERIVE_AUTH_ED25519;
+        break;
+      default:
+        THROW(SWO_PAR_VAL_13);
+      }
+    }
+    if ((derive_path[0] & curveMask) != curveMask) {
+      THROW(SWO_PAR_VAL_14);
+    }
+    // if only the curve was specified, all paths are valid
+    if (derive_path_length > 1) {
+      while ((checkOffset < derive_path_length) && !pathValid) {
+        unsigned char subPathLength = derive_path[checkOffset];
+        unsigned char slip21Marker = ((subPathLength & 0x80) != 0);
+        unsigned char slip21Request = (mode == HDW_SLIP21);
+        subPathLength &= 0x7F;
+        // Authorize if a subpath is valid
+        if (pathLength >= subPathLength) {
+          pathValid = 1;
+          if (slip21Marker != slip21Request) {
+            pathValid = 0;
+          } else {
+            if (slip21Request) {
+              // compare path as bytes as slip21 path may be a string.
+              // NOTE: interpret path first byte (len) as a number of bytes in
+              // the path
+              if (memcmp(path, &derive_path[checkOffset + 1], subPathLength)) {
+                pathValid = 0;
+              }
+            } else {
+              for (unsigned int i = 0; i < subPathLength; i++) {
+                uint32_t allowed_prefix =
+                    U4BE(derive_path, (checkOffset + 1 + 4 * i));
+                if (path[i] != allowed_prefix) {
+                  // path is considered to be valid if the allowed prefix
+                  // contains the 'wildcard' value 0x7fffffff
+                  if (allowed_prefix != BIP32_WILDCARD_VALUE) {
+                    pathValid = 0;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        checkOffset += 1 + (slip21Marker ? 1 : 4) * subPathLength;
+      }
+    } else {
+      pathValid = 1;
+    }
+  } else {
+    pathValid = 1;
+  }
+  if (!pathValid) {
+    THROW(SWO_PAR_VAL_15);
+  }
 }
 
 void expand_seed_ed25519(const uint8_t *sk, size_t sk_length, uint8_t *seed,
@@ -458,9 +555,11 @@ static uint32_t sys_os_perso_derive_node_with_seed_key_internal(
       }
     }
     if (i == pathLength) {
-      THROW(EXCEPTION);
+      THROW(SWO_PAR_VAL_12);
     }
   }
+
+  os_perso_derive_node_bip32_check_path(mode, curve, path, pathLength, fromApp);
 
   if (seed_key == NULL || seed_key_length == 0) {
     if (mode != HDW_SLIP21) {

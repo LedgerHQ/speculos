@@ -45,6 +45,12 @@ unsigned long get_app_text_load_addr(void)
   return 0;
 }
 
+unsigned long get_app_derivation_path(uint8_t **derivationPath)
+{
+  *derivationPath = NULL;
+  return 0;
+}
+
 void unload_running_app(bool UNUSED(unload_data))
 {
 }
