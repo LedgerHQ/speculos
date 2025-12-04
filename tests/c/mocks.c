@@ -7,6 +7,9 @@
 hw_model_t hw_model = MODEL_COUNT;
 int g_api_level = 0;
 
+// app_flags extracted from app
+uint64_t app_flags = 0xFFFFFFFF;
+
 void *get_memory_code_address(void)
 {
   return NULL;
@@ -39,6 +42,12 @@ unsigned long get_app_nvram_size(void)
 
 unsigned long get_app_text_load_addr(void)
 {
+  return 0;
+}
+
+unsigned long get_app_derivation_path(uint8_t **derivationPath)
+{
+  *derivationPath = NULL;
   return 0;
 }
 

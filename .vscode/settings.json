@@ -11,6 +11,7 @@
         "emulate.h": "c",
         "os.h": "c",
         "os_types.h": "c",
-        "errors.h": "c"
+        "errors.h": "c",
+        "launcher.h": "c"
     }
 }

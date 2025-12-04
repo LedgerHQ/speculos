@@ -14,6 +14,7 @@ bool get_app_save_nvram(void);
 unsigned long get_app_nvram_address(void);
 unsigned long get_app_nvram_size(void);
 unsigned long get_app_text_load_addr(void);
+unsigned long get_app_derivation_path(uint8_t **derivationPath);
 void save_current_context(struct sigcontext *sigcontext);
 void replace_current_context(struct sigcontext *sigcontext);
 int replace_current_code(struct app_s *app);

@@ -52,7 +52,10 @@ class ElfInfo:
     shared_ram_addr: int = 0
     shared_ram_size: int = 0
     pic_init_addr: int = 0
+    derivation_path: bytes = b''
 
+
+BOLOS_TAG_DERIVEPATH = 0x04
 
 DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
                 'monster seven myth punch hobby comfort wild raise skin')
@@ -138,6 +141,38 @@ def get_elf_infos(app_path, use_bagl, args):
         supp_ram_section = elf.get_section_by_name('.rfbss')
         ei.ram_addr, ei.ram_size = \
             (supp_ram_section['sh_addr'], supp_ram_section['sh_size']) if supp_ram_section is not None else (0, 0)
+
+        # look at install_parameters
+        install_parameters = symtab_section.get_symbol_by_name('install_parameters')
+        if install_parameters is not None:
+            sym_addr = install_parameters[0]['st_value']
+            sym_size = install_parameters[0]['st_size']
+            # 2. Get section containing the symbol
+            sec_offset_in_file = text_section['sh_offset']
+            sec_addr_in_memory = text_section['sh_addr']
+
+            # 3. Compute offset of symbol in ELF
+            file_offset = sec_offset_in_file + (sym_addr - sec_addr_in_memory)
+            # 4. Read bytes
+            fp.seek(file_offset)
+            data = fp.read(sym_size)
+            # 5. Parse TLVs to find APP_FLAGS one
+            offset = 0
+            while offset < sym_size:
+                tag = data[offset]
+                offset += 1
+                len = data[offset]
+                offset += 1
+                if len == 0x81:
+                    len = data[offset]
+                    offset += 1
+                elif len == 0x82:
+                    len = int.from_bytes(data[offset: offset + 2], 'big')
+                    offset += 2
+                if tag == BOLOS_TAG_DERIVEPATH:
+                    ei.derivation_path = data[offset: offset + len]
+                offset += len
+
     ei.stack_size = estack - ei.stack_addr
     return ei
 
@@ -272,6 +307,11 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         lib_arg += f':{1 if args.load_nvram else 0}'
         lib_arg += f':{1 if args.save_nvram else 0}'
         lib_arg += f':{1 if not use_bagl else 0}'
+        if len(ei.derivation_path) > 0:
+            lib_arg += f':{ei.derivation_path.hex()}'
+        else:
+            # if no derivationèpath found in binary, use 0 to indicate to launcher that it's not valid
+            lib_arg += ':0'
         argv.append(lib_arg)
 
     # for NBGL apps, fonts binary file is mandatory before API Level 23
@@ -283,6 +323,15 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         else:
             logger.error(f"Fonts {fonts_filepath} not found")
             sys.exit(1)
+    # retrieve app_flags from a dedicated section in app.elf
+    binary = LedgerBinaryApp(app_path)
+    app_flags = binary.sections.app_flags
+    if app_flags is None:
+        # if not found in app.elf, everything is allowed (old binaries)
+        app_flags = 0xFFFFFFFFFF
+    else:
+        app_flags = int(app_flags, 16)
+    argv += ['-l', str(app_flags)]
 
     pid = os.fork()
     if pid != 0:
