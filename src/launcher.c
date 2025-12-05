@@ -215,8 +215,9 @@ unsigned long get_app_text_load_addr(void)
 
 unsigned long get_app_derivation_path(uint8_t **derivationPath)
 {
-  *derivationPath = current_app->elf.derivation_path;
-  return current_app->elf.derivation_path_len;
+  // use the derivation of the app, not libs
+  *derivationPath = apps[0].elf.derivation_path;
+  return apps[0].elf.derivation_path_len;
 }
 
 int replace_current_code(struct app_s *app)
