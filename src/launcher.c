@@ -788,7 +788,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:p:l:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:pl:")) != -1) {
     switch (opt) {
     case 'f':
       fonts_path = optarg;
