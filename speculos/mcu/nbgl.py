@@ -72,7 +72,7 @@ class NBGL(GraphicLibrary):
 
     def refresh(self, data: bytes) -> bool:
         if self.model == "apex_p":
-            time.sleep(0.1)  # Let ragger win the race with speculos
+            time.sleep(0.08)  # Let ragger win the race with speculos
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
         # for an unknown reason, partial refreshes are not supported on NanoSP and NanoX
