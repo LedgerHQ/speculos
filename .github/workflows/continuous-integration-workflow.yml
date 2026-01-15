@@ -86,103 +86,19 @@ jobs:
         make -C build/ test
         pytest
 
-  package_python:
-    name: Build and deploy Speculos Python Package
-    runs-on: public-ledgerhq-shared-small
-    needs: [build]
-    permissions:
-      id-token: write
-      attestations: write
-      contents: write
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
-
-    steps:
-    - name: Clone
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Use pip to install Speculos in a virtual environment
-      run: |
-        python3 -m venv venv-test
-        ./venv-test/bin/pip install .
-        ./venv-test/bin/speculos --help
-        echo "TAG_VERSION=$(./venv-test/bin/python -c 'from speculos import __version__; print(__version__)')" >> "$GITHUB_ENV"
-
-    - name: Build Speculos python package
-      run: |
-        git config --global --add safe.directory "$GITHUB_WORKSPACE"
-        if [ -e dist ] ; then
-          echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
-          exit 1
-        fi
-        python3 -m venv venv-build
-        ./venv-build/bin/pip install --upgrade pip build twine
-        ./venv-build/bin/python -m build
-        ./venv-build/bin/python -m twine check dist/*
-
-    - name: Check version against CHANGELOG
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      run: |
-        CHANGELOG_VERSION=$(grep -Po '(?<=## \[)(\d+\.\d+\.\d+)' CHANGELOG.md | head -n 1)
-        if [ "${{ env.TAG_VERSION }}" == "${CHANGELOG_VERSION}" ]; \
-        then \
-            exit 0; \
-        else \
-            echo "Tag '${{ env.TAG_VERSION }}' and CHANGELOG '${CHANGELOG_VERSION}' versions mismatch!"; \
-            exit 1; \
-        fi
-
-    - name: Publish Python package on pypi.org
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      run: ./venv-build/bin/python -m twine upload dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
-        TWINE_NON_INTERACTIVE: 1
-
-    - name: Login to Ledger Artifactory
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      timeout-minutes: 10
-      id: jfrog-login
-      uses: LedgerHQ/actions-security/actions/jfrog-login@actions/jfrog-login-1
-
-    - name: Publish Python package on Ledger Artifactory
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      run: ./venv-build/bin/python -m twine upload dist/*
-      env:
-        TWINE_REPOSITORY_URL: https://jfrog.ledgerlabs.net/artifactory/api/pypi/embedded-apps-pypi-prod-green
-        TWINE_USERNAME: ${{ steps.jfrog-login.outputs.oidc-user }}
-        TWINE_PASSWORD: ${{ steps.jfrog-login.outputs.oidc-token }}
-        TWINE_NON_INTERACTIVE: 1
-
-    - name: Generate library build attestations
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      timeout-minutes: 10
-      uses: LedgerHQ/actions-security/actions/attest@actions/attest-1
-      with:
-        subject-path: dist/*
-
-    - name: Sign library artifacts
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      timeout-minutes: 10
-      uses: LedgerHQ/actions-security/actions/sign-blob@actions/sign-blob-1
-      with:
-        path: dist
-
-    - name: Publish a release on the repo
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        files: |
-          COPYING
-          COPYING.LESSER
-          CHANGELOG.md
-          dist/
+  deploy:
+    name: Build and deploy speculos package
+    needs: build
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_pypi_deployment.yml@v1
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    with:
+      package_name: speculos
+      jfrog_deployment: true
+      release: true
+      publish: true
+      container_image: docker://ghcr.io/ledgerhq/speculos-builder:latest
+    secrets:
+      pypi_token: ${{ secrets.PYPI_PUBLIC_API_TOKEN }}
 
   package_and_test_docker:
     name: Build and test the Speculos docker
