@@ -1,0 +1,5 @@
+version: 1
+self-hosted-runner:
+  labels:
+    - public-ledgerhq-shared-small
+    - speculos-builder-2c-arm64-ubuntu_2404
