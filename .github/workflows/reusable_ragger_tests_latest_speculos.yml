@@ -41,7 +41,9 @@ jobs:
         push: false
         tags: ledgerhq/speculos:test
         context: .
+        file: ./Dockerfiles/Dockerfile
         outputs: type=docker,dest=/tmp/speculos_image.tar
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
@@ -65,14 +67,6 @@ jobs:
         device: ${{ fromJSON(needs.call_get_app_metadata.outputs.compatible_devices) }}
 
     steps:
-    - name: Clone
-      uses: actions/checkout@v4
-      with:
-          repository: ledgerHQ/speculos
-          ref: ${{ inputs.speculos_app_branch_name }}
-          submodules: recursive
-          fetch-depth: 0
-
     - name: Clone
       uses: actions/checkout@v4
       with:
