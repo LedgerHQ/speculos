@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python_version: ['3.10', '3.11', '3.12', '3.13']
     # Use https://ghcr.io/ledgerhq/speculos-builder which has all the required
     # dependencies
     container:
@@ -86,103 +86,18 @@ jobs:
         make -C build/ test
         pytest
 
-  package_python:
-    name: Build and deploy Speculos Python Package
-    runs-on: public-ledgerhq-shared-small
-    needs: [build]
-    permissions:
-      id-token: write
-      attestations: write
-      contents: write
-    container:
-      image: docker://ghcr.io/ledgerhq/speculos-builder:latest
-
-    steps:
-    - name: Clone
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Use pip to install Speculos in a virtual environment
-      run: |
-        python3 -m venv venv-test
-        ./venv-test/bin/pip install .
-        ./venv-test/bin/speculos --help
-        echo "TAG_VERSION=$(./venv-test/bin/python -c 'from speculos import __version__; print(__version__)')" >> "$GITHUB_ENV"
-
-    - name: Build Speculos python package
-      run: |
-        git config --global --add safe.directory "$GITHUB_WORKSPACE"
-        if [ -e dist ] ; then
-          echo >&2 "Error: dist/ directory already exists and this is unexpected. Refusing to build new packages."
-          exit 1
-        fi
-        python3 -m venv venv-build
-        ./venv-build/bin/pip install --upgrade pip build twine
-        ./venv-build/bin/python -m build
-        ./venv-build/bin/python -m twine check dist/*
-
-    - name: Check version against CHANGELOG
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      shell: bash
-      run: |
-        CHANGELOG_VERSION=$(grep -Po '(?<=## \[)(\d+\.\d+\.\d+)' CHANGELOG.md | head -n 1)
-        if [ "${{ env.TAG_VERSION }}" == "${CHANGELOG_VERSION}" ]; \
-        then \
-            exit 0; \
-        else \
-            echo "Tag '${{ env.TAG_VERSION }}' and CHANGELOG '${CHANGELOG_VERSION}' versions mismatch!"; \
-            exit 1; \
-        fi
-
-    - name: Publish Python package on pypi.org
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      run: ./venv-build/bin/python -m twine upload dist/*
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_PUBLIC_API_TOKEN  }}
-        TWINE_NON_INTERACTIVE: 1
-
-    - name: Login to Ledger Artifactory
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      timeout-minutes: 10
-      id: jfrog-login
-      uses: LedgerHQ/actions-security/actions/jfrog-login@actions/jfrog-login-1
-
-    - name: Publish Python package on Ledger Artifactory
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      run: ./venv-build/bin/python -m twine upload dist/*
-      env:
-        TWINE_REPOSITORY_URL: https://jfrog.ledgerlabs.net/artifactory/api/pypi/embedded-apps-pypi-prod-green
-        TWINE_USERNAME: ${{ steps.jfrog-login.outputs.oidc-user }}
-        TWINE_PASSWORD: ${{ steps.jfrog-login.outputs.oidc-token }}
-        TWINE_NON_INTERACTIVE: 1
-
-    - name: Generate library build attestations
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      timeout-minutes: 10
-      uses: LedgerHQ/actions-security/actions/attest@actions/attest-1
-      with:
-        subject-path: dist/*
-
-    - name: Sign library artifacts
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      timeout-minutes: 10
-      uses: LedgerHQ/actions-security/actions/sign-blob@actions/sign-blob-1
-      with:
-        path: dist
-
-    - name: Publish a release on the repo
-      if: success() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        prerelease: false
-        files: |
-          COPYING
-          COPYING.LESSER
-          CHANGELOG.md
-          dist/
+  deploy:
+    name: Build and deploy speculos package
+    needs: build
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_pypi_deployment.yml@v1
+    with:
+      package_name: speculos
+      jfrog_deployment: true
+      release: ${{ startsWith(github.ref, 'refs/tags/') }}
+      publish: ${{ startsWith(github.ref, 'refs/tags/') }}
+      container: ghcr.io/ledgerhq/speculos-builder:latest
+    secrets:
+      pypi_token: ${{ secrets.PYPI_PUBLIC_API_TOKEN }}
 
   package_and_test_docker:
     name: Build and test the Speculos docker
@@ -197,123 +112,3 @@ jobs:
     with:
       app_repository: LedgerHQ/app-boilerplate-rust
       app_branch_name: main
-
-  deploy_docker:
-    name: Build and Upload the Speculos docker
-    strategy:
-      matrix:
-        include:
-          - platform: linux/amd64
-            runner: ubuntu-latest
-          - platform: linux/arm64
-            runner: speculos-builder-2c-arm64-ubuntu_2404
-    runs-on: ${{ matrix.runner }}
-    needs: [build]
-    steps:
-
-    - name: Prepare
-      run: |
-        platform=${{ matrix.platform }}
-        echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
-
-        if [[ "${{ github.event_name }}" == 'push' && ( "${{ github.ref }}" == 'refs/heads/master' || "${{ github.ref }}" =~ ^refs/tags/.* ) ]]; then
-           PUSH_FLAG='true'
-        else
-           PUSH_FLAG='false'
-        fi
-        echo "PUSH_FLAG=${PUSH_FLAG}" >> $GITHUB_ENV
-
-
-    - name: Clone
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Extract metadata
-      id: meta
-      uses: docker/metadata-action@v4
-      with:
-        images: ghcr.io/ledgerhq/speculos
-        tags: |
-          type=raw,value=${{ github.sha }}
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build and publish to GitHub Packages
-      uses: docker/build-push-action@v6
-      id: buildPush
-      with:
-        labels: ${{ steps.meta.outputs.labels }}
-        platforms: ${{ matrix.platform }}
-        outputs: type=image,name=ghcr.io/ledgerhq/speculos,push-by-digest=true,name-canonical=true,push=${{ env.PUSH_FLAG }}
-
-    - name: Export digest
-      run: |
-        mkdir -p /tmp/digests
-        digest="${{ steps.buildPush.outputs.digest }}"
-        touch "/tmp/digests/${digest#sha256:}"
-
-    - name: Upload digest
-      uses: actions/upload-artifact@v4
-      with:
-        name: digests-${{ env.PLATFORM_PAIR }}
-        path: /tmp/digests/*
-        if-no-files-found: error
-        retention-days: 1
-
-  final_tag_multiarch_merge_docker:
-    if: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/')) }}
-    needs:
-      - deploy_docker
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp/digests
-          pattern: digests-*
-          merge-multiple: true
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/ledgerhq/speculos
-          tags: |
-            type=raw,value=${{ github.sha }}
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Create manifest list and push
-        working-directory: /tmp/digests
-        run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'ghcr.io/ledgerhq/speculos@sha256:%s ' *)
-
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ghcr.io/ledgerhq/speculos:latest

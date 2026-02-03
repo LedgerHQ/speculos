@@ -9,11 +9,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "speculos"
-authors = [{name = "Ledger", email = "hello@ledger.fr"}]
+authors = [{name = "Ledger"}]
 description = "Ledger Stax, Flex, Apex+ and Nano S+/X application emulator"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
