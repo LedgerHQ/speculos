@@ -32,14 +32,6 @@ static bolos_err_t get_version(uint8_t *buffer_out, size_t *buffer_out_length);
 static bolos_err_t get_seed_cookie(uint8_t *buffer_out,
                                    size_t *buffer_out_length);
 #endif // HAVE_SEED_COOKIE
-#if defined(DEBUG_OS_STACK_CONSUMPTION)
-static bolos_err_t get_stack_consumption(uint8_t mode, uint8_t *buffer_out,
-                                         size_t *buffer_out_length);
-#endif // DEBUG_OS_STACK_CONSUMPTION
-#if defined(HAVE_LEDGER_PKI)
-static bolos_err_t pki_load_certificate(uint8_t *buffer, size_t buffer_len,
-                                        uint8_t key_usage);
-#endif // HAVE_LEDGER_PKI
 
 /* Exported variables --------------------------------------------------------*/
 
