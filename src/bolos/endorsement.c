@@ -21,6 +21,8 @@
 
 #define cx_ecdsa_init_public_key sys_cx_ecfp_init_public_key
 
+#define ENDORSEMENT_HASH_LENGTH CX_SHA256_SIZE
+
 /**********************
  *      TYPEDEFS
  **********************/
@@ -43,7 +45,9 @@ static char CODE_HASH[] = "12345678abcdef0000fedcba8765432";
  *   GLOBAL FUNCTIONS
  **********************/
 
-// Pre API_LEVEL_23 syscalls
+///////////////////////////////////////
+// API_LEVEL_22
+///////////////////////////////////////
 
 unsigned int sys_os_endorsement_get_code_hash(uint8_t *buffer)
 {
@@ -161,7 +165,9 @@ unsigned long sys_os_endorsement_key1_sign_without_code_hash(uint8_t *data,
   return signature[1] + 2;
 }
 
-// API_LEVEL_23 and above
+///////////////////////////////////////
+// API_LEVEL_23 to API_LEVEL_25
+///////////////////////////////////////
 
 bolos_err_t sys_ENDORSEMENT_get_public_key(ENDORSEMENT_slot_t slot,
                                            uint8_t *out_public_key,
@@ -271,4 +277,47 @@ bolos_err_t sys_ENDORSEMENT_get_public_key_certificate(ENDORSEMENT_slot_t slot,
   }
 
   return 0;
+}
+
+///////////////////////////////////////
+// API_LEVEL_26 and above
+///////////////////////////////////////
+
+bolos_err_t sys_ENDORSEMENT_GET_PUB_KEY(ENDORSEMENT_slot_t slot,
+                                        uint8_t *out_public_key,
+                                        size_t *out_public_key_length)
+{
+  uint8_t key_len = 0;
+  bolos_err_t ret =
+      sys_ENDORSEMENT_get_public_key(slot, out_public_key, &key_len);
+  *out_public_key_length = key_len;
+  return ret;
+}
+
+bolos_err_t sys_ENDORSEMENT_KEY1_SIGN_DATA(uint8_t *data, size_t data_length,
+                                           uint8_t *out_signature,
+                                           size_t *out_signature_length)
+{
+  return sys_ENDORSEMENT_key1_sign_data(data, data_length, out_signature,
+                                        out_signature_length);
+}
+
+bolos_err_t sys_ENDORSEMENT_GET_CODE_HASH(uint8_t *out_hash, size_t hash_length)
+{
+  if (!out_hash || (hash_length < ENDORSEMENT_HASH_LENGTH)) {
+    return 1;
+  }
+
+  return sys_ENDORSEMENT_get_code_hash(out_hash);
+}
+
+bolos_err_t sys_ENDORSEMENT_GET_PUB_KEY_SIG(ENDORSEMENT_slot_t slot,
+                                            uint8_t *out_buffer,
+                                            size_t *out_length)
+{
+  uint8_t len = 0;
+  bolos_err_t ret =
+      sys_ENDORSEMENT_get_public_key_certificate(slot, out_buffer, &len);
+  *out_length = len;
+  return ret;
 }

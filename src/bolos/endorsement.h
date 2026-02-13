@@ -33,7 +33,9 @@ typedef enum {
  * GLOBAL PROTOTYPES
  **********************/
 
-/// Legacy syscalls (before API_LEVEL_23)
+///////////////////////////////////////
+// API_LEVEL_22
+///////////////////////////////////////
 
 unsigned long sys_os_endorsement_get_public_key(uint8_t index, uint8_t *buffer);
 
@@ -57,7 +59,9 @@ sys_os_endorsement_get_public_key_certificate(unsigned char index,
 unsigned int sys_os_endorsement_get_public_key_certificate_new(
     unsigned char index, unsigned char *buffer, unsigned char *length);
 
-/// Refactored syscalls (API_LEVEL_23 and above)
+///////////////////////////////////////
+// API_LEVEL_23 to API_LEVEL_25
+///////////////////////////////////////
 
 bolos_err_t sys_ENDORSEMENT_get_public_key(ENDORSEMENT_slot_t slot,
                                            uint8_t *out_public_key,
@@ -68,7 +72,7 @@ bolos_err_t sys_ENDORSEMENT_key1_sign_data(uint8_t *data, uint32_t data_length,
                                            uint32_t *out_signature_length);
 
 bolos_err_t
-sys_ENDORSEMENT_key1_sign_without_code_hash(uint8_t *data, size_t dataLength,
+sys_ENDORSEMENT_key1_sign_without_code_hash(uint8_t *data, uint32_t dataLength,
                                             uint8_t *signature,
                                             uint32_t *out_signature_length);
 
@@ -77,6 +81,25 @@ bolos_err_t sys_ENDORSEMENT_get_code_hash(uint8_t *out_hash);
 bolos_err_t sys_ENDORSEMENT_get_public_key_certificate(ENDORSEMENT_slot_t slot,
                                                        uint8_t *out_buffer,
                                                        uint8_t *out_length);
+
+///////////////////////////////////////
+// API_LEVEL_26 and above
+///////////////////////////////////////
+
+bolos_err_t sys_ENDORSEMENT_GET_PUB_KEY(ENDORSEMENT_slot_t slot,
+                                        uint8_t *out_public_key,
+                                        size_t *out_public_key_length);
+
+bolos_err_t sys_ENDORSEMENT_KEY1_SIGN_DATA(uint8_t *data, size_t data_length,
+                                           uint8_t *out_signature,
+                                           size_t *out_signature_length);
+
+bolos_err_t sys_ENDORSEMENT_GET_CODE_HASH(uint8_t *out_hash,
+                                          size_t hash_length);
+
+bolos_err_t sys_ENDORSEMENT_GET_PUB_KEY_SIG(ENDORSEMENT_slot_t slot,
+                                            uint8_t *out_buffer,
+                                            size_t *out_length);
 
 /**********************
  *      MACROS

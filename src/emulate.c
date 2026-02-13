@@ -24,12 +24,10 @@ extern bool hdw_cbc;
 
 /* Handle bagl related syscalls which behavior are defined in src/bolos/bagl.c
  */
-int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
-                         unsigned long *ret, bool verbose, int api_level,
-                         hw_model_t model)
+static int emulate_syscall_bagl(unsigned long syscall,
+                                unsigned long *parameters, unsigned long *ret,
+                                bool verbose, hw_model_t model)
 {
-  (void)api_level;
-
   if ((model == MODEL_STAX) || (model == MODEL_FLEX) ||
       (model == MODEL_APEX_P)) {
     return SYSCALL_NOT_HANDLED;
@@ -70,12 +68,18 @@ int emulate_syscall_bagl(unsigned long syscall, unsigned long *parameters,
 
 /* Handle nbgl related syscalls which behavior are defined in src/bolos/nbgl.c
  */
-int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
-                         unsigned long *ret, bool verbose, int api_level,
-                         hw_model_t model)
+static int emulate_syscall_nbgl(unsigned long syscall,
+                                unsigned long *parameters, unsigned long *ret,
+                                bool verbose, int api_level)
 {
-  (void)api_level;
-  (void)model;
+  // TODO: code to remove when API LEVEL < 25 is not supported anymore
+  if (api_level < 25) {
+    switch (syscall) {
+      SYSCALL1(nbgl_get_font, "%u", unsigned int, fontId);
+    default:
+      break;
+    }
+  }
 
   switch (syscall) {
     /* clang-format off */
@@ -104,9 +108,6 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
              nbgl_color_map_t, colorMap,
              uint8_t *,        uzlib_buffer);
 
-    SYSCALL1(nbgl_get_font, "%u",
-             unsigned int, fontId);
-
     SYSCALL0(nbgl_screen_reinit);
 
     SYSCALL5(nbgl_front_draw_img_rle, "%p, %p, %u, %u, %u",
@@ -126,12 +127,10 @@ int emulate_syscall_nbgl(unsigned long syscall, unsigned long *parameters,
 
 /* Handle touch related syscalls which behavior are defined in src/bolos/touch.c
  */
-int emulate_syscall_touch(unsigned long syscall, unsigned long *parameters,
-                          unsigned long *ret, bool verbose, int api_level,
-                          hw_model_t model)
+static int emulate_syscall_touch(unsigned long syscall,
+                                 unsigned long *parameters, unsigned long *ret,
+                                 bool verbose, hw_model_t model)
 {
-  (void)api_level;
-
   if ((model != MODEL_STAX) && (model != MODEL_FLEX) &&
       (model != MODEL_APEX_P)) {
     return SYSCALL_NOT_HANDLED;
@@ -152,12 +151,9 @@ int emulate_syscall_touch(unsigned long syscall, unsigned long *parameters,
 }
 
 /* Handle cx related syscalls which behavior are defined in src/bolos/cx*.c */
-int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
-                       unsigned long *ret, bool verbose, int api_level,
-                       hw_model_t model)
+static int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
+                              unsigned long *ret, bool verbose)
 {
-  (void)api_level;
-  (void)model;
 
   // the XOR operation of the CBC mode
   // is not in CX LIB anymore
@@ -572,12 +568,18 @@ int emulate_syscall_cx(unsigned long syscall, unsigned long *parameters,
 }
 
 /* Handle os related syscalls which behavior are defined in src/bolos/os*.c */
-int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
-                       unsigned long *ret, bool verbose, int api_level,
-                       hw_model_t model)
+static int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
+                              unsigned long *ret, bool verbose, int api_level)
 {
-  (void)api_level;
-  (void)model;
+  // TODO: code to remove when API LEVEL < 26 is not supported anymore
+  if (api_level < 26) {
+    switch (syscall) {
+      SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)", unsigned int,
+               tag, uint8_t *, buffer, size_t, length);
+    default:
+      break;
+    }
+  }
 
   switch (syscall) {
     /* clang-format off */
@@ -589,11 +591,6 @@ int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
              unsigned int, setting_id,
              uint8_t *,    value,
              size_t,       maxlen);
-
-    SYSCALL3(os_registry_get_current_app_tag, "(0x%x, %p, %u)",
-             unsigned int, tag,
-             uint8_t *,    buffer,
-             size_t,       length);
 
     SYSCALL1(os_lib_call, "(%p)",
              unsigned long *, call_parameters);
@@ -663,13 +660,10 @@ int emulate_syscall_os(unsigned long syscall, unsigned long *parameters,
 
 /* Handle default related syscalls which behavior are defined in
  * src/bolos/default.c */
-int emulate_syscall_default(unsigned long syscall, unsigned long *parameters,
-                            unsigned long *ret, bool verbose, int api_level,
-                            hw_model_t model)
+static int emulate_syscall_default(unsigned long syscall,
+                                   unsigned long *parameters,
+                                   unsigned long *ret, bool verbose)
 {
-  (void)api_level;
-  (void)model;
-
   switch (syscall) {
     /* clang-format off */
 
@@ -695,12 +689,14 @@ int emulate_syscall_default(unsigned long syscall, unsigned long *parameters,
 
 /* Handle seph related syscalls which behavior are defined in
  * src/bolos/seproxyhal.c */
-int emulate_syscall_seph(unsigned long syscall, unsigned long *parameters,
-                         unsigned long *ret, bool verbose, int api_level,
-                         hw_model_t model)
+static int emulate_syscall_seph(unsigned long syscall,
+                                unsigned long *parameters, unsigned long *ret,
+                                bool verbose, int api_level)
 {
-  (void)api_level;
-  (void)model;
+  // TODO: whole function to remove when API LEVEL < 25 is not supported anymore
+  if (api_level >= 25) {
+    return SYSCALL_NOT_HANDLED;
+  }
 
   switch (syscall) {
     /* clang-format off */
@@ -726,13 +722,10 @@ int emulate_syscall_seph(unsigned long syscall, unsigned long *parameters,
 
 /* Handle os_perso related syscalls which behavior are defined in
  * src/bolos/os_{bip32, eip2333}.c a */
-int emulate_syscall_os_perso(unsigned long syscall, unsigned long *parameters,
-                             unsigned long *ret, bool verbose, int api_level,
-                             hw_model_t model)
+static int emulate_syscall_os_perso(unsigned long syscall,
+                                    unsigned long *parameters,
+                                    unsigned long *ret, bool verbose)
 {
-  (void)api_level;
-  (void)model;
-
   switch (syscall) {
     /* clang-format off */
 
@@ -776,15 +769,11 @@ int emulate_syscall_os_perso(unsigned long syscall, unsigned long *parameters,
 /* Handle endorsement related syscalls which behavior are defined in
  * src/bolos/endorsement.c a */
 
-int emulate_syscall_endorsement_pre_api_level_23(unsigned long syscall,
-                                                 unsigned long *parameters,
-                                                 unsigned long *ret,
-                                                 bool verbose, int api_level,
-                                                 hw_model_t model)
+static int
+emulate_syscall_endorsement_pre_api_level_23(unsigned long syscall,
+                                             unsigned long *parameters,
+                                             unsigned long *ret, bool verbose)
 {
-  (void)api_level;
-  (void)model;
-
   switch (syscall) {
     /* clang-format off */
 
@@ -821,15 +810,11 @@ int emulate_syscall_endorsement_pre_api_level_23(unsigned long syscall,
   return SYSCALL_HANDLED;
 }
 
-int emulate_syscall_endorsement_after_api_level_23(unsigned long syscall,
-                                                   unsigned long *parameters,
-                                                   unsigned long *ret,
-                                                   bool verbose, int api_level,
-                                                   hw_model_t model)
+static int
+emulate_syscall_endorsement_pre_api_level_26(unsigned long syscall,
+                                             unsigned long *parameters,
+                                             unsigned long *ret, bool verbose)
 {
-  (void)api_level;
-  (void)model;
-
   switch (syscall) {
     /* clang-format off */
         SYSCALL3(ENDORSEMENT_get_public_key, "(%d, %p, %p)",
@@ -859,28 +844,62 @@ int emulate_syscall_endorsement_after_api_level_23(unsigned long syscall,
   return SYSCALL_HANDLED;
 }
 
-int emulate_syscall_endorsement(unsigned long syscall,
-                                unsigned long *parameters, unsigned long *ret,
-                                bool verbose, int api_level, hw_model_t model)
+static int
+emulate_syscall_endorsement_post_api_level_25(unsigned long syscall,
+                                              unsigned long *parameters,
+                                              unsigned long *ret, bool verbose)
 {
-  (void)api_level;
-  (void)model;
+  switch (syscall) {
+    /* clang-format off */
+        SYSCALL3(ENDORSEMENT_GET_PUB_KEY, "(%d, %p, %p)",
+                  uint8_t,   slot,
+                  uint8_t *, out_public_key,
+                  size_t *, out_public_key_length);
 
+        SYSCALL4(ENDORSEMENT_KEY1_SIGN_DATA, "(%p, %u, %p, %p)",
+                  uint8_t *, data,
+                  size_t, data_length,
+                  uint8_t *, out_signature,
+                  size_t *, out_signature_length);
+
+        SYSCALL2(ENDORSEMENT_GET_CODE_HASH, "(%p, %u)",
+                  uint8_t *, out_hash,
+                  size_t, data_length);
+
+        SYSCALL3(ENDORSEMENT_GET_PUB_KEY_SIG, "(%d, %p, %p)",
+                  uint8_t, slot,
+                  uint8_t *, out_buffer,
+                  size_t *, out_length);
+
+  /* clang-format on */
+  default:
+    return SYSCALL_NOT_HANDLED;
+  }
+
+  return SYSCALL_HANDLED;
+}
+
+static int emulate_syscall_endorsement(unsigned long syscall,
+                                       unsigned long *parameters,
+                                       unsigned long *ret, bool verbose,
+                                       int api_level)
+{
   if (api_level <= 22) {
-    return emulate_syscall_endorsement_pre_api_level_23(
-        syscall, parameters, ret, verbose, api_level, model);
+    return emulate_syscall_endorsement_pre_api_level_23(syscall, parameters,
+                                                        ret, verbose);
+  } else if (api_level <= 25) {
+    return emulate_syscall_endorsement_pre_api_level_26(syscall, parameters,
+                                                        ret, verbose);
   } else {
-    return emulate_syscall_endorsement_after_api_level_23(
-        syscall, parameters, ret, verbose, api_level, model);
+    return emulate_syscall_endorsement_post_api_level_25(syscall, parameters,
+                                                         ret, verbose);
   }
 }
 
-int emulate_syscall_os_io(unsigned long syscall, unsigned long *parameters,
-                          unsigned long *ret, bool verbose, int api_level,
-                          hw_model_t model)
+static int emulate_syscall_os_io(unsigned long syscall,
+                                 unsigned long *parameters, unsigned long *ret,
+                                 bool verbose, int api_level)
 {
-  (void)model;
-
   if (api_level < 24) {
     return SYSCALL_NOT_HANDLED;
   }
@@ -928,53 +947,53 @@ int emulate_syscall_os_io(unsigned long syscall, unsigned long *parameters,
 int emulate(unsigned long syscall, unsigned long *parameters,
             unsigned long *ret, bool verbose, int api_level, hw_model_t model)
 {
-  if (emulate_syscall_bagl(syscall, parameters, ret, verbose, api_level,
-                           model) == SYSCALL_HANDLED) {
-    return 0;
-  }
-
-  if (emulate_syscall_nbgl(syscall, parameters, ret, verbose, api_level,
-                           model) == SYSCALL_HANDLED) {
-    return 0;
-  }
-
-  if (emulate_syscall_touch(syscall, parameters, ret, verbose, api_level,
-                            model) == SYSCALL_HANDLED) {
-    return 0;
-  }
-
-  if (emulate_syscall_cx(syscall, parameters, ret, verbose, api_level, model) ==
+  if (emulate_syscall_bagl(syscall, parameters, ret, verbose, model) ==
       SYSCALL_HANDLED) {
     return 0;
   }
 
-  if (emulate_syscall_os(syscall, parameters, ret, verbose, api_level, model) ==
+  if (emulate_syscall_nbgl(syscall, parameters, ret, verbose, api_level) ==
       SYSCALL_HANDLED) {
     return 0;
   }
 
-  if (emulate_syscall_default(syscall, parameters, ret, verbose, api_level,
-                              model) == SYSCALL_HANDLED) {
+  if (emulate_syscall_touch(syscall, parameters, ret, verbose, model) ==
+      SYSCALL_HANDLED) {
     return 0;
   }
 
-  if (emulate_syscall_seph(syscall, parameters, ret, verbose, api_level,
-                           model) == SYSCALL_HANDLED) {
+  if (emulate_syscall_cx(syscall, parameters, ret, verbose) ==
+      SYSCALL_HANDLED) {
     return 0;
   }
 
-  if (emulate_syscall_os_perso(syscall, parameters, ret, verbose, api_level,
-                               model) == SYSCALL_HANDLED) {
+  if (emulate_syscall_os(syscall, parameters, ret, verbose, api_level) ==
+      SYSCALL_HANDLED) {
     return 0;
   }
 
-  if (emulate_syscall_endorsement(syscall, parameters, ret, verbose, api_level,
-                                  model) == SYSCALL_HANDLED) {
+  if (emulate_syscall_default(syscall, parameters, ret, verbose) ==
+      SYSCALL_HANDLED) {
     return 0;
   }
 
-  if (emulate_syscall_os_io(syscall, parameters, ret, verbose, api_level,
-                            model) == SYSCALL_HANDLED) {
+  if (emulate_syscall_seph(syscall, parameters, ret, verbose, api_level) ==
+      SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_os_perso(syscall, parameters, ret, verbose) ==
+      SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_endorsement(syscall, parameters, ret, verbose,
+                                  api_level) == SYSCALL_HANDLED) {
+    return 0;
+  }
+
+  if (emulate_syscall_os_io(syscall, parameters, ret, verbose, api_level) ==
+      SYSCALL_HANDLED) {
     return 0;
   }
 
