@@ -1,5 +1,12 @@
 #pragma once
 
+/*********************
+ *      INCLUDES
+ *********************/
+
+/*********************
+ *      DEFINES
+ *********************/
 // the number of parameters of a syscall is stored in the syscall id
 #define SYSCALL_NUMBER_OF_PARAMETERS(id) (((id) >> 24) & 0xf)
 
@@ -11,9 +18,6 @@
 #define SYSCALL_cx_aes_set_key_hw_ID_IN                               0x020000b2
 #define SYSCALL_cx_aes_reset_hw_ID_IN                                 0x000000b3
 #define SYSCALL_cx_aes_block_hw_ID_IN                                 0x020000b4
-#define SYSCALL_cx_des_set_key_hw_ID_IN                               0x020000af
-#define SYSCALL_cx_des_reset_hw_ID_IN                                 0x000000b0
-#define SYSCALL_cx_des_block_hw_ID_IN                                 0x020000b1
 #define SYSCALL_cx_bn_lock_ID_IN                                      0x02000112
 #define SYSCALL_cx_bn_unlock_ID_IN                                    0x000000b6
 #define SYSCALL_cx_bn_is_locked_ID_IN                                 0x000000b7
@@ -85,30 +89,173 @@
 #define SYSCALL_cx_ecpoint_scalarmul_bn_ID_IN                         0x02000111
 #define SYSCALL_cx_ecpoint_rnd_scalarmul_ID_IN                        0x03000127
 #define SYSCALL_cx_ecpoint_rnd_scalarmul_bn_ID_IN                     0x02000128
+
 #define SYSCALL_cx_ecpoint_rnd_fixed_scalarmul_ID_IN                  0x03000129
+
 #define SYSCALL_cx_ecpoint_double_scalarmul_ID_IN                     0x07000148
 #define SYSCALL_cx_ecpoint_double_scalarmul_bn_ID_IN                  0x0500014a
 #define SYSCALL_cx_ecpoint_cmp_ID_IN                                  0x030000fb
 #define SYSCALL_cx_ecpoint_is_on_curve_ID_IN                          0x020000fc
 #define SYSCALL_cx_ecpoint_is_at_infinity_ID_IN                       0x0200014b
-#define SYSCALL_cx_ecpoint_x25519_ID_IN                               0x0300001b
-#define SYSCALL_cx_ecpoint_x448_ID_IN                                 0x03000060
-#define SYSCALL_cx_crc_hw_ID_IN                                       0x04000102
-#define SYSCALL_cx_get_random_bytes_ID_IN                             0x02000107
-#define SYSCALL_cx_trng_get_random_data_ID_IN                         0x02000106
-#define SYSCALL_os_perso_erase_all_ID_IN                              0x0000004b
-#define SYSCALL_os_perso_set_seed_ID_IN                               0x0400004e
-#define SYSCALL_os_perso_derive_and_set_seed_ID_IN                    0x0700004f
-#define SYSCALL_os_perso_set_words_ID_IN                              0x02000050
-#define SYSCALL_os_perso_finalize_ID_IN                               0x00000051
-#define SYSCALL_os_perso_get_master_key_identifier_ID_IN              0x02000055
-#define SYSCALL_os_perso_isonboarded_ID_IN                            0x0000009f
-#define SYSCALL_os_perso_setonboardingstatus_ID_IN                    0x04000094
-#define SYSCALL_os_perso_derive_node_bip32_ID_IN                      0x05000053
-#define SYSCALL_os_perso_derive_node_with_seed_key_ID_IN              0x080000a6
-#define SYSCALL_os_perso_derive_eip2333_ID_IN                         0x040000a7
 
-// Endorsement syscalls
+#define SYSCALL_cx_ecpoint_x25519_ID_IN 0x0300001b
+
+#define SYSCALL_cx_ecpoint_x448_ID_IN 0x03000060
+
+#define SYSCALL_cx_vss_generate_shares_ID_IN 0x0a000001
+#define SYSCALL_cx_vss_combine_shares_ID_IN  0x04000002
+#define SYSCALL_cx_vss_verify_commits_ID_IN  0x05000003
+
+#define SYSCALL_cx_crc_hw_ID_IN 0x04000102
+
+#define SYSCALL_ox_bls12381_sign_ID_IN      0x05000103
+#define SYSCALL_cx_hash_to_field_ID_IN      0x06000104
+#define SYSCALL_cx_bls12381_aggregate_ID_IN 0x05000105
+#define SYSCALL_cx_bls12381_key_gen_ID_IN   0x03000108
+
+#define SYSCALL_cx_get_random_bytes_ID_IN     0x02000107
+#define SYSCALL_cx_trng_get_random_data_ID_IN 0x02000106
+
+#define SYSCALL_RESERVED_7_ID_IN                         0x0000004b
+#define SYSCALL_RESERVED_8_ID_IN                         0x0400004e
+#define SYSCALL_RESERVED_9_ID_IN                         0x0700004f
+#define SYSCALL_RESERVED_10_ID_IN                        0x02000050
+#define SYSCALL_RESERVED_11_ID_IN                        0x01000051
+#define SYSCALL_os_perso_is_pin_set_ID_IN                0x0000009e
+#define SYSCALL_os_perso_isonboarded_ID_IN               0x0000009f
+#define SYSCALL_RESERVED_12_ID_IN                        0x03000094
+#define SYSCALL_os_perso_derive_node_bip32_ID_IN         0x05000053
+#define SYSCALL_os_perso_derive_node_with_seed_key_ID_IN 0x080000a6
+#define SYSCALL_os_perso_derive_eip2333_ID_IN            0x040000a7
+#define SYSCALL_HDKEY_derive_ID_IN                       0x0a000002
+
+#define SYSCALL_RESERVED_13_ID_IN 0x02000052
+#define SYSCALL_RESERVED_14_ID_IN 0x02000054
+
+#define SYSCALL_os_perso_get_master_key_identifier_ID_IN 0x02000055
+
+#define SYSCALL_ENDORSEMENT_GET_CODE_HASH_ID_IN               0x01000055
+#define SYSCALL_ENDORSEMENT_GET_PUB_KEY_ID_IN                 0x03000056
+#define SYSCALL_ENDORSEMENT_GET_PUB_KEY_SIG_ID_IN             0x03000057
+#define SYSCALL_ENDORSEMENT_KEY1_GET_APP_SECRET_ID_IN         0x01000058
+#define SYSCALL_ENDORSEMENT_KEY1_SIGN_DATA_ID_IN              0x04000059
+#define SYSCALL_ENDORSEMENT_KEY2_DERIVE_AND_SIGN_DATA_ID_IN   0x0400005a
+#define SYSCALL_ENDORSEMENT_KEY1_SIGN_WITHOUT_CODE_HASH_ID_IN 0x0400005b
+#define SYSCALL_RESERVED_15_ID_IN                             0x0400004c
+#define SYSCALL_RESERVED_16_ID_IN                             0x0200004d
+#define SYSCALL_os_global_pin_is_validated_ID_IN              0x000000a0
+#define SYSCALL_os_global_pin_check_ID_IN                     0x020000a1
+#define SYSCALL_os_global_pin_invalidate_ID_IN                0x0000005d
+#define SYSCALL_os_global_pin_retries_ID_IN                   0x0000005e
+#define SYSCALL_RESERVED_3_ID_IN                              0x0000005f
+#define SYSCALL_RESERVED_4_ID_IN                              0x02000122
+#define SYSCALL_os_ux_ID_IN                                   0x01000064
+#define SYSCALL_os_lib_call_ID_IN                             0x01000067
+#define SYSCALL_os_lib_end_ID_IN                              0x00000068
+#define SYSCALL_os_flags_ID_IN                                0x0000006a
+#define SYSCALL_os_version_ID_IN                              0x0200006b
+#define SYSCALL_os_serial_ID_IN                               0x0200006c
+#define SYSCALL_os_seph_features_ID_IN                        0x0000006e
+#define SYSCALL_os_seph_version_ID_IN                         0x0200006f
+#define SYSCALL_os_bootloader_version_ID_IN                   0x02000073
+#define SYSCALL_os_factory_setting_get_ID_IN                  0x0300014c
+#define SYSCALL_os_setting_get_ID_IN                          0x03000070
+#define SYSCALL_os_setting_set_ID_IN                          0x03000071
+#define SYSCALL_RESERVED_5_ID_IN                              0x06000123
+#define SYSCALL_RESERVED_6_ID_IN                              0x00000125
+#define SYSCALL_RESERVED_34_ID_IN                             0x01000126
+#define SYSCALL_os_sched_exit_ID_IN                           0x0100009a
+#define SYSCALL_os_sched_is_running_ID_IN                     0x0100009b
+#define SYSCALL_os_sched_create_ID_IN                         0x0700011b
+#define SYSCALL_os_sched_kill_ID_IN                           0x01000078
+#define SYSCALL_os_io_seph_tx_ID_IN                           0x03000082
+#define SYSCALL_os_io_seph_se_rx_event_ID_IN                  0x05000083
+#define SYSCALL_os_io_init_ID_IN                              0x01000084
+#define SYSCALL_os_io_start_ID_IN                             0x01000085
+#define SYSCALL_os_io_stop_ID_IN                              0x01000086
+#define SYSCALL_os_io_tx_cmd_ID_IN                            0x04000088
+#define SYSCALL_os_io_rx_evt_ID_IN                            0x03000089
+#define SYSCALL_nvm_write_page_ID_IN                          0x0100010a
+#define SYSCALL_nvm_erase_page_ID_IN                          0x01000136
+#define SYSCALL_try_context_get_ID_IN                         0x00000087
+#define SYSCALL_try_context_set_ID_IN                         0x0100010b
+#define SYSCALL_os_sched_last_status_ID_IN                    0x0100009c
+#define SYSCALL_os_sched_yield_ID_IN                          0x0100009d
+#define SYSCALL_os_sched_switch_ID_IN                         0x0200009e
+#define SYSCALL_os_sched_current_task_ID_IN                   0x0000008b
+#define SYSCALL_os_allow_protected_flash_ID_IN                0x0000008e
+#define SYSCALL_os_deny_protected_flash_ID_IN                 0x00000091
+#define SYSCALL_os_allow_protected_ram_ID_IN                  0x00000092
+#define SYSCALL_os_deny_protected_ram_ID_IN                   0x00000093
+#define SYSCALL_os_set_ux_time_ms_ID_IN                       0x010000a2
+#define SYSCALL_os_pki_load_certificate_ID_IN 0x060000aa
+#define SYSCALL_os_pki_verify_ID_IN           0x040000ab
+#define SYSCALL_os_pki_get_info_ID_IN         0x040000ac
+
+#define SYSCALL_RESERVED_20_ID_IN 0x02000150
+#define SYSCALL_RESERVED_21_ID_IN 0x03000151
+#define SYSCALL_RESERVED_22_ID_IN 0x01000152
+#define SYSCALL_RESERVED_23_ID_IN 0x01000155
+
+#define SYSCALL_RESERVED_24_ID_IN 0x01000CA0
+#define SYSCALL_RESERVED_25_ID_IN 0x00000CA1
+
+#define SYSCALL_RESERVED_2_ID_IN               0x010001ED
+#define SYSCALL_RESERVED_1_ID_IN               0x010001EE
+#define SYSCALL_ENDORSEMENT_GET_METADATA_ID_IN 0x02000138
+
+#define SYSCALL_RESERVED_17_ID_IN 0x02000137
+#define SYSCALL_RESERVED_18_ID_IN 0x00000149
+#define SYSCALL_RESERVED_19_ID_IN 0x00000152
+
+#define SYSCALL_screen_clear_ID_IN       0x00000079
+#define SYSCALL_screen_update_ID_IN      0x0000007a
+#define SYSCALL_screen_set_keepout_ID_IN 0x0400007b
+#define SYSCALL_screen_set_brightness_ID_IN 0x0100008c
+#define SYSCALL_bagl_hal_draw_bitmap_within_rect_ID_IN 0x0900007c
+#define SYSCALL_bagl_hal_draw_rect_ID_IN               0x0500007d
+
+#define SYSCALL_os_ux_set_status_ID_IN 0x02000134
+#define SYSCALL_os_ux_get_status_ID_IN 0x01000135
+
+#define SYSCALL_io_button_read_ID_IN 0x0000008f
+
+#define SYSCALL_os_standby_ID_IN 0x0000d0d0
+
+#define SYSCALL_os_seph_serial_ID_IN 0x0200006d
+
+#define SYSCALL_RESERVED_26_ID_IN 0x01000153
+#define SYSCALL_RESERVED_27_ID_IN 0x01000154
+
+#define SYSCALL_os_stack_operations_ID_IN 0x01000199
+
+#define SYSCALL_nbgl_front_draw_rect_ID_IN            0x01fa0000
+#define SYSCALL_nbgl_front_draw_horizontal_line_ID_IN            0x03fa0001
+#define SYSCALL_nbgl_front_draw_img_ID_IN             0x04fa0002
+#define SYSCALL_nbgl_front_refresh_area_ID_IN         0x03fa0003
+#define SYSCALL_nbgl_front_draw_img_file_ID_IN        0x05fa0004
+#define SYSCALL_nbgl_side_draw_rect_ID_IN             0x01fa0005
+#define SYSCALL_nbgl_side_draw_horizontal_line_ID_IN  0x03fa0006
+#define SYSCALL_nbgl_side_draw_img_ID_IN              0x04fa0007
+#define SYSCALL_nbgl_side_refresh_area_ID_IN          0x02fa0008
+#define SYSCALL_nbgl_screen_reinit_ID_IN              0x00fa000d
+#define SYSCALL_nbgl_front_draw_img_rle_ID_IN         0x05fa0010
+#define SYSCALL_nbgl_front_control_area_masking_ID_IN 0x03fa0012
+
+#define SYSCALL_nbgl_wait_pipeline_ID_IN 0x00fa0011
+
+#define SYSCALL_nbgl_screen_update_temperature_ID_IN 0x01fa0011
+
+#define SYSCALL_nbgl_screen_config_fast_mode_ID_IN 0x00fa0012
+
+#define SYSCALL_fetch_background_img  0x01fa0009
+#define SYSCALL_delete_background_img 0x01fa000a
+
+#define SYSCALL_touch_get_last_info_ID_IN   0x01fa000b
+#define SYSCALL_touch_exclude_borders_ID_IN 0x01fa000d
+#define SYSCALL_touch_set_state_ID_IN       0x01fa000e
+#define SYSCALL_touch_debug_ID_IN 0x03fa000f
+
 // -- Pre API_LEVEL_23
 #define SYSCALL_os_endorsement_get_code_hash_ID_IN                    0x01000055
 #define SYSCALL_os_endorsement_get_public_key_ID_IN                   0x03000056
@@ -117,96 +264,38 @@
 #define SYSCALL_os_endorsement_key1_sign_data_ID_IN                   0x03000059
 #define SYSCALL_os_endorsement_key2_derive_sign_data_ID_IN            0x0300005a
 #define SYSCALL_os_endorsement_key1_sign_without_code_hash_ID_IN      0x0300005b
-// -- API_LEVEL_23 and above
-#define SYSCALL_ENDORSEMENT_get_code_hash_ID_IN                       0x01000055
-#define SYSCALL_ENDORSEMENT_get_public_key_ID_IN                      0x03000056
-#define SYSCALL_ENDORSEMENT_get_public_key_certificate_ID_IN          0x03000057
-#define SYSCALL_ENDORSEMENT_key1_get_app_secret_ID_IN                 0x01000058
-#define SYSCALL_ENDORSEMENT_key1_sign_data_ID_IN                      0x04000059
-#define SYSCALL_ENDORSEMENT_key2_derive_and_sign_data_ID_IN           0x0400005a
-#define SYSCALL_ENDORSEMENT_key1_sign_without_code_hash_ID_IN         0x0400005b
 
-#define SYSCALL_os_perso_set_pin_ID_IN                                0x0300004c
-#define SYSCALL_os_perso_set_current_identity_pin_ID_IN               0x0200004d
-#define SYSCALL_os_global_pin_is_validated_ID_IN                      0x000000a0
-#define SYSCALL_os_global_pin_check_ID_IN                             0x020000a1
-#define SYSCALL_os_global_pin_invalidate_ID_IN                        0x0000005d
-#define SYSCALL_os_global_pin_retries_ID_IN                           0x0000005e
-#define SYSCALL_os_registry_count_ID_IN                               0x0000005f
-#define SYSCALL_os_registry_get_ID_IN                                 0x02000122
-#define SYSCALL_os_ux_ID_IN                                           0x01000064
-#define SYSCALL_os_ux_result_ID_IN                                    0x01000065
-#define SYSCALL_os_lib_call_ID_IN                                     0x01000067
-#define SYSCALL_os_lib_end_ID_IN                                      0x00000068
-#define SYSCALL_os_flags_ID_IN                                        0x0000006a
-#define SYSCALL_os_version_ID_IN                                      0x0200006b
-#define SYSCALL_os_serial_ID_IN                                       0x0200006c
-#define SYSCALL_os_seph_features_ID_IN                                0x0000006e
-#define SYSCALL_os_seph_version_ID_IN                                 0x0200006f
-#define SYSCALL_os_bootloader_version_ID_IN                           0x02000073
-#define SYSCALL_os_setting_get_ID_IN                                  0x03000070
-#define SYSCALL_os_setting_set_ID_IN                                  0x03000071
-#define SYSCALL_os_get_memory_info_ID_IN                              0x01000072
-#define SYSCALL_os_registry_get_tag_ID_IN                             0x06000123
-#define SYSCALL_os_registry_get_current_app_tag_ID_IN                 0x03000074
-#define SYSCALL_os_registry_delete_app_and_dependees_ID_IN            0x01000124
-#define SYSCALL_os_registry_delete_all_apps_ID_IN                     0x00000125
-#define SYSCALL_os_sched_exec_ID_IN                                   0x01000126
-#define SYSCALL_os_sched_exit_ID_IN                                   0x0100009a
-#define SYSCALL_os_sched_is_running_ID_IN                             0x0100009b
-#define SYSCALL_os_sched_create_ID_IN                                 0x0700011b
-#define SYSCALL_os_sched_kill_ID_IN                                   0x01000078
+// -- Pre API_LEVEL_26
+#define SYSCALL_ENDORSEMENT_get_code_hash_ID_IN               0x01000055
+#define SYSCALL_ENDORSEMENT_get_public_key_ID_IN              0x03000056
+#define SYSCALL_ENDORSEMENT_get_public_key_certificate_ID_IN  0x03000057
+#define SYSCALL_ENDORSEMENT_key1_get_app_secret_ID_IN         0x01000058
+#define SYSCALL_ENDORSEMENT_key1_sign_data_ID_IN              0x03000059
+#define SYSCALL_ENDORSEMENT_key2_derive_and_sign_data_ID_IN   0x0300005a
+#define SYSCALL_ENDORSEMENT_key1_sign_without_code_hash_ID_IN 0x0300005b
+
+// -- Pre API_LEVEL_25
 #define SYSCALL_io_seph_send_ID_IN                                    0x02000083
 #define SYSCALL_io_seph_is_status_sent_ID_IN                          0x00000084
 #define SYSCALL_io_seph_recv_ID_IN                                    0x03000085
-#define SYSCALL_nvm_write_page_ID_IN                                  0x0100010a
-#define SYSCALL_nvm_erase_page_ID_IN                                  0x01000136
-#define SYSCALL_try_context_get_ID_IN                                 0x00000087
-#define SYSCALL_try_context_set_ID_IN                                 0x0100010b
-#define SYSCALL_os_sched_last_status_ID_IN                            0x0100009c
-#define SYSCALL_os_sched_yield_ID_IN                                  0x0100009d
-#define SYSCALL_os_sched_switch_ID_IN                                 0x0200009e
-#define SYSCALL_os_sched_current_task_ID_IN                           0x0000008b
-#define SYSCALL_os_allow_protected_flash_ID_IN                        0x0000008e
-#define SYSCALL_os_deny_protected_flash_ID_IN                         0x00000091
-#define SYSCALL_os_allow_protected_ram_ID_IN                          0x00000092
-#define SYSCALL_os_deny_protected_ram_ID_IN                           0x00000093
-#define SYSCALL_os_customca_verify_ID_IN                              0x03000090
-#define SYSCALL_screen_clear_ID_IN                                    0x00000079
-#define SYSCALL_screen_update_ID_IN                                   0x0000007a
-#define SYSCALL_screen_set_keepout_ID_IN                              0x0400007b
-#define SYSCALL_screen_set_brightness_ID_IN                           0x0100008c
-#define SYSCALL_bagl_hal_draw_bitmap_within_rect_ID_IN                0x0900007c
-#define SYSCALL_bagl_hal_draw_rect_ID_IN                              0x0500007d
-#define SYSCALL_io_button_read_ID_IN                                  0x0000008f
-#define SYSCALL_os_seph_serial_ID_IN                                  0x0200006d
 
-#define SYSCALL_nbgl_front_draw_rect_ID_IN                            0x01fa0000
-#define SYSCALL_nbgl_front_draw_horizontal_line_ID_IN                 0x03fa0001
-#define SYSCALL_nbgl_front_draw_img_ID_IN                             0x04fa0002
-#define SYSCALL_nbgl_front_refresh_area_ID_IN                         0x03fa0003
-#define SYSCALL_nbgl_front_draw_img_file_ID_IN                        0x05fa0004
-#define SYSCALL_touch_get_last_info_ID_IN                             0x01fa000b
+#define SYSCALL_os_registry_get_current_app_tag_ID_IN                 0x03000074
+
 #define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
-#define SYSCALL_nbgl_screen_reinit_ID_IN                              0x00fa000d
-#define SYSCALL_nbgl_front_draw_img_rle_ID_IN                         0x05fa0010
 
-#define SYSCALL_ox_bls12381_sign_ID_IN                                0x05000103
-#define SYSCALL_cx_hash_to_field_ID_IN                                0x06000104
-#define SYSCALL_cx_bls12381_aggregate_ID_IN                           0x05000105
-#define SYSCALL_cx_bls12381_key_gen_ID_IN                             0x03000108
+/**********************
+ *      TYPEDEFS
+ **********************/
 
-#define SYSCALL_os_pki_load_certificate_ID_IN                         0x060000aa
-#define SYSCALL_os_pki_verify_ID_IN                                   0x040000ab
-#define SYSCALL_os_pki_get_info_ID_IN                                 0x040000ac
+/**********************
+ * STATIC VARIABLES
+ **********************/
 
-// API level 24 io-revamp
-#define SYSCALL_os_io_init_ID_IN                                      0x01000084
-#define SYSCALL_os_io_start_ID_IN                                     0x01000085
-#define SYSCALL_os_io_stop_ID_IN                                      0x01000086
-#define SYSCALL_os_io_tx_cmd_ID_IN                                    0x04000088
-#define SYSCALL_os_io_rx_evt_ID_IN                                    0x03000089
-#define SYSCALL_os_io_seph_tx_ID_IN                                   0x03000082
-#define SYSCALL_os_io_seph_se_rx_event_ID_IN                          0x05000083
+/**********************
+ * STATIC INLINE
+ **********************/
 
+/**********************
+ * GLOBAL PROTOTYPES
+ **********************/
 // clang-format on

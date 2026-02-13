@@ -60,7 +60,6 @@ add_library(emu
         bolos/io/sdk/lib_stusb/src/usbd_ledger.c
         bolos/io/sdk/lib_nfc/src/nfc_ledger.c
         bolos/io/sdk/lib_nfc/src/nfc_ndef.c
-        bolos/io/sdk/io/src/os_io_default_apdu.c
         bolos/io/sdk/io/src/os_io_seph_cmd.c
         bolos/io/sdk/io/src/os_io_seph_ux.c
         bolos/io/sdk/io/src/os_io.c
