@@ -33,10 +33,10 @@ jobs:
           fetch-depth: 0
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
 
     - name: Build the Speculos docker
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v6
       with:
         push: false
         tags: ledgerhq/speculos:test
@@ -117,23 +117,25 @@ jobs:
 
     - name: Run and test Speculos docker for C apps
       if: ${{ env.SDK == 'c' }}
-      uses: addnab/docker-run-action@v3
-      with:
-        image: ledgerhq/speculos:test
-        options: -v ${{ github.workspace }}/app:/app
-        run: |
-            apt-get update && apt-get install -y gcc
-            pip install -r /app/${{ env.TEST_DIR }}/requirements.txt
-            pytest /app/${{ env.TEST_DIR }}/ --tb=short -v --device ${{ matrix.device }}
+      run: |
+          docker run --rm \
+          --entrypoint /bin/bash \
+          -v "${{ github.workspace }}/app:/app" \
+          ledgerhq/speculos:test \
+          -c "apt-get update && apt-get install -y gcc && \
+              pip install -r /app/${{ env.TEST_DIR }}/requirements.txt && \
+              pytest /app/${{ env.TEST_DIR }}/ --tb=short -v --device ${{ matrix.device }}"
 
     - name: Run and test Speculos docker for Rust apps
       if: ${{ env.SDK == 'rust' }}
-      uses: addnab/docker-run-action@v3
-      with:
-        image: ledgerhq/speculos:test
-        options: -v ${{ github.workspace }}/app:/app
-        run: |
-            apt-get update && apt-get install -y gcc && apt-get install -y cargo
-            pip install -r /app/${{ env.TEST_DIR }}/requirements.txt
-            # test_version requires Cargo.toml
-            pytest /app/${{ env.TEST_DIR }}/ --tb=short -v --device ${{ matrix.device }} -k "not test_version"
+      run: |
+          docker run --rm \
+          --entrypoint /bin/bash \
+          -v "${{ github.workspace }}/app:/app" \
+          ledgerhq/speculos:test \
+          -c "
+            apt-get update && \
+            apt-get install -y gcc cargo && \
+            pip install -r /app/${{ env.TEST_DIR }}/requirements.txt && \
+            pytest /app/${{ env.TEST_DIR }}/ --tb=short -v --device ${{ matrix.device }} -k 'not test_version'
+          "
