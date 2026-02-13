@@ -32,14 +32,6 @@ static bolos_err_t get_version(uint8_t *buffer_out, size_t *buffer_out_length);
 static bolos_err_t get_seed_cookie(uint8_t *buffer_out,
                                    size_t *buffer_out_length);
 #endif // HAVE_SEED_COOKIE
-#if defined(DEBUG_OS_STACK_CONSUMPTION)
-static bolos_err_t get_stack_consumption(uint8_t mode, uint8_t *buffer_out,
-                                         size_t *buffer_out_length);
-#endif // DEBUG_OS_STACK_CONSUMPTION
-#if defined(HAVE_LEDGER_PKI)
-static bolos_err_t pki_load_certificate(uint8_t *buffer, size_t buffer_len,
-                                        uint8_t key_usage);
-#endif // HAVE_LEDGER_PKI
 
 /* Exported variables --------------------------------------------------------*/
 
@@ -115,42 +107,6 @@ static bolos_err_t get_seed_cookie(uint8_t *buffer_out,
 }
 #endif // HAVE_SEED_COOKIE
 
-#if defined(DEBUG_OS_STACK_CONSUMPTION)
-static bolos_err_t get_stack_consumption(uint8_t mode, uint8_t *buffer_out,
-                                         size_t *buffer_out_length)
-{
-  bolos_err_t err = 0x6985;
-  int status = os_stack_operations(mode);
-
-  *buffer_out_length = 0;
-  if (status != -1) {
-    U4BE_ENCODE(buffer_out, 0x00, status);
-    *buffer_out_length += 4;
-    err = SWO_SUCCESS;
-  }
-
-  return err;
-}
-#endif // DEBUG_OS_STACK_CONSUMPTION
-
-#if defined(HAVE_LEDGER_PKI)
-static bolos_err_t pki_load_certificate(uint8_t *buffer, size_t buffer_len,
-                                        uint8_t key_usage)
-{
-  bolos_err_t err = 0x6985;
-  cx_ecfp_384_public_key_t public_key;
-
-  err = os_pki_load_certificate(key_usage, buffer, buffer_len, NULL, NULL,
-                                &public_key);
-  if (err == 0) {
-    err = SWO_SUCCESS;
-  }
-  explicit_bzero(&public_key, sizeof(cx_ecfp_384_public_key_t));
-
-  return err;
-}
-#endif // HAVE_LEDGER_PKI
-
 /* Exported functions --------------------------------------------------------*/
 bolos_err_t os_io_handle_default_apdu(uint8_t *buffer_in,
                                       size_t buffer_in_length,
@@ -215,15 +171,6 @@ bolos_err_t os_io_handle_default_apdu(uint8_t *buffer_in,
         goto end;
       }
       break;
-
-#if defined(HAVE_LEDGER_PKI)
-    case DEFAULT_APDU_INS_LOAD_CERTIFICATE:
-      *buffer_out_length = 0;
-      err =
-          pki_load_certificate(&buffer_in[APDU_OFF_LC + 1],
-                               buffer_in[APDU_OFF_LC], buffer_in[APDU_OFF_P1]);
-      break;
-#endif // HAVE_LEDGER_PKI
 
     default:
       err = 0x6e01;
