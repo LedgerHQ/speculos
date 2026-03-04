@@ -1,9 +1,9 @@
 # Docker - for Mac M1
 
-## Option A: Use the install script (recommended)
+## Option 1: Script setup (recommended)
 
 Create a `scripts` folder at the project root.  
-In it create `install-speculos-macm1.sh`, from the contents below.
+In it create `install-speculos-macm1.sh`, and insert the [script below](#script).
 
 ```shell
 ./scripts/install-speculos-macm1.sh
@@ -17,7 +17,8 @@ If you want to force building from source instead (e.g. to get a specific commit
 FORCE_BUILD=1 ./scripts/install-speculos-macm1.sh
 ```
 
-### install-speculos-macm1.sh
+### Script
+install-speculos-macm1.sh
 
 ```shell
 #!/bin/bash
@@ -43,7 +44,8 @@ else
   echo "    Pull failed or image not found; will build from source."
 fi
 
-SPECULOS_DIR="${SPECULOS_DIR:-$HOME/speculos}"
+# Default: use ./speculos in the current working directory (run script from any folder)
+SPECULOS_DIR="${SPECULOS_DIR:-$(pwd)/speculos}"
 # Resolve to absolute path so Docker always gets a valid context
 SPECULOS_DIR="$(cd "$(dirname "$SPECULOS_DIR")" && pwd)/$(basename "$SPECULOS_DIR")"
 
@@ -78,13 +80,13 @@ echo "Done. Run Speculos from the speculos repo root:"
 echo "  cd $SPECULOS_DIR"
 echo "  docker run --rm -it -v \$(pwd)/apps:/speculos/apps -p 41000:41000 -p 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf"
 echo ""
-echo "See docs/SPECULOS_MAC_M1_SETUP.md for more options."
+
 ```
 ---
 
-## Option B: Manual setup
+## Option 2: Manual setup
 
-### 1. Pull the official image (no build)
+### A. Pull the official image (no build)
 
 On M1, the official image is multi-arch; Docker will pull the arm64 variant:
 
@@ -99,7 +101,7 @@ Then run Speculos from a directory that has an `apps/` folder (e.g. a speculos c
 docker run --rm -it -v $(pwd)/apps:/speculos/apps -p 41000:41000 -p 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
 ```
 
-### 2. Or clone and build from source
+### B. Or clone and build from source
 
 **Clone Speculos** from a directory of your choice (e.g. your home or projects folder):
 
@@ -139,7 +141,7 @@ docker image ls
 **Run Speculos** from the **root of the speculos project**:
 
 ```shell
-docker run --rm -it -v $(pwd)/apps:/speculos/apps --publish 41000:41000 --publish 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
+docker run --rm -it -v $(pwd)/apps:/speculos/apps -p 41000:41000 -p 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
 ```
 
 - **VNC:** `localhost:41000`
