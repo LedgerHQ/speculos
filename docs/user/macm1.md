@@ -80,11 +80,13 @@ echo "Done. Run Speculos from the speculos repo root:"
 echo "  cd $SPECULOS_DIR"
 echo "  docker run --rm -it -v \$(pwd)/apps:/speculos/apps -p 41000:41000 -p 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf"
 echo ""
-
 ```
+
 ---
 
 ## Option 2: Manual setup
+
+There are two possible ways to set up Speculos manually.
 
 ### A. Pull the official image (no build)
 
@@ -93,12 +95,6 @@ On M1, the official image is multi-arch; Docker will pull the arm64 variant:
 ```shell
 docker pull --platform linux/arm64 ghcr.io/ledgerhq/speculos:latest
 docker tag ghcr.io/ledgerhq/speculos:latest speculos
-```
-
-Then run Speculos from a directory that has an `apps/` folder (e.g. a speculos clone):
-
-```shell
-docker run --rm -it -v $(pwd)/apps:/speculos/apps -p 41000:41000 -p 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
 ```
 
 ### B. Or clone and build from source
@@ -138,15 +134,24 @@ docker image ls
 # speculos     latest  ...             ...            593MB
 ```
 
+## Run Speculos
+
 **Run Speculos** from the **root of the speculos project**:
+
+Then run Speculos from a directory that has an `apps/` folder (e.g. a speculos clone):
 
 ```shell
 docker run --rm -it -v $(pwd)/apps:/speculos/apps -p 41000:41000 -p 5001:5001 speculos --display headless --vnc-port 41000 --api-port 5001 apps/btc.elf
 ```
 
+- The VNC server is available using the `-p` option
+- The `apps/` folder is mounted using `-v` so you can use your own `.elf` apps.
+
 - **VNC:** `localhost:41000`
 - **API:** `localhost:5001`
-- The `apps/` folder is mounted via `-v` so you can use your own `.elf` apps.
+
+The image can run an interactive shell with `--entrypoint /bin/bash`.
+
 
 ### Arguments and advanced usage
 
