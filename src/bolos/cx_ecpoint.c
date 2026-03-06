@@ -359,7 +359,9 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
   case CX_CURVE_BrainPoolP512R1:
   case CX_CURVE_BrainPoolP512T1:
   case CX_CURVE_BLS12_381_G1:
-  case CX_CURVE_BLS12_377_G1: {
+  case CX_CURVE_BLS12_377_G1:
+  case CX_CURVE_PALLAS:
+  case CX_CURVE_VESTA: {
     if (cx_weierstrass_mult(ec_P->curve, Qx, Qy, P.x, P.y, e) != 1) {
       error = CX_INTERNAL_ERROR;
       goto cleanup;
@@ -383,6 +385,7 @@ cx_err_t sys_cx_ecpoint_scalarmul(cx_ecpoint_t *ec_P, const uint8_t *k,
     }
     break;
   case CX_CURVE_EdBLS12:
+  case CX_CURVE_JUBJUB:
     error = cx_twisted_edwards_mul_point(&P, k, k_len);
     goto cleanup;
     break;
@@ -518,7 +521,8 @@ cx_err_t sys_cx_ecpoint_add(cx_ecpoint_t *ec_R, const cx_ecpoint_t *ec_P,
     if (edwards_add(&R, &P, &Q) != 0) {
       error = CX_INTERNAL_ERROR;
     }
-  } else if (ec_P->curve == CX_CURVE_EdBLS12) {
+  } else if ((ec_P->curve == CX_CURVE_EdBLS12) ||
+             (ec_P->curve == CX_CURVE_JUBJUB)) {
     cx_mpi_ecpoint_t mpi_p, mpi_q, mpi_r;
     cx_mpi_ecpoint_from_ecpoint(&mpi_p, ec_P);
     cx_mpi_ecpoint_from_ecpoint(&mpi_q, ec_Q);
