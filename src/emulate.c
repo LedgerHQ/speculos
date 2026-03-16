@@ -681,6 +681,8 @@ static int emulate_syscall_os(unsigned long syscall,
              size_t *, trusted_name_len,
              cx_ecfp_384_public_key_t *, public_key);
 
+    SYSCALL1(os_stack_operations, "(%u)",
+              unsigned char, mode)
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;
