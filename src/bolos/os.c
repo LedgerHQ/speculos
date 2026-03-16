@@ -1,3 +1,5 @@
+#include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,6 +22,8 @@
 #define BOLOS_UX_OK 0xAA
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+
+#define OS_STACK_INIT_VALUE 0xFF
 
 struct libcall_s {
   struct app_s *app;
@@ -240,4 +244,62 @@ unsigned int sys_os_serial(unsigned char *serial, unsigned int maxlength)
   }
   memcpy(serial, sn, size);
   return size;
+}
+
+unsigned long sys_os_stack_operations(unsigned char mode)
+{
+  unsigned int result = -1;
+  unsigned char *st;
+  uintptr_t stack_lowest;
+  uintptr_t stack_highest;
+  uintptr_t stack_length;
+  stack_t ss;
+
+  /* Query the currently configured alternate signal stack instead of
+   * assuming a fixed offset from LOAD_ADDR. */
+  if (sigaltstack(NULL, &ss) != 0 || ss.ss_sp == NULL || ss.ss_size == 0) {
+    return result;
+  }
+  stack_lowest = (uintptr_t)ss.ss_sp;
+  stack_length = ss.ss_size;
+  stack_highest = (uintptr_t)__builtin_frame_address(0);
+  /* Ensure the computed highest address lies within the alternate stack
+   * region to avoid reading/writing unmapped memory. */
+  if (stack_highest < stack_lowest ||
+      stack_highest > stack_lowest + stack_length) {
+    stack_highest = stack_lowest + stack_length;
+  }
+
+  switch (mode) {
+  case MODE_INITIALIZATION:
+    // We initialize the stack up from lowest address to the current location of
+    // the stack pointer, except the canary. We do not call the dedicated
+    // function for this, otherwise it might smash its own portion of stack.
+    for (st = (unsigned char *)(stack_lowest + sizeof(int));
+         st < (unsigned char *)stack_highest; st++) {
+      *st = OS_STACK_INIT_VALUE;
+    }
+    result = 0;
+    break;
+
+  case MODE_RETRIEVAL:
+    // The goal is to output the length of the used stack since the last
+    // initialization.
+    for (st = (unsigned char *)(stack_lowest + sizeof(int));
+         st < (unsigned char *)stack_highest; st++) {
+      if (*st != OS_STACK_INIT_VALUE) {
+        break;
+      }
+    }
+
+    result = (unsigned int)(stack_lowest + stack_length - (uintptr_t)st +
+                            sizeof(char));
+    break;
+
+  default:
+    // result is already initialized.
+    break;
+  }
+
+  return result;
 }

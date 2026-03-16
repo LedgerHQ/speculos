@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#define LOAD_ADDR ((void *)0x40000000)
+
 struct app_s;
 
 void unload_running_app(bool unload_data);
