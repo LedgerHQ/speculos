@@ -37,7 +37,7 @@ typedef struct cx_ecfp_256_private_key_s cx_ecfp_private_key_t;
 #endif
 #endif
 
-int emulate(unsigned long syscall, unsigned long *parameters,
+int emulate(unsigned long syscall, const unsigned long *parameters,
             unsigned long *ret, bool verbose, int api_level, hw_model_t model);
 
 unsigned long sys_os_version(uint8_t *buffer, unsigned int len);
@@ -116,13 +116,10 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     }                                                                          \
   } while (0)
 
-#define GET_RETID(name)
-
 #define SYSCALL0(_name)                                                        \
   case SYSCALL_##_name##_ID_IN: {                                              \
     *ret = (unsigned long)sys_##_name();                                       \
     print_syscall(#_name "(%s)", "");                                          \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     print_ret(*ret);                                                           \
     break;                                                                     \
   }
@@ -131,7 +128,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
   case SYSCALL_##_name##_ID_IN: {                                              \
     sys_##_name();                                                             \
     print_syscall(#_name "(%s)", "");                                          \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -139,7 +135,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
   case SYSCALL_##_name##_ID_IN: {                                              \
     *ret = sys_##_funcname();                                                  \
     print_syscall(#_name "(%s)", "");                                          \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     print_ret(*ret);                                                           \
     break;                                                                     \
   }
@@ -150,7 +145,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     print_syscall(#_name "" _fmt, (_type0)_arg0);                              \
     *ret = (unsigned long)sys_##_name(_arg0);                                  \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -160,7 +154,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     print_syscall(#_name "" _fmt, (_type0)_arg0);                              \
     *ret = sys_##_funcname(_arg0);                                             \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -171,7 +164,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     print_syscall(#_name "" _fmt, (_type0)_arg0, (_type1)_arg1);               \
     *ret = sys_##_name(_arg0, _arg1);                                          \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -184,7 +176,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
                   (_type2)_arg2);                                              \
     *ret = sys_##_name(_arg0, _arg1, _arg2);                                   \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -198,7 +189,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
                   (_type2)_arg2);                                              \
     *ret = sys_##_funcname(_arg0, _arg1, _arg2);                               \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -213,7 +203,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
                   (_type3)_arg3);                                              \
     *ret = sys_##_name(_arg0, _arg1, _arg2, _arg3);                            \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -229,7 +218,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
                   (_type3)_arg3, (_type4)_arg4);                               \
     *ret = sys_##_name(_arg0, _arg1, _arg2, _arg3, _arg4);                     \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -246,7 +234,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
                   (_type3)_arg3, (_type4)_arg4, (_type5)_arg5);                \
     *ret = sys_##_name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5);              \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -264,7 +251,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
                   (_type3)_arg3, (_type4)_arg4, (_type5)_arg5, (_type6)_arg6); \
     *ret = sys_##_name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6);       \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -286,7 +272,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     *ret =                                                                     \
         sys_##_name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7);   \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -309,7 +294,6 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     *ret = sys_##_name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7, \
                        _arg8);                                                 \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
 
@@ -333,6 +317,5 @@ unsigned long sys_os_lib_throw(unsigned int exception);
     *ret = sys_##_name(_arg0, _arg1, _arg2, _arg3, _arg4, _arg5, _arg6, _arg7, \
                        _arg8, _arg9);                                          \
     print_ret(*ret);                                                           \
-    GET_RETID(SYSCALL_##_name##_ID_OUT);                                       \
     break;                                                                     \
   }
