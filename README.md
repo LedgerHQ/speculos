@@ -43,7 +43,7 @@ sudo apt install \
     git cmake gcc-arm-linux-gnueabihf libc6-dev-armhf-cross gdb-multiarch \
     python3-pyqt6 python3-construct python3-flask-restful python3-jsonschema \
     python3-mnemonic python3-pil python3-pyelftools python3-requests \
-    qemu-user-static libvncserver-dev
+    qemu-user-static libvncserver-dev libxcb-cursor0
 
 # from the root directory of the source repository
 pip install .
