@@ -530,6 +530,8 @@ class SeProxyHal(IODevice):
                 action = "press" if pressed else "release"
                 with open(finger_log, "a") as f:
                     f.write(f"{action},{x},{y},{time.monotonic():.4f}\n")
+            elif pressed:
+                self.logger.info(f"Finger press at: {x},{y}")
         packet += x.to_bytes(2, 'big')
         packet += y.to_bytes(2, 'big')
 
