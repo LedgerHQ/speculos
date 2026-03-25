@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Install Speculos"""
 import pathlib
+import shutil
 import tempfile
-from distutils.spawn import find_executable
 from setuptools.command.build_py import build_py as _build_py
 from setuptools import setup
 
@@ -19,7 +19,7 @@ class BuildSpeculos(_build_py):
     """
 
     def run(self):
-        if not find_executable("cmake"):
+        if not shutil.which("cmake"):
             raise RuntimeError("cmake is not found and is required to build Speculos")
 
         if not self.dry_run:
