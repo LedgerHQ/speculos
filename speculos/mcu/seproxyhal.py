@@ -521,11 +521,17 @@ class SeProxyHal(IODevice):
         '''Forward finger press/release from the GUI to the app.'''
 
         if pressed:
-            if self.verbose:
-                self.logger.info(f"Finger press at: {x},{y}")
             packet = SephTag.FINGER_EVENT_TOUCH.to_bytes(1, 'big')
         else:
             packet = SephTag.FINGER_EVENT_RELEASE.to_bytes(1, 'big')
+        if self.verbose:
+            finger_log = os.environ.get("SPECULOS_FINGER_LOG")
+            if finger_log:
+                action = "press" if pressed else "release"
+                with open(finger_log, "a") as f:
+                    f.write(f"{action},{x},{y},{time.monotonic():.4f}\n")
+            elif pressed:
+                self.logger.info(f"Finger press at: {x},{y}")
         packet += x.to_bytes(2, 'big')
         packet += y.to_bytes(2, 'big')
 
