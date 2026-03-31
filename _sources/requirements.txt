@@ -1,0 +1,6 @@
+sphinx<7
+# rtd-theme 2.0.0 needs sphinx<8, but is buggy with sphinx 7, so both are pinned
+# rtd-theme v3 is still beta but should work with newer sphinx versions
+sphinx-rtd-theme<=2
+myst-parser
+sphinxcontrib-rawfiles

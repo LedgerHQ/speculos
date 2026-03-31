@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker - for Mac M1 &mdash; Speculos  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Semihosting as an additional debug mechanism" href="semihosting.html" />
+    <link rel="prev" title="Docker" href="docker.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Speculos
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="api.html">REST API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="automation.html">Automation: press buttons automatically</a></li>
+<li class="toctree-l2"><a class="reference internal" href="clients.html">Clients: how to send APDUs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html">Debug: how to use GDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Docker - for Mac M1</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-build-the-docker-image">How to build the Docker image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-to-use-the-docker-image">How to use the Docker image</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#arguments">Arguments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#debug">Debug</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#docker-compose-setup">docker-compose setup</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="semihosting.html">Semihosting as an additional debug mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#bitcoin-testnet-app">Bitcoin Testnet app</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Speculos</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">User</a></li>
+      <li class="breadcrumb-item active">Docker - for Mac M1</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/macm1.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="docker-for-mac-m1">
+<h1>Docker - for Mac M1<a class="headerlink" href="#docker-for-mac-m1" title="Permalink to this heading"></a></h1>
+<section id="how-to-build-the-docker-image">
+<h2>How to build the Docker image<a class="headerlink" href="#how-to-build-the-docker-image" title="Permalink to this heading"></a></h2>
+<p>Edit the <code class="docutils literal notranslate"><span class="pre">Dockerfile</span></code> and perform the following modification</p>
+<p>Replace line #1</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">ghcr</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">ledgerhq</span><span class="o">/</span><span class="n">speculos</span><span class="o">-</span><span class="n">builder</span><span class="p">:</span><span class="n">latest</span> <span class="n">AS</span> <span class="n">builder</span>
+</pre></div>
+</div>
+<p>with</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FROM</span> <span class="n">ghcr</span><span class="o">.</span><span class="n">io</span><span class="o">/</span><span class="n">ledgerhq</span><span class="o">/</span><span class="n">speculos</span><span class="o">-</span><span class="n">builder</span><span class="o">-</span><span class="n">aarch64</span><span class="p">:</span><span class="n">latest</span> <span class="n">AS</span> <span class="n">builder</span>
+</pre></div>
+</div>
+<p>Then build the Docker container image with the following command:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>./<span class="w"> </span>-t<span class="w"> </span>speculos
+</pre></div>
+</div>
+<p>If the build is successful, you should have a docker image named speculos:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>image<span class="w"> </span>ls
+
+REPOSITORY<span class="w">                                  </span>TAG<span class="w">       </span>IMAGE<span class="w"> </span>ID<span class="w">       </span>CREATED<span class="w">          </span>SIZE
+speculos<span class="w">                                    </span>latest<span class="w">    </span>634c66a13457<span class="w">   </span><span class="m">15</span><span class="w"> </span>minutes<span class="w"> </span>ago<span class="w">   </span>593MB
+</pre></div>
+</div>
+</section>
+<section id="how-to-use-the-docker-image">
+<h2>How to use the Docker image<a class="headerlink" href="#how-to-use-the-docker-image" title="Permalink to this heading"></a></h2>
+<p>Run the image with a few arguments from the root of the speculos project:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span>/apps:/speculos/apps<span class="w"> </span>--publish<span class="w"> </span><span class="m">41000</span>:41000<span class="w"> </span>--publish<span class="w"> </span><span class="m">5001</span>:5001<span class="w"> </span>speculos<span class="w"> </span>--display<span class="w"> </span>headless<span class="w"> </span>--vnc-port<span class="w"> </span><span class="m">41000</span><span class="w"> </span>--api-port<span class="w"> </span><span class="m">5001</span><span class="w"> </span>apps/btc.elf
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>The app folder (here <code class="docutils literal notranslate"><span class="pre">$(pwd)/apps/</span></code>) is mounted thanks to <code class="docutils literal notranslate"><span class="pre">-v</span></code></p></li>
+<li><p>The VNC server is available from the host thanks to <code class="docutils literal notranslate"><span class="pre">--publish</span></code></p></li>
+</ul>
+<p>The image can obviously run an interactive shell with <code class="docutils literal notranslate"><span class="pre">--entrypoint</span> <span class="pre">/bin/bash</span></code>.</p>
+<section id="arguments">
+<h3>Arguments<a class="headerlink" href="#arguments" title="Permalink to this heading"></a></h3>
+<p>All the arguments which are supported by <code class="docutils literal notranslate"><span class="pre">speculos.py</span></code> can be passed on the Docker command-line. Don’t forget to publish container’s ports when required using <code class="docutils literal notranslate"><span class="pre">-p</span></code>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>/apps:/speculos/apps<span class="w"> </span><span class="se">\</span>
+-p<span class="w"> </span><span class="m">1234</span>:1234<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>-p<span class="w"> </span><span class="m">40000</span>:40000<span class="w"> </span>-p<span class="w"> </span><span class="m">41000</span>:41000<span class="w"> </span>speculos<span class="w"> </span><span class="se">\</span>
+--model<span class="w"> </span>nanos<span class="w"> </span>./apps/btc.elf<span class="w"> </span>--sdk<span class="w"> </span><span class="m">2</span>.0<span class="w"> </span>--seed<span class="w"> </span><span class="s2">&quot;secret&quot;</span><span class="w"> </span>--display<span class="w"> </span>headless<span class="w"> </span>--apdu-port<span class="w"> </span><span class="m">40000</span><span class="w"> </span>--vnc-port<span class="w"> </span><span class="m">41000</span>
+</pre></div>
+</div>
+</section>
+<section id="debug">
+<h3>Debug<a class="headerlink" href="#debug" title="Permalink to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>-it<span class="w"> </span>-v<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span><span class="nb">pwd</span><span class="k">)</span><span class="s2">&quot;</span>/apps:/speculos/apps<span class="w"> </span>-p<span class="w"> </span><span class="m">1234</span>:1234<span class="w"> </span>-p<span class="w"> </span><span class="m">5000</span>:5000<span class="w"> </span>-p<span class="w"> </span><span class="m">40000</span>:40000<span class="w"> </span>-p<span class="w"> </span><span class="m">41000</span>:41000<span class="w"> </span>--entrypoint<span class="w"> </span>/bin/bash<span class="w"> </span>speculos
+</pre></div>
+</div>
+</section>
+<section id="docker-compose-setup">
+<h3>docker-compose setup<a class="headerlink" href="#docker-compose-setup" title="Permalink to this heading"></a></h3>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>docker-compose<span class="w"> </span>up<span class="w"> </span><span class="o">[</span>-d<span class="o">]</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p>Default configuration is nanos / 2.0 / btc.elf / seed “secret”</p>
+</div></blockquote>
+<p>Edit <code class="docutils literal notranslate"><span class="pre">docker-compose.yml</span></code> to configure port forwarding and environment variables that fit your needs.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="docker.html" class="btn btn-neutral float-left" title="Docker" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="semihosting.html" class="btn btn-neutral float-right" title="Semihosting as an additional debug mechanism" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Ledger.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

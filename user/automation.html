@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automation: press buttons automatically &mdash; Speculos  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Clients: how to send APDUs" href="clients.html" />
+    <link rel="prev" title="REST API" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Speculos
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation/index.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">User</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="api.html">REST API</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Automation: press buttons automatically</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rules">Rules</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#actions">Actions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#conditions">Conditions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="clients.html">Clients: how to send APDUs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="debug.html">Debug: how to use GDB</a></li>
+<li class="toctree-l2"><a class="reference internal" href="docker.html">Docker</a></li>
+<li class="toctree-l2"><a class="reference internal" href="macm1.html">Docker - for Mac M1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="semihosting.html">Semihosting as an additional debug mechanism</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#bitcoin-testnet-app">Bitcoin Testnet app</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../dev/index.html">Developer documentation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Speculos</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">User</a></li>
+      <li class="breadcrumb-item active">Automation: press buttons automatically</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/user/automation.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="automation-press-buttons-automatically">
+<h1>Automation: press buttons automatically<a class="headerlink" href="#automation-press-buttons-automatically" title="Permalink to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">--automation</span></code> argument allows to apply a set of actions (eg. button press)
+when a condition is met (usually some text is displayed on the screen). It is
+especially useful to automate app testing.</p>
+<p>A JSON file is expected (either a JSON document or a path prefixed by <code class="docutils literal notranslate"><span class="pre">file:</span></code>).</p>
+<section id="rules">
+<h2>Rules<a class="headerlink" href="#rules" title="Permalink to this heading"></a></h2>
+<p>Rules are a list of rules. Each rule is a dictionary with the following valid
+keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">text</span></code>: expected text (string)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">regexp</span></code>: regular expression matching the expected text (string)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">x</span></code>: x-coordinate of the text (int)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">y</span></code>: y-coordinate of the text (int)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conditions</span></code>: list of conditions, described below</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actions</span></code>: list of actions, described below</p></li>
+</ul>
+<p>Each key is optional.</p>
+<section id="actions">
+<h3>Actions<a class="headerlink" href="#actions" title="Permalink to this heading"></a></h3>
+<p>4 actions are available:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;button&quot;,</span> <span class="pre">num,</span> <span class="pre">pressed</span> <span class="pre">]</span></code>: press (<code class="docutils literal notranslate"><span class="pre">pressed=true</span></code>) or release
+(<code class="docutils literal notranslate"><span class="pre">pressed=false</span></code>) a button (<code class="docutils literal notranslate"><span class="pre">num=1</span></code> for left, <code class="docutils literal notranslate"><span class="pre">num=2</span></code> for right)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;finger&quot;,</span> <span class="pre">x,</span> <span class="pre">y,</span> <span class="pre">touched</span> <span class="pre">]</span></code>: touch (<code class="docutils literal notranslate"><span class="pre">touched=true</span></code>) or release
+(<code class="docutils literal notranslate"><span class="pre">touched=false</span></code>) the screen (<code class="docutils literal notranslate"><span class="pre">x</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span></code> coordinates)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;setbool&quot;,</span> <span class="pre">varname,</span> <span class="pre">value</span> <span class="pre">]</span></code>: set a variable whose name is <code class="docutils literal notranslate"><span class="pre">varname</span></code> to a
+boolean value (either <code class="docutils literal notranslate"><span class="pre">true</span></code> or <code class="docutils literal notranslate"><span class="pre">false</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[</span> <span class="pre">&quot;exit&quot;</span> <span class="pre">]</span></code>: exit speculos</p></li>
+</ul>
+<p>The actions of a rule are executed if and only if each rule option matches.
+These actions are applied successively according to the ordering of the <code class="docutils literal notranslate"><span class="pre">actions</span></code>
+list.</p>
+<p>The actions of the first rule matched are applied. Further matching rules are
+discarded (it allows to implement a <em>default</em> rule).</p>
+</section>
+<section id="conditions">
+<h3>Conditions<a class="headerlink" href="#conditions" title="Permalink to this heading"></a></h3>
+<p>Conditions are a list of variables of tuple <code class="docutils literal notranslate"><span class="pre">(varname,</span> <span class="pre">value)</span></code> where <code class="docutils literal notranslate"><span class="pre">varname</span></code>
+is a variable name and <code class="docutils literal notranslate"><span class="pre">value</span></code> a boolean. These variables are set by the
+<code class="docutils literal notranslate"><span class="pre">setbool</span></code> action and by default an unset variable is equal to <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p>
+<p>If a non-empty <code class="docutils literal notranslate"><span class="pre">conditions</span></code> list is specified in the rule, each condition should
+be met (as well as the other options) to allow the actions to be applied.</p>
+</section>
+</section>
+<section id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this heading"></a></h2>
+<p>As an example, one can consider the following automation JSON file:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;rules&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Application&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;x&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">35</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;y&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;conditions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;seen&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">]</span>
+<span class="w">            </span><span class="p">],</span>
+<span class="w">            </span><span class="nt">&quot;actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;button&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">],</span>
+<span class="w">                </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;button&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="w"> </span><span class="p">],</span>
+<span class="w">                </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;setbool&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;seen&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">]</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;regexp&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;\\d+&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">&quot;actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;exit&quot;</span><span class="w"> </span><span class="p">]</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">&quot;actions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="w"> </span><span class="s2">&quot;setbool&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;default_match&quot;</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">]</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The first rule matches only if:</p>
+<ul class="simple">
+<li><p>the text displayed at <code class="docutils literal notranslate"><span class="pre">(35,</span> <span class="pre">3)</span></code> is <code class="docutils literal notranslate"><span class="pre">Application</span></code></p></li>
+<li><p>this rule was never matched before (because the variable <code class="docutils literal notranslate"><span class="pre">seen</span></code> is set to
+<code class="docutils literal notranslate"><span class="pre">true</span></code> in the <code class="docutils literal notranslate"><span class="pre">actions</span></code> and expected to be <code class="docutils literal notranslate"><span class="pre">false</span></code> in the <code class="docutils literal notranslate"><span class="pre">conditions</span></code>)</p></li>
+</ul>
+<p>If the first rule is matched, the right button (<code class="docutils literal notranslate"><span class="pre">2</span></code>) is pressed then released
+(<code class="docutils literal notranslate"><span class="pre">true</span></code> then <code class="docutils literal notranslate"><span class="pre">false</span></code>) and the variable <code class="docutils literal notranslate"><span class="pre">seen</span></code> is set to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<p>The second rules matches if the text is a number  (regular expression <code class="docutils literal notranslate"><span class="pre">\d+</span></code>)
+displayed at any coordinates (no <code class="docutils literal notranslate"><span class="pre">x</span></code> nor <code class="docutils literal notranslate"><span class="pre">y</span></code> specified). The action <code class="docutils literal notranslate"><span class="pre">exit</span></code> makes
+speculos exit without any confirmation.</p>
+<p>The last rule is a default rule (there are no options). If no previous rule is
+matched, the variable <code class="docutils literal notranslate"><span class="pre">default_match</span></code> is set to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="api.html" class="btn btn-neutral float-left" title="REST API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="clients.html" class="btn btn-neutral float-right" title="Clients: how to send APDUs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Ledger.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
