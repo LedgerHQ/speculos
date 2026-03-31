@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Install Python dependencies
@@ -31,7 +31,7 @@ jobs:
       - name: Generate the documentation
         run: (cd docs && make html)
       - name: Upload documentation bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: documentation
           path: docs/build/html/
@@ -43,7 +43,7 @@ jobs:
     if: github.event_name == 'push'  && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     steps:
       - name: Download documentation bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       - name: Deploy documentation on pages
         uses: peaceiris/actions-gh-pages@v4
         with:
