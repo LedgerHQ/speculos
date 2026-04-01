@@ -68,6 +68,8 @@ add_library(emu
         bolos/hdkey/src/hdkey.c
         bolos/hdkey/src/hdkey_validate.c
         bolos/hdkey/src/hdkey_zip32.c
+        bolos/hdkey/src/hdkey_bip32.c
+        bolos/hdkey/src/hdkey_bls12377.c
         emulate.c
         environment.c
         svc.c)

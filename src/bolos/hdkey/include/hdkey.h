@@ -17,7 +17,6 @@
 /*********************
  *      DEFINES
  *********************/
-#define HDKEY_BIP32_WILDCARD_VALUE (0x7fffffff)
 
 /**********************
  *      TYPEDEFS

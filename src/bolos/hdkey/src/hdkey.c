@@ -8,6 +8,7 @@
  *      INCLUDES
  *********************/
 #include "hdkey.h"
+#include "hdkey_bls12377.h"
 #include "hdkey_validate.h"
 #include "hdkey_zip32.h"
 #include "os_hdkey.h"
@@ -50,6 +51,9 @@ os_result_t HDKEY_derive(HDKEY_params_t *params)
   }
 
   switch (params->mode) {
+  case HDKEY_DERIVE_MODE_BLS12377_ALEO:
+    os_error = HDKEY_BLS12377_derive(params);
+    break;
   case HDKEY_DERIVE_MODE_ZIP32_SAPLING:
     os_error = HDKEY_ZIP32_sapling_derive(params);
     break;

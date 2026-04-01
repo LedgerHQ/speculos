@@ -29,18 +29,21 @@
 #define cx_ecfp_init_private_key  sys_cx_ecfp_init_private_key
 #define cx_ecdsa_init_private_key cx_ecfp_init_private_key
 
-static uint8_t const BIP32_SECP_SEED[] = { 'B', 'i', 't', 'c', 'o', 'i',
+uint8_t const BIP32_SECP_SEED[] = { 'B', 'i', 't', 'c', 'o', 'i',
                                            'n', ' ', 's', 'e', 'e', 'd' };
 
-static uint8_t const BIP32_NIST_SEED[] = { 'N', 'i', 's', 't', '2', '5', '6',
+uint8_t const BIP32_NIST_SEED[] = { 'N', 'i', 's', 't', '2', '5', '6',
                                            'p', '1', ' ', 's', 'e', 'e', 'd' };
 
-static uint8_t const BIP32_ED_SEED[] = { 'e', 'd', '2', '5', '5', '1',
+uint8_t const BIP32_ED_SEED[] = { 'e', 'd', '2', '5', '5', '1',
                                          '9', ' ', 's', 'e', 'e', 'd' };
 
-static uint8_t const SLIP21_SEED[] = { 'S', 'y', 'm', 'm', 'e', 't',
+uint8_t const SLIP21_SEED[] = { 'S', 'y', 'm', 'm', 'e', 't',
                                        'r', 'i', 'c', ' ', 'k', 'e',
                                        'y', ' ', 's', 'e', 'e', 'd' };
+
+uint8_t const BLS12_377_SEED[]
+    = {'b', 'l', 's', '1', '2', '_', '3', '7', '7', ' ', 's', 'e', 'e', 'd'};
 
 static uint32_t sys_os_perso_derive_node_with_seed_key_internal(
     uint32_t mode, cx_curve_t curve, const uint32_t *path, uint32_t pathLength,
