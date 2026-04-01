@@ -316,10 +316,42 @@ uint32_t U4BE(const uint8_t *buf, size_t off)
          (buf[off + 2] << 8) | buf[off + 3];
 }
 
+void U4LE_ENCODE(uint8_t *buf, size_t off, uint32_t value)
+{
+  buf[off + 3] = (value >> 24) & 0xFF;
+  buf[off + 2] = (value >> 16) & 0xFF;
+  buf[off + 1] = (value >> 8) & 0xFF;
+  buf[off + 0] = value & 0xFF;
+}
+
 void cx_memxor(uint8_t *buf1, const uint8_t *buf2, size_t len)
 {
   size_t i;
   for (i = 0; i < len; i++) {
     buf1[i] ^= buf2[i];
+  }
+}
+
+/**
+ * @brief Reverse byte order in a buffer.
+ * @param[in, out] buffer Pointer to the buffer to reverse.
+ * @param[in] len Length of the buffer.
+ */
+void cx_swap_bytes(uint8_t *buffer, size_t len)
+{
+  uint8_t t;
+  size_t i = 0;
+  size_t j = len - 1;
+
+  if (buffer == NULL || len <= 1) {
+    return;
+  }
+
+  while (i < j) {
+    t = buffer[i];
+    buffer[i] = buffer[j];
+    buffer[j] = t;
+    i++;
+    j--;
   }
 }

@@ -64,6 +64,10 @@ add_library(emu
         bolos/io/sdk/io/src/os_io_seph_ux.c
         bolos/io/sdk/io/src/os_io.c
         bolos/io/mock/src/mock.c
+        bolos/os_hdkey.c
+        bolos/hdkey/src/hdkey.c
+        bolos/hdkey/src/hdkey_validate.c
+        bolos/hdkey/src/hdkey_zip32.c
         emulate.c
         environment.c
         svc.c)
@@ -75,7 +79,8 @@ bolos/io/sdk/io/include
 bolos/io/sdk/protocol/include
 bolos/io/sdk/lib_stusb/include
 bolos/io/sdk/lib_nfc/include
-bolos)
+bolos/
+bolos/hdkey/include)
 
 add_compile_definitions(emu
 HAVE_BOLOS=1
@@ -107,4 +112,3 @@ else ()
   message(FATAL_ERROR "Unable to identify the compiler!")
 endif ()
 target_link_libraries(launcher PRIVATE emu)
-

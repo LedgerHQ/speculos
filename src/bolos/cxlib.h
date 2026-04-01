@@ -27,6 +27,16 @@
     }                                                                          \
   } while (0)
 
+#define ERROR_CHECK(func, success, ret)                                        \
+  do {                                                                         \
+    error = func;                                                              \
+    if (error != success) {                                                    \
+      error = ret;                                                             \
+      goto end;                                                                \
+    }                                                                          \
+    error = CX_OK;                                                             \
+  } while (0)
+
 #define CX_OK 0x00000000
 
 #define CX_CARRY 0xFFFFFF21

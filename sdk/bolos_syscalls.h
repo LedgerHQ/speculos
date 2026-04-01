@@ -283,6 +283,8 @@
 
 #define SYSCALL_nbgl_get_font_ID_IN                                   0x01fa000c
 
+#define SYSCALL_hdkey_derive_ID_IN 0x0a000002
+
 /**********************
  *      TYPEDEFS
  **********************/
