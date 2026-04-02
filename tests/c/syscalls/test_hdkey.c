@@ -13,6 +13,7 @@
 #include "environment.h"
 #include "bolos/hdkey/include/hdkey.h"
 #include "bolos/hdkey/include/hdkey_zip32.h"
+#include "bolos/hdkey/include/hdkey_bls12377.h"
 
 #define ARRAYLEN(array) (sizeof(array) / sizeof(array[0]))
 
@@ -191,12 +192,61 @@ static void test_HDKEY_derive_zip32_registered(void **state)
     assert_memory_equal(chain, cc, sizeof(cc));
 }
 
+/**
+ * @brief Test function for HDKEY_derive with BLS12-377.
+ */
+static void test_HDKEY_derive_bls12377(void **state)
+{
+    (void) state; /* unused */
+    // Test vector:
+    // Root seed:
+    // fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542
+    // {
+    //     path: "m/0'/2147483647'",
+    //     chainCode:
+    //         'c0cbe8cce5b29f2a787e1f77915af2c2e71fe65d4dcb7ad797b3584fcb42bcb5',
+    //     seed: '2e6695fe0bd1e628215e5f8c0aa6b374233c6fa06019057d6d786ae66d937ef5'
+    // },
+
+    HDKEY_params_t     params;
+    uint32_t           path[]          = {0x80000000, 0xffffffff};
+    uint8_t            private_key[32] = {0};
+    uint8_t            chain[32]       = {0};
+    const char *seed = "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542";
+    uint8_t expected_key[]   = {0x2e, 0x66, 0x95, 0xfe, 0x0b, 0xd1, 0xe6, 0x28, 0x21, 0x5e, 0x5f,
+                                0x8c, 0x0a, 0xa6, 0xb3, 0x74, 0x23, 0x3c, 0x6f, 0xa0, 0x60, 0x19,
+                                0x05, 0x7d, 0x6d, 0x78, 0x6a, 0xe6, 0x6d, 0x93, 0x7e, 0xf5};
+    uint8_t expected_chain[] = {0xc0, 0xcb, 0xe8, 0xcc, 0xe5, 0xb2, 0x9f, 0x2a, 0x78, 0x7e, 0x1f,
+                                0x77, 0x91, 0x5a, 0xf2, 0xc2, 0xe7, 0x1f, 0xe6, 0x5d, 0x4d, 0xcb,
+                                0x7a, 0xd7, 0x97, 0xb3, 0x58, 0x4f, 0xcb, 0x42, 0xbc, 0xb5};
+
+    memset(&params, 0, sizeof(HDKEY_params_t));
+
+    // Set up context
+    setup_context(&params,
+                  BOLOS_TRUE,
+                  HDKEY_DERIVE_MODE_BLS12377_ALEO,
+                  CX_CURVE_BLS12_377_G1,
+                  path,
+                  ARRAYLEN(path));
+    // Set up result pointers
+    setup_context_result(&params, private_key, sizeof(private_key), chain, sizeof(chain));
+    // Init seed
+    assert_int_equal(setenv("SPECULOS_SEED", seed, 1), 0);
+    init_environment();
+
+    assert_int_equal(HDKEY_derive(&params), OS_SUCCESS);
+    assert_memory_equal(expected_key, private_key, HDKEY_BLS12377_KEY_LEN);
+    assert_memory_equal(expected_chain, chain, HDKEY_BLS12377_KEY_LEN);
+}
+
 int main(void)
 {
   const struct CMUnitTest tests[] = {
     cmocka_unit_test_setup(test_HDKEY_derive_zip32_sapling, test_setup),
     cmocka_unit_test_setup(test_HDKEY_derive_zip32_orchard, test_setup),
     cmocka_unit_test_setup(test_HDKEY_derive_zip32_registered, test_setup),
+    cmocka_unit_test_setup(test_HDKEY_derive_bls12377, NULL),
   };
   return cmocka_run_group_tests(tests, NULL, NULL);
 }
