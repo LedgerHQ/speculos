@@ -15,7 +15,8 @@
  *      DEFINES
  *********************/
 /**
- * @brief BLS12377 key length in bytes. Child key length and chain code length are equal
+ * @brief BLS12377 key length in bytes. Child key length and chain code length
+ * are equal
  */
 #define HDKEY_BLS12377_KEY_LEN (CX_SHA512_SIZE / 2)
 

@@ -9,10 +9,10 @@
 /*********************
  *      INCLUDES
  *********************/
-#include <stddef.h>
-#include <stdint.h>
 #include "cxlib.h"
 #include "os_types.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /*********************
  *      DEFINES

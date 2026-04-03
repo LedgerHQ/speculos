@@ -1,9 +1,9 @@
 #define _SDK_2_0_
 
-#include <string.h>
+#include "os_hdkey.h"
 #include "cxlib.h"
 #include "hdkey.h"
-#include "os_hdkey.h"
+#include <string.h>
 
 bolos_err_t sys_hdkey_derive(HDKEY_derive_mode_t derivation_mode,
                              cx_curve_t curve, const uint32_t *path,

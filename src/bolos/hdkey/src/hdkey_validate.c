@@ -8,12 +8,12 @@
 /*********************
  *      INCLUDES
  *********************/
+#include "hdkey_validate.h"
 #include "appflags.h"
 #include "cx.h"
 #include "cx_utils.h"
 #include "hdkey.h"
 #include "hdkey_bip32.h"
-#include "hdkey_validate.h"
 #include "launcher.h"
 #include "os_bip32.h"
 #include "os_hdkey.h"

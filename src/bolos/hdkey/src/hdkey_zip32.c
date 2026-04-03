@@ -8,14 +8,14 @@
 /*********************
  *      INCLUDES
  *********************/
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
+#include "hdkey_zip32.h"
 #include "cx_utils.h"
 #include "cxlib.h"
 #include "environment.h"
 #include "hdkey.h"
-#include "hdkey_zip32.h"
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 /*********************
  *      DEFINES
@@ -502,13 +502,13 @@ os_result_t HDKEY_ZIP32_sapling_derive(HDKEY_params_t *params)
     goto end;
   }
 
-  if ((os_error =
-           hdkey_zip32_get_seed(tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
+  if ((os_error = hdkey_zip32_get_seed(tmp_seed, sizeof(tmp_seed))) !=
+      OS_SUCCESS) {
     goto end;
   }
 
   if ((os_error = HDKEY_ZIP32_sapling_master_key(
-                      &parent, tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
+           &parent, tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
     goto end;
   }
   // Clear as it's not needed anymore
@@ -638,13 +638,13 @@ os_result_t HDKEY_ZIP32_orchard_derive(HDKEY_params_t *params)
     goto end;
   }
 
-  if ((os_error =
-           hdkey_zip32_get_seed(tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
+  if ((os_error = hdkey_zip32_get_seed(tmp_seed, sizeof(tmp_seed))) !=
+      OS_SUCCESS) {
     goto end;
   }
 
   if ((os_error = HDKEY_ZIP32_orchard_master_key(
-                      &parent, tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
+           &parent, tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
     goto end;
   }
   // Clear as it's not needed anymore
@@ -809,8 +809,8 @@ os_result_t HDKEY_ZIP32_registered_derive(HDKEY_params_t *params)
     goto end;
   }
 
-  if ((os_error =
-           hdkey_zip32_get_seed(tmp_seed, sizeof(tmp_seed))) != OS_SUCCESS) {
+  if ((os_error = hdkey_zip32_get_seed(tmp_seed, sizeof(tmp_seed))) !=
+      OS_SUCCESS) {
     goto end;
   }
 
