@@ -112,4 +112,6 @@ void U2BE_ENCODE(uint8_t *buf, size_t off, uint32_t value);
 void U4BE_ENCODE(uint8_t *buf, size_t off, uint32_t value);
 uint16_t U2BE(const uint8_t *buf, size_t off);
 uint32_t U4BE(const uint8_t *buf, size_t off);
+void U4LE_ENCODE(uint8_t *buf, size_t off, uint32_t value);
 void cx_memxor(uint8_t *buf1, const uint8_t *buf2, size_t len);
+void cx_swap_bytes(uint8_t *buffer, size_t len);

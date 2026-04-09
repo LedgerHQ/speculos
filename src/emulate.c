@@ -15,6 +15,8 @@
 
 #include "bolos_syscalls.h"
 
+#include "bolos/os_hdkey.h"
+
 #define SYSCALL_HANDLED     1
 #define SYSCALL_NOT_HANDLED 0
 
@@ -683,6 +685,7 @@ static int emulate_syscall_os(unsigned long syscall,
 
     SYSCALL1(os_stack_operations, "(%u)",
               unsigned char, mode)
+
   /* clang-format on */
   default:
     return SYSCALL_NOT_HANDLED;
@@ -790,6 +793,18 @@ static int emulate_syscall_os_perso(unsigned long syscall,
     SYSCALL2(os_perso_get_master_key_identifier, "(%p, %u)",
              uint8_t *, identifier,
              size_t, identifier_length);
+
+    SYSCALL10(hdkey_derive, "(%u, %u, %p, %u, %p, %u, %p, %u, %p, %u)",
+             HDKEY_derive_mode_t, derivation_mode,
+             cx_curve_t, curve,
+             uint32_t *, path,
+             size_t, path_len,
+             uint8_t *, private_key,
+             size_t, private_key_len,
+             uint8_t *, chain_code,
+             size_t, chain_code_len,
+             uint8_t *, seed,
+             size_t, seed_len)
 
   /* clang-format on */
   default:

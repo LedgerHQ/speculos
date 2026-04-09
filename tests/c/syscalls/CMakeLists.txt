@@ -22,9 +22,10 @@ add_executable(test_syscall_ripemd test_ripemd.c ../utils.c ../mocks.c)
 add_executable(test_syscall_sha2 test_sha2.c nist_cavp.c ../utils.c ../mocks.c)
 add_executable(test_syscall_sha3 test_sha3.c nist_cavp.c ../utils.c ../mocks.c)
 add_executable(test_syscall_slip21 test_slip21.c ../mocks.c)
+add_executable(test_syscall_hdkey test_hdkey.c ../mocks.c)
 
 add_test(NAME hello COMMAND qemu-arm-static hello WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 foreach(target aes bip32 blake2 bls bn crc16 ec ecpoint ecdh ecdsa eddsa endorsement hmac
-               math os_global_pin_is_validated rfc6979 ripemd sha2 sha3 slip21 eip2333)
+               math os_global_pin_is_validated rfc6979 ripemd sha2 sha3 slip21 eip2333 hdkey)
   add_test(NAME test_syscall_${target} COMMAND qemu-arm-static test_syscall_${target} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endforeach()
