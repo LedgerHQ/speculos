@@ -158,7 +158,8 @@ jobs:
             $PYTHON_PATH -m pip install pytest &&
             $PYTHON_PATH -m pip install . &&
             make -C build/ test &&
-            $PYTHON_PATH -m pytest
+            $PYTHON_PATH -m pytest &&
+            chown -R $(id -u):$(id -g) ./dist
           "
 
   deploy:
