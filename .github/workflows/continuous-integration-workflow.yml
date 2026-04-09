@@ -158,14 +158,13 @@ jobs:
             $PYTHON_PATH -m pip install pytest &&
             $PYTHON_PATH -m pip install . &&
             make -C build/ test &&
-            $PYTHON_PATH -m pytest &&
-            chown -R $(id -u):$(id -g) ./dist
+            $PYTHON_PATH -m pytest
           "
 
   deploy:
     name: Build and deploy speculos package
     needs: build
-    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_pypi_deployment.yml@v1
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_pypi_deployment.yml@y333/fix_permission
     with:
       package_name: speculos
       jfrog_deployment: true
