@@ -594,9 +594,8 @@ static int emulate_syscall_os(unsigned long syscall,
                               const unsigned long *parameters,
                               unsigned long *ret, bool verbose, int api_level)
 {
-  // code to remove when API LEVEL < 26 is not supported anymore
-  if ((api_level < 26) &&
-      (syscall == SYSCALL_os_registry_get_current_app_tag_ID_IN)) {
+  (void)api_level;
+  if (syscall == SYSCALL_os_registry_get_current_app_tag_ID_IN) {
     unsigned int tag = (unsigned int)parameters[0];
     uint8_t *buffer = (uint8_t *)parameters[1];
     size_t length = parameters[2];
