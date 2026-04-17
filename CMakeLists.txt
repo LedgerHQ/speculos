@@ -93,8 +93,8 @@ else()
 
   ExternalProject_Add(
     blst
-    URL https://github.com/supranational/blst/archive/d0bc304a132df43856d8302e15dabee97d3d8a95.tar.gz
-    URL_HASH SHA256=70127766f8031cde3df4224d88f7b33dec6c33fc7ac6b8e4308d4f7d0bdffd7b
+    URL https://github.com/supranational/blst/archive/e7f90de551e8df682f3cc99067d204d8b90d27ad.tar.gz
+    URL_HASH SHA256=d0dd93537bcfcb68375826597835908dfc6b9bf0b31ceadde249e038e630db74
     CONFIGURE_COMMAND ""
     BUILD_COMMAND sh build.sh CC=arm-linux-gnueabihf-gcc
     INSTALL_COMMAND cp ${CMAKE_CURRENT_BINARY_DIR}/blst-prefix/src/blst/libblst.a ${INSTALL_DIR}/lib/
