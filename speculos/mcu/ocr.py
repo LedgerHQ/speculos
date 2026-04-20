@@ -211,6 +211,12 @@ class OCR:
         # create a new TextEvent if there are no events yet or if there is a new line
         self.events.append(TextEvent(char, x, y, w, h, False))
 
+    def add_text(self, text: str) -> None:
+        """
+        Add a line of text as a TextEvent, to be sent to the client
+        """
+        self.events.append(TextEvent(text, 0, 0, 0, 0, False))
+
     def analyze_bitmap(self, data: bytes, use_bagl: bool) -> None:
         """
         data contain information about the latest displayed bitmap.
