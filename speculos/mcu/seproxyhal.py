@@ -16,6 +16,7 @@ from .display import DisplayNotifier, IODevice
 from .nbgl import NBGL
 from .ocr import OCR
 from .readerror import ReadError
+from .nbgl_serialize import deserialize_nbgl_bytes
 
 
 class SephTag(IntEnum):
@@ -64,6 +65,7 @@ class SephTag(IntEnum):
     NBGL_DRAW_IMAGE = 0xFD
     NBGL_DRAW_IMAGE_FILE = 0xFE
     NBGL_DRAW_IMAGE_RLE = 0xFF
+    NBGL_SERIALIZED_EVENT = 0x5C
 
 
 TICKER_DELAY = 0.1
@@ -263,6 +265,7 @@ class SeProxyHal(IODevice):
                  verbose: bool = False,
                  sound: bool = False):
         self._socket = sock
+        self.model = model
         self.logger = logging.getLogger("seproxyhal")
         self.printf_queue = ''
         self.automation = automation
@@ -270,6 +273,7 @@ class SeProxyHal(IODevice):
         self.events: List[TextEvent] = []
         self.need_nbgl_refresh = False
         self.is_last_draw_nbgl = False
+        self.is_nbgl_serialized_enabled = False
         self.verbose = verbose
         self.sound = sound
 
@@ -464,6 +468,24 @@ class SeProxyHal(IODevice):
                 else:
                     self.logger.warning(f"Unknown tune id: {tune_id}")
 
+        elif tag == SephTag.NBGL_SERIALIZED_EVENT:
+            self.is_nbgl_serialized_enabled = True
+            # Deserialize NBGL event bytes
+            is_stax = (self.model == 'stax')
+            event = deserialize_nbgl_bytes(is_stax, data)
+
+            # Extract text from NBGL event
+            d = event.to_json_dict()
+            if 'obj' in d:
+                content = d['obj']['content']
+                text = content.get('text', '')
+                if len(text) > 0:
+                    # Text may be split in lines
+                    lines = text.split('\n')
+                    # Add line to be sent as TextEvent to Ragger
+                    for line in lines:
+                        self.ocr.add_text(line)
+
         elif tag == SephTag.NBGL_DRAW_RECT:
             assert isinstance(screen.display.nbgl_gl, NBGL)
             self.events += screen.display.nbgl_gl.hal_draw_rect(data)
@@ -486,12 +508,18 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.NBGL_DRAW_IMAGE:
             assert isinstance(screen.display.nbgl_gl, NBGL)
-            self.ocr.analyze_bitmap(data, False)
+            # Do not analyze raw image,
+            # if the text was already sent through NBGL serialized events
+            if self.is_nbgl_serialized_enabled is False:
+                self.ocr.analyze_bitmap(data, False)
             screen.display.nbgl_gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
             assert isinstance(screen.display.nbgl_gl, NBGL)
-            self.ocr.analyze_bitmap(data, False)
+            # Do not analyze raw image,
+            # if the text was already sent through NBGL serialized events
+            if self.is_nbgl_serialized_enabled is False:
+                self.ocr.analyze_bitmap(data, False)
             screen.display.nbgl_gl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
