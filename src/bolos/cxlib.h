@@ -152,6 +152,7 @@ cx_err_t cx_mpi_gf2_n_mul(cx_mpi_t *r, const cx_mpi_t *a, const cx_mpi_t *b,
                           const cx_mpi_t *n, const cx_mpi_t *h);
 void cx_mpi_reverse(cx_mpi_t *x, uint32_t nbytes);
 void cx_mpi_swap(cx_mpi_t *a, cx_mpi_t *b, const int c);
+cx_err_t cx_mpi_check_memory_full(cx_mpi_t *x);
 
 cx_err_t cx_mpi_ecpoint_normalize(cx_mpi_ecpoint_t *P);
 ;
@@ -255,6 +256,8 @@ cx_err_t cx_montgomery_recover_y(cx_mpi_ecpoint_t *P, uint32_t sign);
 
 cx_err_t cx_montgomery_mul_coordinate(cx_curve_t curve, cx_mpi_t *u_coordinate,
                                       const uint8_t *scalar, size_t scalar_len);
+cx_err_t cx_montgomery_is_point_on_curve(const cx_mpi_ecpoint_t *P,
+                                         bool *is_on_curve);
 
 // cx_ecpoint.c
 cx_err_t cx_mpi_ecpoint_from_ecpoint(cx_mpi_ecpoint_t *P,

@@ -703,6 +703,12 @@ cx_err_t sys_cx_ecpoint_is_on_curve(const cx_ecpoint_t *ec_P, bool *is_on_curve)
 
   CX_CHECK(cx_mpi_ecpoint_from_ecpoint(&P, ec_P));
 
+  if ((ec_P->curve == CX_CURVE_Curve25519) ||
+      (ec_P->curve == CX_CURVE_Curve448)) {
+    error = cx_montgomery_is_point_on_curve(&P, is_on_curve);
+    goto end;
+  }
+
   if ((nid = cx_nid_from_curve(ec_P->curve)) >= 0) {
     group = cx_group_from_nid_and_curve(nid, ec_P->curve);
   }

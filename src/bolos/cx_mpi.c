@@ -1202,3 +1202,11 @@ void cx_mpi_swap(cx_mpi_t *a, cx_mpi_t *b, const int c)
     BN_swap(a, b);
   }
 }
+
+cx_err_t cx_mpi_check_memory_full(cx_mpi_t *x)
+{
+  if (x == NULL) {
+    return CX_MEMORY_FULL;
+  }
+  return CX_OK;
+}

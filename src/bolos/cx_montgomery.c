@@ -252,3 +252,74 @@ end:
 
   return error;
 }
+
+cx_err_t cx_montgomery_is_point_on_curve(const cx_mpi_ecpoint_t *P,
+                                         bool *is_on_curve)
+{
+  cx_err_t error = CX_INTERNAL_ERROR;
+  cx_mpi_t *n, *a, *b, *x, *y, *r1, *r2, *r3;
+  cx_bn_t bn_n, bn_a, bn_b, bn_x, bn_y, bn_r1, bn_r2, bn_r3;
+  uint32_t sz;
+  const cx_curve_montgomery_t *domain;
+
+  domain = (const cx_curve_montgomery_t *)cx_ecdomain(P->curve);
+  if (domain == NULL) {
+    return CX_INVALID_PARAMETER;
+  }
+  if (cx_mpi_cmp_u32(P->z, 0) == 0) {
+    return CX_EC_INFINITE_POINT;
+  }
+  sz = domain->length;
+  bn_n = (cx_bn_t)(-1);
+  bn_a = (cx_bn_t)(-1);
+  bn_b = (cx_bn_t)(-1);
+  bn_x = (cx_bn_t)(-1);
+  bn_y = (cx_bn_t)(-1);
+  bn_r1 = (cx_bn_t)(-1);
+  bn_r2 = (cx_bn_t)(-1);
+  bn_r3 = (cx_bn_t)(-1);
+
+  n = cx_mpi_alloc_init(&bn_n, sz, domain->p, sz);
+  CX_CHECK(cx_mpi_check_memory_full(n));
+  a = cx_mpi_alloc(&bn_a, sz);
+  CX_CHECK(cx_mpi_check_memory_full(a));
+  b = cx_mpi_alloc(&bn_b, sz);
+  CX_CHECK(cx_mpi_check_memory_full(b));
+  x = cx_mpi_alloc(&bn_x, sz);
+  CX_CHECK(cx_mpi_check_memory_full(x));
+  y = cx_mpi_alloc(&bn_y, sz);
+  CX_CHECK(cx_mpi_check_memory_full(y));
+  r1 = cx_mpi_alloc(&bn_r1, sz);
+  CX_CHECK(cx_mpi_check_memory_full(r1));
+  r2 = cx_mpi_alloc(&bn_r2, sz);
+  CX_CHECK(cx_mpi_check_memory_full(r2));
+  r3 = cx_mpi_alloc(&bn_r3, sz);
+  CX_CHECK(cx_mpi_check_memory_full(r3));
+
+  CX_CHECK(cx_mpi_init(a, domain->a, sz));
+  CX_CHECK(cx_mpi_init(b, domain->b, sz));
+  CX_CHECK(cx_mpi_copy(x, P->x));
+  CX_CHECK(cx_mpi_copy(y, P->y));
+  CX_CHECK(cx_mpi_mod_mul(r1, x, x, n));
+  CX_CHECK(cx_mpi_mod_mul(r2, y, y, n));
+  CX_CHECK(cx_mpi_mod_mul(r3, r2, b, n)); // r3 = b*r2 = b*y^2
+  CX_CHECK(cx_mpi_mod_mul(b, r1, x, n));  // b = r1*x = x^2*x = x^3
+  CX_CHECK(cx_mpi_mod_mul(r2, r1, a, n)); // r2 = a*r1 = a*x^2
+  CX_CHECK(cx_mpi_mod_add(a, r2, x, n));  // a = r2+x = a*x^2+x
+  CX_CHECK(cx_mpi_mod_add(r2, a, b, n));  // r2 = b+a = x^3+a*x^2+x
+  CX_CHECK(cx_mpi_mod_sub(a, r2, r3, n));
+
+  *is_on_curve = (cx_mpi_cmp_u32(a, 0) == 0); // b*y^2 == x^3+a*x^2+x
+
+end:
+  cx_mpi_destroy(&bn_n);
+  cx_mpi_destroy(&bn_a);
+  cx_mpi_destroy(&bn_b);
+  cx_mpi_destroy(&bn_x);
+  cx_mpi_destroy(&bn_y);
+  cx_mpi_destroy(&bn_r1);
+  cx_mpi_destroy(&bn_r2);
+  cx_mpi_destroy(&bn_r3);
+
+  return error;
+}
