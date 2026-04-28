@@ -173,10 +173,13 @@ class FrameBuffer:
         return self._public_screenshot_value
 
     def get_public_screenshot(self) -> bytes:
-        if self.model == "stax" or self.model == "flex":
-            # On Stax/Flex, we only make the screenshot public on the RESTFUL api when it is consistent with events
-            # On top of this, take_screenshot is time consuming on stax/flex, so we'll do as few as possible
-            # We return the value calculated last time update_public_screenshot was called
+        if self.model in ("stax", "flex", "apex_p"):
+            # On Stax/Flex/Apex+, we only make the screenshot public on the RESTFUL api when it is
+            # consistent with events (i.e. right after an NBGL refresh + GENERAL_STATUS), so that
+            # clients like ragger never observe a frame newer than the event they just received.
+            # On top of this, take_screenshot is time consuming on these models, so we'll do as
+            # few as possible. We return the value calculated last time update_public_screenshot
+            # was called.
             return self.public_screenshot_value
         # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
         # So we publish the raw current content every time. It's ok as take_screenshot is fast on Nano
