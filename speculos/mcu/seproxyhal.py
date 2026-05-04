@@ -479,6 +479,10 @@ class SeProxyHal(IODevice):
             if 'obj' in d:
                 content = d['obj']['content']
                 text = content.get('text', '')
+
+                # Delete all content after page break ('\f')
+                text = text.split('\f')[0]
+
                 if len(text) > 0:
                     # Text may be split in lines
                     lines = text.split('\n')
