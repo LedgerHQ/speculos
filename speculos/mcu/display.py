@@ -13,6 +13,7 @@ from socket import socket
 from threading import Lock
 from typing import Any, Dict, IO, List, Optional, Tuple, Union
 
+from ledgered.devices import Devices
 from speculos.observer import TextEvent
 from .struct import DisplayArgs, MODELS, Pixel, ServerArgs
 
@@ -173,7 +174,7 @@ class FrameBuffer:
         return self._public_screenshot_value
 
     def get_public_screenshot(self) -> bytes:
-        if self.model in ("stax", "flex", "apex_p"):
+        if not Devices.get_by_name(self.model).is_nano:
             # On Stax/Flex/Apex+, we only make the screenshot public on the RESTFUL api when it is
             # consistent with events (i.e. right after an NBGL refresh + GENERAL_STATUS), so that
             # clients like ragger never observe a frame newer than the event they just received.
