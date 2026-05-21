@@ -1,0 +1,122 @@
+# Build the speculos docker images and push them to GitHub Packages
+---
+name: Publish Speculos Docker images
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  GITHUB_REGISTRY: ghcr.io
+  GITHUB_ORG_PATH: ledgerhq
+  REPO_NAME: speculos
+  BUILD_PLATFORMS: linux/amd64,linux/arm64
+
+jobs:
+  get_speculos_version:
+    name: Get latest Speculos version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      speculos_version: ${{ steps.get-speculos-version.outputs.speculos_version }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get latest Speculos version from changelog
+        id: get-speculos-version
+        run: |
+          # Get the latest tag from the last changelog entry
+          LATEST_CHANGELOG_ENTRY=$(awk '/^## \[/{print $2; exit}' CHANGELOG.md)
+          # remove leading 'v' if present
+          LATEST_CHANGELOG_ENTRY=${LATEST_CHANGELOG_ENTRY#v}
+          echo "Latest speculos version: $LATEST_CHANGELOG_ENTRY"
+          echo "speculos_version=$LATEST_CHANGELOG_ENTRY" >> $GITHUB_OUTPUT
+
+      - name: Login to ghcr.io registry
+        uses: docker/login-action@v4
+        with:
+          registry:  ${{ env.GITHUB_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check already existing image
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "https://${GITHUB_REGISTRY}/v2/${GITHUB_ORG_PATH,,}/speculos/tags/list"
+          echo "https://${GITHUB_REGISTRY}/v2/${GITHUB_ORG_PATH,,}/speculos-builder/tags/list"
+          # Get tags of all images from internal Docker registry
+          TAGS_SPECULOS=$(curl -H "Authorization: Bearer ${GITHUB_TOKEN}" https://${GITHUB_REGISTRY}/v2/${GITHUB_ORG_PATH,,}/speculos/tags/list)
+          echo "TAGS_SPECULOS: $TAGS_SPECULOS"
+          TAGS_SPECULOS_BUILDER=$(curl -H "Authorization: Bearer ${GITHUB_TOKEN}" https://${GITHUB_REGISTRY}/v2/${GITHUB_ORG_PATH,,}/speculos-builder/tags/list)
+          echo "TAGS_SPECULOS_BUILDER: $TAGS_SPECULOS_BUILDER"
+
+          # Concatenate all tags from json fields in one string without brackets
+          ALL_TAGS=$(echo $TAGS_SPECULOS $TAGS_SPECULOS_BUILDER | jq -s '.[0].tags + .[1].tags'  | tr -d '[]')
+
+          # Get the tag to find
+          TAG_TO_FIND=${{ steps.get-speculos-version.outputs.speculos_version }}
+          TAG_TO_FIND=${TAG_TO_FIND#v}  # Remove leading 'v' if present
+
+          echo "Looking for tag: $TAG_TO_FIND"
+
+          # Check if the tag to find is already present in the list of tags
+          if [[ "$ALL_TAGS" == *"$TAG_TO_FIND"* ]]; then
+            echo "An image tagged with the latest changelog version already exists on ghcr.io Docker registry. Please update the changelog."
+            exit 1
+          else
+            exit 0
+          fi
+
+  speculos_builder:
+    name: Speculos Builder
+    needs: [get_speculos_version]
+    if: ${{ !failure() && !cancelled() }}
+    permissions:
+      packages: write
+      id-token: write
+      contents: write
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_docker_deployment.yml@v1
+    with:
+      app_repository: LedgerHQ/speculos
+      app_ref: ${{ needs.get_speculos_version.outputs.speculos_version }}
+      image_name: speculos-builder
+      build_dir: .
+      dockerfile_path: Dockerfiles/build.Dockerfile
+      dry_run: false
+      jfrog_instance: jfrog.ledgerlabs.net
+      jfrog_registry_name: embedded-apps-oci-prod-public
+      runs_on: ubuntu-latest
+      github_org_path: ledgerhq
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+
+
+  speculos:
+    name: Speculos
+    needs: [get_speculos_version, speculos_builder]
+    if: ${{ !failure() && !cancelled() }}
+    permissions:
+      packages: write
+      id-token: write
+      contents: write
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_docker_deployment.yml@v1
+    with:
+      app_repository: LedgerHQ/speculos
+      app_ref: ${{ needs.get_speculos_version.outputs.speculos_version }}
+      image_name: speculos
+      build_dir: .
+      dockerfile_path: Dockerfiles/Dockerfile
+      dry_run: false
+      jfrog_instance: jfrog.ledgerlabs.net
+      jfrog_registry_name: embedded-apps-oci-prod-public
+      runs_on: ubuntu-latest
+      github_org_path: ledgerhq
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
