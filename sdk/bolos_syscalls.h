@@ -285,6 +285,9 @@
 
 #define SYSCALL_hdkey_derive_ID_IN 0x0a000002
 
+#define SYSCALL_ADDRESS_BOOK_HMAC_ID_IN        0x06000200
+#define SYSCALL_ADDRESS_BOOK_HMAC_VERIFY_ID_IN 0x06000201
+
 /**********************
  *      TYPEDEFS
  **********************/

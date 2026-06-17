@@ -65,11 +65,13 @@ add_library(emu
         bolos/io/sdk/io/src/os_io.c
         bolos/io/mock/src/mock.c
         bolos/os_hdkey.c
+        bolos/os_address_book.c
         bolos/hdkey/src/hdkey.c
         bolos/hdkey/src/hdkey_validate.c
         bolos/hdkey/src/hdkey_zip32.c
         bolos/hdkey/src/hdkey_bip32.c
         bolos/hdkey/src/hdkey_bls12377.c
+        bolos/address_book/src/address_book.c
         emulate.c
         environment.c
         svc.c)
@@ -82,7 +84,8 @@ bolos/io/sdk/protocol/include
 bolos/io/sdk/lib_stusb/include
 bolos/io/sdk/lib_nfc/include
 bolos/
-bolos/hdkey/include)
+bolos/hdkey/include
+bolos/address_book/include)
 
 add_compile_definitions(emu
 HAVE_BOLOS=1
