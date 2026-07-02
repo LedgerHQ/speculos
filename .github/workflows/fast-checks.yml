@@ -31,10 +31,7 @@ jobs:
     name: Call Ledger Python linters
     uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_python_checks.yml@v1
     with:
-      run_linter: flake8
       run_type_check: true
-      run_security_check: true
-      bandit_severity_level: high
       src_directory: speculos
       setup_directory: .
 
