@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Emulate the target app along the SE Proxy Hal server.
-'''
+"""
 
 import argparse
 import binascii
@@ -14,22 +14,20 @@ import socket
 import sys
 import threading
 from dataclasses import dataclass
+
 from elftools.elf.elffile import ELFFile
 from ledgered.binary import LedgerBinaryApp
 from mnemonic import mnemonic
-from typing import Optional, Type
 
 from .api import ApiRunner, EventsBroadcaster
 from .mcu import apdu as apdu_server
-from .mcu import automation
-from .mcu import display
-from .mcu import seproxyhal
+from .mcu import automation, display, seproxyhal
 from .mcu.automation_server import AutomationClient, AutomationServer
 from .mcu.button_tcp import FakeButton
 from .mcu.finger_tcp import FakeFinger
 from .mcu.struct import DisplayArgs, ServerArgs
-from .mcu.vnc import VNC
 from .mcu.transport import TransportType
+from .mcu.vnc import VNC
 from .observer import BroadcastInterface
 from .resources_importer import resources
 
@@ -52,13 +50,15 @@ class ElfInfo:
     shared_ram_addr: int = 0
     shared_ram_size: int = 0
     pic_init_addr: int = 0
-    derivation_path: bytes = b''
+    derivation_path: bytes = b""
 
 
 BOLOS_TAG_DERIVEPATH = 0x04
 
-DEFAULT_SEED = ('glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact '
-                'monster seven myth punch hobby comfort wild raise skin')
+DEFAULT_SEED = (
+    "glory promote mansion idle axis finger extra february uncover one trip resource lawn turtle enact "
+    "monster seven myth punch hobby comfort wild raise skin"
+)
 
 logger = logging.getLogger("speculos")
 
@@ -66,90 +66,91 @@ launcher_path = str(resources.files(__package__) / "resources" / "launcher")
 
 
 def set_pdeath(sig):
-    '''Set the parent death signal of the calling process.'''
+    """Set the parent death signal of the calling process."""
 
     PR_SET_PDEATHSIG = 1
-    libc = ctypes.cdll.LoadLibrary('libc.so.6')
+    libc = ctypes.cdll.LoadLibrary("libc.so.6")
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
 
 def get_elf_infos(app_path, use_bagl, args):
     ei = ElfInfo()
-    with open(app_path, 'rb') as fp:
+    with open(app_path, "rb") as fp:
         elf = ELFFile(fp)
-        text_section = elf.get_section_by_name('.text')
+        text_section = elf.get_section_by_name(".text")
         for seg in elf.iter_segments():
-            if seg['p_type'] != 'PT_LOAD':
+            if seg["p_type"] != "PT_LOAD":
                 continue
             if seg.section_in_segment(text_section):
                 text_seg = seg
                 break
         else:
             raise RuntimeError("No program header with text section!")
-        symtab_section = elf.get_section_by_name('.symtab')
-        bss_section = elf.get_section_by_name('.bss')
-        ei.text_offset = text_seg['p_offset']
-        ei.text_size = text_seg['p_filesz']
-        ei.text_addr = text_section['sh_addr']
-        ei.stack_addr = bss_section['sh_addr']
-        sym_estack = symtab_section.get_symbol_by_name('_estack')
+        symtab_section = elf.get_section_by_name(".symtab")
+        bss_section = elf.get_section_by_name(".bss")
+        ei.text_offset = text_seg["p_offset"]
+        ei.text_size = text_seg["p_filesz"]
+        ei.text_addr = text_section["sh_addr"]
+        ei.stack_addr = bss_section["sh_addr"]
+        sym_estack = symtab_section.get_symbol_by_name("_estack")
         if sym_estack is None:
-            sym_estack = symtab_section.get_symbol_by_name('END_STACK')
+            sym_estack = symtab_section.get_symbol_by_name("END_STACK")
         if sym_estack is None:
-            logger.error('failed to find _estack/END_STACK symbol')
+            logger.error("failed to find _estack/END_STACK symbol")
             sys.exit(1)
-        estack = sym_estack[0]['st_value']
+        estack = sym_estack[0]["st_value"]
 
         # Look for the symbols SVC_Call and SVC_cx_call
         # if they are found, save their addresses to patch them to replace the SYSCALL later
         svc_call_symbol = symtab_section.get_symbol_by_name("SVC_Call")
         if svc_call_symbol is not None:
-            ei.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+            ei.svc_call_addr = svc_call_symbol[0]["st_value"] & (~1)
         svc_cx_call_symbol = symtab_section.get_symbol_by_name("SVC_cx_call")
         if svc_cx_call_symbol is not None:
-            ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
+            ei.svc_cx_call_addr = svc_cx_call_symbol[0]["st_value"] & (~1)
         # Check where are located fonts in .elf file (LNX/LNS+ with BAGL only)
         # (on apps using NBGL, fonts are loaded from a known location: STAX_FONTS_ARRAY_ADDR,
         #  FLEX_FONTS_ARRAY_ADDR, NANOX_FONTS_ARRAY_ADDR or NANOSP_FONTS_ARRAY_ADDR)
-        bagl_fonts_symbol = symtab_section.get_symbol_by_name('C_bagl_fonts')
+        bagl_fonts_symbol = symtab_section.get_symbol_by_name("C_bagl_fonts")
         if bagl_fonts_symbol is not None:
-            ei.fonts_addr = bagl_fonts_symbol[0]['st_value']
-            ei.fonts_size = bagl_fonts_symbol[0]['st_size']
-            logger.info(f"Found C_bagl_fonts in app {os.path.basename(app_path)} "
-                        f"at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n")
+            ei.fonts_addr = bagl_fonts_symbol[0]["st_value"]
+            ei.fonts_size = bagl_fonts_symbol[0]["st_size"]
+            logger.info(
+                f"Found C_bagl_fonts in app {os.path.basename(app_path)} at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n"
+            )
         elif use_bagl:
             logger.info("Disabling OCR.")
 
         # App NVRAM handling
-        if elf.get_section_by_name('.nvm_data') is not None:
+        if elf.get_section_by_name(".nvm_data") is not None:
             # This is a Rust app
             if args.load_nvram or args.save_nvram:
                 logger.error("NVRAM data save and load functionality is not yet implemented for Rust apps.")
                 sys.exit(1)
         else:
             # This is a C app
-            nvram_data_symbol = symtab_section.get_symbol_by_name('_nvram_data')
+            nvram_data_symbol = symtab_section.get_symbol_by_name("_nvram_data")
             # _envram for applications built with old SDK version
-            envram_data_symbol = symtab_section.get_symbol_by_name('_envram_data') \
-                or symtab_section.get_symbol_by_name('_envram')
+            envram_data_symbol = symtab_section.get_symbol_by_name("_envram_data") or symtab_section.get_symbol_by_name("_envram")
             if nvram_data_symbol is not None and envram_data_symbol is not None:
-                ei.app_nvram_addr = nvram_data_symbol[0]['st_value']
-                ei.app_nvram_size = envram_data_symbol[0]['st_value'] - nvram_data_symbol[0]['st_value']
+                ei.app_nvram_addr = nvram_data_symbol[0]["st_value"]
+                ei.app_nvram_size = envram_data_symbol[0]["st_value"] - nvram_data_symbol[0]["st_value"]
             else:
                 logger.info("The application does not use NVRAM.")
 
-        supp_ram_section = elf.get_section_by_name('.rfbss')
-        ei.ram_addr, ei.ram_size = \
-            (supp_ram_section['sh_addr'], supp_ram_section['sh_size']) if supp_ram_section is not None else (0, 0)
+        supp_ram_section = elf.get_section_by_name(".rfbss")
+        ei.ram_addr, ei.ram_size = (
+            (supp_ram_section["sh_addr"], supp_ram_section["sh_size"]) if supp_ram_section is not None else (0, 0)
+        )
 
         # look at install_parameters
-        install_parameters = symtab_section.get_symbol_by_name('install_parameters')
+        install_parameters = symtab_section.get_symbol_by_name("install_parameters")
         if install_parameters is not None:
-            sym_addr = install_parameters[0]['st_value']
-            sym_size = install_parameters[0]['st_size']
+            sym_addr = install_parameters[0]["st_value"]
+            sym_size = install_parameters[0]["st_size"]
             # 2. Get section containing the symbol
-            sec_offset_in_file = text_section['sh_offset']
-            sec_addr_in_memory = text_section['sh_addr']
+            sec_offset_in_file = text_section["sh_offset"]
+            sec_addr_in_memory = text_section["sh_addr"]
 
             # 3. Compute offset of symbol in ELF
             file_offset = sec_offset_in_file + (sym_addr - sec_addr_in_memory)
@@ -167,10 +168,10 @@ def get_elf_infos(app_path, use_bagl, args):
                     len = data[offset]
                     offset += 1
                 elif len == 0x82:
-                    len = int.from_bytes(data[offset: offset + 2], 'big')
+                    len = int.from_bytes(data[offset : offset + 2], "big")
                     offset += 2
                 if tag == BOLOS_TAG_DERIVEPATH:
-                    ei.derivation_path = data[offset: offset + len]
+                    ei.derivation_path = data[offset : offset + len]
                 offset += len
 
     ei.stack_size = estack - ei.stack_addr
@@ -179,65 +180,67 @@ def get_elf_infos(app_path, use_bagl, args):
 
 def get_sharedlib_infos(app_path, apiLevel):
     ei = ElfInfo()
-    with open(app_path, 'rb') as fp:
+    with open(app_path, "rb") as fp:
         elf = ELFFile(fp)
-        text_section = elf.get_section_by_name('.text')
+        text_section = elf.get_section_by_name(".text")
         # The name of the section is shram, starting at API Level 23
         if apiLevel is None or int(apiLevel) < 23:
-            sharedram_section = elf.get_section_by_name('.cxram')
+            sharedram_section = elf.get_section_by_name(".cxram")
         else:
-            sharedram_section = elf.get_section_by_name('.shram')
-        ei.text_offset = text_section['sh_offset']
-        ei.text_size = text_section['sh_size']
-        ei.text_addr = text_section['sh_addr']
+            sharedram_section = elf.get_section_by_name(".shram")
+        ei.text_offset = text_section["sh_offset"]
+        ei.text_size = text_section["sh_size"]
+        ei.text_addr = text_section["sh_addr"]
         ei.shared_ram_addr = sharedram_section["sh_addr"]
         ei.shared_ram_size = sharedram_section["sh_size"]
         # Look for the symbols SVC_Call and SVC_cx_call
         # if they are found, save their addresses to patch them to replace the SYSCALL later
-        symtab_section = elf.get_section_by_name('.symtab')
+        symtab_section = elf.get_section_by_name(".symtab")
         if symtab_section is not None:
             svc_call_symbol = symtab_section.get_symbol_by_name("SVC_Call")
             if svc_call_symbol is not None:
-                ei.svc_call_addr = svc_call_symbol[0]['st_value'] & (~1)
+                ei.svc_call_addr = svc_call_symbol[0]["st_value"] & (~1)
             svc_cx_call_symbol = symtab_section.get_symbol_by_name("SVC_cx_call")
             if svc_cx_call_symbol is not None:
-                ei.svc_cx_call_addr = svc_cx_call_symbol[0]['st_value'] & (~1)
+                ei.svc_cx_call_addr = svc_cx_call_symbol[0]["st_value"] & (~1)
         # At API Level 23, fonts are stored in shared elf, in C_nbgl_fonts variable
         if apiLevel is not None and int(apiLevel) >= 23:
-            symtab = elf.get_section_by_name('.symtab')
-            nbgl_fonts_symbol = symtab.get_symbol_by_name('C_nbgl_fonts')
+            symtab = elf.get_section_by_name(".symtab")
+            nbgl_fonts_symbol = symtab.get_symbol_by_name("C_nbgl_fonts")
             if nbgl_fonts_symbol is not None:
-                ei.fonts_addr = nbgl_fonts_symbol[0]['st_value']
-                ei.fonts_size = nbgl_fonts_symbol[0]['st_size']
-                logger.info(f"Found C_nbgl_fonts in sharedlib {os.path.basename(app_path)} "
-                            f"at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n")
+                ei.fonts_addr = nbgl_fonts_symbol[0]["st_value"]
+                ei.fonts_size = nbgl_fonts_symbol[0]["st_size"]
+                logger.info(
+                    f"Found C_nbgl_fonts in sharedlib {os.path.basename(app_path)} "
+                    f"at 0x{ei.fonts_addr:X} ({ei.fonts_size} bytes)\n"
+                )
             else:
                 logger.info("Disabling OCR.")
             # At API Level >= 23, a function called pic_init() needs to be retrieved
             pic_init_symbol = symtab.get_symbol_by_name("pic_init")
             if pic_init_symbol is not None:
-                ei.pic_init_addr = pic_init_symbol[0]['st_value']
+                ei.pic_init_addr = pic_init_symbol[0]["st_value"]
 
     return ei
 
 
 def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> int:
-    argv = ['qemu-arm-static']
+    argv = ["qemu-arm-static"]
 
     if args.debug:
-        argv += ['-g', '1234', '-singlestep']
+        argv += ["-g", "1234", "-singlestep"]
 
     argv += [launcher_path]
 
     if args.trace:
-        argv += ['-t']
+        argv += ["-t"]
 
-    argv += ['-m', args.model]
+    argv += ["-m", args.model]
 
-    argv += ['-a', str(args.apiLevel)]
+    argv += ["-a", str(args.apiLevel)]
 
     if args.pki_prod:
-        argv += ['-p']
+        argv += ["-p"]
 
     fonts_addr = 0
     fonts_size = 0
@@ -250,15 +253,15 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     sharedlib = str(resources.files(__package__) / sharedlib_filepath)
     if os.path.exists(sharedlib):
         sharedlib_ei = get_sharedlib_infos(sharedlib, args.apiLevel)
-        sharedlib_args = f'{sharedlib}:{sharedlib_ei.text_offset:#x}'
-        sharedlib_args += f':{sharedlib_ei.text_size:#x}'
-        sharedlib_args += f':{sharedlib_ei.text_addr:#x}'
-        sharedlib_args += f':{sharedlib_ei.shared_ram_size:#x}'
-        sharedlib_args += f':{sharedlib_ei.shared_ram_addr:#x}'
-        sharedlib_args += f':{sharedlib_ei.pic_init_addr:#x}'
-        sharedlib_args += f':{sharedlib_ei.svc_call_addr:#x}'
-        sharedlib_args += f':{sharedlib_ei.svc_cx_call_addr:#x}'
-        argv += ['-c', sharedlib_args]
+        sharedlib_args = f"{sharedlib}:{sharedlib_ei.text_offset:#x}"
+        sharedlib_args += f":{sharedlib_ei.text_size:#x}"
+        sharedlib_args += f":{sharedlib_ei.text_addr:#x}"
+        sharedlib_args += f":{sharedlib_ei.shared_ram_size:#x}"
+        sharedlib_args += f":{sharedlib_ei.shared_ram_addr:#x}"
+        sharedlib_args += f":{sharedlib_ei.pic_init_addr:#x}"
+        sharedlib_args += f":{sharedlib_ei.svc_call_addr:#x}"
+        sharedlib_args += f":{sharedlib_ei.svc_cx_call_addr:#x}"
+        argv += ["-c", sharedlib_args]
         fonts_addr = sharedlib_ei.fonts_addr
         fonts_size = sharedlib_ei.fonts_size
     else:
@@ -271,10 +274,10 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     if args.model in ["stax", "flex"]:
         only_bagl = False
 
-    extra_ram = ''
-    app_path = getattr(args, 'app.elf')
-    for lib in [f'main:{app_path}'] + args.library:
-        name, lib_path = lib.split(':')
+    extra_ram = ""
+    app_path = getattr(args, "app.elf")
+    for lib in [f"main:{app_path}", *args.library]:
+        name, lib_path = lib.split(":")
         binary = LedgerBinaryApp(lib_path)
         use_bagl = binary.sections.sdk_graphics == "bagl"
         if not use_bagl:
@@ -294,24 +297,24 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
             fonts_size = 0
         # Since binaries loaded as libs could also declare extra RAM page(s), collect them all
         if (ei.ram_addr, ei.ram_size) != (0, 0):
-            arg = f'{ei.ram_addr:#x}:{ei.ram_size:#x}'
+            arg = f"{ei.ram_addr:#x}:{ei.ram_size:#x}"
             if extra_ram and arg != extra_ram:
                 logger.error("different extra RAM pages for main app and/or libraries!")
                 sys.exit(1)
             extra_ram = arg
-        lib_arg = f'{name}:{lib_path}:{ei.text_offset:#x}:{ei.text_size:#x}'
-        lib_arg += f':{ei.stack_addr:#x}:{ei.stack_size:#x}:{ei.svc_call_addr:#x}'
-        lib_arg += f':{ei.svc_cx_call_addr:#x}:{ei.text_addr:#x}'
-        lib_arg += f':{fonts_addr:#x}:{fonts_size:#x}'
-        lib_arg += f':{ei.app_nvram_addr:#x}:{ei.app_nvram_size:#x}'
-        lib_arg += f':{1 if args.load_nvram else 0}'
-        lib_arg += f':{1 if args.save_nvram else 0}'
-        lib_arg += f':{1 if not use_bagl else 0}'
+        lib_arg = f"{name}:{lib_path}:{ei.text_offset:#x}:{ei.text_size:#x}"
+        lib_arg += f":{ei.stack_addr:#x}:{ei.stack_size:#x}:{ei.svc_call_addr:#x}"
+        lib_arg += f":{ei.svc_cx_call_addr:#x}:{ei.text_addr:#x}"
+        lib_arg += f":{fonts_addr:#x}:{fonts_size:#x}"
+        lib_arg += f":{ei.app_nvram_addr:#x}:{ei.app_nvram_size:#x}"
+        lib_arg += f":{1 if args.load_nvram else 0}"
+        lib_arg += f":{1 if args.save_nvram else 0}"
+        lib_arg += f":{1 if not use_bagl else 0}"
         if len(ei.derivation_path) > 0:
-            lib_arg += f':{ei.derivation_path.hex()}'
+            lib_arg += f":{ei.derivation_path.hex()}"
         else:
             # if no derivationèpath found in binary, use 0 to indicate to launcher that it's not valid
-            lib_arg += ':0'
+            lib_arg += ":0"
         argv.append(lib_arg)
 
     # for NBGL apps, fonts binary file is mandatory before API Level 23
@@ -319,7 +322,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         fonts_filepath = f"fonts/{args.model}-fonts-{args.apiLevel}.bin"
         fonts = str(resources.files(__package__) / fonts_filepath)
         if os.path.exists(fonts):
-            argv += ['-f', fonts]
+            argv += ["-f", fonts]
         else:
             logger.error(f"Fonts {fonts_filepath} not found")
             sys.exit(1)
@@ -331,7 +334,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         app_flags = 0xFFFFFFFFFF
     else:
         app_flags = int(app_flags, 16)
-    argv += ['-l', str(app_flags)]
+    argv += ["-l", str(app_flags)]
 
     pid = os.fork()
     if pid != 0:
@@ -351,21 +354,21 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         seed = mnemonic.Mnemonic.to_seed(args.seed)
 
-    os.environ['SPECULOS_SEED'] = binascii.hexlify(seed).decode('ascii')
+    os.environ["SPECULOS_SEED"] = binascii.hexlify(seed).decode("ascii")
 
     if args.deterministic_rng:
-        os.environ['RNG_SEED'] = args.deterministic_rng
+        os.environ["RNG_SEED"] = args.deterministic_rng
 
     if args.user_private_key:
-        os.environ['USER_PRIVATE_KEY'] = args.user_private_key
+        os.environ["USER_PRIVATE_KEY"] = args.user_private_key
     if args.attestation_key:
-        os.environ['ATTESTATION_PRIVATE_KEY'] = args.attestation_key
+        os.environ["ATTESTATION_PRIVATE_KEY"] = args.attestation_key
 
     logger.debug(f"executing qemu: {argv}")
     try:
-        os.execvp(argv[0], argv)
+        os.execvp(argv[0], argv)  # noqa: S606
     except FileNotFoundError:
-        logger.error('failed to execute qemu: "%s" not found' % argv[0])
+        logger.error(f'failed to execute qemu: "{argv[0]}" not found')
         sys.exit(1)
     sys.exit(0)
 
@@ -373,9 +376,9 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
 def setup_logging(args):
     if not args.verbose:
         # Remove Werkzeug logger
-        log = logging.getLogger('werkzeug')
+        log = logging.getLogger("werkzeug")
         log.disabled = True
-    logging.basicConfig(level=logging.INFO, format='%(name)s: %(message)s')
+    logging.basicConfig(level=logging.INFO, format="%(name)s: %(message)s")
 
     for arg in args.log_level:
         if ":" not in arg:
@@ -392,58 +395,144 @@ def setup_logging(args):
 
 def main(prog=None) -> int:
 
-    parser = argparse.ArgumentParser(description='Emulate Ledger Nano S+, X, Stax, Flex, Apex+ apps.')
-    parser.add_argument('app.elf', type=str, help='application path')
-    parser.add_argument('--automation', type=str, help='Load a JSON document automating actions (prefix with "file:" '
-                                                       'to specify a path')
-    parser.add_argument('--color', default='MATTE_BLACK', choices=list(display.COLORS.keys()), help='Nano color')
-    parser.add_argument('-d', '--debug', action='store_true', help='Wait gdb connection to port 1234')
-    parser.add_argument('--deterministic-rng', default='', help='Seed the rng with a given value to produce '
-                                                                'deterministic randomness')
-    parser.add_argument('--user-private-key', default='',
-                        help='32B in hex format, will be used as the user private keys')
-    parser.add_argument('--attestation-key', default='', help='32B in hex format, will be used as the private '
-                                                              'attestation key')
-    parser.add_argument('-a', '--apiLevel', type=str, help='Api level')
-    parser.add_argument('-l', '--library', default=[], action='append', help='Additional library (eg. '
-                        'Bitcoin:app/btc.elf) which can be called through os_lib_call'
-                        'You can also only pass the lib elf path if the lib name is included in the metadata')
-    parser.add_argument('--log-level', default=[], action='append', help='Configure the logger levels (eg. usb:DEBUG), '
-                                                                         'can be specified multiple times')
-    parser.add_argument('-m', '--model', choices=list(display.MODELS.keys()))
-    parser.add_argument('-s', '--seed', default=DEFAULT_SEED, help='BIP39 mnemonic or hex seed. Default to mnemonic: '
-                                                                   'to use a hex seed, prefix it with "hex:"')
-    parser.add_argument('-t', '--trace', action='store_true', help='Trace syscalls')
-    parser.add_argument('-u', '--usb', default='hid', help='Configure the USB transport protocol, '
-                        'either HID (default) or U2F (DEPRECATED, use `--transport` instead)')
-    parser.add_argument('-T', '--transport', default=None, choices=('HID', 'U2F', 'NFC'),
-                        help='Configure the transport protocol: HID (default), U2F or NFC.')
-    parser.add_argument('-p', '--pki-prod', action='store_true', help='Use production public key for PKI')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Increase verbosity')
-    parser.add_argument('-S', '--sound', action='store_true', help='Activate Tune playing')
+    parser = argparse.ArgumentParser(description="Emulate Ledger Nano S+, X, Stax, Flex, Apex+ apps.")
+    parser.add_argument("app.elf", type=str, help="application path")
+    parser.add_argument(
+        "--automation",
+        type=str,
+        help='Load a JSON document automating actions (prefix with "file:" to specify a path',
+    )
+    parser.add_argument(
+        "--color",
+        default="MATTE_BLACK",
+        choices=list(display.COLORS.keys()),
+        help="Nano color",
+    )
+    parser.add_argument("-d", "--debug", action="store_true", help="Wait gdb connection to port 1234")
+    parser.add_argument(
+        "--deterministic-rng",
+        default="",
+        help="Seed the rng with a given value to produce deterministic randomness",
+    )
+    parser.add_argument(
+        "--user-private-key",
+        default="",
+        help="32B in hex format, will be used as the user private keys",
+    )
+    parser.add_argument(
+        "--attestation-key",
+        default="",
+        help="32B in hex format, will be used as the private attestation key",
+    )
+    parser.add_argument("-a", "--apiLevel", type=str, help="Api level")
+    parser.add_argument(
+        "-l",
+        "--library",
+        default=[],
+        action="append",
+        help="Additional library (eg. "
+        "Bitcoin:app/btc.elf) which can be called through os_lib_call"
+        "You can also only pass the lib elf path if the lib name is included in the metadata",
+    )
+    parser.add_argument(
+        "--log-level",
+        default=[],
+        action="append",
+        help="Configure the logger levels (eg. usb:DEBUG), can be specified multiple times",
+    )
+    parser.add_argument("-m", "--model", choices=list(display.MODELS.keys()))
+    parser.add_argument(
+        "-s",
+        "--seed",
+        default=DEFAULT_SEED,
+        help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"',
+    )
+    parser.add_argument("-t", "--trace", action="store_true", help="Trace syscalls")
+    parser.add_argument(
+        "-u",
+        "--usb",
+        default="hid",
+        help="Configure the USB transport protocol, either HID (default) or U2F (DEPRECATED, use `--transport` instead)",
+    )
+    parser.add_argument(
+        "-T",
+        "--transport",
+        default=None,
+        choices=("HID", "U2F", "NFC"),
+        help="Configure the transport protocol: HID (default), U2F or NFC.",
+    )
+    parser.add_argument(
+        "-p",
+        "--pki-prod",
+        action="store_true",
+        help="Use production public key for PKI",
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Increase verbosity")
+    parser.add_argument("-S", "--sound", action="store_true", help="Activate Tune playing")
 
-    group = parser.add_argument_group('network arguments')
-    group.add_argument('--apdu-port', default=9999, type=int, help='ApduServer TCP port')
-    group.add_argument('--api-port', default=5000, type=int, help='Set the REST API TCP port (0 disables it)')
-    group.add_argument('--automation-port', type=int, help='Forward text displayed on the screen to TCP clients')
-    group.add_argument('--vnc-port', type=int, help='Start a VNC server on the specified port')
-    group.add_argument('--vnc-password', type=str, help='VNC plain-text password (required for MacOS Screen Sharing)')
-    group.add_argument('--button-port', type=int, help='Spawn a TCP server on the specified port to receive button '
-                                                       'press (lLrR)')
-    group.add_argument('--finger-port', type=int, help='Spawn a TCP server on the specified port to receive finger '
-                                                       'touch (x,y,pressed)+')
+    group = parser.add_argument_group("network arguments")
+    group.add_argument("--apdu-port", default=9999, type=int, help="ApduServer TCP port")
+    group.add_argument(
+        "--api-port",
+        default=5000,
+        type=int,
+        help="Set the REST API TCP port (0 disables it)",
+    )
+    group.add_argument(
+        "--automation-port",
+        type=int,
+        help="Forward text displayed on the screen to TCP clients",
+    )
+    group.add_argument("--vnc-port", type=int, help="Start a VNC server on the specified port")
+    group.add_argument(
+        "--vnc-password",
+        type=str,
+        help="VNC plain-text password (required for MacOS Screen Sharing)",
+    )
+    group.add_argument(
+        "--button-port",
+        type=int,
+        help="Spawn a TCP server on the specified port to receive button press (lLrR)",
+    )
+    group.add_argument(
+        "--finger-port",
+        type=int,
+        help="Spawn a TCP server on the specified port to receive finger touch (x,y,pressed)+",
+    )
 
-    group = parser.add_argument_group('display arguments', 'These arguments might only apply to one of the display '
-                                                           'method.')
-    group.add_argument('--display', default='qt', choices=['headless', 'qt', 'text'])
-    group.add_argument('--ontop', action='store_true', help='The window stays on top of all other windows')
-    group.add_argument('--xy', action='store', help='Window position in "XxY" format (eg. "--xy 30x100").')
-    group.add_argument('--keymap', action='store', help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for "
-                                                        "left button, 'a' right, 's' both). Default: arrow keys")
-    group.add_argument('--progressive', action='store_true', help='Enable step-by-step rendering of graphical elements')
-    group.add_argument('--zoom', help='Display pixel size.', type=int, choices=range(1, 11))
-    group.add_argument('--load-nvram', action='store_true', help='Preload app NVRAM data from file beforehand')
-    group.add_argument('--save-nvram', action='store_true', help='Save app NVRAM data to file')
+    group = parser.add_argument_group(
+        "display arguments",
+        "These arguments might only apply to one of the display method.",
+    )
+    group.add_argument("--display", default="qt", choices=["headless", "qt", "text"])
+    group.add_argument(
+        "--ontop",
+        action="store_true",
+        help="The window stays on top of all other windows",
+    )
+    group.add_argument(
+        "--xy",
+        action="store",
+        help='Window position in "XxY" format (eg. "--xy 30x100").',
+    )
+    group.add_argument(
+        "--keymap",
+        action="store",
+        help="Text UI keymap in the form of a string (e.g. 'was' => 'w' for "
+        "left button, 'a' right, 's' both). Default: arrow keys",
+    )
+    group.add_argument(
+        "--progressive",
+        action="store_true",
+        help="Enable step-by-step rendering of graphical elements",
+    )
+    group.add_argument("--zoom", help="Display pixel size.", type=int, choices=range(1, 11))
+    group.add_argument(
+        "--load-nvram",
+        action="store_true",
+        help="Preload app NVRAM data from file beforehand",
+    )
+    group.add_argument("--save-nvram", action="store_true", help="Save app NVRAM data to file")
 
     if prog:
         parser.prog = prog
@@ -456,7 +545,7 @@ def main(prog=None) -> int:
     setup_logging(args)
 
     # Init model and api_level if not specified from app elf metadata
-    app_path = getattr(args, 'app.elf')
+    app_path = getattr(args, "app.elf")
     binary = LedgerBinaryApp(app_path)
     if not args.model:
         if binary.sections.target is None:
@@ -528,23 +617,23 @@ def main(prog=None) -> int:
     if args.progressive:
         rendering = seproxyhal.RENDER_METHOD.PROGRESSIVE
 
-    if args.display == 'text' and args.model not in ['nanox', 'nanosp']:
+    if args.display == "text" and args.model not in ["nanox", "nanosp"]:
         logger.error(f"unsupported model '{args.model}' with argument --display text")
         sys.exit(1)
 
-    if args.ontop and args.display != 'qt':
+    if args.ontop and args.display != "qt":
         logger.error("--ontop can only be used with --display qt")
         sys.exit(1)
 
-    if args.xy and args.display != 'qt':
+    if args.xy and args.display != "qt":
         logger.error("--xy can only be used with --display qt")
         sys.exit(1)
 
-    if args.zoom and args.display != 'qt':
+    if args.zoom and args.display != "qt":
         logger.error("--zoom can only be used with --display qt")
         sys.exit(1)
 
-    if args.keymap and args.display != 'text':
+    if args.keymap and args.display != "text":
         logger.error("--keymap can only be used with --display text")
         sys.exit(1)
 
@@ -552,30 +641,30 @@ def main(prog=None) -> int:
         logger.error("--vnc-password can only be used with --vnc-port")
         sys.exit(1)
 
-    ScreenNotifier: Type[display.DisplayNotifier]
-    if args.display == 'text':
+    ScreenNotifier: type[display.DisplayNotifier]
+    if args.display == "text":
         from .mcu.screen_text import TextScreenNotifier as ScreenNotifier
-    elif args.display == 'headless':
+    elif args.display == "headless":
         from .mcu.headless import HeadlessNotifier as ScreenNotifier
     else:
         from .mcu.screen import QtScreenNotifier as ScreenNotifier
 
-    api_enabled = (args.api_port != 0)
+    api_enabled = args.api_port != 0
 
-    automation_path: Optional[automation.Automation] = None
+    automation_path: automation.Automation | None = None
     if args.automation:
         # TODO: remove this condition and all associated code in next major version
         logger.warning("--automation is deprecated, please use the REST API instead")
         automation_path = automation.Automation(args.automation)
 
-    automation_server: Optional[BroadcastInterface] = None
+    automation_server: BroadcastInterface | None = None
     if args.automation_port:
         # TODO: remove this condition and all associated code in next major version
         logger.warning("--automation-port is deprecated, please use the REST API instead")
         if api_enabled:
             logger.warning("--automation-port is incompatible with the API server, disabling the latter")
             api_enabled = False
-        automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)
+        automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)  # noqa: S104
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
 
@@ -593,7 +682,7 @@ def main(prog=None) -> int:
     else:
         transport_type = TransportType[args.usb.upper()]
 
-    apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)
+    apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)  # noqa: S104
     seph = seproxyhal.SeProxyHal(
         s2,
         args.model,
@@ -601,7 +690,8 @@ def main(prog=None) -> int:
         automation_server,
         transport_type,
         args.verbose,
-        args.sound)
+        args.sound,
+    )
 
     button = None
     if args.button_port:
@@ -620,30 +710,24 @@ def main(prog=None) -> int:
 
     zoom = args.zoom
     if zoom is None:
-        default_zoom = {
-            "nanox": 2,
-            "nanosp": 2,
-            "stax": 1,
-            "flex": 1,
-            "apex_p": 1
-        }
+        default_zoom = {"nanox": 2, "nanosp": 2, "stax": 1, "flex": 1, "apex_p": 1}
         zoom = default_zoom.get(args.model)
 
     x, y = None, None
     if args.xy:
-        x, y = (int(i) for i in args.xy.split('x'))
+        x, y = (int(i) for i in args.xy.split("x"))
 
-    apirun: Optional[ApiRunner] = None
+    apirun: ApiRunner | None = None
     if api_enabled:
         apirun = ApiRunner(args.api_port)
 
-    display_args = DisplayArgs(args.color, args.model, args.ontop, rendering,
-                               args.keymap, zoom, x, y)
+    display_args = DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
     screen_notifier = ScreenNotifier(display_args, server_args)
 
     if apirun is not None:
-        assert automation_server is not None
+        if automation_server is None:
+            raise AssertionError("Automation server is not initialized")
         apirun.start_server_thread(screen_notifier, seph, automation_server)
 
     try:

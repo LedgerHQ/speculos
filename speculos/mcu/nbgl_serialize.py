@@ -64,9 +64,7 @@ class NbglObjType(IntEnum):
     (SWITCH,) = (6,)  # Switch to turn on/off something
     (PAGE_INDICATOR,) = (7,)  # horizontal bar to indicate navigation across pages
 
-    (PROGRESS_BAR,) = (
-        8,
-    )  # horizontal bar to indicate progression of something (between 0% and 100%)
+    (PROGRESS_BAR,) = (8,)  # horizontal bar to indicate progression of something (between 0% and 100%)
     (RADIO_BUTTON,) = (9,)  # Indicator to inform whether something is on or off
     (QR_CODE,) = (10,)  # QR Code
     (KEYBOARD,) = (11,)  # Keyboard
@@ -241,9 +239,7 @@ class NbglContainer(NbglObj):
     @classmethod
     def from_bytes(cls, is_stax: bool, data: bytes):
         area = NbglArea.from_bytes(is_stax, data[0 : NbglArea.size()])
-        layout, nb_children, force_clean = struct.unpack(
-            ">BB?", data[NbglArea.size() :]
-        )
+        layout, nb_children, force_clean = struct.unpack(">BB?", data[NbglArea.size() :])
         return cls(
             area=area,
             layout=NbglDirection(layout),
@@ -263,9 +259,7 @@ class NbglLine(NbglObj):
     @classmethod
     def from_bytes(cls, is_stax: bool, data: bytes):
         area = NbglArea.from_bytes(is_stax, data[0 : NbglArea.size()])
-        direction, line_color, thickness, offset = struct.unpack(
-            ">BBBB", data[NbglArea.size() :]
-        )
+        direction, line_color, thickness, offset = struct.unpack(">BBBB", data[NbglArea.size() :])
         return cls(
             area=area,
             direction=NbglDirection(direction),
@@ -285,9 +279,7 @@ class NbglRadioButton(NbglObj):
     @classmethod
     def from_bytes(cls, is_stax: bool, data):
         area = NbglArea.from_bytes(is_stax, data[0 : NbglArea.size()])
-        active_color, border_color, state = struct.unpack(
-            ">BBB", data[NbglArea.size() :]
-        )
+        active_color, border_color, state = struct.unpack(">BBB", data[NbglArea.size() :])
         return cls(
             area=area,
             active_color=NbglColor(active_color),
@@ -358,8 +350,8 @@ class NbglButton(NbglObj):
         area = NbglArea.from_bytes(is_stax, data[0:cnt])
         params_template = ">BBBBB?"
         params_size = struct.calcsize(params_template)
-        inner_color, border_color, foreground_color, radius, font_id, localized = (
-            struct.unpack(params_template, data[cnt : cnt + params_size])
+        inner_color, border_color, foreground_color, radius, font_id, localized = struct.unpack(
+            params_template, data[cnt : cnt + params_size]
         )
 
         cnt += params_size
@@ -398,8 +390,8 @@ class NbglTextArea(NbglObj):
         # Parse pattern
         params_pattern = ">BBBB??H"
         params_size = struct.calcsize(params_pattern)
-        text_color, alignment, style, font_id, localized, auto_hide_long_line, len = (
-            struct.unpack(params_pattern, data[cnt : cnt + params_size])
+        text_color, alignment, style, font_id, localized, auto_hide_long_line, len = struct.unpack(
+            params_pattern, data[cnt : cnt + params_size]
         )
         cnt += params_size
 
@@ -516,9 +508,7 @@ class NbglKeyboard(NbglObj):
         area = NbglArea.from_bytes(is_stax, data[0 : NbglArea.size()])
         if is_stax:
             selected_char_index = 0
-            text_color, border_color, letters_only, upper_case, mode, key_mask = (
-                struct.unpack(">BBBBBI", data[NbglArea.size() :])
-            )
+            text_color, border_color, letters_only, upper_case, mode, key_mask = struct.unpack(">BBBBBI", data[NbglArea.size() :])
         else:
             upper_case = False
             (

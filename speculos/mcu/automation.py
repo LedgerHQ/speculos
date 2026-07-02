@@ -1,7 +1,8 @@
 import json
-import jsonschema
 import logging
 import re
+
+import jsonschema
 
 from speculos.resources_importer import get_resources_path
 

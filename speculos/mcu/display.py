@@ -2,21 +2,25 @@ from __future__ import annotations
 
 import io
 from abc import ABC, abstractmethod
+
 try:
     from functools import cache
 except ImportError:
     # `functools.cache` does not exists on Python3.8
     from functools import lru_cache
+
     cache = lru_cache(maxsize=None)
-from PIL import Image
 from socket import socket
 from threading import Lock
-from typing import Any, Dict, IO, List, Optional, Tuple, Union
+from typing import IO, Any
+
+from PIL import Image
 
 from speculos.observer import TextEvent
-from .struct import DisplayArgs, MODELS, Pixel, ServerArgs
 
-PixelColorMapping = Dict[Pixel, int]
+from .struct import MODELS, DisplayArgs, Pixel, ServerArgs
+
+PixelColorMapping = dict[Pixel, int]
 
 
 class IODevice(ABC):
@@ -30,7 +34,7 @@ class IODevice(ABC):
 
     @property
     @abstractmethod
-    def file(self) -> Union[IO[bytes], socket]:
+    def file(self) -> IO[bytes] | socket:
         """
         Returns the file (Pipe, Socket, ...) tied to this `IODevice`
         """
@@ -51,15 +55,15 @@ class IODevice(ABC):
         pass
 
 
-COLORS: Dict[str, int] = {
-    'LAGOON_BLUE': 0x7ebab5,
-    'JADE_GREEN': 0xb9ceac,
-    'FLAMINGO_PINK': 0xd8a0a6,
-    'SAFFRON_YELLOW': 0xf6a950,
-    'MATTE_BLACK': 0x111111,
-    'CHARLOTTE_PINK': 0xff5555,
-    'ARNAUD_GREEN': 0x79ff79,
-    'SYLVE_CYAN': 0x29f3f3,
+COLORS: dict[str, int] = {
+    "LAGOON_BLUE": 0x7EBAB5,
+    "JADE_GREEN": 0xB9CEAC,
+    "FLAMINGO_PINK": 0xD8A0A6,
+    "SAFFRON_YELLOW": 0xF6A950,
+    "MATTE_BLACK": 0x111111,
+    "CHARLOTTE_PINK": 0xFF5555,
+    "ARNAUD_GREEN": 0x79FF79,
+    "SYLVE_CYAN": 0x29F3F3,
 }
 
 
@@ -70,24 +74,23 @@ class FrameBuffer:
     It updates the screen, takes screenshots, manages colors and such.
     """
 
-    COLORS = {
-        "nanox": 0xdddddd,
-        "nanosp": 0xdddddd,
-        "stax": 0xdddddd,
-        "flex": 0xdddddd,
-        "apex_p": 0xffffff,
-        "apex_m": 0xffffff
-    }
-
     def __init__(self, model: str):
+        self.COLORS = {
+            "nanox": 0xDDDDDD,
+            "nanosp": 0xDDDDDD,
+            "stax": 0xDDDDDD,
+            "flex": 0xDDDDDD,
+            "apex_p": 0xFFFFFF,
+            "apex_m": 0xFFFFFF,
+        }
         self.pixels: PixelColorMapping = {}
         self.screenshot_pixels: PixelColorMapping = {}
         self.screenshot_pixels_lock = Lock()
         self.default_color = 0
         self.draw_default_color = False
         self.reset_screeshot_pixels = False
-        self._public_screenshot_value = b''
-        self.current_data = b''
+        self._public_screenshot_value = b""
+        self.current_data = b""
         self.recreate_public_screenshot = True
         self.model = model
         self.current_screen_size = MODELS[model].screen_size
@@ -97,9 +100,9 @@ class FrameBuffer:
     def check_color(self, color: int) -> int:
         # There are only 2 colors on the Nano S+ and the Nano X but the one
         # passed in argument isn't always valid. Fix it here.
-        if self.model != 'stax' and self.model != 'flex':
+        if self.model != "stax" and self.model != "flex":
             if color != 0x000000:
-                color = FrameBuffer.COLORS.get(self.model, color)
+                color = self.COLORS.get(self.model, color)
         return color
 
     def draw_point(self, x: int, y: int, color: int) -> None:
@@ -109,7 +112,7 @@ class FrameBuffer:
         for x in range(x0, x0 + width):
             self.pixels[(x, y)] = self.check_color(color)
 
-    def draw_rect(self, x0: int, y0: int, width: int, height: int, color: int) -> List[TextEvent]:
+    def draw_rect(self, x0: int, y0: int, width: int, height: int, color: int) -> list[TextEvent]:
         color = self.check_color(color)
 
         if x0 == 0 and y0 == 0 and width == self._width and height == self._height:
@@ -132,7 +135,7 @@ class FrameBuffer:
             data = bytearray(self.default_color.to_bytes(3, "big")) * self._width * self._height
             for (x, y), color in self.screenshot_pixels.items():
                 pos = 3 * (y * self._width + x)
-                data[pos:pos + 3] = color.to_bytes(3, "big")
+                data[pos : pos + 3] = color.to_bytes(3, "big")
         return bytes(data)
 
     def _get_screenshot_iobytes_value(self) -> bytes:
@@ -144,7 +147,7 @@ class FrameBuffer:
         image.save(iobytes, format="PNG")
         return iobytes.getvalue()
 
-    def take_screenshot(self) -> Tuple[Tuple[int, int], bytes]:
+    def take_screenshot(self) -> tuple[tuple[int, int], bytes]:
         return self.current_screen_size, self._get_image()
 
     def update_screenshot(self) -> None:
@@ -186,11 +189,13 @@ class FrameBuffer:
     # case multiple inheritance in `screen.PaintWidget(FrameBuffer, QWidget)` will break, as both
     # FrameBuffer and QWidget derive from a different metaclass, and Python cannot figure out which
     # class builder to use.
-    def update(self,
-               x: Optional[int] = None,
-               y: Optional[int] = None,
-               w: Optional[int] = None,
-               h: Optional[int] = None) -> bool:
+    def update(
+        self,
+        x: int | None = None,
+        y: int | None = None,
+        w: int | None = None,
+        h: int | None = None,
+    ) -> bool:
         raise NotImplementedError()
 
 
@@ -201,7 +206,7 @@ class GraphicLibrary(ABC):
     Currently implemented graphic libraries are `bagl.Bagl` and `nbgl.NBGL`.
     """
 
-    def __init__(self, fb: FrameBuffer, size: Tuple[int, int], model: str):
+    def __init__(self, fb: FrameBuffer, size: tuple[int, int], model: str):
         self._fb = fb
         self.SCREEN_WIDTH, self.SCREEN_HEIGHT = size
         self.model = model
@@ -220,7 +225,7 @@ class GraphicLibrary(ABC):
     def update_public_screenshot(self) -> None:
         self.fb.update_public_screenshot()
 
-    def take_screenshot(self) -> Tuple[Tuple[int, int], bytes]:
+    def take_screenshot(self) -> tuple[tuple[int, int], bytes]:
         return self.fb.take_screenshot()
 
 
@@ -270,7 +275,7 @@ class Display(ABC):
         pass
 
     @abstractmethod
-    def display_status(self, data: bytes) -> List[TextEvent]:
+    def display_status(self, data: bytes) -> list[TextEvent]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -308,7 +313,7 @@ class DisplayNotifier(ABC):
         # TODO: this should be Dict[int, IODevice], but in QtScreen, it is
         #       a QSocketNotifier, which has a completely different interface
         #       and is not used in the same way in the mcu/screen.py module.
-        self.notifiers: Dict[int, Any] = {}
+        self.notifiers: dict[int, Any] = {}
         self._server_args = server_args
         self._display_args = display_args
         self._display: Display
@@ -322,7 +327,8 @@ class DisplayNotifier(ABC):
         return self._display
 
     def add_notifier(self, device: IODevice):
-        assert device.fileno not in self.notifiers
+        if device.fileno in self.notifiers:
+            raise ValueError(f"notifier for {device.fileno} already registered")
         self.notifiers[device.fileno] = device
 
     def remove_notifier(self, fd: int):

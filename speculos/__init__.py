@@ -1,8 +1,10 @@
-from . import api  # noqa: F401
-from . import client  # noqa: F401
-from . import mcu  # noqa: F401
+from . import (
+    api,  # noqa: F401
+    client,  # noqa: F401
+    mcu,  # noqa: F401
+)
 
 try:
-    from speculos.__version__ import __version__  # noqa
+    from speculos.__version__ import __version__
 except ImportError:
-    __version__ = "unknown version"  # noqa
+    __version__ = "unknown version"

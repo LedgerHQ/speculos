@@ -4,10 +4,9 @@ from speculos.client import SpeculosClient
 
 
 class TestSpeculosClient(TestCase):
-
     def setUp(self):
-        self.app = 'app'
-        self.args = ['some', 'arguments']
+        self.app = "app"
+        self.args = ["some", "arguments"]
         self.client = SpeculosClient(self.app, self.args)
 
     def test_stop_successive_should_not_raise(self):

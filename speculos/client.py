@@ -1,15 +1,16 @@
 import json
 import logging
-import requests
 import socket
-import sys
 import subprocess
+import sys
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
+from types import TracebackType
+
+import requests
 from PIL import Image, ImageChops
 from requests import Response
-from typing import Generator, List, Optional, Tuple, Type
-from types import TracebackType
 
 logger = logging.getLogger("speculos-client")
 logger.setLevel(logging.INFO)
@@ -28,9 +29,7 @@ class ClientException(Exception):
 
 def check_status_code(response: requests.Response, url: str) -> None:
     if response.status_code != 200:
-        raise ClientException(
-            f"HTTP request on {url} failed, status={response.status_code}, error={response.content!r}"
-        )
+        raise ClientException(f"HTTP request on {url} failed, status={response.status_code}, error={response.content!r}")
 
 
 class ApduResponse:
@@ -45,14 +44,21 @@ class ApduResponse:
         return data
 
 
-def split_apdu(data: bytes) -> Tuple[bytes, int]:
+def split_apdu(data: bytes) -> tuple[bytes, int]:
     if len(data) < 2:
         raise ClientException(f"APDU response length is shorter than 2 ({data!r})")
     status = int.from_bytes(data[-2:], "big")
     return data[:-2], status
 
 
-def screenshot_equal(path1: str, path2: str, left: int = 0, upper: int = 0, right: int = 0, lower: int = 0) -> bool:
+def screenshot_equal(
+    path1: str,
+    path2: str,
+    left: int = 0,
+    upper: int = 0,
+    right: int = 0,
+    lower: int = 0,
+) -> bool:
     """Compare two images and return True if they are equal."""
 
     with Image.open(path1) as img1:
@@ -71,10 +77,11 @@ class Api:
         self.api_url = api_url
         self.timeout = 2000
         self.session = requests.Session()
-        self.stream: Optional[Response] = None
+        self.stream: Response | None = None
 
     def open_stream(self) -> None:
-        assert self.stream is None
+        if self.stream is not None:
+            raise AssertionError("Stream is already open")
         self.stream = self.session.get(f"{self.api_url}/events?stream=true", stream=True)
         check_status_code(self.stream, "/events")
 
@@ -95,7 +102,8 @@ class Api:
 
         https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream
         """
-        assert self.stream is not None
+        if self.stream is None:
+            raise AssertionError("Stream is not open")
         data = b""
         while True:
             line = self.stream.raw.readline()
@@ -121,15 +129,20 @@ class Api:
         return event
 
     def press_and_release(self, button: str) -> None:
-        assert button in ["left", "right", "both"]
+        if button not in ["left", "right", "both"]:
+            raise ValueError(f"Invalid button: {button}")
         data = {"action": "press-and-release"}
         with self.session.post(f"{self.api_url}/button/{button}", json=data) as response:
             check_status_code(response, f"/button/{button}")
 
-    def finger_touch(self,
-                     x: int, y: int,
-                     x2: Optional[int] = None, y2: Optional[int] = None,
-                     delay: float = 0.5) -> None:
+    def finger_touch(
+        self,
+        x: int,
+        y: int,
+        x2: int | None = None,
+        y2: int | None = None,
+        delay: float = 0.5,
+    ) -> None:
         data = {"action": "press-and-release", "x": x, "y": y, "delay": delay}
         if x2 is not None:
             data["x2"] = x2
@@ -148,7 +161,14 @@ class Api:
             x2 -= 10
         elif direction == "right":
             x2 += 10
-        data = {"action": "press-and-release", "x": x, "y": y, "x2": x2, "y2": y2, "delay": delay}
+        data = {
+            "action": "press-and-release",
+            "x": x,
+            "y": y,
+            "x2": x2,
+            "y2": y2,
+            "delay": delay,
+        }
         with self.session.post(f"{self.api_url}/finger", json=data) as response:
             check_status_code(response, "/finger")
 
@@ -171,7 +191,7 @@ class Api:
 
         # TimeoutError exception in exchange function raises ChunkedEncodingError exception
         except requests.exceptions.ChunkedEncodingError:
-            raise TimeoutError()
+            raise TimeoutError() from None
 
     def _apdu_exchange_nowait(self, data: bytes) -> requests.Response:
         return self.session.post(f"{self.api_url}/apdu", json={"data": data.hex()}, stream=True)
@@ -182,13 +202,13 @@ class Api:
 
 
 class SpeculosInstance:
-    def __init__(self, app: str, args: Optional[List[str]] = None) -> None:
+    def __init__(self, app: str, args: list[str] | None = None) -> None:
         self.app = app
         if args is None:
-            self.args: List[str] = []
+            self.args: list[str] = []
         else:
             self.args = list(args)
-        self.process: Optional[subprocess.Popen] = None
+        self.process: subprocess.Popen | None = None
 
         if "--display" not in self.args:
             self.args += ["--display", "headless"]
@@ -201,7 +221,7 @@ class SpeculosInstance:
 
     def _wait_until_ready(self) -> None:
         connected = False
-        for i in range(0, 50):
+        for _i in range(0, 50):
             try:
                 s = socket.create_connection(("127.0.0.1", self.port))
                 connected = True
@@ -215,9 +235,9 @@ class SpeculosInstance:
         s.close()
 
     def start(self) -> None:
-        cmd = [sys.executable or "python3", "-m", "speculos"] + self.args + [self.app]
+        cmd = [sys.executable or "python3", "-m", "speculos", *self.args, self.app]
         logger.info(f"starting speculos with command: {' '.join(cmd)}")
-        self.process = subprocess.Popen(cmd)
+        self.process = subprocess.Popen(cmd)  # noqa: S603
         self._wait_until_ready()
 
     def stop(self) -> None:
@@ -237,7 +257,9 @@ class SpeculosInstance:
 
 
 class SpeculosClient(Api, SpeculosInstance):
-    def __init__(self, app: str, args: List[str] = [], api_url: str = "http://127.0.0.1:5000") -> None:
+    def __init__(self, app: str, args: list[str] | None = None, api_url: str = "http://127.0.0.1:5000") -> None:
+        if args is None:
+            args = []
         SpeculosInstance.__init__(self, app, args)
         Api.__init__(self, api_url)
 
@@ -252,7 +274,7 @@ class SpeculosClient(Api, SpeculosInstance):
         self.open_stream()
 
     def stop(self) -> None:
-        """ Terminate speculos instance started with `start` method. """
+        """Terminate speculos instance started with `start` method."""
         self.close_stream()
         SpeculosInstance.stop(self)
 
@@ -261,14 +283,22 @@ class SpeculosClient(Api, SpeculosInstance):
         return self
 
     def __exit__(
-        self, exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException], exc_tb: Optional[TracebackType]
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         self.stop()
 
     def apdu_exchange(
-            self, cla: int, ins: int, data: bytes = b"", p1: int = 0, p2: int = 0,
-            tick_timeout: int = 5 * 60 * 10) -> bytes:
+        self,
+        cla: int,
+        ins: int,
+        data: bytes = b"",
+        p1: int = 0,
+        p2: int = 0,
+        tick_timeout: int = 5 * 60 * 10,
+    ) -> bytes:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
         return Api._apdu_exchange(self, apdu, tick_timeout)
 

@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Tests to ensure that speculos launches correctly the BTC apps.
-'''
+"""
 
-import json
 import importlib.resources
 import io
-import os
-import pytest
-
+import json
 from enum import IntEnum
+
+import pytest
 
 import speculos.client
 
@@ -49,16 +48,18 @@ def test_boil_get_public_key_with_user_approval(client, app):
         while "Cancel" not in event["text"]:
             client.press_and_release("right")
             event = client.get_next_event()
- 
+
         screenshot = client.get_screenshot()
         path = importlib.resources.files(__package__) / "resources" / f"boil_getpubkey_{app.model}.png"
-        assert speculos.client.screenshot_equal(path, io.BytesIO(screenshot))
+        if not speculos.client.screenshot_equal(path, io.BytesIO(screenshot)):
+            raise ValueError("Screenshot does not match expected image")
 
         client.press_and_release("both")
 
         with pytest.raises(speculos.client.ApduException) as e:
             response.receive()
-        assert e.value.sw == 0x6985
+        if e.value.sw != 0x6985:
+            raise ValueError(f"Expected status word 0x6985, got {e.value.sw}")
 
 
 def test_boil_automation(client, app):

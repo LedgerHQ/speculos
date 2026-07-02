@@ -1,10 +1,9 @@
 import select
-from typing import List, Optional
 
 from speculos.observer import TextEvent
-from . import bagl
-from . import nbgl
-from .display import Display, DisplayNotifier, FrameBuffer, GraphicLibrary, MODELS
+
+from . import bagl, nbgl
+from .display import MODELS, Display, DisplayNotifier, FrameBuffer, GraphicLibrary
 from .readerror import ReadError
 from .struct import DisplayArgs, ServerArgs
 from .vnc import VNC
@@ -28,7 +27,7 @@ class Headless(Display):
     def nbgl_gl(self):
         return self._nbgl_gl
 
-    def display_status(self, data: bytes) -> List[TextEvent]:
+    def display_status(self, data: bytes) -> list[TextEvent]:
         ret = self.bagl_gl.display_status(data)
         return ret
 
@@ -40,15 +39,17 @@ class Headless(Display):
 
 
 class HeadlessPaintWidget(FrameBuffer):
-    def __init__(self, model: str, vnc: Optional[VNC] = None):
+    def __init__(self, model: str, vnc: VNC | None = None):
         super().__init__(model)
         self.vnc = vnc
 
-    def update(self,
-               _0: Optional[int] = None,
-               _1: Optional[int] = None,
-               _2: Optional[int] = None,
-               _3: Optional[int] = None) -> bool:
+    def update(
+        self,
+        _0: int | None = None,
+        _1: int | None = None,
+        _2: int | None = None,
+        _3: int | None = None,
+    ) -> bool:
         if self.pixels or self.draw_default_color:
             self._redraw()
             self.pixels = {}
@@ -63,7 +64,6 @@ class HeadlessPaintWidget(FrameBuffer):
 
 
 class HeadlessNotifier(DisplayNotifier):
-
     def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
         super().__init__(display_args, server_args)
         self._set_display_class(Headless)

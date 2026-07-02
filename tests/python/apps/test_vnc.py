@@ -1,6 +1,7 @@
-import pytest
 import socket
 import time
+
+import pytest
 
 
 class Vnc:
@@ -8,7 +9,7 @@ class Vnc:
         self.s = self.connect(port)
 
     def connect(self, port):
-        for i in range(0, 5):
+        for _i in range(0, 5):
             try:
                 s = socket.create_connection(("127.0.0.1", port), timeout=0.5)
                 connected = True
@@ -17,7 +18,8 @@ class Vnc:
                 time.sleep(0.2)
                 connected = False
 
-        assert connected
+        if not connected:
+            raise AssertionError("Failed to connect to VNC server")
         return s
 
     def auth(self, password=None):
@@ -28,9 +30,11 @@ class Vnc:
         # receive security types supported
         data = self.s.recv(2)
         if not password:
-            assert data == b"\x01\x01"
+            if data != b"\x01\x01":
+                raise ValueError(f"Expected security type b'\\x01\\x01', got {data}")
         else:
-            assert data == b"\x01\x02"
+            if data != b"\x01\x02":
+                raise ValueError(f"Expected security type b'\\x01\\x02', got {data}")
 
 
 @pytest.fixture(scope="function")

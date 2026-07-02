@@ -1,30 +1,31 @@
-import os
 import logging
+import os
+import struct
 import sys
 import threading
 import time
-import struct
-from pathlib import Path
 from collections import namedtuple
+from collections.abc import Callable
 from enum import IntEnum
+from pathlib import Path
 from socket import socket
-from typing import Callable, List, Optional, Tuple
 
 from speculos.observer import BroadcastInterface, TextEvent
-from .transport import build_transport, TransportType
+
 from .automation import Automation
 from .display import DisplayNotifier, IODevice
 from .nbgl import NBGL
+from .nbgl_serialize import deserialize_nbgl_bytes
 from .ocr import OCR
 from .readerror import ReadError
-from .nbgl_serialize import deserialize_nbgl_bytes
+from .transport import TransportType, build_transport
 
 
 class SephTag(IntEnum):
     BUTTON_PUSH_EVENT = 0x05
-    FINGER_EVENT = 0x0c
-    DISPLAY_PROCESSED_EVENT = 0x0d
-    TICKER_EVENT = 0x0e
+    FINGER_EVENT = 0x0C
+    DISPLAY_PROCESSED_EVENT = 0x0D
+    TICKER_EVENT = 0x0E
     CAPDU_EVENT = 0x16
 
     MCU = 0x31
@@ -32,7 +33,7 @@ class SephTag(IntEnum):
     TAG_BLE_SEND = 0x38
     TAG_BLE_RADIO_POWER = 0x44
     SE_POWER_OFF = 0x46
-    USB_CONFIG = 0x4f
+    USB_CONFIG = 0x4F
     USB_EP_PREPARE = 0x50
 
     NFC_RAPDU = 0x4A
@@ -42,8 +43,8 @@ class SephTag(IntEnum):
     RAPDU = 0x53
     PLAY_TUNE = 0x56
 
-    DBG_SCREEN_DISPLAY_STATUS = 0x5e
-    PRINTC_STATUS = 0x5f
+    DBG_SCREEN_DISPLAY_STATUS = 0x5E
+    PRINTC_STATUS = 0x5F
     NBGL_SEND_SPECULOS_TEXT_LINE = 0x5A
 
     GENERAL_STATUS = 0x60
@@ -72,12 +73,18 @@ class SephTag(IntEnum):
 
 TICKER_DELAY = 0.1
 
-RenderMethods = namedtuple('RenderMethods', 'PROGRESSIVE FLUSHED')
+RenderMethods = namedtuple("RenderMethods", "PROGRESSIVE FLUSHED")
 RENDER_METHOD = RenderMethods(0, 1)
 
 
 class TimeTickerDaemon(threading.Thread):
-    def __init__(self, add_tick: Callable, wait_until_tick_is_processed: Callable, *args, **kwargs):
+    def __init__(
+        self,
+        add_tick: Callable,
+        wait_until_tick_is_processed: Callable,
+        *args,
+        **kwargs,
+    ):
         """
         Initializes the Ticker Daemon
         The goal of this daemon is to emulate the time spent in the application by sending it
@@ -140,7 +147,7 @@ class SocketHelper(threading.Thread):
         self.socket = sock
         self.sending_lock = threading.Lock()
         self.queue_condition = threading.Condition()
-        self.queue: List[Tuple[SephTag, bytes]] = []
+        self.queue: list[tuple[SephTag, bytes]] = []
         self.status_event = status_event
         self.logger = logging.getLogger("seproxyhal.packet")
         self.stop = False
@@ -148,12 +155,12 @@ class SocketHelper(threading.Thread):
         self.tick_requested = False
 
     def _recvall(self, size: int):
-        data = b''
+        data = b""
         while size > 0:
             try:
                 tmp = self.socket.recv(size)
             except ConnectionResetError:
-                tmp = b''
+                tmp = b""
 
             if len(tmp) == 0:
                 self.logger.debug("fd closed")
@@ -171,22 +178,23 @@ class SocketHelper(threading.Thread):
             return None, None, None
 
         tag = data[0]
-        size = int.from_bytes(data[1:3], 'big')
+        size = int.from_bytes(data[1:3], "big")
 
         data = self._recvall(size)
         if data is None:
             return None, None, None
-        assert len(data) == size
+        if len(data) != size:
+            raise ValueError("Data length does not match expected size")
 
         return tag, size, data
 
-    def send_packet(self, tag: SephTag, data: bytes = b''):
+    def send_packet(self, tag: SephTag, data: bytes = b""):
         """Send a packet to the app."""
 
-        size: bytes = len(data).to_bytes(2, 'big')
-        packet: bytes = tag.to_bytes(1, 'big') + size + data
+        size: bytes = len(data).to_bytes(2, "big")
+        packet: bytes = tag.to_bytes(1, "big") + size + data
         with self.sending_lock:
-            self.logger.debug("send {}" .format(packet.hex()))
+            self.logger.debug(f"send {packet.hex()}")
             try:
                 self.socket.sendall(packet)
             except BrokenPipeError:
@@ -194,7 +202,7 @@ class SocketHelper(threading.Thread):
             except OSError:
                 self.stop = True
 
-    def queue_packet(self, tag: SephTag, data: bytes = b'', priority: bool = False):
+    def queue_packet(self, tag: SephTag, data: bytes = b"", priority: bool = False):
         """
         Append a packet to the queue of packets to be sent.
 
@@ -230,7 +238,6 @@ class SocketHelper(threading.Thread):
 
     def run(self):
         while not self.stop:
-
             # wait for a event in the queue or a tick to be available
             with self.queue_condition:
                 while len(self.queue) == 0 and not self.tick_requested:
@@ -244,7 +251,7 @@ class SocketHelper(threading.Thread):
             if len(self.queue):
                 tag, data = self.queue.pop(0)
             elif self.tick_requested:
-                tag, data = SephTag.TICKER_EVENT, b''
+                tag, data = SephTag.TICKER_EVENT, b""
             else:
                 raise RuntimeError("Unexpected state: no ticker nor event to send on socket")
 
@@ -258,21 +265,23 @@ class SocketHelper(threading.Thread):
 
 
 class SeProxyHal(IODevice):
-    def __init__(self,
-                 sock: socket,
-                 model: str,
-                 automation: Optional[Automation] = None,
-                 automation_server: Optional[BroadcastInterface] = None,
-                 transport: TransportType = TransportType.HID,
-                 verbose: bool = False,
-                 sound: bool = False):
+    def __init__(
+        self,
+        sock: socket,
+        model: str,
+        automation: Automation | None = None,
+        automation_server: BroadcastInterface | None = None,
+        transport: TransportType = TransportType.HID,
+        verbose: bool = False,
+        sound: bool = False,
+    ):
         self._socket = sock
         self.model = model
         self.logger = logging.getLogger("seproxyhal")
-        self.printf_queue = ''
+        self.printf_queue = ""
         self.automation = automation
         self.automation_server = automation_server
-        self.events: List[TextEvent] = []
+        self.events: list[TextEvent] = []
         self.need_nbgl_refresh = False
         self.is_last_draw_nbgl = False
         self.nbgl_speculos_text_lines_enabled = False
@@ -284,8 +293,7 @@ class SeProxyHal(IODevice):
         self.socket_helper = SocketHelper(self._socket, self.status_event)
         self.socket_helper.start()
 
-        self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick,
-                                                   self.socket_helper.wait_until_tick_is_processed)
+        self.time_ticker_thread = TimeTickerDaemon(self.socket_helper.add_tick, self.socket_helper.wait_until_tick_is_processed)
         self.time_ticker_thread.start()
 
         self.transport = build_transport(self.socket_helper.queue_packet, transport)
@@ -293,7 +301,7 @@ class SeProxyHal(IODevice):
         self.ocr = OCR(model)
 
         # A list of callback methods when an APDU response is received
-        self.apdu_callbacks: List[Callable[[bytes], None]] = []
+        self.apdu_callbacks: list[Callable[[bytes], None]] = []
 
     @property
     def file(self):
@@ -318,7 +326,7 @@ class SeProxyHal(IODevice):
                     self.file.close()
                     sys.exit(0)
                 else:
-                    assert False
+                    raise AssertionError()
 
     def apply_automation(self):
         for event in self.events:
@@ -330,11 +338,11 @@ class SeProxyHal(IODevice):
         self.file.close()
 
     def can_read(self, screen: DisplayNotifier):
-        '''
+        """
         Handle packet sent by the app.
 
         This function is called thanks to a screen QSocketNotifier.
-        '''
+        """
         tag, size, data = self.socket_helper.read_packet()
         if data is None:
             self._cleanup(screen)
@@ -343,7 +351,7 @@ class SeProxyHal(IODevice):
         self.logger.debug(f"received (tag: {tag:#04x}, size: {size:#04x}): {data!r}")
 
         if tag == SephTag.GENERAL_STATUS:
-            if int.from_bytes(data[:2], 'big') == SephTag.GENERAL_STATUS_LAST_COMMAND:
+            if int.from_bytes(data[:2], "big") == SephTag.GENERAL_STATUS_LAST_COMMAND:
                 if self.need_nbgl_refresh:
                     self.need_nbgl_refresh = False
 
@@ -369,9 +377,11 @@ class SeProxyHal(IODevice):
                 self.logger.error(f"unknown subtag: {data[:2]!r}")
                 sys.exit(0)
 
-        elif tag in [SephTag.SCREEN_DISPLAY_STATUS,
-                     SephTag.DBG_SCREEN_DISPLAY_STATUS,
-                     SephTag.BAGL_DRAW_RECT]:
+        elif tag in [
+            SephTag.SCREEN_DISPLAY_STATUS,
+            SephTag.DBG_SCREEN_DISPLAY_STATUS,
+            SephTag.BAGL_DRAW_RECT,
+        ]:
             self.logger.debug(f"DISPLAY_STATUS {data!r}")
             self.is_last_draw_nbgl = False
             if screen.display.model not in ["nanox", "nanosp"] or tag == SephTag.BAGL_DRAW_RECT:
@@ -397,14 +407,14 @@ class SeProxyHal(IODevice):
             text = data[:-8].decode()
             # Extract coordinates
             coordinates = data[-8:]
-            x, y, w, h = struct.unpack('>4H', coordinates)
+            x, y, w, h = struct.unpack(">4H", coordinates)
             self.ocr.add_text(text, x, y, w, h)
 
         elif tag == SephTag.PRINTF_STATUS or tag == SephTag.PRINTC_STATUS:
             for b in [chr(b) for b in data]:
-                if b == '\n':
+                if b == "\n":
                     self.logger.info(f"printf: {self.printf_queue}")
-                    self.printf_queue = ''
+                    self.printf_queue = ""
                 else:
                     self.printf_queue += b
 
@@ -445,7 +455,6 @@ class SeProxyHal(IODevice):
             pass
 
         elif tag == SephTag.PLAY_TUNE:
-
             TUNES_NAMES = {
                 1: "TUNE_BOOT",
                 2: "TUNE_CHARGING",
@@ -457,7 +466,7 @@ class SeProxyHal(IODevice):
                 8: "TUNE_LOOK_AT_ME",
                 9: "TUNE_TAP_CASUAL",
                 10: "TUNE_TAP_NEXT",
-                11: "TUNE_CARD_CONNECT"
+                11: "TUNE_CARD_CONNECT",
             }
 
             if self.sound:
@@ -469,8 +478,9 @@ class SeProxyHal(IODevice):
                     wavefile = f"{Path(__file__).parent}/tunes/{TUNES_NAMES[tune_id]}.wav"
                     if Path(wavefile).exists():
                         # to hide its initialization message
-                        os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+                        os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
                         import pygame.mixer
+
                         try:
                             pygame.mixer.init()
                             my_sound = pygame.mixer.Sound(wavefile)
@@ -486,12 +496,13 @@ class SeProxyHal(IODevice):
             # NBGL serialized events are not enabled in the targets libshared.
             # However, speculos has the capability to parse them, and could exploit them
             # in the future.
-            is_stax = (self.model == 'stax')
+            is_stax = self.model == "stax"
             event = deserialize_nbgl_bytes(is_stax, data)
             self.logger.info(event)
 
         elif tag == SephTag.NBGL_DRAW_RECT:
-            assert isinstance(screen.display.nbgl_gl, NBGL)
+            if not isinstance(screen.display.nbgl_gl, NBGL):
+                raise ValueError("Display is not an instance of NBGL")
             self.events += screen.display.nbgl_gl.hal_draw_rect(data)
 
         elif tag == SephTag.NBGL_REFRESH:
@@ -503,15 +514,18 @@ class SeProxyHal(IODevice):
             self.is_last_draw_nbgl = True
 
         elif tag == SephTag.NBGL_DRAW_HORIZONTAL_LINE:
-            assert isinstance(screen.display.nbgl_gl, NBGL)
+            if not isinstance(screen.display.nbgl_gl, NBGL):
+                raise ValueError("Display is not an instance of NBGL")
             screen.display.nbgl_gl.hal_draw_horizontal_line(data)
 
         elif tag == SephTag.NBGL_DRAW_LINE:
-            assert isinstance(screen.display.nbgl_gl, NBGL)
+            if not isinstance(screen.display.nbgl_gl, NBGL):
+                raise ValueError("Display is not an instance of NBGL")
             screen.display.nbgl_gl.hal_draw_line(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE:
-            assert isinstance(screen.display.nbgl_gl, NBGL)
+            if not isinstance(screen.display.nbgl_gl, NBGL):
+                raise ValueError("Display is not an instance of NBGL")
             # Do not analyze raw image,
             # if the text was already sent through a NBGL text line event.
             if self.nbgl_speculos_text_lines_enabled is False:
@@ -519,7 +533,8 @@ class SeProxyHal(IODevice):
             screen.display.nbgl_gl.hal_draw_image(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_RLE:
-            assert isinstance(screen.display.nbgl_gl, NBGL)
+            if not isinstance(screen.display.nbgl_gl, NBGL):
+                raise ValueError("Display is not an instance of NBGL")
             # Do not analyze raw image,
             # if the text was already sent through a NBGL text line event.
             if self.nbgl_speculos_text_lines_enabled is False:
@@ -527,7 +542,8 @@ class SeProxyHal(IODevice):
             screen.display.nbgl_gl.hal_draw_image_rle(data)
 
         elif tag == SephTag.NBGL_DRAW_IMAGE_FILE:
-            assert isinstance(screen.display.nbgl_gl, NBGL)
+            if not isinstance(screen.display.nbgl_gl, NBGL):
+                raise ValueError("Display is not an instance of NBGL")
             screen.display.nbgl_gl.hal_draw_image_file(data)
 
         elif tag == SephTag.NFC_RAPDU:
@@ -542,20 +558,20 @@ class SeProxyHal(IODevice):
             sys.exit(0)
 
     def handle_button(self, button: int, pressed: bool):
-        '''Forward button press/release from the GUI to the app.'''
+        """Forward button press/release from the GUI to the app."""
 
         if pressed:
-            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, 'big'))
+            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (button << 1).to_bytes(1, "big"))
         else:
-            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, 'big'))
+            self.socket_helper.queue_packet(SephTag.BUTTON_PUSH_EVENT, (0 << 1).to_bytes(1, "big"))
 
     def handle_finger(self, x: int, y: int, pressed: bool):
-        '''Forward finger press/release from the GUI to the app.'''
+        """Forward finger press/release from the GUI to the app."""
 
         if pressed:
-            packet = SephTag.FINGER_EVENT_TOUCH.to_bytes(1, 'big')
+            packet = SephTag.FINGER_EVENT_TOUCH.to_bytes(1, "big")
         else:
-            packet = SephTag.FINGER_EVENT_RELEASE.to_bytes(1, 'big')
+            packet = SephTag.FINGER_EVENT_RELEASE.to_bytes(1, "big")
         if self.verbose:
             finger_log = os.environ.get("SPECULOS_FINGER_LOG")
             if finger_log:
@@ -564,8 +580,8 @@ class SeProxyHal(IODevice):
                     f.write(f"{action},{x},{y},{time.monotonic():.4f}\n")
             elif pressed:
                 self.logger.info(f"Finger press at: {x},{y}")
-        packet += x.to_bytes(2, 'big')
-        packet += y.to_bytes(2, 'big')
+        packet += x.to_bytes(2, "big")
+        packet += y.to_bytes(2, "big")
 
         self.socket_helper.queue_packet(SephTag.FINGER_EVENT, packet)
 
@@ -578,7 +594,7 @@ class SeProxyHal(IODevice):
             self.time_ticker_thread.add_tick(wait_until_tick_is_processed=True)
 
     def handle_wait(self, delay: float):
-        '''Wait for a specified delay, taking account real time seen by the app.'''
+        """Wait for a specified delay, taking account real time seen by the app."""
         expected_ticks = int(delay / TICKER_DELAY)
         if not self.time_ticker_thread.paused:
             start = self.socket_helper.ticks_count
@@ -589,16 +605,16 @@ class SeProxyHal(IODevice):
                 self.time_ticker_thread.add_tick(wait_until_tick_is_processed=True)
 
     def to_app(self, packet: bytes):
-        '''
+        """
         Forward raw APDU to the app.
 
         Packets can be forwarded directly to the SE thanks to
         SephTag.CAPDU_EVENT, but it doesn't work with messages are larger
         than G_io_seproxyhal_spi_buffer. Emulating a basic USB stack is more
         reliable, see issue #11.
-        '''
+        """
 
-        if packet.startswith(b'RAW!') and len(packet) > 4:
+        if packet.startswith(b"RAW!") and len(packet) > 4:
             tag, packet = packet[4], packet[5:]
             self.socket_helper.queue_packet(SephTag(tag), packet)
         else:

@@ -1,10 +1,12 @@
 import json
 import threading
+from collections.abc import Generator
+
 import jsonschema
-from flask import stream_with_context, Response, request
-from typing import Generator, Optional
+from flask import Response, request, stream_with_context
 
 from speculos.resources_importer import get_resource_schema_as_json
+
 from ..mcu.seproxyhal import SeProxyHal
 from .restful import SephResource
 
@@ -16,7 +18,7 @@ class APDUBridge:
         self.response_condition = threading.Condition()
         self._seph = seph
         self._seph.apdu_callbacks.append(self.seph_apdu_callback)
-        self.response: Optional[bytes]
+        self.response: bytes | None
 
     def exchange(self, data: bytes, tick_timeout: int = 5 * 60 * 10) -> Generator[bytes, None, None]:
         # force headers to be sent
@@ -65,7 +67,12 @@ class APDU(SephResource):
 
         if "tick_timeout" in args:
             tick_timeout = args["tick_timeout"]
-            return Response(stream_with_context(self._bridge.exchange(data, tick_timeout)),
-                            content_type="application/json")
+            return Response(
+                stream_with_context(self._bridge.exchange(data, tick_timeout)),
+                content_type="application/json",
+            )
 
-        return Response(stream_with_context(self._bridge.exchange(data)), content_type="application/json")
+        return Response(
+            stream_with_context(self._bridge.exchange(data)),
+            content_type="application/json",
+        )

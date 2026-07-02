@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from .interface import TransportLayer, TransportType
 from .nfc import NFC
@@ -14,4 +14,4 @@ def build_transport(cb: Callable, transport: TransportType) -> TransportLayer:
         return HID(cb, transport)
 
 
-__all__ = ["build_transport", "TransportType"]
+__all__ = ["TransportType", "build_transport"]

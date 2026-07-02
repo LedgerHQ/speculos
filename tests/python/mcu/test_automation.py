@@ -1,7 +1,7 @@
 import importlib.resources
 import json
+
 import jsonschema
-import os
 import pytest
 
 from speculos.mcu import automation
@@ -23,10 +23,12 @@ class TestAutomation:
         """Invalid JSON/schema testcases."""
 
         with pytest.raises(json.decoder.JSONDecodeError):
-            assert automation.Automation("x")
+            if not automation.Automation("x"):
+                raise AssertionError("Invalid JSON should raise an exception")
 
         with pytest.raises(jsonschema.exceptions.ValidationError):
-            assert automation.Automation("{}")
+            if not automation.Automation("{}"):
+                raise AssertionError("Invalid JSON should raise an exception")
 
         names = [
             "automation_invalid_rule_key.json",
@@ -35,30 +37,32 @@ class TestAutomation:
         ]
         for name in names:
             with pytest.raises(jsonschema.exceptions.ValidationError):
-                assert automation.Automation(TestAutomation.get_json_path(name))
+                if not automation.Automation(TestAutomation.get_json_path(name)):
+                    raise AssertionError("Invalid JSON should raise an exception")
 
     def test_rules(self):
         expected_actions = [
             ["button", 2, True],
             ["button", 2, False],
             ["setbool", "seen", True],
-            ["exit"]
+            ["exit"],
         ]
-        regexp_actions = [
-            ["exit"]
-        ]
-        default_actions = [
-            ["setbool", "default_match", True]
-        ]
+        regexp_actions = [["exit"]]
+        default_actions = [["setbool", "default_match", True]]
 
         auto = automation.Automation(TestAutomation.get_json_path("automation_valid.json"))
-        assert auto.get_actions("Application", 0, 0) == default_actions
-        assert auto.get_actions("Application", 35, 3) == expected_actions
+        if auto.get_actions("Application", 0, 0) != default_actions:
+            raise AssertionError("Actions do not match expected default actions")
+        if auto.get_actions("Application", 35, 3) != expected_actions:
+            raise AssertionError("Actions do not match expected actions")
 
         auto.set_bool("seen", True)
-        assert auto.get_actions("Application", 35, 3) == default_actions
+        if auto.get_actions("Application", 35, 3) != default_actions:
+            raise AssertionError("Actions do not match expected default actions")
 
         auto.set_bool("seen", False)
-        assert auto.get_actions("Application", 35, 3) == expected_actions
+        if auto.get_actions("Application", 35, 3) != expected_actions:
+            raise AssertionError("Actions do not match expected actions")
 
-        assert auto.get_actions("1234", 35, 3) == regexp_actions
+        if auto.get_actions("1234", 35, 3) != regexp_actions:
+            raise AssertionError("Actions do not match expected regexp actions")

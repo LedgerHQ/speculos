@@ -6,7 +6,6 @@ import json
 import logging
 import socketserver
 import threading
-from typing import List
 from dataclasses import asdict
 
 from speculos.observer import BroadcastInterface, ObserverInterface, TextEvent
@@ -30,12 +29,11 @@ class AutomationServer(socketserver.ThreadingMixIn, socketserver.TCPServer, Broa
 
 
 class AutomationClient(socketserver.BaseRequestHandler, ObserverInterface):
-
     def setup(self) -> None:
-        self.server:  AutomationServer
+        self.server: AutomationServer
         self.logger = logging.getLogger("automation")
         self.condition = threading.Condition()
-        self.events: List[TextEvent] = []
+        self.events: list[TextEvent] = []
         self.logger.debug("New client from %s", self.client_address)
         self.server.add_client(self)
 

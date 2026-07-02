@@ -4,7 +4,6 @@ Forward NFC packets between the MCU and the SE
 
 import enum
 import logging
-from typing import List, Optional
 
 from .interface import TransportLayer, TransportType
 
@@ -20,7 +19,7 @@ class NFC(TransportLayer):
         self.MTU = 140
         self.rx_sequence = 0
         self.rx_size = 0
-        self.rx_data: bytes = b''
+        self.rx_data: bytes = b""
         self.logger = logging.getLogger("NFC")
 
     def config(self, data: bytes) -> None:
@@ -29,7 +28,7 @@ class NFC(TransportLayer):
     def prepare(self, data: bytes) -> None:
         self.logger.warning("USB-specific 'prepare' method called on NFC transport. Ignored.")
 
-    def handle_rapdu(self, data: bytes) -> Optional[bytes]:
+    def handle_rapdu(self, data: bytes) -> bytes | None:
         """concatenate apdu chunks into full apdu"""
         # example of data
         # 0000050000002b3330000409312e302e302d72633104e600000008362e312e302d646508352e312e302d6465010001009000
@@ -38,8 +37,9 @@ class NFC(TransportLayer):
         if data[2] != 0x05:
             return None
 
-        sequence = int.from_bytes(data[3:5], 'big')
-        assert self.rx_sequence == sequence, f"Unexpected sequence number:{sequence}"
+        sequence = int.from_bytes(data[3:5], "big")
+        if self.rx_sequence != sequence:
+            raise ValueError(f"Unexpected sequence number:{sequence}")
 
         if sequence == 0:
             self.rx_size = int.from_bytes(data[5:7], "big")
@@ -56,7 +56,7 @@ class NFC(TransportLayer):
         return None
 
     def send(self, data: bytes) -> None:
-        chunks: List[bytes] = []
+        chunks: list[bytes] = []
         data_len = len(data)
 
         while len(data) > 0:

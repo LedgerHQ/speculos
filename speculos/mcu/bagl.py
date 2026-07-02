@@ -1,29 +1,32 @@
 import binascii
 import logging
 from collections import namedtuple
-from construct import Aligned, Struct, Int8ul, Int16ul, Int32ul, Padded
-from typing import List, Optional, Tuple
+
+from construct import Aligned, Int8ul, Int16ul, Int32ul, Padded, Struct
 
 from speculos.observer import TextEvent
-from . import bagl_font
-from . import bagl_glyph
+
+from . import bagl_font, bagl_glyph
 from .display import FrameBuffer, GraphicLibrary
 
-bagl_component_t = Aligned(4, Struct(
-    "type" / Int8ul,
-    "userid" / Int8ul,
-    "x" / Int16ul,
-    "y" / Int16ul,
-    "width" / Int16ul,
-    "height" / Int16ul,
-    "stroke" / Int8ul,
-    "radius" / Int8ul,
-    "fill" / Padded(4, Int8ul),
-    "fgcolor" / Int32ul,
-    "bgcolor" / Int32ul,
-    "font_id" / Int16ul,
-    "icon_id" / Int8ul,
-))
+bagl_component_t = Aligned(
+    4,
+    Struct(
+        "type" / Int8ul,
+        "userid" / Int8ul,
+        "x" / Int16ul,
+        "y" / Int16ul,
+        "width" / Int16ul,
+        "height" / Int16ul,
+        "stroke" / Int8ul,
+        "radius" / Int8ul,
+        "fill" / Padded(4, Int8ul),
+        "fgcolor" / Int32ul,
+        "bgcolor" / Int32ul,
+        "font_id" / Int16ul,
+        "icon_id" / Int8ul,
+    ),
+)
 
 BAGL_FILL = 1
 
@@ -36,10 +39,10 @@ BAGL_FILL_CIRCLE_6_OCTANT = 32
 BAGL_FILL_CIRCLE_7_OCTANT = 64
 BAGL_FILL_CIRCLE_8_OCTANT = 128
 BAGL_FILL_CIRCLE = 0xFF
-BAGL_FILL_CIRCLE_3PI2_2PI = (BAGL_FILL_CIRCLE_1_OCTANT | BAGL_FILL_CIRCLE_2_OCTANT)
-BAGL_FILL_CIRCLE_PI_3PI2 = (BAGL_FILL_CIRCLE_3_OCTANT | BAGL_FILL_CIRCLE_4_OCTANT)
-BAGL_FILL_CIRCLE_0_PI2 = (BAGL_FILL_CIRCLE_5_OCTANT | BAGL_FILL_CIRCLE_6_OCTANT)
-BAGL_FILL_CIRCLE_PI2_PI = (BAGL_FILL_CIRCLE_7_OCTANT | BAGL_FILL_CIRCLE_8_OCTANT)
+BAGL_FILL_CIRCLE_3PI2_2PI = BAGL_FILL_CIRCLE_1_OCTANT | BAGL_FILL_CIRCLE_2_OCTANT
+BAGL_FILL_CIRCLE_PI_3PI2 = BAGL_FILL_CIRCLE_3_OCTANT | BAGL_FILL_CIRCLE_4_OCTANT
+BAGL_FILL_CIRCLE_0_PI2 = BAGL_FILL_CIRCLE_5_OCTANT | BAGL_FILL_CIRCLE_6_OCTANT
+BAGL_FILL_CIRCLE_PI2_PI = BAGL_FILL_CIRCLE_7_OCTANT | BAGL_FILL_CIRCLE_8_OCTANT
 
 BAGL_NONE = 0
 BAGL_BUTTON = 1
@@ -63,27 +66,29 @@ BAGL_FONT_ALIGNMENT_MIDDLE = 0x2000
 
 SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START = 0x00
 
-DrawState = namedtuple('DrawState', 'x y width height colors bpp xx yy')
+DrawState = namedtuple("DrawState", "x y width height colors bpp xx yy")
 
 
 class Bagl(GraphicLibrary):
-    def __init__(self, fb: FrameBuffer, size: Tuple[int, int], model: str):
+    def __init__(self, fb: FrameBuffer, size: tuple[int, int], model: str):
         super().__init__(fb, size, model)
         self.draw_state = DrawState(0, 0, 0, 0, [], 0, 0, 0)
         self.logger = logging.getLogger("BAGL")
 
-    def refresh(self, _: Optional[bytes] = None) -> bool:
+    def refresh(self, _: bytes | None = None) -> bool:
         return self.fb.update()
 
-    def hal_draw_bitmap_within_rect(self,
-                                    x: int,
-                                    y: int,
-                                    width: int,
-                                    height: int,
-                                    colors: List[int],
-                                    bpp: int,
-                                    bitmap: List[int],
-                                    restore: Optional[Tuple[int, int]] = None) -> None:
+    def hal_draw_bitmap_within_rect(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        colors: list[int],
+        bpp: int,
+        bitmap: list[int],
+        restore: tuple[int, int] | None = None,
+    ) -> None:
         if bpp == 3 or bpp > 4:
             return
 
@@ -141,7 +146,7 @@ class Bagl(GraphicLibrary):
             else:
                 height = self.SCREEN_HEIGHT - y
 
-        YX = (y//8)*self.SCREEN_WIDTH + x
+        YX = (y // 8) * self.SCREEN_WIDTH + x
         YXlinemax = YX + width
         xx = x
         requested_x = x
@@ -170,16 +175,16 @@ class Bagl(GraphicLibrary):
 
         xx = 0
 
-        text = text.replace(b'\r\n', b'\n')
+        text = text.replace(b"\r\n", b"\n")
         for ch in text:
             ch_width = 0
 
             if ch < font.first_char or ch > font.last_char:
-                if ch in ['\r', '\n']:
+                if ch in ["\r", "\n"]:
                     return xx
 
-                if ch >= 0xc0:
-                    ch_width = ch & 0x3f
+                if ch >= 0xC0:
+                    ch_width = ch & 0x3F
                 elif ch >= 0x80:
                     if ch & 0x20:
                         font_symbol_id = bagl_font.BAGL_FONT_SYMBOLS_1
@@ -187,7 +192,7 @@ class Bagl(GraphicLibrary):
                         font_symbol_id = bagl_font.BAGL_FONT_SYMBOLS_0
                     font_symbols = bagl_font.get(font_symbol_id)
                     if font_symbols:
-                        ch_width = font.characters[ch & 0x1f].char_width
+                        ch_width = font.characters[ch & 0x1F].char_width
             else:
                 ch -= font.first_char
                 ch_width = font.characters[ch].char_width
@@ -199,15 +204,17 @@ class Bagl(GraphicLibrary):
 
         return xx
 
-    def _draw_string(self,
-                     font_id: int,
-                     fgcolor: int,
-                     bgcolor: int,
-                     x: int,
-                     y: int,
-                     width: int,
-                     height: int,
-                     text: bytes) -> int:
+    def _draw_string(
+        self,
+        font_id: int,
+        fgcolor: int,
+        bgcolor: int,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        text: bytes,
+    ) -> int:
         font = bagl_font.get(font_id)
         if not font:
             self.logger.error("unsupported font %d", font_id & bagl_font.BAGL_FONT_ID_MASK)
@@ -216,7 +223,7 @@ class Bagl(GraphicLibrary):
         if font.bpp > 1:
             color_count = (1 << font.bpp) - 1
             colors = [bgcolor]
-            for i in range(1, color_count):
+            for _i in range(1, color_count):
                 colors.append(0)
 
             for off in range(0, 3):
@@ -228,10 +235,10 @@ class Bagl(GraphicLibrary):
 
                 if cfg > cbg:
                     for i in range(1, color_count):
-                        colors[i] |= min(0xff, cbg + i * cinc) << (off * 8)
+                        colors[i] |= min(0xFF, cbg + i * cinc) << (off * 8)
                 else:
                     for i in range(1, color_count):
-                        colors[i] |= min(0xff, cfg + (color_count - i) * cinc) << (off * 8)
+                        colors[i] |= min(0xFF, cfg + (color_count - i) * cinc) << (off * 8)
 
             colors.append(fgcolor)
         else:
@@ -241,25 +248,25 @@ class Bagl(GraphicLibrary):
         height += y
         xx = x
 
-        text = text.replace(b'\r\n', b'\n')
+        text = text.replace(b"\r\n", b"\n")
 
         for ch in text:
             ch_height: int = font.char_height
             ch_kerning: int = 0
             ch_width: int = 0
-            ch_bitmap: Optional[List[int]] = None
+            ch_bitmap: list[int] | None = None
             ch_y: int = y
 
             if ch < font.first_char or ch > font.last_char:
-                if ch in ['\r', '\n']:
+                if ch in ["\r", "\n"]:
                     y += ch_height
                     if y + ch_height > height:
                         return (y << 16) | (xx & 0xFFFF)
                     xx = x
                     continue
 
-                if ch >= 0xc0:
-                    ch_width = ch & 0x3f
+                if ch >= 0xC0:
+                    ch_width = ch & 0x3F
                 elif ch >= 0x80:
                     if ch & 0x20:
                         font_symbol_id = bagl_font.BAGL_FONT_SYMBOLS_1
@@ -267,13 +274,13 @@ class Bagl(GraphicLibrary):
                         font_symbol_id = bagl_font.BAGL_FONT_SYMBOLS_0
                     font_symbols = bagl_font.get(font_symbol_id)
                     if font_symbols:
-                        ch_bitmap = font.bitmap[font.characters[ch & 0x1f].bitmap_offset:]
-                        ch_width = font.characters[ch & 0x1f].char_width
+                        ch_bitmap = font.bitmap[font.characters[ch & 0x1F].bitmap_offset :]
+                        ch_width = font.characters[ch & 0x1F].char_width
                         ch_height = font_symbols.char_height
                         ch_y = y + font.baseline_height - font_symbols.baseline_height
             else:
                 ch -= font.first_char
-                ch_bitmap = font.bitmap[font.characters[ch].bitmap_offset:]
+                ch_bitmap = font.bitmap[font.characters[ch].bitmap_offset :]
                 ch_width = font.characters[ch].char_width
                 ch_kerning = font.char_kerning
 
@@ -293,73 +300,75 @@ class Bagl(GraphicLibrary):
 
         return (y << 16) | (xx & 0xFFFF)
 
-    def _draw_circle_helper(self,
-                            color: int,
-                            x_center: int,
-                            y_center: int,
-                            radius: int,
-                            octants: int,
-                            radiusint: int,
-                            colorint: int) -> None:
+    def _draw_circle_helper(
+        self,
+        color: int,
+        x_center: int,
+        y_center: int,
+        radius: int,
+        octants: int,
+        radiusint: int,
+        colorint: int,
+    ) -> None:
         x, y = radius, 0
         decisionOver2 = 1 - x
-        dradius = radius-radiusint
+        dradius = radius - radiusint
         last_x = x
-        drawint = (radiusint > 0 and dradius > 0)
+        drawint = radiusint > 0 and dradius > 0
 
         while y <= x:
             if octants & 1:
                 if drawint:
-                    self._hal_draw_rect(colorint, x_center,   y+y_center, x-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center+x-(dradius-1), y+y_center, dradius, 1)
+                    self._hal_draw_rect(colorint, x_center, y + y_center, x - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center + x - (dradius - 1), y + y_center, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center,   y+y_center-1, x, 1)
+                    self._hal_draw_rect(color, x_center, y + y_center - 1, x, 1)
             if octants & 2:
                 if drawint:
                     if last_x != x:
-                        self._hal_draw_rect(colorint, x_center,   x+y_center, y-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center+y-(dradius-1), x+y_center, dradius, 1)
+                        self._hal_draw_rect(colorint, x_center, x + y_center, y - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center + y - (dradius - 1), x + y_center, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center,   x+y_center-1, y, 1)
+                    self._hal_draw_rect(color, x_center, x + y_center - 1, y, 1)
             if octants & 4:
                 if drawint:
-                    self._hal_draw_rect(colorint, x_center-x, y+y_center, x-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center-x-(dradius-1), y+y_center, dradius, 1)
+                    self._hal_draw_rect(colorint, x_center - x, y + y_center, x - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center - x - (dradius - 1), y + y_center, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center-x, y+y_center-1, x, 1)
+                    self._hal_draw_rect(color, x_center - x, y + y_center - 1, x, 1)
             if octants & 8:
                 if drawint:
                     if last_x != x:
-                        self._hal_draw_rect(colorint, x_center-y, x+y_center, y-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center-y-(dradius-1), x+y_center, dradius, 1)
+                        self._hal_draw_rect(colorint, x_center - y, x + y_center, y - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center - y - (dradius - 1), x + y_center, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center-y, x+y_center-1, y, 1)
+                    self._hal_draw_rect(color, x_center - y, x + y_center - 1, y, 1)
             if octants & 16:
                 if drawint:
-                    self._hal_draw_rect(colorint, x_center,   y_center-y, x-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center+x-(dradius-1), y_center-y, dradius, 1)
+                    self._hal_draw_rect(colorint, x_center, y_center - y, x - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center + x - (dradius - 1), y_center - y, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center,   y_center-y, x, 1)
+                    self._hal_draw_rect(color, x_center, y_center - y, x, 1)
             if octants & 32:
                 if drawint:
                     if last_x != x:
-                        self._hal_draw_rect(colorint, x_center,   y_center-x, y-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center+y-(dradius-1), y_center-x, dradius, 1)
+                        self._hal_draw_rect(colorint, x_center, y_center - x, y - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center + y - (dradius - 1), y_center - x, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center,   y_center-x, y, 1)
+                    self._hal_draw_rect(color, x_center, y_center - x, y, 1)
             if octants & 64:
                 if drawint:
-                    self._hal_draw_rect(colorint, x_center-x, y_center-y, x-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center-x-(dradius-1), y_center-y, dradius, 1)
+                    self._hal_draw_rect(colorint, x_center - x, y_center - y, x - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center - x - (dradius - 1), y_center - y, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center-x, y_center-y, x, 1)
+                    self._hal_draw_rect(color, x_center - x, y_center - y, x, 1)
             if octants & 128:
                 if drawint:
                     if last_x != x:
-                        self._hal_draw_rect(colorint, x_center-y, y_center-x, y-(dradius-1), 1)
-                    self._hal_draw_rect(color, x_center-y-(dradius-1), y_center-x, dradius, 1)
+                        self._hal_draw_rect(colorint, x_center - y, y_center - x, y - (dradius - 1), 1)
+                    self._hal_draw_rect(color, x_center - y - (dradius - 1), y_center - x, dradius, 1)
                 else:
-                    self._hal_draw_rect(color, x_center-y, y_center-x, y, 1)
+                    self._hal_draw_rect(color, x_center - y, y_center - x, y, 1)
 
             last_x = x
             y += 1
@@ -381,7 +390,7 @@ class Bagl(GraphicLibrary):
                 # assert (1 << glyph.bpp) * 4 == len(context)
                 colors = []
                 for i in range(0, 1 << glyph.bpp):
-                    color = int.from_bytes(context[i*4:(i+1)*4], byteorder='big')
+                    color = int.from_bytes(context[i * 4 : (i + 1) * 4], byteorder="big")
                     colors.append(color)
             else:
                 colors = glyph.colors
@@ -393,7 +402,8 @@ class Bagl(GraphicLibrary):
                 glyph.height,
                 colors,
                 glyph.bpp,
-                glyph.bitmap)
+                glyph.bitmap,
+            )
         else:
             if len(context) == 0:
                 self.logger.info("len context == 0 %s", binascii.hexlify(context))
@@ -404,53 +414,108 @@ class Bagl(GraphicLibrary):
                 return
             colors = []
             n = 1
-            for i in range(0, 1 << bpp):
-                color = int.from_bytes(context[n:n+4], byteorder='big')
+            for _i in range(0, 1 << bpp):
+                color = int.from_bytes(context[n : n + 4], byteorder="big")
                 colors.append(color)
                 n += 4
             bitmap = list(context[n:])  # converting bytes to list
             bitmap_length_bits = bpp * component.width * component.height
-            assert len(bitmap) * 8 >= bitmap_length_bits
-            self.hal_draw_bitmap_within_rect(component.x, component.y,
-                                             component.width, component.height,
-                                             colors,
-                                             bpp,
-                                             bitmap)
+            if len(bitmap) * 8 < bitmap_length_bits:
+                raise ValueError("Bitmap length is insufficient")
+            self.hal_draw_bitmap_within_rect(
+                component.x,
+                component.y,
+                component.width,
+                component.height,
+                colors,
+                bpp,
+                bitmap,
+            )
 
-    def _display_bagl_rectangle(self, component, context, context_encoding, halignment, valignment) -> List[TextEvent]:
+    def _display_bagl_rectangle(self, component, context, context_encoding, halignment, valignment) -> list[TextEvent]:
         ret = []
-        radius = min(component.radius, min(component.width//2, component.height//2))
+        radius = min(component.radius, min(component.width // 2, component.height // 2))
         if component.fill != BAGL_FILL:
             coords = [
                 # centered top to bottom
-                (component.x+radius, component.y, component.width-2*radius, component.height),
+                (
+                    component.x + radius,
+                    component.y,
+                    component.width - 2 * radius,
+                    component.height,
+                ),
                 # left to center rect
-                (component.x, component.y+radius, radius, component.height-2*radius),
+                (
+                    component.x,
+                    component.y + radius,
+                    radius,
+                    component.height - 2 * radius,
+                ),
                 # center rect to right
-                (component.x+component.width-radius-1, component.y+radius, radius, component.height-2*radius),
+                (
+                    component.x + component.width - radius - 1,
+                    component.y + radius,
+                    radius,
+                    component.height - 2 * radius,
+                ),
             ]
-            for (x, y, width, height) in coords:
+            for x, y, width, height in coords:
                 self._hal_draw_rect(component.bgcolor, x, y, width, height)
             coords = [
                 # outline. 4 rectangles (with last pixel of each corner not set)
                 # top, bottom, left, right
-                (component.x+radius, component.y, component.width-2*radius, component.stroke),
-                (component.x+radius, component.y+component.height-1, component.width-2*radius, component.stroke),
-                (component.x, component.y+radius, component.stroke, component.height-2*radius),
-                (component.x+component.width-1, component.y+radius, component.stroke, component.height-2*radius),
+                (
+                    component.x + radius,
+                    component.y,
+                    component.width - 2 * radius,
+                    component.stroke,
+                ),
+                (
+                    component.x + radius,
+                    component.y + component.height - 1,
+                    component.width - 2 * radius,
+                    component.stroke,
+                ),
+                (
+                    component.x,
+                    component.y + radius,
+                    component.stroke,
+                    component.height - 2 * radius,
+                ),
+                (
+                    component.x + component.width - 1,
+                    component.y + radius,
+                    component.stroke,
+                    component.height - 2 * radius,
+                ),
             ]
-            for (x, y, width, height) in coords:
+            for x, y, width, height in coords:
                 self._hal_draw_rect(component.fgcolor, x, y, width, height)
         else:
             coords = [
                 # centered top to bottom
-                (component.x+radius, component.y, component.width-2*radius, component.height),
+                (
+                    component.x + radius,
+                    component.y,
+                    component.width - 2 * radius,
+                    component.height,
+                ),
                 # left to center rect
-                (component.x, component.y+radius, radius, component.height-2*radius),
+                (
+                    component.x,
+                    component.y + radius,
+                    radius,
+                    component.height - 2 * radius,
+                ),
                 # center rect to right
-                (component.x+component.width-radius, component.y+radius, radius, component.height-2*radius),
+                (
+                    component.x + component.width - radius,
+                    component.y + radius,
+                    radius,
+                    component.height - 2 * radius,
+                ),
             ]
-            for (x, y, width, height) in coords:
+            for x, y, width, height in coords:
                 if x == 0 and y == 0 and width == self.SCREEN_WIDTH and height == self.SCREEN_HEIGHT:
                     ret += self.fb.draw_rect(x, y, width, height, component.fgcolor)
                 else:
@@ -460,60 +525,72 @@ class Bagl(GraphicLibrary):
             radiusint = 0
             if component.fill != BAGL_FILL and component.stroke < radius:
                 radiusint = radius - component.stroke
-            self._draw_circle_helper(component.fgcolor,
-                                     component.x + radius,
-                                     component.y + radius,
-                                     radius,
-                                     BAGL_FILL_CIRCLE_PI2_PI,
-                                     radiusint,
-                                     component.bgcolor)
-            self._draw_circle_helper(component.fgcolor,
-                                     component.x + component.width - radius - component.stroke,
-                                     component.y + radius,
-                                     radius,
-                                     BAGL_FILL_CIRCLE_0_PI2,
-                                     radiusint,
-                                     component.bgcolor)
-            self._draw_circle_helper(component.fgcolor,
-                                     component.x + radius,
-                                     component.y + component.height - radius - component.stroke,
-                                     radius,
-                                     BAGL_FILL_CIRCLE_PI_3PI2,
-                                     radiusint,
-                                     component.bgcolor)
-            self._draw_circle_helper(component.fgcolor,
-                                     component.x + component.width - radius - component.stroke,
-                                     component.y + component.height - radius - component.stroke,
-                                     radius,
-                                     BAGL_FILL_CIRCLE_3PI2_2PI,
-                                     radiusint,
-                                     component.bgcolor)
+            self._draw_circle_helper(
+                component.fgcolor,
+                component.x + radius,
+                component.y + radius,
+                radius,
+                BAGL_FILL_CIRCLE_PI2_PI,
+                radiusint,
+                component.bgcolor,
+            )
+            self._draw_circle_helper(
+                component.fgcolor,
+                component.x + component.width - radius - component.stroke,
+                component.y + radius,
+                radius,
+                BAGL_FILL_CIRCLE_0_PI2,
+                radiusint,
+                component.bgcolor,
+            )
+            self._draw_circle_helper(
+                component.fgcolor,
+                component.x + radius,
+                component.y + component.height - radius - component.stroke,
+                radius,
+                BAGL_FILL_CIRCLE_PI_3PI2,
+                radiusint,
+                component.bgcolor,
+            )
+            self._draw_circle_helper(
+                component.fgcolor,
+                component.x + component.width - radius - component.stroke,
+                component.y + component.height - radius - component.stroke,
+                radius,
+                BAGL_FILL_CIRCLE_3PI2_2PI,
+                radiusint,
+                component.bgcolor,
+            )
 
         if context:
             fgcolor, bgcolor = component.fgcolor, component.bgcolor
             if component.fill == BAGL_FILL:
                 fgcolor, bgcolor = bgcolor, fgcolor
             stroke = max(1, component.stroke * 2)
-            self._draw_string(component.font_id,
-                              fgcolor,
-                              bgcolor,
-                              component.x + halignment,                  # XXX: take icon_width into account
-                              component.y + valignment,
-                              component.width - halignment - stroke,     # XXX: take icon_width into account
-                              component.height - valignment - stroke,
-                              context)
+            self._draw_string(
+                component.font_id,
+                fgcolor,
+                bgcolor,
+                component.x + halignment,  # XXX: take icon_width into account
+                component.y + valignment,
+                component.width - halignment - stroke,  # XXX: take icon_width into account
+                component.height - valignment - stroke,
+                context,
+            )
 
         return ret
 
-    def _display_bagl_labeline(self,
-                               component,
-                               text,
-                               halignment,
-                               valignment,
-                               baseline,
-                               char_height,
-                               strwidth,
-                               type_) -> List[TextEvent]:
+    def _display_bagl_labeline(
+        self,
+        component,
+        text,
+        halignment,
+        valignment,
+        baseline,
+        char_height,
+        strwidth,
+        type_,
+    ) -> list[TextEvent]:
         if component.fill == BAGL_FILL:
             y = component.y
             height = component.height
@@ -521,8 +598,13 @@ class Bagl(GraphicLibrary):
                 y -= baseline
                 height = char_height
             self._hal_draw_rect(component.bgcolor, component.x, y, halignment, height)
-            self._hal_draw_rect(component.bgcolor, component.x + halignment + strwidth,
-                                y, component.width - (halignment + strwidth), height)
+            self._hal_draw_rect(
+                component.bgcolor,
+                component.x + halignment + strwidth,
+                y,
+                component.width - (halignment + strwidth),
+                height,
+            )
 
         if len(text) == 0:
             return []
@@ -535,18 +617,27 @@ class Bagl(GraphicLibrary):
         else:
             y += valignment
             height += valignment
-        self._draw_string(component.font_id,
-                          component.fgcolor,
-                          component.bgcolor,
-                          component.x + halignment,
-                          y,
-                          component.width - halignment,
-                          component.height,
-                          text)
+        self._draw_string(
+            component.font_id,
+            component.fgcolor,
+            component.bgcolor,
+            component.x + halignment,
+            y,
+            component.width - halignment,
+            component.height,
+            text,
+        )
 
-        return [TextEvent(text.decode("utf-8", "ignore"),
-                          component.x + halignment, y,
-                          component.width - halignment, component.height, False)]
+        return [
+            TextEvent(
+                text.decode("utf-8", "ignore"),
+                component.x + halignment,
+                y,
+                component.width - halignment,
+                component.height,
+                False,
+            )
+        ]
 
     def _display_get_alignment(self, component, context, context_encoding):
         halignment = 0
@@ -564,11 +655,9 @@ class Bagl(GraphicLibrary):
             char_height = font.char_height
 
             if context:
-                strwidth = self._compute_line_width(component.font_id,
-                                                    component.width + 100,
-                                                    context)
+                strwidth = self._compute_line_width(component.font_id, component.width + 100, context)
 
-        haligned = (component.font_id & BAGL_FONT_ALIGNMENT_HORIZONTAL_MASK)
+        haligned = component.font_id & BAGL_FONT_ALIGNMENT_HORIZONTAL_MASK
         if haligned == BAGL_FONT_ALIGNMENT_RIGHT:
             halignment = component.width - strwidth
         elif haligned == BAGL_FONT_ALIGNMENT_CENTER:
@@ -578,7 +667,7 @@ class Bagl(GraphicLibrary):
         else:
             halignment = 0
 
-        valigned = (component.font_id & BAGL_FONT_ALIGNMENT_VERTICAL_MASK)
+        valigned = component.font_id & BAGL_FONT_ALIGNMENT_VERTICAL_MASK
         if valigned == BAGL_FONT_ALIGNMENT_BOTTOM:
             valignment = component.height - baseline
         elif valigned == BAGL_FONT_ALIGNMENT_MIDDLE:
@@ -590,9 +679,9 @@ class Bagl(GraphicLibrary):
 
         return (halignment, valignment, baseline, char_height, strwidth)
 
-    def display_status(self, data: bytes) -> List[TextEvent]:
+    def display_status(self, data: bytes) -> list[TextEvent]:
         component = bagl_component_t.parse(data)
-        context = data[bagl_component_t.sizeof():]
+        context = data[bagl_component_t.sizeof() :]
         context_encoding = 0  # XXX
         self.logger.debug("component: %s", component)
 
@@ -608,30 +697,46 @@ class Bagl(GraphicLibrary):
         elif type_ == BAGL_RECTANGLE:
             ret = self._display_bagl_rectangle(component, context, context_encoding, halignment, valignment)
         elif type_ == BAGL_LABEL:
-            self._display_bagl_labeline(component, context, halignment, valignment, baseline, char_height,
-                                        strwidth, type_)
+            self._display_bagl_labeline(
+                component,
+                context,
+                halignment,
+                valignment,
+                baseline,
+                char_height,
+                strwidth,
+                type_,
+            )
         elif type_ == BAGL_LABELINE:
-            ret = self._display_bagl_labeline(component, context, halignment, valignment, baseline, char_height,
-                                              strwidth, type_)
+            ret = self._display_bagl_labeline(
+                component,
+                context,
+                halignment,
+                valignment,
+                baseline,
+                char_height,
+                strwidth,
+                type_,
+            )
         elif type_ == BAGL_ICON:
             self._display_bagl_icon(component, context)
         return ret
 
     def display_raw_status(self, data: bytes) -> None:
         if data[0] == SEPROXYHAL_TAG_SCREEN_DISPLAY_RAW_STATUS_START:
-            x = int.from_bytes(data[1:3], byteorder='big', signed=True)
-            y = int.from_bytes(data[3:5], byteorder='big', signed=True)
-            w = int.from_bytes(data[5:7], byteorder='big')
-            h = int.from_bytes(data[7:9], byteorder='big')
-            bpp = int.from_bytes(data[9:10], byteorder='big')
+            x = int.from_bytes(data[1:3], byteorder="big", signed=True)
+            y = int.from_bytes(data[3:5], byteorder="big", signed=True)
+            w = int.from_bytes(data[5:7], byteorder="big")
+            h = int.from_bytes(data[7:9], byteorder="big")
+            bpp = int.from_bytes(data[9:10], byteorder="big")
             # character = data[10:14]     # Added by speculos syscall (unused here)
 
             color_size = 4 * (1 << bpp)
             colors = []
             for i in range(14, 14 + color_size, 4):
-                color = int.from_bytes(data[i:i+4], byteorder='little')
+                color = int.from_bytes(data[i : i + 4], byteorder="little")
                 colors.append(color)
-            bitmap = data[14+color_size:]
+            bitmap = data[14 + color_size :]
 
             self.hal_draw_bitmap_within_rect(x, y, w, h, colors, bpp, list(bitmap))
 

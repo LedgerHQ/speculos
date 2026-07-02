@@ -7,13 +7,17 @@ Record an emulated device screen and save the animation as a gif.
 import argparse
 import io
 import logging
+import tempfile
+from pathlib import Path
+
 import requests
 from PIL import Image
 
 
 def take_screenshot(session, api_url):
     response = session.get(f"{api_url}/screenshot")
-    assert response.status_code == 200
+    if response.status_code != 200:
+        raise AssertionError(f"Failed to take screenshot, status code: {response.status_code}")
     return response.content
 
 
@@ -48,7 +52,7 @@ def save_gif(outfile, images, duration=500):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Record a screen as a GIF.")
     parser.add_argument("--api-url", default="http://127.0.0.1:5000", help="REST API URL")
-    parser.add_argument("--outfile", default="/tmp/speculos.gif", help="Output file")
+    parser.add_argument("--outfile", default=Path(tempfile.gettempdir()) / "speculos.gif", help="Output file")
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)

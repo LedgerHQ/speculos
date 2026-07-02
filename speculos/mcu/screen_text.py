@@ -4,10 +4,10 @@ import os
 import select
 import sys
 import time
-from typing import Any, List
+from typing import Any
 
 from . import bagl
-from .display import Display, DisplayNotifier, FrameBuffer, MODELS
+from .display import MODELS, Display, DisplayNotifier, FrameBuffer
 from .readerror import ReadError
 from .struct import DisplayArgs, ServerArgs
 
@@ -20,23 +20,23 @@ _TEXT_ = "\033[36;40m"
 _BORDER_ = "\033[30;1;40m"
 _RESET_COLOR = "\033[0m"
 
-M: List = [0]*16
-M[0b0000] = ' '
-M[0b0001] = '\u2598'
-M[0b0010] = '\u259D'
-M[0b0011] = '\u2580'
-M[0b0100] = '\u2596'
-M[0b0101] = '\u258C'
-M[0b0110] = '\u259E'
-M[0b0111] = '\u259B'
-M[0b1000] = '\u2597'
-M[0b1001] = '\u259A'
-M[0b1010] = '\u2590'
-M[0b1011] = '\u259C'
-M[0b1100] = '\u2584'
-M[0b1101] = '\u2599'
-M[0b1110] = '\u259F'
-M[0b1111] = '\u2588'
+M: list = [0] * 16
+M[0b0000] = " "
+M[0b0001] = "\u2598"
+M[0b0010] = "\u259d"
+M[0b0011] = "\u2580"
+M[0b0100] = "\u2596"
+M[0b0101] = "\u258c"
+M[0b0110] = "\u259e"
+M[0b0111] = "\u259b"
+M[0b1000] = "\u2597"
+M[0b1001] = "\u259a"
+M[0b1010] = "\u2590"
+M[0b1011] = "\u259c"
+M[0b1100] = "\u2584"
+M[0b1101] = "\u2599"
+M[0b1110] = "\u259f"
+M[0b1111] = "\u2588"
 
 
 # a b
@@ -54,8 +54,7 @@ class TextWidget(FrameBuffer):
 
         # ncurses stops the process if in the background
         if os.tcgetpgrp(sys.stdin.fileno()) != os.getpgrp():
-            logging.getLogger("display").warn("please run speculos in the foreground to allow the initialization of "
-                                              "the display")
+            logging.getLogger("display").warning("please run speculos in the foreground to initialize the display")
 
         self.stdscr = curses.initscr()
         curses.noecho()
@@ -82,19 +81,19 @@ class TextWidget(FrameBuffer):
         self.stdscr.clear()
         for i in range(0, self.height, 2):
             line = []
-            for j in range(0, self.width-2, 2):
+            for j in range(0, self.width - 2, 2):
                 a = self.get_pixel(j, i)
-                b = self.get_pixel(j+1, i)
-                c = self.get_pixel(j, i+1)
-                d = self.get_pixel(j+1, i+1)
+                b = self.get_pixel(j + 1, i)
+                c = self.get_pixel(j, i + 1)
+                d = self.get_pixel(j + 1, i + 1)
                 line.append(map_pix(a, b, c, d))
 
-            self.stdscr.addstr(1 + i//2, 0, ' ', curses.color_pair(2))
-            self.stdscr.addstr(1 + i//2, 1, ''.join(line), curses.color_pair(1))
-            self.stdscr.addstr(1 + i//2, self.width//2 + 1, ' ', curses.color_pair(2))
+            self.stdscr.addstr(1 + i // 2, 0, " ", curses.color_pair(2))
+            self.stdscr.addstr(1 + i // 2, 1, "".join(line), curses.color_pair(1))
+            self.stdscr.addstr(1 + i // 2, self.width // 2 + 1, " ", curses.color_pair(2))
 
-        self.stdscr.addstr(0, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
-        self.stdscr.addstr(self.height//2+1, 0, ' '*(self.width//2 + 2), curses.color_pair(2))
+        self.stdscr.addstr(0, 0, " " * (self.width // 2 + 2), curses.color_pair(2))
+        self.stdscr.addstr(self.height // 2 + 1, 0, " " * (self.width // 2 + 2), curses.color_pair(2))
         self.stdscr.refresh()
         self.update_screenshot()
 
@@ -113,10 +112,10 @@ class TextScreen(Display):
             self.ARROW_KEYS = [curses.KEY_LEFT, curses.KEY_RIGHT, curses.KEY_DOWN]
 
         self.key2btn = {
-                            self.ARROW_KEYS[0]: BUTTON_LEFT,
-                            self.ARROW_KEYS[1]: BUTTON_RIGHT,
-                            self.ARROW_KEYS[2]: BUTTON_LEFT | BUTTON_RIGHT,
-                        }
+            self.ARROW_KEYS[0]: BUTTON_LEFT,
+            self.ARROW_KEYS[1]: BUTTON_RIGHT,
+            self.ARROW_KEYS[2]: BUTTON_LEFT | BUTTON_RIGHT,
+        }
 
     @property
     def gl(self) -> bagl.Bagl:
@@ -140,21 +139,20 @@ class TextScreen(Display):
             time.sleep(wait_time)
             self.seph.handle_button(self.key2btn[key], False)
             return True
-        elif key == ord('q'):
+        elif key == ord("q"):
             return False
         else:
             return True
 
 
 class TextScreenNotifier(DisplayNotifier):
-
     def __init__(self, display_args: DisplayArgs, server_args: ServerArgs) -> None:
         super().__init__(display_args, server_args)
         self._set_display_class(TextScreen)
 
     def run(self) -> None:
         while True:
-            rlist: List[Any] = list(self.notifiers.keys())
+            rlist: list[Any] = list(self.notifiers.keys())
             if not rlist:
                 break
 
@@ -162,7 +160,8 @@ class TextScreenNotifier(DisplayNotifier):
             rlist, _, _ = select.select(rlist, [], [])
             if sys.stdin in rlist:
                 rlist.remove(sys.stdin)
-                assert isinstance(self.display, TextScreen)
+                if not isinstance(self.display, TextScreen):
+                    raise ValueError("Display is not an instance of TextScreen")
                 if not self.display.get_keypress():
                     break
             try:
