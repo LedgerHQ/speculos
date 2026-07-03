@@ -393,8 +393,15 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.NBGL_SEND_SPECULOS_TEXT_LINE:
             self.nbgl_speculos_text_lines_enabled = True
-            # Extract text content
-            text = data[:-8].decode()
+            # Extract text content. The text is controlled by the app and may
+            # contain invalid UTF-8 (e.g. a buggy app rendering a
+            # non-NUL-terminated string sends trailing garbage bytes): replace
+            # undecodable bytes instead of crashing speculos.
+            try:
+                text = data[:-8].decode("utf-8")
+            except UnicodeDecodeError:
+                self.logger.warning(f"invalid UTF-8 in NBGL text line: {data[:-8]!r}")
+                text = data[:-8].decode("utf-8", errors="replace")
             # Extract coordinates
             coordinates = data[-8:]
             x, y, w, h = struct.unpack('>4H', coordinates)

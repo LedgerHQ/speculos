@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation: refreshed outdated macOS, Docker, usage and clients pages (removed obsolete `--model nanos`, missing `btc.elf`, manual Dockerfile edits, archived `btchip-python` references, and the obsolete `ledgerblue` version pin)
 - `docker-compose.yml`: use the bundled `apps/boil.elf` and a valid default configuration
 
+### Fixed
+
+- Don't crash on NBGL text lines containing invalid UTF-8 (sent by apps rendering non-NUL-terminated strings); replace the undecodable bytes and log a warning instead
+
 ## [0.26.9] 2026-06-17
 
 ### Fixed
