@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation: refreshed outdated macOS, Docker, usage and clients pages (removed obsolete `--model nanos`, missing `btc.elf`, manual Dockerfile edits, archived `btchip-python` references, and the obsolete `ledgerblue` version pin)
 - `docker-compose.yml`: use the bundled `apps/boil.elf` and a valid default configuration
 
+## [0.26.10] 2026-07-09
+
+### Added
+
+- Add the support of Address Book syscalls
+
 ## [0.26.9] 2026-06-17
 
 ### Fixed
