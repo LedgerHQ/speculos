@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.26.10] 2026-06-17
 
 ### Added
 
@@ -14,11 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation: "Driving Speculos from code or an agent" page (REST API + APDU)
 - Documentation: Troubleshooting page (common errors and fixes)
 - `examples/quickstart/`: runnable headless launch script and a REST-API agent example
+- Implement Address Book syscalls
 
 ### Changed
 
 - Documentation: refreshed outdated macOS, Docker, usage and clients pages (removed obsolete `--model nanos`, missing `btc.elf`, manual Dockerfile edits, archived `btchip-python` references, and the obsolete `ledgerblue` version pin)
 - `docker-compose.yml`: use the bundled `apps/boil.elf` and a valid default configuration
+- Drop the redundant CNAME file
 
 ## [0.26.9] 2026-06-17
 
