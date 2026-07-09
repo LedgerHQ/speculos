@@ -15,6 +15,7 @@
 
 #include "bolos_syscalls.h"
 
+#include "bolos/os_address_book.h"
 #include "bolos/os_hdkey.h"
 
 #define SYSCALL_HANDLED     1
@@ -684,6 +685,22 @@ static int emulate_syscall_os(unsigned long syscall,
 
     SYSCALL1(os_stack_operations, "(%u)",
               unsigned char, mode)
+
+    SYSCALL6(ADDRESS_BOOK_HMAC, "(%p, %u, %u, %p, %u, %p)",
+             uint32_t *, bip32_path,
+             size_t, bip32_path_len,
+             ADDRESS_BOOK_salt_id_t, salt_id,
+             uint8_t *, message,
+             size_t, message_len,
+             uint8_t *, hmac_out)
+
+    SYSCALL6(ADDRESS_BOOK_HMAC_VERIFY, "(%p, %u, %u, %p, %u, %p)",
+             uint32_t *, bip32_path,
+             size_t, bip32_path_len,
+             ADDRESS_BOOK_salt_id_t, salt_id,
+             uint8_t *, message,
+             size_t, message_len,
+             uint8_t *, hmac_expected)
 
   /* clang-format on */
   default:
