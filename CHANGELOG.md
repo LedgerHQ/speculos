@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docker-compose.yml`: use the bundled `apps/boil.elf` and a valid default configuration
 - Drop the redundant CNAME file
 
+### Fixed
+
+- Don't crash on NBGL text lines containing invalid UTF-8 (sent by apps rendering non-NUL-terminated strings); replace the undecodable bytes and log a warning instead
+
 ## [0.26.9] 2026-06-17
 
 ### Fixed
