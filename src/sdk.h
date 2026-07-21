@@ -1,7 +1,7 @@
 #pragma once
 
 #define FIRST_SUPPORTED_API_LEVEL 22
-#define LAST_SUPPORTED_API_LEVEL  26
+#define LAST_SUPPORTED_API_LEVEL  27
 
 extern int g_api_level;
 
