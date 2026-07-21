@@ -253,8 +253,13 @@ function on_keydown(e) {
 
 function zoom_screenshot() {
   var element = document.getElementById("screenshot");
-  element.width = element.naturalWidth * 2;
-  element.height = element.naturalHeight * 2;
+  element.addEventListener("load", function () {
+    // The 2x zoom suits the small Nano screens; the larger touchscreen
+    // models (400x672 and up) are displayed at natural size.
+    var zoom = (element.naturalWidth <= 200) ? 2 : 1;
+    element.width = element.naturalWidth * zoom;
+    element.height = element.naturalHeight * zoom;
+  });
 }
 
 /*
