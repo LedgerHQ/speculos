@@ -16,6 +16,7 @@ from .automation import Automation
 from .button import Button
 from .events import Events
 from .finger import Finger
+from .model import ModelInfo
 from .screenshot import Screenshot
 from .swagger import Swagger
 from .web_interface import WebInterface
@@ -84,6 +85,7 @@ class ApiWrapper:
                                resource_class_kwargs=seph_kwargs)
         self._api.add_resource(Events, "/events", resource_class_kwargs=event_kwargs)
         self._api.add_resource(Finger, "/finger", resource_class_kwargs=seph_kwargs)
+        self._api.add_resource(ModelInfo, "/model", resource_class_kwargs=screen_kwargs)
         self._api.add_resource(Screenshot, "/screenshot", resource_class_kwargs=screen_kwargs)
         self._api.add_resource(Swagger, "/swagger/", resource_class_kwargs=app_kwargs)
         self._api.add_resource(WebInterface, "/", resource_class_kwargs=app_kwargs)
