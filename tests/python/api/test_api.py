@@ -8,6 +8,7 @@ import time
 from collections import namedtuple
 
 from speculos.client import SpeculosClient
+from speculos.mcu.struct import MODELS
 
 API_URL = "http://127.0.0.1:5000"
 
@@ -49,6 +50,14 @@ class TestApi:
         data = json.dumps({"x": 0, "y": 0, "action": "press-and-release"}).encode()
         with requests.post(f"{API_URL}/finger", data=data) as response:
             assert response.status_code == 200
+
+    def test_model(self, app):
+        with requests.get(f"{API_URL}/model") as response:
+            assert response.status_code == 200
+            data = response.json()
+            assert data["name"] == app.model
+            width, height = MODELS[app.model].screen_size
+            assert data["screen"] == {"width": width, "height": height}
 
     def test_events(self):
         """

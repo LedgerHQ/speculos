@@ -131,6 +131,30 @@ paths:
         "400":
           description: "invalid parameter"
 
+  /model:
+    get:
+      summary: "Get the device model and screen size"
+      responses:
+        "200":
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "flex"
+                  screen:
+                    type: object
+                    properties:
+                      width:
+                        type: integer
+                        example: 480
+                      height:
+                        type: integer
+                        example: 600
+
   /screenshot:
     get:
       summary: "Get a screenshot"
