@@ -6,6 +6,8 @@ import time
 import pytest
 import requests
 
+from speculos.mcu.struct import MODELS
+
 API_URL = "http://127.0.0.1:5000"
 
 
@@ -52,6 +54,16 @@ class TestApi:
         with requests.post(f"{API_URL}/finger", data=data, timeout=10) as response:
             if response.status_code != 200:
                 raise AssertionError(f"Expected status code 200, got {response.status_code}")
+
+    def test_model(self, app):
+        with requests.get(f"{API_URL}/model", timeout=10) as response:
+            if response.status_code != 200:
+                raise AssertionError(f"Expected status code 200, got {response.status_code}")
+            data = response.json()
+            width, height = MODELS[app.model].screen_size
+            expected = {"name": app.model, "screen": {"width": width, "height": height}}
+            if data != expected:
+                raise ValueError(f"Expected {expected}, got {data}")
 
     def test_events(self):
         """
