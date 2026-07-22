@@ -17,7 +17,7 @@
 /* glory promote mansion idle axis finger extra february uncover one trip
  * resource lawn turtle enact monster seven myth punch hobby comfort wild raise
  * skin */
-static const uint8_t default_seed[MAX_SEED_SIZE] =
+static const uint8_t default_seed[MAX_SEED_SIZE] __attribute__((nonstring)) =
     "\xb1\x19\x97\xfa\xff\x42\x0a\x33\x1b\xb4\xa4\xff\xdc\x8b\xdc\x8b\xa7\xc0"
     "\x17\x32\xa9\x9a\x30\xd8\x3d\xbb\xeb\xd4\x69\x66\x6c\x84\xb4\x7d\x09\xd3"
     "\xf5\xf4\x72\xb3\xb9\x38\x4a\xc6\x34\xbe\xba\x2a\x44\x0b\xa3\x6e\xc7\x66"

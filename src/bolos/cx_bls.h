@@ -2,6 +2,7 @@
 #define CX_BLS_H
 
 #include <blst.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #define CX_BLS_BLS12381_PARAM_LEN (48)
