@@ -14,18 +14,10 @@ concurrency:
 
 jobs:
   linter-c:
-    name: Linter on C code
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v7
-
-      - name: Lint check
-        run:
-          clang-format --dry-run --Werror $(find src tests -type f \( -name '*.c' -o -name '*.h' \))
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_lint.yml@v1
+    with:
+      source: src tests
+      repo_is_tool: true
 
   lint:
     name: Call Ledger Python linters
