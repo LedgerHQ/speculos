@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
       - name: Install Python dependencies
         run: |
-          pip install -r docs/requirements.txt
+          pip install --only-binary :all: -r docs/requirements.txt
       - name: Generate the documentation
         run: (cd docs && make html)
       - name: Upload documentation bundle

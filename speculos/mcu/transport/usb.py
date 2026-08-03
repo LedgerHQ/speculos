@@ -133,15 +133,15 @@ class USBTransport(TransportLayer):
         self._send_cb(SephUSBTag.XFER_EVENT, packet)
 
     def _send_setup(self, breq: USBReq, wValue: int):
-        data = usb_header.build(dict(endpoint=self.endpoint_out, tag=SephUSBTag.XFER_SETUP, length=0))
+        data = usb_header.build({"endpoint": self.endpoint_out, "tag": SephUSBTag.XFER_SETUP, "length": 0})
         data += usb_setup.build(
-            dict(
-                bmreq=USBReq.RECIPIENT_DEVICE,
-                breq=breq,
-                wValue=wValue,
-                wIndex=0,
-                wLength=0,
-            )
+            {
+                "bmreq": USBReq.RECIPIENT_DEVICE,
+                "breq": breq,
+                "wValue": wValue,
+                "wIndex": 0,
+                "wLength": 0,
+            }
         )
         self.logger.debug("[SEND_SETUP] %s", data.hex())
         self._send_cb(SephUSBTag.XFER_EVENT, data)
@@ -223,7 +223,7 @@ class U2F(USBTransport):
         pass
 
     def _build_xfer(self, tag: SephUSBTag, data: bytes) -> bytes:
-        packet = usb_header.build(dict(endpoint=self.endpoint_out, tag=tag, length=len(data)))
+        packet = usb_header.build({"endpoint": self.endpoint_out, "tag": tag, "length": len(data)})
         packet += data
         return packet
 
@@ -251,14 +251,14 @@ class HID(USBTransport):
         super().__init__(send_cb, transport)
         self.hid_packet = HIDPacket()
 
-    def _build_header(self, data: bytes, length: int, seq: int) -> bytes:
+    def _build_header(self, length: int, seq: int) -> bytes:
         header = hid_header.build(
-            dict(
-                channel=self.USB_CHANNEL,
-                command=self.USB_COMMAND,
-                seq=seq,
-                length=length,
-            )
+            {
+                "channel": self.USB_CHANNEL,
+                "command": self.USB_COMMAND,
+                "seq": seq,
+                "length": length,
+            }
         )
         if seq != 0:
             # strip hid_header.length
@@ -266,10 +266,10 @@ class HID(USBTransport):
         return header
 
     def _build_xfer(self, tag: SephUSBTag, data: bytes, seq: int = 0, length: int = USB_SIZE):
-        header = self._build_header(data, length, seq)
+        header = self._build_header(length, seq)
         size = len(header) + len(data)
 
-        packet = usb_header.build(dict(endpoint=self.endpoint_out, tag=tag, length=size))
+        packet = usb_header.build({"endpoint": self.endpoint_out, "tag": tag, "length": size})
         packet += header
         packet += data
 

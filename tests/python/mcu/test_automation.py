@@ -23,12 +23,10 @@ class TestAutomation:
         """Invalid JSON/schema testcases."""
 
         with pytest.raises(json.decoder.JSONDecodeError):
-            if not automation.Automation("x"):
-                raise AssertionError("Invalid JSON should raise an exception")
+            automation.Automation("x")
 
         with pytest.raises(jsonschema.exceptions.ValidationError):
-            if not automation.Automation("{}"):
-                raise AssertionError("Invalid JSON should raise an exception")
+            automation.Automation("{}")
 
         names = [
             "automation_invalid_rule_key.json",
@@ -37,8 +35,7 @@ class TestAutomation:
         ]
         for name in names:
             with pytest.raises(jsonschema.exceptions.ValidationError):
-                if not automation.Automation(TestAutomation.get_json_path(name)):
-                    raise AssertionError("Invalid JSON should raise an exception")
+                automation.Automation(TestAutomation.get_json_path(name))
 
     def test_rules(self):
         expected_actions = [

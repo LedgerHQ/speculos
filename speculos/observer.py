@@ -22,7 +22,7 @@ class ObserverInterface(ABC):
 class BroadcastInterface(ABC):
     def __init__(self) -> None:
         self.logger: Logger
-        self.clients: list[ObserverInterface] = list()
+        self.clients: list[ObserverInterface] = []
 
     def add_client(self, client: ObserverInterface) -> None:
         self.logger.debug("New client '%s'", client)

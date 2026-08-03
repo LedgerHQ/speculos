@@ -6,9 +6,9 @@ true color: 24 bbp).
 """
 
 import logging
-import os
 import subprocess
 import sys
+from pathlib import Path
 from typing import IO
 
 from .display import DisplayNotifier, IODevice, PixelColorMapping
@@ -24,10 +24,19 @@ class VNC(IODevice):
     ):
         self.logger = logging.getLogger("vnc")
 
+        if not 1 <= port <= 65535:
+            raise ValueError(f"Invalid port number: {port}")
+        if password is not None and any(c in password for c in ("\x00", "\n", "\r")):
+            raise ValueError("VNC password contains invalid characters")
+
         self._width, self._height = screen_size
-        path = os.path.dirname(os.path.realpath(__file__))
-        server = os.path.join(path, "../resources/vnc_server")
-        cmd = [server]
+        if not (isinstance(self._width, int) and isinstance(self._height, int) and self._width > 0 and self._height > 0):
+            raise ValueError(f"Invalid screen size: {screen_size}")
+
+        server = Path(__file__).parent.parent / "resources" / "vnc_server"
+        if not server.is_file():
+            raise FileNotFoundError(f"VNC server binary not found: {server}")
+        cmd = [str(server)]
 
         # custom options
         cmd += ["-s", f"{self._width}x{self._height}"]
@@ -38,9 +47,9 @@ class VNC(IODevice):
         cmd += [
             "--",
             "-rfbport",
-            f"{port}",
+            str(port),
             "-rfbportv6",
-            f"{port}",
+            str(port),
         ]
         if password is not None:
             cmd += ["-passwd", password]

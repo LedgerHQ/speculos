@@ -1056,12 +1056,11 @@ class RLECustomB(RLECustomBase):
         if self.verbose:
             sys.stdout.write(f"Nb values: {len(alternances)}\n")
 
-        if False and self.verbose:
-            sys.stdout.write(f"Nb values: {len(alternances)}\n")
-            next_pixel = 0
-            for repeat in alternances:
-                sys.stdout.write(f"{repeat:2d} x {next_pixel}\n")
-                next_pixel ^= 1
+            if False:
+                next_pixel = 0
+                for repeat in alternances:
+                    sys.stdout.write(f"{repeat:2d} x {next_pixel}\n")
+                    next_pixel ^= 1
 
         # Now read all those values and store them into bytes
         output = b""

@@ -641,13 +641,13 @@ def main(prog=None) -> int:
         logger.error("--vnc-password can only be used with --vnc-port")
         sys.exit(1)
 
-    ScreenNotifier: type[display.DisplayNotifier]
+    screen_notifier_cls: type[display.DisplayNotifier]
     if args.display == "text":
-        from .mcu.screen_text import TextScreenNotifier as ScreenNotifier
+        from .mcu.screen_text import TextScreenNotifier as screen_notifier_cls
     elif args.display == "headless":
-        from .mcu.headless import HeadlessNotifier as ScreenNotifier
+        from .mcu.headless import HeadlessNotifier as screen_notifier_cls
     else:
-        from .mcu.screen import QtScreenNotifier as ScreenNotifier
+        from .mcu.screen import QtScreenNotifier as screen_notifier_cls
 
     api_enabled = args.api_port != 0
 
@@ -723,7 +723,7 @@ def main(prog=None) -> int:
 
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)
-    screen_notifier = ScreenNotifier(display_args, server_args)
+    screen_notifier = screen_notifier_cls(display_args, server_args)
 
     if apirun is not None:
         if automation_server is None:

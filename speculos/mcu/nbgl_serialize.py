@@ -390,7 +390,7 @@ class NbglTextArea(NbglObj):
         # Parse pattern
         params_pattern = ">BBBB??H"
         params_size = struct.calcsize(params_pattern)
-        text_color, alignment, style, font_id, localized, auto_hide_long_line, len = struct.unpack(
+        text_color, alignment, style, font_id, localized, auto_hide_long_line, length = struct.unpack(
             params_pattern, data[cnt : cnt + params_size]
         )
         cnt += params_size
@@ -405,7 +405,7 @@ class NbglTextArea(NbglObj):
             font_id=NbglFontId(font_id),
             localized=localized,
             auto_hide_long_line=auto_hide_long_line,
-            len=len,
+            len=length,
             text=text,
         )
 
