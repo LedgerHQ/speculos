@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from pathlib import Path
 
 import jsonschema
 
@@ -13,8 +14,10 @@ class Automation:
         self.variables = {}
 
         if document.startswith("file:"):
-            path = document[5:]
-            with open(path) as fp:  # lgtm [py/path-injection]
+            path = Path(document[5:]).resolve()
+            if not path.is_file():
+                raise ValueError(f"Automation file not found or not a regular file: {path}")
+            with path.open() as fp:
                 self.json = json.load(fp)
         else:
             self.json = json.loads(document)

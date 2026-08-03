@@ -188,7 +188,7 @@ static void nbgl_uncompress_rle_1bpp(nbgl_area_t *area, uint8_t *buffer,
   size_t nb_ones = 0;
   uint8_t pixels = 0;
   size_t nb_pixels = 0;
-  size_t remaining_pixels = area->width * area->height;
+  size_t remaining_pixels = (size_t)area->width * area->height;
 
   memset(out_buffer, 0, out_buffer_len);
   if (!buffer_len) {

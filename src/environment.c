@@ -170,7 +170,7 @@ static void env_init_user_hex_private_key(const char *ENV_NAME,
       p = NULL;
     } else if ((unsigned int)size != dst->d_len) {
       warnx("invalid size for user key passed through %s environment variable: "
-            "expecting '%u', got '%i'",
+            "expecting '%zu', got '%zd'",
             ENV_NAME, dst->d_len, size);
       p = NULL;
     }
@@ -305,8 +305,8 @@ size_t env_get_app_tag(char *dst, size_t length, BOLOS_TAG tag)
     return 0;
   }
   if (length < field->length) {
-    warnx("Providing length to copy env variable too small: asked for %u, "
-          "needs %u",
+    warnx("Providing length to copy env variable too small: asked for %zu, "
+          "needs %zu",
           length, field->length);
     return 0;
   }
