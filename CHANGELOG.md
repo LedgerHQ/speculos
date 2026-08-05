@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Support API_LEVEL_27
+
+### Changed
+
+- Builder image: replaced `wget` with `curl --proto '=https'` to enforce HTTPS-only redirects
+- Builder image: dependency archives now use version-agnostic filenames (`openssl.tar.gz`, `cmocka.tar.xz`, `blst.tar.gz`)
+- CI: upgrade pip before installing packages in the `build` job
+- Bump packages version: pyacl, werkzeug, pillow, cryptography, urllib3
+
+### Fixed
+
+- Builder image: blst checksum was never written to `SHA256SUMS`, so its integrity was not verified
+- Builder image: OpenSSL built without `no-dso`, causing a linker warning about `dlopen` in static binaries
+
 ## [0.26.10] 2026-06-17
 
 ### Added
