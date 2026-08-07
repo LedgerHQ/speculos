@@ -64,9 +64,3 @@ find = {namespaces = false}
 [tool.setuptools_scm]
 write_to = "speculos/__version__.py"
 local_scheme = "no-local-version"
-
-[tool.mypy]
-ignore_missing_imports = true
-
-[tool.flake8]
-max-line-length = 120

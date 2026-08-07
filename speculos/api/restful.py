@@ -1,12 +1,11 @@
 from flask import Flask
-from typing import Optional
 from flask_restful import Resource
 
 from ..mcu.seproxyhal import SeProxyHal
 
 
 class SephResource(Resource):
-    def __init__(self, *args, seph: Optional[SeProxyHal] = None, **kwargs):
+    def __init__(self, *args, seph: SeProxyHal | None = None, **kwargs):
         if seph is None:
             raise RuntimeError("Argument 'seph' must not be None")
         super().__init__(*args, **kwargs)
@@ -18,7 +17,7 @@ class SephResource(Resource):
 
 
 class AppResource(Resource):
-    def __init__(self, *args, app: Optional[Flask] = None, **kwargs):
+    def __init__(self, *args, app: Flask | None = None, **kwargs):
         if app is None:
             raise RuntimeError("Argument 'app' must not be None")
         super().__init__(*args, **kwargs)

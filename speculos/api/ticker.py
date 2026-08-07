@@ -2,6 +2,7 @@ import jsonschema
 from flask import request
 
 from speculos.resources_importer import get_resource_schema_as_json
+
 from .restful import SephResource
 
 

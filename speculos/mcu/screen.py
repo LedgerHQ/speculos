@@ -1,20 +1,26 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QApplication, QWidget, QMainWindow
-from PyQt6.QtGui import QPainter, QColor, QPixmap
-from PyQt6.QtGui import QIcon, QKeyEvent, QMouseEvent
-from PyQt6.QtCore import QEvent, Qt, QSocketNotifier, QSettings, QRect
-from PyQt6.sip import voidptr
-from typing import Dict, List, Optional, Union
+from dataclasses import dataclass
 from enum import IntEnum
 
+from PyQt6.QtCore import QEvent, QRect, QSettings, QSocketNotifier, Qt
+from PyQt6.QtGui import QColor, QIcon, QKeyEvent, QMouseEvent, QPainter, QPixmap
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget
+from PyQt6.sip import voidptr
+
 from speculos.observer import TextEvent
-from . import bagl
-from . import nbgl
-from .display import COLORS, Display, DisplayNotifier, FrameBuffer, GraphicLibrary, IODevice
+
+from . import bagl, nbgl
+from .display import (
+    COLORS,
+    Display,
+    DisplayNotifier,
+    FrameBuffer,
+    GraphicLibrary,
+    IODevice,
+)
 from .readerror import ReadError
-from dataclasses import dataclass
-from .struct import DisplayArgs, MODELS, ServerArgs, Pixel
+from .struct import MODELS, DisplayArgs, Pixel, ServerArgs
 from .vnc import VNC
 
 
@@ -25,12 +31,12 @@ class NanoButtons(IntEnum):
 
 @dataclass
 class ButtonMapping:
-    keys: Dict[Qt.Key, list[NanoButtons]]
+    keys: dict[Qt.Key, list[NanoButtons]]
 
 
 @dataclass
 class TouchMapping:
-    keys: Dict[Qt.Key, Pixel]
+    keys: dict[Qt.Key, Pixel]
 
 
 # For Nano, the arrow keys are mapped to physical buttons
@@ -43,41 +49,51 @@ class TouchMapping:
 #  - Escape: Cancel button (review) in bottom left corner
 #  - Backspace: Back button in top left corner
 #  - M: Menu (Setting/Info) in top right corner
-KEYS_BINDINGS: Dict[str, Union[ButtonMapping, TouchMapping]] = {
-    'nanox': ButtonMapping({
-        Qt.Key.Key_Left: [NanoButtons.LEFT],
-        Qt.Key.Key_Right: [NanoButtons.RIGHT],
-        Qt.Key.Key_Down: [NanoButtons.LEFT, NanoButtons.RIGHT],
-    }),
-    'nanosp': ButtonMapping({
-        Qt.Key.Key_Left: [NanoButtons.LEFT],
-        Qt.Key.Key_Right: [NanoButtons.RIGHT],
-        Qt.Key.Key_Down: [NanoButtons.LEFT, NanoButtons.RIGHT],
-    }),
-    'stax': TouchMapping({
-        Qt.Key.Key_Left: (240, 625),
-        Qt.Key.Key_Right: (360, 625),
-        Qt.Key.Key_Return: (200, 530),
-        Qt.Key.Key_Escape: (80, 625),
-        Qt.Key.Key_Backspace: (35, 35),
-        Qt.Key.Key_M: (330, 65),
-    }),
-    'flex': TouchMapping({
-        Qt.Key.Key_Left: (290, 550),
-        Qt.Key.Key_Right: (430, 550),
-        Qt.Key.Key_Return: (250, 430),
-        Qt.Key.Key_Escape: (80, 550),
-        Qt.Key.Key_Backspace: (35, 35),
-        Qt.Key.Key_M: (400, 65),
-    }),
-    'apex_p': TouchMapping({
-        Qt.Key.Key_Left: (170, 360),
-        Qt.Key.Key_Right: (270, 360),
-        Qt.Key.Key_Return: (140, 280),
-        Qt.Key.Key_Escape: (20, 360),
-        Qt.Key.Key_Backspace: (20, 20),
-        Qt.Key.Key_M: (255, 45),
-    }),
+KEYS_BINDINGS: dict[str, ButtonMapping | TouchMapping] = {
+    "nanox": ButtonMapping(
+        {
+            Qt.Key.Key_Left: [NanoButtons.LEFT],
+            Qt.Key.Key_Right: [NanoButtons.RIGHT],
+            Qt.Key.Key_Down: [NanoButtons.LEFT, NanoButtons.RIGHT],
+        }
+    ),
+    "nanosp": ButtonMapping(
+        {
+            Qt.Key.Key_Left: [NanoButtons.LEFT],
+            Qt.Key.Key_Right: [NanoButtons.RIGHT],
+            Qt.Key.Key_Down: [NanoButtons.LEFT, NanoButtons.RIGHT],
+        }
+    ),
+    "stax": TouchMapping(
+        {
+            Qt.Key.Key_Left: (240, 625),
+            Qt.Key.Key_Right: (360, 625),
+            Qt.Key.Key_Return: (200, 530),
+            Qt.Key.Key_Escape: (80, 625),
+            Qt.Key.Key_Backspace: (35, 35),
+            Qt.Key.Key_M: (330, 65),
+        }
+    ),
+    "flex": TouchMapping(
+        {
+            Qt.Key.Key_Left: (290, 550),
+            Qt.Key.Key_Right: (430, 550),
+            Qt.Key.Key_Return: (250, 430),
+            Qt.Key.Key_Escape: (80, 550),
+            Qt.Key.Key_Backspace: (35, 35),
+            Qt.Key.Key_M: (400, 65),
+        }
+    ),
+    "apex_p": TouchMapping(
+        {
+            Qt.Key.Key_Left: (170, 360),
+            Qt.Key.Key_Right: (270, 360),
+            Qt.Key.Key_Return: (140, 280),
+            Qt.Key.Key_Escape: (20, 360),
+            Qt.Key.Key_Backspace: (20, 20),
+            Qt.Key.Key_M: (255, 45),
+        }
+    ),
 }
 
 
@@ -86,7 +102,7 @@ DEFAULT_WINDOW_Y = 10
 
 
 class PaintWidget(FrameBuffer, QWidget):
-    def __init__(self, parent, model: str, pixel_size: int, vnc: Optional[VNC] = None):
+    def __init__(self, parent, model: str, pixel_size: int, vnc: VNC | None = None):
         QWidget.__init__(self, parent)
         FrameBuffer.__init__(self, model)
         self.pixel_size = pixel_size
@@ -110,14 +126,17 @@ class PaintWidget(FrameBuffer, QWidget):
             # Only call scaled if needed.
             copied_pixmap = self.mPixmap.scaled(
                 self.mPixmap.width() * self.pixel_size,
-                self.mPixmap.height() * self.pixel_size)
+                self.mPixmap.height() * self.pixel_size,
+            )
         qp.drawPixmap(0, 0, copied_pixmap)
 
-    def update(self,  # type: ignore[override]
-               x: Optional[int] = None,
-               y: Optional[int] = None,
-               w: Optional[int] = None,
-               h: Optional[int] = None) -> bool:
+    def update(
+        self,  # type: ignore[override]
+        x: int | None = None,
+        y: int | None = None,
+        w: int | None = None,
+        h: int | None = None,
+    ) -> bool:
         if x and y and w and h:
             QWidget.update(self, QRect(x, y, w, h))
         else:
@@ -141,7 +160,7 @@ class PaintWidget(FrameBuffer, QWidget):
 class App(QMainWindow):
     def __init__(self, qt_app: QApplication, display: DisplayArgs, server: ServerArgs) -> None:
         super().__init__()
-        self.setWindowTitle('Ledger %s Emulator' % MODELS[display.model].name)
+        self.setWindowTitle(f"Ledger {MODELS[display.model].name} Emulator")
 
         self.seph = server.seph
         self._width, self._height = MODELS[display.model].screen_size
@@ -174,10 +193,9 @@ class App(QMainWindow):
             x2 = x1 + screen.geometry().width() - 1
             y2 = y1 + screen.geometry().height() - 1
 
-            if window_x >= x1 and window_y >= y1 and (window_x + window_width - 1) <= x2 and \
-               (window_y + window_height - 1) <= y2:
+            if window_x >= x1 and window_y >= y1 and (window_x + window_width - 1) <= x2 and (window_y + window_height - 1) <= y2:
                 window_is_visible = True
-                break   # No need to check other screens
+                break  # No need to check other screens
 
         # If the window is not FULLY visible, force default coordinates on current screen:
         if not window_is_visible:
@@ -199,9 +217,12 @@ class App(QMainWindow):
 
         # Add paint widget and paint
         self.widget = PaintWidget(self, display.model, display.pixel_size, server.vnc)
-        self.widget.move(self.box_position_x * display.pixel_size, self.box_position_y * display.pixel_size)
+        self.widget.move(
+            self.box_position_x * display.pixel_size,
+            self.box_position_y * display.pixel_size,
+        )
         self.widget.resize(self._width * display.pixel_size, self._height * display.pixel_size)
-        self.setWindowIcon(QIcon('mcu/icon.png'))
+        self.setWindowIcon(QIcon("mcu/icon.png"))
         self.show()
         self._screen: Screen
 
@@ -223,7 +244,7 @@ class App(QMainWindow):
         return x, y
 
     def mousePressEvent(self, event: QMouseEvent):
-        '''Get the mouse location.'''
+        """Get the mouse location."""
 
         self.mouse_offset = event.pos()
 
@@ -242,10 +263,10 @@ class App(QMainWindow):
         QApplication.restoreOverrideCursor()
 
     def closeEvent(self, event: QEvent):
-        '''
+        """
         Called when the window is closed. We save the current window position to
         the settings file in order to restore it upon next speculos execution.
-        '''
+        """
         settings = QSettings("ledger", "speculos")
         settings.setValue("window_x", self.pos().x())
         settings.setValue("window_y", self.pos().y())
@@ -287,12 +308,11 @@ class Screen(Display):
         if key == Qt.Key.Key_Q and not pressed:
             self.app.close()
             return
-        if self._display_args.model not in KEYS_BINDINGS or \
-           key not in KEYS_BINDINGS[self._display_args.model].keys:
+        if self._display_args.model not in KEYS_BINDINGS or key not in KEYS_BINDINGS[self._display_args.model].keys:
             # Ignore unhandled events
             return
 
-        if self._display_args.model.startswith('nano'):
+        if self._display_args.model.startswith("nano"):
             # Forward the event to seph
             kl = KEYS_BINDINGS[self._display_args.model].keys[key]
             for k in kl:
@@ -302,7 +322,7 @@ class Screen(Display):
             x, y = KEYS_BINDINGS[self._display_args.model].keys[key]
             self.seph.handle_finger(x, y, pressed)
 
-    def display_status(self, data: bytes) -> List[TextEvent]:
+    def display_status(self, data: bytes) -> list[TextEvent]:
         ret = self.bagl_gl.display_status(data)
         return ret
 
@@ -319,7 +339,8 @@ class QtScreenNotifier(DisplayNotifier):
         super().__init__(display_args, server_args)
         self._set_display_class(Screen)
         self._app_widget = App(self._qapp, display_args, server_args)
-        assert isinstance(self.display, Screen)
+        if not isinstance(self.display, Screen):
+            raise ValueError("Display is not an instance of Screen")
         self.display.set_app(self._app_widget)
 
     def _can_read(self, device: IODevice) -> None:
@@ -332,7 +353,8 @@ class QtScreenNotifier(DisplayNotifier):
     def add_notifier(self, device: IODevice) -> None:
         n = QSocketNotifier(voidptr(device.fileno), QSocketNotifier.Type.Read, self._qapp)
         n.activated.connect(lambda _: self._can_read(device))
-        assert device.fileno not in self.notifiers
+        if device.fileno in self.notifiers:
+            raise ValueError(f"Notifier for {device.fileno} already registered")
         self.notifiers[device.fileno] = n
 
     def enable_notifier(self, fd: int, enabled: bool = True) -> None:

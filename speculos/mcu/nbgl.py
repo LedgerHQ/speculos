@@ -15,9 +15,9 @@ except ImportError:
     from functools import lru_cache
 
     cache = lru_cache(maxsize=None)
-from typing import List, Tuple
 
 from .display import FrameBuffer, GraphicLibrary
+
 # This is a copy - original version is in the SDK (tools/rle_custom.py)
 from .rle_custom import RLECustom
 
@@ -50,31 +50,24 @@ class NBGL(GraphicLibrary):
             4: 0x111111
         }
         # fmt: on
-        assert (
-            bpp in color_table
-        ), f"BPP should be in {color_table.keys()}, but is '{bpp}'"
+        if bpp not in color_table:
+            raise ValueError(f"BPP should be in {color_table.keys()}, but is '{bpp}'")
         return color * color_table[bpp]
 
-    def __init__(self, fb: FrameBuffer, size: Tuple[int, int], model: str):
+    def __init__(self, fb: FrameBuffer, size: tuple[int, int], model: str):
         super().__init__(fb, size, model)
         self.logger = logging.getLogger("NBGL")
 
     def __assert_area(self, area) -> None:
         if area.x0 > self.SCREEN_WIDTH or (area.x0 + area.width) > self.SCREEN_WIDTH:
-            raise AssertionError(
-                "left edge (%d) or right edge (%d) out of screen"
-                % (area.x0, (area.x0 + area.width))
-            )
+            raise AssertionError(f"left edge {area.x0} or right edge {area.x0 + area.width} out of screen")
         # on Nano, it's allowed to have y0 < 0 or y0 > HEIGHT (in menu list)
         if self.SCREEN_HEIGHT == 64:
             return
         if area.y0 > self.SCREEN_HEIGHT or (area.y0 + area.height) > self.SCREEN_HEIGHT:
-            raise AssertionError(
-                "top edge (%d) or bottom edge (%d) out of screen"
-                % (area.y0, (area.y0 + area.height))
-            )
+            raise AssertionError(f"top edge {area.y0} or bottom edge {area.y0 + area.height} out of screen")
 
-    def hal_draw_rect(self, data: bytes) -> List[TextEvent]:
+    def hal_draw_rect(self, data: bytes) -> list[TextEvent]:
         area = nbgl_area_t.parse(data)
         self.__assert_area(area)
         return self.fb.draw_rect(
@@ -99,7 +92,7 @@ class NBGL(GraphicLibrary):
         return self.fb.update(area.x0, area.y0, area.width, area.height)
 
     def hal_draw_horizontal_line(self, data: bytes) -> None:
-        area = nbgl_area_t.parse(data[0: nbgl_area_t.sizeof()])
+        area = nbgl_area_t.parse(data[0 : nbgl_area_t.sizeof()])
         self.__assert_area(area)
 
         mask = data[-2]
@@ -115,7 +108,7 @@ class NBGL(GraphicLibrary):
                 self.fb.draw_horizontal_line(area.x0, y, area.width, back_color)
 
     def hal_draw_line(self, data: bytes) -> None:
-        area = nbgl_area_t.parse(data[0: nbgl_area_t.sizeof()])
+        area = nbgl_area_t.parse(data[0 : nbgl_area_t.sizeof()])
         self.__assert_area(area)
 
         dotStartIndex = data[-2]
@@ -148,15 +141,14 @@ class NBGL(GraphicLibrary):
     @staticmethod
     @cache
     def get_4bpp_color_from_color_index(index, front_color, back_color):
+        # fmt: off
         COLOR_MAPS_4BPP = {
             # Manually hardcoced color maps
-            # fmt: off
             (NbglColor.BLACK, NbglColor.WHITE): [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
             (NbglColor.WHITE, NbglColor.BLACK): [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
             (NbglColor.DARK_GRAY, NbglColor.WHITE): [5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 11, 12, 13, 14, 15],
             (NbglColor.LIGHT_GRAY, NbglColor.WHITE): [10, 10, 11, 11, 12, 12, 13, 13, 13, 14, 14, 14, 15, 15, 15, 15],
             (NbglColor.LIGHT_GRAY, NbglColor.BLACK): [10, 9, 8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0],
-            (NbglColor.DARK_GRAY, NbglColor.BLACK): [10, 9, 8, 7, 6, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0],
 
             # Default computed color maps
             (NbglColor.BLACK, NbglColor.BLACK): [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -171,12 +163,10 @@ class NBGL(GraphicLibrary):
             (NbglColor.WHITE, NbglColor.DARK_GRAY): [15, 14, 13, 13, 12, 11, 11, 10, 9, 9, 8, 7, 7, 6, 5, 5],
             (NbglColor.WHITE, NbglColor.LIGHT_GRAY): [15, 15, 14, 14, 14, 13, 13, 13, 12, 12, 11, 11, 11, 10, 10, 10],
             (NbglColor.WHITE, NbglColor.WHITE): [15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15],
-            # fmt: on
         }
+        # fmt: on
 
-        mapped_index = COLOR_MAPS_4BPP[(NbglColor(front_color), NbglColor(back_color))][
-            index
-        ]
+        mapped_index = COLOR_MAPS_4BPP[(NbglColor(front_color), NbglColor(back_color))][index]
         return NBGL.to_screen_color(mapped_index, 4)
 
     @staticmethod
@@ -230,9 +220,7 @@ class NBGL(GraphicLibrary):
                 if color_map and bpp < 4:
                     pixel_color = NBGL.get_color_from_color_map(nib, color_map, bpp)
                 elif bpp == 4:
-                    pixel_color = NBGL.get_4bpp_color_from_color_index(
-                        nib, color_map, area.color
-                    )
+                    pixel_color = NBGL.get_4bpp_color_from_color_index(nib, color_map, area.color)
                 else:
                     pixel_color = NBGL.to_screen_color(nib, bpp)
 
@@ -281,22 +269,20 @@ class NBGL(GraphicLibrary):
                     pass
 
     def hal_draw_image(self, data: bytes):
-        area = nbgl_area_t.parse(data[0: nbgl_area_t.sizeof()])
+        area = nbgl_area_t.parse(data[0 : nbgl_area_t.sizeof()])
         self.__assert_area(area)
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
         bit_size = area.width * area.height * bpp
         buffer_size = (bit_size // 8) + ((bit_size % 8) > 0)
-        buffer = data[nbgl_area_t.sizeof(): nbgl_area_t.sizeof() + buffer_size]
+        buffer = data[nbgl_area_t.sizeof() : nbgl_area_t.sizeof() + buffer_size]
         transformation: int = data[nbgl_area_t.sizeof() + buffer_size]
-        color_map = data[
-            nbgl_area_t.sizeof() + buffer_size + 1
-        ]  # front color in case of BPP4
+        color_map = data[nbgl_area_t.sizeof() + buffer_size + 1]  # front color in case of BPP4
         self.draw_image(area, bpp, transformation, buffer, color_map)
 
     def hal_draw_image_file(self, data):
-        area = nbgl_area_t.parse(data[0: nbgl_area_t.sizeof()])
+        area = nbgl_area_t.parse(data[0 : nbgl_area_t.sizeof()])
         self.__assert_area(area)
-        data = data[nbgl_area_t.sizeof():]
+        data = data[nbgl_area_t.sizeof() :]
         area.width = (data[1] << 8) | data[0]
         area.height = (data[3] << 8) | data[2]
         area.bpp = data[4] >> 4
@@ -310,7 +296,7 @@ class NBGL(GraphicLibrary):
             # bitmaps (e.g. 14x14 1bpp = 196 bits -> 25 bytes, not 24), leaving
             # hal_draw_image to read its trailing bytes out of range.
             buffer_size = (area.width * area.height * bpp + 7) // 8
-        buffer = data[8: 8 + buffer_size]
+        buffer = data[8 : 8 + buffer_size]
 
         if not compression:
             # hal_draw_image() expects its payload laid out as:
@@ -321,12 +307,7 @@ class NBGL(GraphicLibrary):
             # hal_draw_image consume the color_map as the transformation and then
             # read the color_map out of range. This mirrors the compressed branch
             # below, which already inserts the b'\0' transformation byte.
-            data = (
-                nbgl_area_t.build(area)
-                + data[8: 8 + buffer_size]
-                + b"\0"
-                + data[-1].to_bytes(1, "big")
-            )
+            data = nbgl_area_t.build(area) + data[8 : 8 + buffer_size] + b"\0" + data[-1].to_bytes(1, "big")
             return self.hal_draw_image(data)
         output_buffer = []
         while len(buffer) > 0:
@@ -335,12 +316,7 @@ class NBGL(GraphicLibrary):
             output_buffer += gzip.decompress(bytes(buffer[:compressed_chunk_len]))
             buffer = buffer[compressed_chunk_len:]
 
-        data = (
-            nbgl_area_t.build(area)
-            + bytes(output_buffer)
-            + b"\0"
-            + data[-1].to_bytes(1, "big")
-        )
+        data = nbgl_area_t.build(area) + bytes(output_buffer) + b"\0" + data[-1].to_bytes(1, "big")
         self.hal_draw_image(data)
         # decompress
 
@@ -356,9 +332,9 @@ class NBGL(GraphicLibrary):
         - nb_skipped_bytes (1 byte)
         - character (4 bytes) [added by speculos syscall]
         """
-        area = nbgl_area_t.parse(data[0: nbgl_area_t.sizeof()])
+        area = nbgl_area_t.parse(data[0 : nbgl_area_t.sizeof()])
         self.__assert_area(area)
-        bitmap = data[nbgl_area_t.sizeof(): -(1 + 1 + 4)]
+        bitmap = data[nbgl_area_t.sizeof() : -(1 + 1 + 4)]
         bpp = NBGL.nbgl_bpp_to_read_bpp(area.bpp)
         # We may have to skip initial transparent pixels (bytes, in that case)
         nb_skipped_bytes = data[nbgl_area_t.sizeof() + len(bitmap) + 1]
@@ -371,7 +347,5 @@ class NBGL(GraphicLibrary):
 
         # Display the uncompressed image
         transformation = 0  # NO_TRANSFORMATION
-        color_map = data[
-            nbgl_area_t.sizeof() + len(bitmap)
-        ]  # front color in case of BPP4
+        color_map = data[nbgl_area_t.sizeof() + len(bitmap)]  # front color in case of BPP4
         self.draw_image(area, bpp, transformation, buffer, color_map)

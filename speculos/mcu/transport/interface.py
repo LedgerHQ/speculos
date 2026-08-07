@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from enum import auto, IntEnum
-from typing import Callable, Optional
+from collections.abc import Callable
+from enum import IntEnum, auto
 
 
 class TransportType(IntEnum):
@@ -10,7 +10,6 @@ class TransportType(IntEnum):
 
 
 class TransportLayer(ABC):
-
     def __init__(self, send_cb: Callable, transport: TransportType):
         self._transport = transport
         self._send_cb = send_cb
@@ -24,7 +23,7 @@ class TransportLayer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def prepare(self, data: bytes) -> Optional[bytes]:
+    def prepare(self, data: bytes) -> bytes | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -32,5 +31,5 @@ class TransportLayer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def handle_rapdu(self, data: bytes) -> Optional[bytes]:
+    def handle_rapdu(self, data: bytes) -> bytes | None:
         raise NotImplementedError

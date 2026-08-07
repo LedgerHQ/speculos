@@ -1,4 +1,4 @@
-'''
+"""
 TCP server to emulate buttons:
 
 - L/R: press left/right button
@@ -8,7 +8,7 @@ Usage example:
 
     $ echo -n RrRrRr | nc -nv 127.0.0.1 1235
     $ echo -n LRlr | nc -nv 127.0.0.1 1235
-'''
+"""
 
 import logging
 import socket
@@ -18,16 +18,15 @@ from .display import DisplayNotifier, IODevice
 
 
 class FakeButtonClient(IODevice):
-    actions = {
-        'L': (1, True),
-        'l': (1, False),
-        'R': (2, True),
-        'r': (2, False),
-    }
-
     def __init__(self, sock: socket.socket):
         self.socket = sock
         self.logger = logging.getLogger("button")
+        self.actions = {
+            "L": (1, True),
+            "l": (1, False),
+            "R": (2, True),
+            "r": (2, False),
+        }
 
     @property
     def file(self):
@@ -39,7 +38,7 @@ class FakeButtonClient(IODevice):
 
     def can_read(self, screen: DisplayNotifier):
         packet = self.file.recv(1)
-        if packet == b'':
+        if packet == b"":
             self._cleanup(screen)
             return
 
@@ -58,7 +57,7 @@ class FakeButton(IODevice):
     def __init__(self, port: int):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind(('0.0.0.0', port))  # lgtm [py/bind-socket-all-network-interfaces]
+        self.socket.bind(("0.0.0.0", port))  # lgtm [py/bind-socket-all-network-interfaces]  # noqa: S104
         self.socket.listen(5)
         self.logger = logging.getLogger("button")
 

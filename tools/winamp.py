@@ -1,6 +1,6 @@
 #!/usr/bin/python2
 
-'''
+"""
 VNC client with skin support.
 
 Speculos must be launched with the --vnc-port argument in order to expose the
@@ -17,14 +17,15 @@ version of gtkvnc.
 
 This script is based on the example from
 https://github.com/jwendell/gtk-vnc/blob/master/examples/gvncviewer.py
-'''
+"""
 
 import argparse
+import tempfile
+import time
+
+import cairo
 import gtk
 import gtkvnc
-import time
-import cairo
-
 from gtk import gdk
 from PIL import Image
 
@@ -64,10 +65,10 @@ def motion_notify_event(box, event):
 
 def vnc_screenshot(src, ev, vnc):
     if ev.keyval == gtk.gdk.keyval_from_name("s"):
-        filename = "/tmp/speculos-{}.png".format(int(time.time()))
+        filename = f"{tempfile.gettempdir()}/speculos-{int(time.time())}.png"
         pix = vnc.get_pixbuf()
         pix.save(filename, "png")
-        print("[*] screenshot saved to {}".format(filename))
+        print(f"[*] screenshot saved to {filename}")
 
     return False
 
@@ -119,7 +120,7 @@ def is_black_rectangle(pixels, x, y, width, height):
     black = (0, 0, 0, 255)
     for i in range(0, SCREEN_WIDTH):
         for j in range(0, SCREEN_HEIGHT):
-            if pixels[x+i, y+j] != black:
+            if pixels[x + i, y + j] != black:
                 return False
     return True
 
@@ -139,11 +140,11 @@ def find_screen_position(image):
     return x, y
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', '--host', default='127.0.0.1', help='VNC host')
-    parser.add_argument('-p', '--port', default='5902', help='VNC port')
-    parser.add_argument('-s', '--skin', default=None, help='PNG image')
+    parser.add_argument("-o", "--host", default="127.0.0.1", help="VNC host")
+    parser.add_argument("-p", "--port", default="5902", help="VNC port")
+    parser.add_argument("-s", "--skin", default=None, help="PNG image")
     args = parser.parse_args()
 
     window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -187,7 +188,7 @@ if __name__ == '__main__':
     grab_keys = [gtk.keysyms.Control_L, gtk.keysyms.Alt_L, gtk.keysyms.g]
     vnc.set_grab_keys(grab_keys)
 
-    print("Connecting to %s %s" % (args.host, args.port))
+    print(f"Connecting to {args.host} {args.port}")
     vnc.open_host(args.host, args.port)
 
     vnc.connect("vnc-pointer-grab", vnc_grab, window)

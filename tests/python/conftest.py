@@ -1,30 +1,31 @@
-import pytest
-import os
 import re
 from collections import namedtuple
 from pathlib import Path
-from typing import List, Optional
+
+import pytest
 
 from speculos.client import SpeculosClient
-
 
 # going back from...(conftest.py \ python \ tests \ git root) / 'apps'
 APP_DIR = Path(__file__).resolve().parent.parent.parent / "apps"
 AppInfo = namedtuple("AppInfo", ["filepath", "model", "name", "version"])
 
 
-def app_info_from_path(path: Path) -> Optional[AppInfo]:
+def app_info_from_path(path: Path) -> AppInfo | None:
     # name example: nanox#boil#2.1.0.elf
     app_regexp = re.compile(r"^(nanox|nanosp|stax|flex|apex_p)#([^#]+)#([\w\-.]+)\.elf$")
     matching = re.match(app_regexp, path.name)
     if not matching:
         return None
     return AppInfo(
-        filepath=path, model=matching.group(1), name=matching.group(2), version=matching.group(3)
+        filepath=path,
+        model=matching.group(1),
+        name=matching.group(2),
+        version=matching.group(3),
     )
 
 
-def list_apps_to_test() -> List[AppInfo]:
+def list_apps_to_test() -> list[AppInfo]:
     """
     List apps matching the pattern:
 
@@ -43,9 +44,7 @@ def list_apps_to_test() -> List[AppInfo]:
             continue
         info = app_info_from_path(appfile)
         if not info:
-            pytest.fail(
-                f"An unexpected file was found in apps/, with a # but not matching the pattern: {appfile.name!r}"
-            )
+            pytest.fail(f"An unexpected file was found in apps/, with a # but not matching the pattern: {appfile.name!r}")
             continue
         all_apps.append(info)
     return all_apps
@@ -56,12 +55,12 @@ def app(request, client):
     return app_info_from_path(Path(client.app))
 
 
-def get_apps(name: str) -> List[AppInfo]:
+def get_apps(name: str) -> list[AppInfo]:
     """Retrieve the list of apps in the ../../apps directory."""
     return [app for app in list_apps_to_test() if app.name == name]
 
 
-def default_boil_app() -> List[AppInfo]:
+def default_boil_app() -> list[AppInfo]:
     filepath = (APP_DIR / "boil.elf").resolve()
     apps = get_apps("boil")
     return [app for app in apps if app.filepath == filepath]

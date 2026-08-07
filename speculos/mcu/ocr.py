@@ -1,11 +1,13 @@
 import functools
 import string
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Dict, List, Mapping
-from speculos.observer import TextEvent
-from . import bagl_font
 
-from construct import Struct, Int8ul, Int16ul
+from construct import Int8ul, Int16ul, Struct
+
+from speculos.observer import TextEvent
+
+from . import bagl_font
 
 nbgl_area_t = Struct(
     "x0" / Int16ul,
@@ -32,7 +34,7 @@ class BitMapChar:
     bitmap: bytes
 
 
-__FONT_MAP: Dict[int, Mapping[str, BitMapChar]] = {}
+__FONT_MAP: dict[int, Mapping[str, BitMapChar]] = {}
 
 DISPLAY_CHARS = string.ascii_letters + string.digits + string.punctuation
 
@@ -45,10 +47,11 @@ def cache_font(f):
         if byte_string not in __font_char_cache:
             __font_char_cache[byte_string] = f(byte_string)
         return __font_char_cache[byte_string]
+
     return wrapper
 
 
-def split(bits: BitVector, n: Width) -> List[BitVector]:
+def split(bits: BitVector, n: Width) -> list[BitVector]:
     """
     Split a bit array (string of '1' and '0')
     into an arbitrary list of n-sized bit arrays.
@@ -68,7 +71,7 @@ def split(bits: BitVector, n: Width) -> List[BitVector]:
 
 def split_bytes(bytes_elems: BitMap, n: CharWidth):
     """Useful to display a bitmap character"""
-    bits = "".join("{0:08b}".format(x)[::-1] for x in bytes_elems)
+    bits = "".join(f"{x:08b}"[::-1] for x in bytes_elems)
     return split(bits, n)
 
 
@@ -98,32 +101,22 @@ def get_font_map(font: bagl_font.Font):
 
 def _get_font_map(font: bagl_font.Font) -> Mapping[Char, BitMapChar]:
     font_map = {}
-    for ord_char, font_char in zip(
-        range(font.first_char, font.last_char), font.characters
-    ):
+    for ord_char, font_char in zip(range(font.first_char, font.last_char), font.characters, strict=False):
         font_map[chr(ord_char)] = BitMapChar(
             font_char,
-            bytes(
-                font.bitmap[
-                    font_char.bitmap_offset:(
-                        font_char.bitmap_offset
-                        + font_char.bitmap_byte_count
-                    )
-                ]
-            ),
+            bytes(font.bitmap[font_char.bitmap_offset : (font_char.bitmap_offset + font_char.bitmap_byte_count)]),
         )
     return font_map
 
 
 class OCR:
-
     # Maximum space for a letter to be considered part of the same word
     MAX_BLANK_SPACE_NANO = 12
     MAX_BLANK_SPACE_STAX = 24
     MAX_BLANK_SPACE_FLEX = 26
 
     def __init__(self, model: str):
-        self.events: List[TextEvent] = []
+        self.events: list[TextEvent] = []
         # Store the model of the device
         self.model = model
         # Maximum space for a letter to be considered part of the same word
@@ -151,7 +144,7 @@ class OCR:
                     # sometimes (but not always) the bitmap being passed is shortened
                     # by one '\x00' byte, not matching the exact bitmap
                     # provided in the font. Hence the 'residual' computation
-                    residual_bytes: bytes = bitmap_struct.bitmap[len(bitmap):]
+                    residual_bytes: bytes = bitmap_struct.bitmap[len(bitmap) :]
                     if all(b == 0 for b in residual_bytes):
                         all_values.append(character_value)
             if all_values:
@@ -202,8 +195,7 @@ class OCR:
             if x_diff < 0:
                 x_diff = -x_diff
             # Try to find if that char can be added to previous event
-            if y < (self.events[-1].y + self.events[-1].h) \
-               and x_diff < self.max_blank_space:
+            if y < (self.events[-1].y + self.events[-1].h) and x_diff < self.max_blank_space:
                 # Add this character to previous event
                 self.store_char_in_last_event(x, y, w, h, char)
                 return
@@ -231,10 +223,10 @@ class OCR:
             # - compressed bitmap (buffer_len)
             # - 2 bytes of different meaning depending on SephTag
             # - 4 bytes with unicode code point of displayed character
-            area = nbgl_area_t.parse(data[0:nbgl_area_t.sizeof()])
+            area = nbgl_area_t.parse(data[0 : nbgl_area_t.sizeof()])
             x, y, w, h = area.x0, area.y0, area.width, area.height
             character = int.from_bytes(data[-4:], byteorder="little", signed=False)
-            bitmap = data[nbgl_area_t.sizeof():-(2+4)]
+            bitmap = data[nbgl_area_t.sizeof() : -(2 + 4)]
         else:
             if data[0] != 0:
                 return
@@ -246,7 +238,7 @@ class OCR:
             bpp = int.from_bytes(data[9:10], byteorder="big")
             character = int.from_bytes(data[10:14], byteorder="big", signed=False)
             color_size = 4 * (1 << bpp)
-            bitmap = data[14+color_size:]
+            bitmap = data[14 + color_size :]
 
             # h may no reflect the real height: use number of lines displayed
             h = (len(bitmap) * 8) // w
@@ -264,7 +256,7 @@ class OCR:
         else:
             self.find_bitmap(x, y, w, h, bitmap)
 
-    def get_events(self) -> List[TextEvent]:
+    def get_events(self) -> list[TextEvent]:
         events = self.events.copy()
         self.events = []
         return events

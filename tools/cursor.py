@@ -1,50 +1,63 @@
 #!/usr/bin/env python3
 
-'''
+"""
 Export bitmap and colors from a 32x32 PNG file to a .h file.
-'''
+"""
+
+import sys
+from pathlib import Path
 
 from PIL import Image
 
-import os
-import sys
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print('Usage: %s <cursor.png> <cursor.h>' % sys.argv[0], file=sys.stderr)
+        print(f"Usage: {sys.argv[0]} <cursor.png> <cursor.h>", file=sys.stderr)
         sys.exit(0)
 
-    filename = sys.argv[1]
-    im = Image.open(filename)
+    input_path = Path(sys.argv[1]).resolve()
+    if not input_path.is_file():
+        print(f"Error: input file not found: {input_path}", file=sys.stderr)
+        sys.exit(1)
+    if input_path.suffix.lower() != ".png":
+        print(f"Error: input file must be a .png file: {input_path}", file=sys.stderr)
+        sys.exit(1)
+
+    output_path = Path(sys.argv[2]).resolve()
+    if output_path.suffix.lower() != ".h":
+        print(f"Error: output file must be a .h file: {output_path}", file=sys.stderr)
+        sys.exit(1)
+
+    im = Image.open(input_path)
     x, y = im.size
 
-    assert (x, y) == (32, 32)
+    if (x, y) != (32, 32):
+        raise ValueError(f"Expected image size (32, 32), got ({x}, {y})")
 
-    var = os.path.splitext(os.path.basename(filename))[0]
+    var = input_path.stem
 
-    im2 = im.convert('P')
+    im2 = im.convert("P")
     pixels = im2.load()
-    buf = 'char cursor_%s[] = {' % var
+    buf = f"char cursor_{var}[] = {{"
     for j in range(0, x):
         for i in range(0, y):
-            if pixels[i, j] not in [0, 0xff]:
+            if pixels[i, j] not in [0, 0xFF]:
                 buf += "'x',"
             else:
                 buf += "' ',"
-    buf += '};\n'
+    buf += "};\n"
 
-    im = im.convert('RGB')
+    im = im.convert("RGB")
     pixels = im.load()
 
-    buf += 'char color_%s[] = {' % var
+    buf += f"char color_{var}[] = {{"
     for j in range(0, x):
         for i in range(0, y):
             r, g, b = pixels[i, j]
-            buf += "0x%02x," % r
-            buf += "0x%02x," % g
-            buf += "0x%02x," % b
-            buf += "0x%02x," % 0
-    buf += '};\n'
+            buf += f"0x{r:02x},"
+            buf += f"0x{g:02x},"
+            buf += f"0x{b:02x},"
+            buf += f"0x{0:02x},"
+    buf += "};\n"
 
-    with open(sys.argv[2], 'w') as fp:
+    with output_path.open("w") as fp:
         fp.write(buf)

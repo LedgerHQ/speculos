@@ -7,6 +7,7 @@ the building blocks of any automated or agentic workflow.
 
 Requires: pip install requests
 """
+
 import sys
 
 import requests
@@ -24,9 +25,7 @@ def send_apdu(hex_data: str) -> str:
 
 def current_screen_text() -> list[str]:
     """Return the text lines currently displayed on the device screen."""
-    resp = requests.get(
-        f"{BASE}/events", params={"currentscreenonly": "true"}, timeout=TIMEOUT
-    )
+    resp = requests.get(f"{BASE}/events", params={"currentscreenonly": "true"}, timeout=TIMEOUT)
     resp.raise_for_status()
     return [e.get("text", "") for e in resp.json()["events"]]
 

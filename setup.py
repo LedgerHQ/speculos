@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Install Speculos"""
+
 import pathlib
 import shutil
 import tempfile
-from setuptools.command.build_py import build_py as _build_py
+
 from setuptools import setup
+from setuptools.command.build_py import build_py as _build_py
 
 
 class BuildSpeculos(_build_py):

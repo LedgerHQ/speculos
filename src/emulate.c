@@ -605,7 +605,7 @@ static int emulate_syscall_os(unsigned long syscall,
               "[*] syscall: "
               "os_registry_get_current_app_tag"
               ""
-              "(0x%x, %p, %u)",
+              "(0x%x, %p, %zu)",
               tag, buffer, length);
     }
     *ret = sys_os_registry_get_current_app_tag(tag, buffer, length);
