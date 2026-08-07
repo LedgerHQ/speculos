@@ -23,13 +23,9 @@ WORKDIR /speculos
 # Copying artifacts from previous build
 COPY --from=builder /speculos/speculos/resources/ /speculos/speculos/resources/
 
-# Install only the runtime deps from pyproject.toml, without building speculos
-# itself: pip install . would trigger a full cmake rebuild of OpenSSL and other
-# native dependencies that belong in the builder stage, not here.
 RUN pip install --upgrade pip && \
-    pip install tomli && \
-    python3 -c "import tomli,subprocess,sys; d=tomli.load(open('pyproject.toml','rb')); subprocess.run([sys.executable,'-m','pip','install']+d['project']['dependencies'],check=True)" && \
-    pip uninstall -y tomli
+    SETUPTOOLS_SCM_PRETEND_VERSION_FOR_SPECULOS="$(sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' CHANGELOG.md | head -1)" \
+        pip install -e .
 
 RUN apt-get update && \
     apt-get install -qy \
