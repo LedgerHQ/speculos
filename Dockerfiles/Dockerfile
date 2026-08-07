@@ -23,18 +23,22 @@ WORKDIR /speculos
 # Copying artifacts from previous build
 COPY --from=builder /speculos/speculos/resources/ /speculos/speculos/resources/
 
-RUN pip install --upgrade pip pipenv
-RUN pipenv install --deploy --system
+# Install only the runtime deps from pyproject.toml, without building speculos
+# itself: pip install . would trigger a full cmake rebuild of OpenSSL and other
+# native dependencies that belong in the builder stage, not here.
+RUN pip install --upgrade pip && \
+    pip install tomli && \
+    python3 -c "import tomli,subprocess,sys; d=tomli.load(open('pyproject.toml','rb')); subprocess.run([sys.executable,'-m','pip','install']+d['project']['dependencies'],check=True)" && \
+    pip uninstall -y tomli
 
-
-RUN apt-get update && apt-get install -qy \
-    qemu-user-static \
-    libvncserver-dev \
-    gdb-multiarch \
-    binutils-arm-none-eabi \
-    && apt-get clean
-
-RUN apt-get clean && rm -rf /var/lib/apt/lists/
+RUN apt-get update && \
+    apt-get install -qy \
+        qemu-user-static \
+        libvncserver-dev \
+        gdb-multiarch \
+        binutils-arm-none-eabi && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/
 
 # default port for dev env
 EXPOSE 1234
