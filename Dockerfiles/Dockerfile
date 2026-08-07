@@ -23,18 +23,18 @@ WORKDIR /speculos
 # Copying artifacts from previous build
 COPY --from=builder /speculos/speculos/resources/ /speculos/speculos/resources/
 
-RUN pip install --upgrade pip pipenv
-RUN pipenv install --deploy --system
+RUN pip install --upgrade pip && \
+    SETUPTOOLS_SCM_PRETEND_VERSION_FOR_SPECULOS="$(sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' CHANGELOG.md | head -1)" \
+        pip install -e .
 
-
-RUN apt-get update && apt-get install -qy \
-    qemu-user-static \
-    libvncserver-dev \
-    gdb-multiarch \
-    binutils-arm-none-eabi \
-    && apt-get clean
-
-RUN apt-get clean && rm -rf /var/lib/apt/lists/
+RUN apt-get update && \
+    apt-get install -qy \
+        qemu-user-static \
+        libvncserver-dev \
+        gdb-multiarch \
+        binutils-arm-none-eabi && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/
 
 # default port for dev env
 EXPOSE 1234

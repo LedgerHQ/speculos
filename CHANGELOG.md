@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Builder image: dependency archives now use version-agnostic filenames (`openssl.tar.gz`, `cmocka.tar.xz`, `blst.tar.gz`)
 - CI: upgrade pip before installing packages in the `build` job
 - Bump packages version: pyacl, werkzeug, pillow, cryptography, urllib3
+- speculos Dockerfile : install dependencies from pyproject.toml (Pipfile removed)
 
 ### Fixed
 
