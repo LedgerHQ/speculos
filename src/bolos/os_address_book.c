@@ -5,8 +5,7 @@
 #include <stdint.h>
 #include <string.h>
 
-bool sys_ADDRESS_BOOK_HMAC(const uint32_t *bip32_path, size_t bip32_path_len,
-                           ADDRESS_BOOK_salt_id_t salt_id,
+bool sys_ADDRESS_BOOK_HMAC(ADDRESS_BOOK_salt_id_t salt_id,
                            const uint8_t *message, size_t message_len,
                            uint8_t *hmac_out)
 {
@@ -16,22 +15,15 @@ bool sys_ADDRESS_BOOK_HMAC(const uint32_t *bip32_path, size_t bip32_path_len,
     return false;
   }
 
-  if ((bip32_path == NULL) && (bip32_path_len != 0)) {
-    return false;
-  }
-
   if ((message == NULL) && (message_len != 0)) {
     return false;
   }
 
   // Call kernel
-  return ADDRESS_BOOK_hmac(bip32_path, bip32_path_len, salt_id, message,
-                           message_len, hmac_out);
+  return ADDRESS_BOOK_hmac(salt_id, message, message_len, hmac_out);
 }
 
-bool sys_ADDRESS_BOOK_HMAC_VERIFY(const uint32_t *bip32_path,
-                                  size_t bip32_path_len,
-                                  ADDRESS_BOOK_salt_id_t salt_id,
+bool sys_ADDRESS_BOOK_HMAC_VERIFY(ADDRESS_BOOK_salt_id_t salt_id,
                                   const uint8_t *message, size_t message_len,
                                   const uint8_t *hmac_expected)
 {
@@ -41,15 +33,10 @@ bool sys_ADDRESS_BOOK_HMAC_VERIFY(const uint32_t *bip32_path,
     return false;
   }
 
-  if ((bip32_path == NULL) && (bip32_path_len != 0)) {
-    return false;
-  }
-
   if ((message == NULL) && (message_len != 0)) {
     return false;
   }
 
   // Call kernel
-  return ADDRESS_BOOK_hmac_verify(bip32_path, bip32_path_len, salt_id, message,
-                                  message_len, hmac_expected);
+  return ADDRESS_BOOK_hmac_verify(salt_id, message, message_len, hmac_expected);
 }
