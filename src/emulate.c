@@ -686,17 +686,13 @@ static int emulate_syscall_os(unsigned long syscall,
     SYSCALL1(os_stack_operations, "(%u)",
               unsigned char, mode)
 
-    SYSCALL6(ADDRESS_BOOK_HMAC, "(%p, %u, %u, %p, %u, %p)",
-             uint32_t *, bip32_path,
-             size_t, bip32_path_len,
+    SYSCALL4(ADDRESS_BOOK_HMAC, "(%u, %p, %u, %p)",
              ADDRESS_BOOK_salt_id_t, salt_id,
              uint8_t *, message,
              size_t, message_len,
              uint8_t *, hmac_out)
 
-    SYSCALL6(ADDRESS_BOOK_HMAC_VERIFY, "(%p, %u, %u, %p, %u, %p)",
-             uint32_t *, bip32_path,
-             size_t, bip32_path_len,
+    SYSCALL4(ADDRESS_BOOK_HMAC_VERIFY, "(%u, %p, %u, %p)",
              ADDRESS_BOOK_salt_id_t, salt_id,
              uint8_t *, message,
              size_t, message_len,

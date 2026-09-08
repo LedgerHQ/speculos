@@ -71,6 +71,9 @@ static const ADDRESS_BOOK_salt_entry_t salt_table[ADDRESS_BOOK_SALT_COUNT] = {
                                              1U },
 };
 
+static const uint32_t ADDRESS_BOOK_PATH[4] = { 2147483648, 2147483648,
+                                               2147483648, 2147483648 };
+
 /*********************
  *  STATIC FUNCTIONS
  *********************/
@@ -79,15 +82,12 @@ static const ADDRESS_BOOK_salt_entry_t salt_table[ADDRESS_BOOK_SALT_COUNT] = {
  *
  * KDF: K = SHA256(salt || privkey.d)
  *
- * @pre  bip32_path_len <= MAX_BIP32_DEPTH
  * @pre  salt != NULL && salt_len > 0
  *
  * @post On success: hmac_key contains the 32-byte derived key.
  * @post On failure: hmac_key is zeroed.
  * @post In all cases: private key material is wiped before return.
  *
- * @param[in]  bip32_path     BIP32 derivation path
- * @param[in]  bip32_path_len Number of elements in bip32_path
  * @param[in]  salt           Salt bytes
  * @param[in]  salt_len       Salt length in bytes
  * @param[out] hmac_key       Output buffer for the 32-byte HMAC key
@@ -95,8 +95,7 @@ static const ADDRESS_BOOK_salt_entry_t salt_table[ADDRESS_BOOK_SALT_COUNT] = {
  * @return true on success, false on failure
  */
 static bool
-address_book_derive_hmac_key(const uint32_t *bip32_path, size_t bip32_path_len,
-                             const uint8_t *salt, size_t salt_len,
+address_book_derive_hmac_key(const uint8_t *salt, size_t salt_len,
                              uint8_t hmac_key[ADDRESS_BOOK_HMAC_SIZE])
 {
   cx_ecfp_256_private_key_t privkey = { 0 };
@@ -107,8 +106,8 @@ address_book_derive_hmac_key(const uint32_t *bip32_path, size_t bip32_path_len,
   /* Derive secp256k1 private key from BIP32 path, only 32 bytes are needed */
   uint8_t key_data[64] = { 0 };
 
-  os_perso_derive_node_os_level(HDW_NORMAL, CX_CURVE_SECP256K1, bip32_path,
-                                bip32_path_len, key_data, NULL);
+  os_perso_derive_node_os_level(HDW_NORMAL, CX_CURVE_SECP256K1,
+                                ADDRESS_BOOK_PATH, 4, key_data, NULL);
 
   sys_cx_ecfp_init_private_key(CX_CURVE_SECP256K1, key_data, 32, &privkey);
   explicit_bzero(key_data, sizeof(key_data));
@@ -134,9 +133,9 @@ address_book_derive_hmac_key(const uint32_t *bip32_path, size_t bip32_path_len,
 /**
  * @brief Core HMAC-SHA256 computation.
  *
- * Derives the HMAC key from the BIP32 path + salt, computes HMAC-SHA256(K,
- * message), and writes the result to hmac_out. All key material is wiped before
- * return.
+ * Derives the HMAC key from the predefined BIP32 path + salt, computes
+ * HMAC-SHA256(K, message), and writes the result to hmac_out. All key material
+ * is wiped before return.
  *
  * @pre  All parameters validated by the calling public function.
  *
@@ -144,8 +143,6 @@ address_book_derive_hmac_key(const uint32_t *bip32_path, size_t bip32_path_len,
  * @post On failure: hmac_out is zeroed.
  * @post In all cases: HMAC key material is wiped before return.
  *
- * @param[in]  bip32_path     BIP32 derivation path
- * @param[in]  bip32_path_len Number of elements in bip32_path
  * @param[in]  salt           Salt bytes for the KDF
  * @param[in]  salt_len       Salt length
  * @param[in]  message        HMAC message data
@@ -154,9 +151,7 @@ address_book_derive_hmac_key(const uint32_t *bip32_path, size_t bip32_path_len,
  *
  * @return true on success, false on failure
  */
-static bool address_book_compute_hmac(const uint32_t *bip32_path,
-                                      size_t bip32_path_len,
-                                      const uint8_t *salt, size_t salt_len,
+static bool address_book_compute_hmac(const uint8_t *salt, size_t salt_len,
                                       const uint8_t *message,
                                       size_t message_len,
                                       uint8_t hmac_out[ADDRESS_BOOK_HMAC_SIZE])
@@ -165,8 +160,7 @@ static bool address_book_compute_hmac(const uint32_t *bip32_path,
   cx_hmac_sha256_t hmac_ctx = { 0 };
   bool success = false;
 
-  if (!address_book_derive_hmac_key(bip32_path, bip32_path_len, salt, salt_len,
-                                    hmac_key)) {
+  if (!address_book_derive_hmac_key(salt, salt_len, hmac_key)) {
     goto cleanup;
   }
 
@@ -187,11 +181,9 @@ cleanup:
 /**
  * @brief Validates common input parameters for both functions.
  *
- * Checks for NULL pointers, path length bounds, salt_id range, and message
+ * Checks for NULL pointers, salt_id range, and message
  * length.
  *
- * @param[in] bip32_path     BIP32 derivation path
- * @param[in] bip32_path_len Number of elements in bip32_path
  * @param[in] salt_id        Salt identifier
  * @param[in] message        Message buffer (may be NULL only if message_len ==
  * 0)
@@ -199,19 +191,10 @@ cleanup:
  *
  * @return true if all parameters are valid, false otherwise
  */
-static bool address_book_validate_params(const uint32_t *bip32_path,
-                                         size_t bip32_path_len,
-                                         ADDRESS_BOOK_salt_id_t salt_id,
+static bool address_book_validate_params(ADDRESS_BOOK_salt_id_t salt_id,
                                          const uint8_t *message,
                                          size_t message_len)
 {
-  if (bip32_path == NULL) {
-    return false;
-  }
-  if ((bip32_path_len == 0) ||
-      (bip32_path_len > ADDRESS_BOOK_MAX_BIP32_DEPTH)) {
-    return false;
-  }
   if ((unsigned int)salt_id >= (unsigned int)ADDRESS_BOOK_SALT_COUNT) {
     return false;
   }
@@ -228,15 +211,13 @@ static bool address_book_validate_params(const uint32_t *bip32_path,
  *  GLOBAL FUNCTIONS
  *********************/
 
-bool ADDRESS_BOOK_hmac(const uint32_t *bip32_path, size_t bip32_path_len,
-                       ADDRESS_BOOK_salt_id_t salt_id, const uint8_t *message,
+bool ADDRESS_BOOK_hmac(ADDRESS_BOOK_salt_id_t salt_id, const uint8_t *message,
                        size_t message_len, uint8_t *hmac_out)
 {
   bool success = false;
 
   /* Validate inputs */
-  if (!address_book_validate_params(bip32_path, bip32_path_len, salt_id,
-                                    message, message_len)) {
+  if (!address_book_validate_params(salt_id, message, message_len)) {
     goto end;
   }
   if (hmac_out == NULL) {
@@ -244,16 +225,14 @@ bool ADDRESS_BOOK_hmac(const uint32_t *bip32_path, size_t bip32_path_len,
   }
 
   const ADDRESS_BOOK_salt_entry_t *salt = &salt_table[salt_id];
-  success =
-      address_book_compute_hmac(bip32_path, bip32_path_len, salt->str,
-                                salt->len, message, message_len, hmac_out);
+  success = address_book_compute_hmac(salt->str, salt->len, message,
+                                      message_len, hmac_out);
 
 end:
   return success;
 }
 
-bool ADDRESS_BOOK_hmac_verify(const uint32_t *bip32_path, size_t bip32_path_len,
-                              ADDRESS_BOOK_salt_id_t salt_id,
+bool ADDRESS_BOOK_hmac_verify(ADDRESS_BOOK_salt_id_t salt_id,
                               const uint8_t *message, size_t message_len,
                               const uint8_t *hmac_expected)
 {
@@ -261,8 +240,7 @@ bool ADDRESS_BOOK_hmac_verify(const uint32_t *bip32_path, size_t bip32_path_len,
   bool success = false;
 
   /* Validate inputs */
-  if (!address_book_validate_params(bip32_path, bip32_path_len, salt_id,
-                                    message, message_len)) {
+  if (!address_book_validate_params(salt_id, message, message_len)) {
     goto cleanup;
   }
   if (hmac_expected == NULL) {
@@ -270,8 +248,7 @@ bool ADDRESS_BOOK_hmac_verify(const uint32_t *bip32_path, size_t bip32_path_len,
   }
 
   const ADDRESS_BOOK_salt_entry_t *salt = &salt_table[salt_id];
-  if (!address_book_compute_hmac(bip32_path, bip32_path_len, salt->str,
-                                 salt->len, message, message_len,
+  if (!address_book_compute_hmac(salt->str, salt->len, message, message_len,
                                  hmac_computed)) {
     goto cleanup;
   }
