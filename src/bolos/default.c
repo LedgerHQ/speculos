@@ -68,7 +68,8 @@ int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len)
     unsigned long data_offset =
         dst_addr - (get_memory_code_address() + app_nvram_offset);
     fseek(fptr, data_offset, SEEK_SET);
-    if (fwrite(src_addr, 1, src_len, fptr) != src_len) {
+    /* dst_addr holds the written data, including the zeros of an erase */
+    if (fwrite(dst_addr, 1, src_len, fptr) != src_len) {
       errx(1, "App NVRAM write attempt failed\n");
     }
     fclose(fptr);
