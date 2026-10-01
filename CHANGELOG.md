@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Network listeners (REST API, APDU, button/finger/automation TCP) now default to `127.0.0.1` instead of `0.0.0.0`; use `--host 0.0.0.0` or `SPECULOS_HOST` (Docker image sets `0.0.0.0`) when publishing ports
 - Builder image: blst checksum was never written to `SHA256SUMS`, so its integrity was not verified
 - Builder image: OpenSSL built without `no-dso`, causing a linker warning about `dlopen` in static binaries
 - Address Book: HMAC key derivation was wrongly subject to the calling app's derivation-path check

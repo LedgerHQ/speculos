@@ -27,7 +27,7 @@ from .web_interface import WebInterface
 class ApiRunner(IODevice):
     """Run the Speculos API server in a dedicated thread, with a notification when it stops"""
 
-    def __init__(self, api_port: int) -> None:
+    def __init__(self, api_port: int, host: str = "127.0.0.1") -> None:
         self._api_wrapper: ApiWrapper
         # self.sock is used by Screen.add_notifier. Closing self._notify_exit
         # signals it that the API is no longer running.
@@ -35,6 +35,7 @@ class ApiRunner(IODevice):
         self._notify_exit: socket.socket
         self.sock, self._notify_exit = socket.socketpair()
         self._port: int = api_port
+        self._host: str = host
         self._api_thread: threading.Thread
 
     @property
@@ -51,7 +52,7 @@ class ApiRunner(IODevice):
         seph_: SeProxyHal,
         automation_server: BroadcastInterface,
     ) -> None:
-        self._api_wrapper = ApiWrapper(self._port, screen_, seph_, automation_server)
+        self._api_wrapper = ApiWrapper(self._port, screen_, seph_, automation_server, host=self._host)
         self._api_thread = threading.Thread(target=self._api_wrapper.run, name="API-server", daemon=True)
         self._api_thread.start()
 
@@ -66,8 +67,10 @@ class ApiWrapper:
         screen: DisplayNotifier,
         seph: SeProxyHal,
         automation_server: BroadcastInterface,
+        host: str = "127.0.0.1",
     ):
         self._port = api_port
+        self._host = host
         static_folder = str(resources.files(__package__) / "static")
         # Remove the Flask startup banner
         flask.cli.show_server_banner = lambda *a: None
@@ -103,4 +106,4 @@ class ApiWrapper:
 
     def run(self):
         # threaded must be set to allow serving requests along events streaming
-        self._app.run(host="0.0.0.0", port=self._port, threaded=True, use_reloader=False)  # noqa: S104
+        self._app.run(host=self._host, port=self._port, threaded=True, use_reloader=False)

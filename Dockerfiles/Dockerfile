@@ -36,6 +36,9 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/
 
+# Published ports need listeners on all interfaces inside the container.
+ENV SPECULOS_HOST=0.0.0.0
+
 # default port for dev env
 EXPOSE 1234
 EXPOSE 1236

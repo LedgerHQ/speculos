@@ -28,6 +28,8 @@ All the arguments which are supported by `speculos.py` can be passed on the Dock
 docker run --rm -it -v "$(pwd)"/apps:/speculos/apps \
 -p 1234:1234 -p 5000:5000 -p 40000:40000 -p 41000:41000 speculos \
 ./apps/boil.elf --seed "secret" --display headless --apdu-port 40000 --vnc-port 41000
+# Official images set SPECULOS_HOST=0.0.0.0. Outside Docker, pass --host 0.0.0.0
+# when you need non-localhost clients.
 ```
 
 ### Debug
