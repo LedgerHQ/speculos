@@ -45,6 +45,9 @@ unsigned long sys_os_global_pin_check(unsigned char *pin_buffer,
     return BOLOS_TRUE;
   }
 
+  /* A device erases itself when its tries run out. That state is a fresh
+   * Speculos started with the same seed, which a test gets by restarting it,
+   * so the count stops at zero here instead of emulating the wipe. */
   if (pin_retries > 0) {
     pin_retries--;
   }
