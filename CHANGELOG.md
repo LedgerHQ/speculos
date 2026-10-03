@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `os_global_pin_check` and `os_global_pin_retries` syscalls: the emulated device has a PIN (`--pin`, default `1234`) and three tries; a wrong entry spends one, down to zero, and a correct entry restores them. Both syscalls require `APPLICATION_FLAG_GLOBAL_PIN` in the app flags, as on a device.
+
 ## [0.27.1] 2026-09-29
 
 ### Fixed
