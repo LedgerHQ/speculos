@@ -37,6 +37,19 @@ static const char APP_NAME_VERSION_ENV_NAME_BKP[] = "SPECULOS_DETECTED_APPNAME";
 static env_sized_name_t app_name = { 3, "app\0" };
 static env_sized_name_t app_version = { 6, "1.33.7\0" };
 
+/* DEVICE PIN */
+
+static const char PIN_ENV_NAME[] = "SPECULOS_PIN";
+
+/* The PIN the emulated device is set up with, ASCII digits as the PIN keypad
+ * passes them to os_global_pin_check. */
+static const char default_pin[] = "1234";
+
+static struct {
+  size_t size;
+  uint8_t pin[MAX_PIN_SIZE];
+} actual_pin = { 0 };
+
 /* RNG VARIABLES */
 
 static const char RNG_ENV_NAME[] = "RNG_SEED";
@@ -133,6 +146,52 @@ size_t env_get_seed(uint8_t *seed, size_t max_size)
 {
   memcpy(seed, actual_seed.seed, max_size);
   return (actual_seed.size < max_size) ? actual_seed.size : max_size;
+}
+
+/* A device PIN has 4 to 8 digits. */
+static bool is_device_pin(const char *pin)
+{
+  size_t length = strlen(pin);
+
+  if (length < MIN_PIN_SIZE || length > MAX_PIN_SIZE) {
+    return false;
+  }
+  for (size_t i = 0; i < length; i++) {
+    if (pin[i] < '0' || pin[i] > '9') {
+      return false;
+    }
+  }
+  return true;
+}
+
+static void env_init_pin()
+{
+  const char *p = getenv(PIN_ENV_NAME);
+
+  if (p != NULL && !is_device_pin(p)) {
+    warnx("invalid PIN passed through %s environment variable: 4 to 8 digits "
+          "expected",
+          PIN_ENV_NAME);
+    p = NULL;
+  }
+  if (p == NULL) {
+    p = default_pin;
+  } else {
+    fprintf(stderr, "[*] Device PIN initialized from environment\n");
+  }
+  actual_pin.size = strlen(p);
+  memcpy(actual_pin.pin, p, actual_pin.size);
+}
+
+size_t env_get_pin(const uint8_t **pin)
+{
+  if (actual_pin.size == 0) {
+    /* Not initialized, as in the syscall tests: the default PIN. */
+    actual_pin.size = strlen(default_pin);
+    memcpy(actual_pin.pin, default_pin, actual_pin.size);
+  }
+  *pin = actual_pin.pin;
+  return actual_pin.size;
 }
 
 static void env_init_rng()
@@ -319,6 +378,7 @@ size_t env_get_app_tag(char *dst, size_t length, BOLOS_TAG tag)
 void init_environment()
 {
   env_init_seed();
+  env_init_pin();
   env_init_rng();
   env_init_endorsement();
   env_init_app_name_version();

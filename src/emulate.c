@@ -652,6 +652,12 @@ static int emulate_syscall_os(unsigned long syscall,
 
     SYSCALL0(os_global_pin_is_validated);
 
+    SYSCALL2(os_global_pin_check, "(%p, %u)",
+             unsigned char *, pin_buffer,
+             unsigned char,   pin_length);
+
+    SYSCALL0(os_global_pin_retries);
+
     SYSCALL0(os_perso_isonboarded);
 
     SYSCALL1(os_sched_last_status, "(%u)",

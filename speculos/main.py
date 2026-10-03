@@ -355,6 +355,7 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
         seed = mnemonic.Mnemonic.to_seed(args.seed)
 
     os.environ["SPECULOS_SEED"] = binascii.hexlify(seed).decode("ascii")
+    os.environ["SPECULOS_PIN"] = args.pin
 
     if args.deterministic_rng:
         os.environ["RNG_SEED"] = args.deterministic_rng
@@ -446,6 +447,11 @@ def main(prog=None) -> int:
         "--seed",
         default=DEFAULT_SEED,
         help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"',
+    )
+    parser.add_argument(
+        "--pin",
+        default="1234",
+        help="Device PIN, 4 to 8 digits, which os_global_pin_check checks (default: 1234)",
     )
     parser.add_argument("-t", "--trace", action="store_true", help="Trace syscalls")
     parser.add_argument(
@@ -562,6 +568,11 @@ def main(prog=None) -> int:
     # Check args.apiLevel, 0 is an invalid value
     if args.apiLevel == "0":
         logger.error(f"Invalid api_level {args.apiLevel}")
+        sys.exit(1)
+
+    # A device PIN has 4 to 8 digits
+    if not (args.pin.isascii() and args.pin.isdigit() and 4 <= len(args.pin) <= 8):
+        logger.error(f"Invalid PIN {args.pin!r}: 4 to 8 digits expected")
         sys.exit(1)
 
     # Set SPECULOS_DETECTED_APPNAME env variable for proper emulation.

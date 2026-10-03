@@ -17,6 +17,7 @@ add_executable(test_syscall_hmac test_hmac.c ../utils.c ../mocks.c)
 add_executable(test_syscall_math test_math.c)
 add_executable(test_syscall_mpi_rng test_mpi_rng.c ../utils.c ../mocks.c)
 add_executable(test_syscall_os_global_pin_is_validated test_os_global_pin_is_validated.c ../mocks.c)
+add_executable(test_syscall_os_global_pin test_os_global_pin.c ../mocks.c)
 add_executable(test_syscall_rfc6979 test_rfc6979.c ../utils.c ../mocks.c)
 add_executable(test_syscall_ripemd test_ripemd.c ../utils.c ../mocks.c)
 add_executable(test_syscall_sha2 test_sha2.c nist_cavp.c ../utils.c ../mocks.c)
@@ -27,6 +28,7 @@ add_executable(test_syscall_nvm test_nvm.c)
 
 add_test(NAME hello COMMAND qemu-arm-static hello WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 foreach(target aes bip32 blake2 bls bn crc16 ec ecpoint ecdh ecdsa eddsa endorsement hmac
-               math nvm os_global_pin_is_validated rfc6979 ripemd sha2 sha3 slip21 eip2333 hdkey)
+               math nvm os_global_pin os_global_pin_is_validated rfc6979 ripemd sha2 sha3 slip21
+               eip2333 hdkey)
   add_test(NAME test_syscall_${target} COMMAND qemu-arm-static test_syscall_${target} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endforeach()

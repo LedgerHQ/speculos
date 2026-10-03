@@ -46,6 +46,11 @@ unsigned long sys_os_seph_version(uint8_t *buffer, size_t len);
 unsigned long sys_os_lib_call(unsigned long *parameters);
 unsigned long sys_os_lib_end(void);
 unsigned long sys_os_global_pin_is_validated(void);
+unsigned long sys_os_global_pin_check(unsigned char *pin_buffer,
+                                      unsigned char pin_length);
+unsigned long sys_os_global_pin_retries(void);
+/* Restores the tries of the device PIN, for the syscall tests. */
+void reset_global_pin_retries(void);
 unsigned long sys_os_perso_isonboarded(void);
 unsigned long sys_os_flags(void);
 int sys_nvm_write(void *dst_addr, void *src_addr, size_t src_len);

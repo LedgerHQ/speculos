@@ -67,6 +67,18 @@ $ echo 'b0 01 00 00 00' \
 00000012
 ```
 
+## Device PIN
+
+An app holding `APPLICATION_FLAG_GLOBAL_PIN` can have the user enter the device
+PIN (`os_global_pin_check`) and read its remaining tries
+(`os_global_pin_retries`). The emulated device has the PIN `1234`, which
+`--pin` changes (4 to 8 digits), and three tries: a wrong entry spends one,
+down to zero, and a correct entry restores them.
+
+```shell
+./speculos.py --pin 5678 path/to/app.elf
+```
+
 ## Loading a library app (example: Bitcoin Testnet)
 
 Some apps call into another app at runtime (`os_lib_call`). Pass the dependency

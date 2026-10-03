@@ -3,6 +3,8 @@
 #include <stdint.h>
 
 #define MAX_SEED_SIZE   64
+#define MIN_PIN_SIZE    4
+#define MAX_PIN_SIZE    8
 #define MAX_STRING_SIZE 128
 #define MAX_CERT_SIZE   6 + 33 * 2
 
@@ -22,6 +24,7 @@ typedef struct {
 } env_user_certificate_t;
 
 size_t env_get_seed(uint8_t *seed, size_t max_size);
+size_t env_get_pin(const uint8_t **pin);
 unsigned int env_get_rng();
 cx_ecfp_private_key_t *env_get_user_private_key(unsigned int index);
 env_user_certificate_t *env_get_user_certificate(unsigned int index);

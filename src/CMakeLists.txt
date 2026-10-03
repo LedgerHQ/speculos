@@ -41,6 +41,7 @@ add_library(emu
         bolos/os.c
         bolos/os_bip32.c
         bolos/os_eip2333.c
+        bolos/os_pin.c
         bolos/cx.c
         bolos/cx_hash.c
         bolos/cx_math.c
