@@ -13,7 +13,7 @@ from speculos.mcu.seproxyhal import SeProxyHal
 from speculos.observer import BroadcastInterface
 from speculos.resources_importer import resources
 
-from .apdu import APDU
+from .apdu import APDU, pending_replies
 from .automation import Automation
 from .button import Button
 from .events import Events
@@ -56,6 +56,8 @@ class ApiRunner(IODevice):
         self._api_thread.start()
 
     def stop(self):
+        # The app may exit right after answering: send the answer first.
+        pending_replies.wait_idle(1.0)
         self._notify_exit.close()
 
 

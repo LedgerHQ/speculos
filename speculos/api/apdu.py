@@ -11,6 +11,30 @@ from ..mcu.seproxyhal import SeProxyHal
 from .restful import SephResource
 
 
+class PendingReplies:
+    """Counts /apdu answers not fully sent yet."""
+
+    def __init__(self) -> None:
+        self._count = 0
+        self._condition = threading.Condition()
+
+    def add(self) -> None:
+        with self._condition:
+            self._count += 1
+
+    def done(self) -> None:
+        with self._condition:
+            self._count -= 1
+            self._condition.notify_all()
+
+    def wait_idle(self, timeout: float) -> bool:
+        with self._condition:
+            return self._condition.wait_for(lambda: self._count == 0, timeout)
+
+
+pending_replies = PendingReplies()
+
+
 class APDUBridge:
     def __init__(self, seph: SeProxyHal):
         # We want to be notified when APDU response is transmitted from the SE
@@ -66,13 +90,12 @@ class APDU(SephResource):
         data = bytes.fromhex(args.get("data"))
 
         if "tick_timeout" in args:
-            tick_timeout = args["tick_timeout"]
-            return Response(
-                stream_with_context(self._bridge.exchange(data, tick_timeout)),
-                content_type="application/json",
-            )
+            exchange = self._bridge.exchange(data, args["tick_timeout"])
+        else:
+            exchange = self._bridge.exchange(data)
 
-        return Response(
-            stream_with_context(self._bridge.exchange(data)),
-            content_type="application/json",
-        )
+        response = Response(stream_with_context(exchange), content_type="application/json")
+        # Released once the last chunk is sent.
+        pending_replies.add()
+        response.call_on_close(pending_replies.done)
+        return response
