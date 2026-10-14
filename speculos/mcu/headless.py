@@ -59,7 +59,7 @@ class HeadlessPaintWidget(FrameBuffer):
 
     def _redraw(self) -> None:
         if self.vnc:
-            self.vnc.redraw(self.pixels, self.default_color)
+            self.vnc.redraw(self.pixels, self.default_color, self.draw_default_color)
         self.update_screenshot()
 
 
