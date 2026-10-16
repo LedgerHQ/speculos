@@ -6,12 +6,19 @@ true color: 24 bbp).
 """
 
 import logging
+import struct
 import subprocess
 import sys
+from array import array
 from pathlib import Path
 from typing import IO
 
 from .display import DisplayNotifier, IODevice, PixelColorMapping
+
+# y, x, color, end of line: the layout vnc_server reads.
+_DRAW_EVENT = struct.Struct("<HHIB")
+# Colors are 24 bits, so this never matches one: the first refresh is sent whole.
+_UNSENT = 0xFFFFFFFF
 
 
 class VNC(IODevice):
@@ -54,6 +61,9 @@ class VNC(IODevice):
         if password is not None:
             cmd += ["-passwd", password]
 
+        # What the VNC server holds, so only changed pixels are sent to it.
+        self._sent = array("I", [_UNSENT]) * (self._width * self._height)
+
         self.subprocess = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)  # noqa: S603
 
     @property
@@ -62,29 +72,45 @@ class VNC(IODevice):
             raise ValueError("VNC subprocess stdout is not available")
         return self.subprocess.stdout
 
-    def redraw(self, pixels: PixelColorMapping, default_color: int) -> None:
-        """The framebuffer was updated, forward everything to the VNC server."""
+    def redraw(self, pixels: PixelColorMapping, default_color: int, clear: bool) -> None:
+        """Forward the pixels drawn since the last refresh to the VNC server.
 
-        # int.to_bytes() is super slow, hence the manual encoding
-        buf = bytearray(self._width * self._height * 9)
-        i = 0
-        for x in range(0, self._width):
-            for y in range(0, self._height):
-                color = pixels.get((x, y), default_color)
-                buf[i + 0] = y & 0xFF
-                buf[i + 1] = (y >> 8) & 0xFF
-                buf[i + 2] = x & 0xFF
-                buf[i + 3] = (x >> 8) & 0xFF
-                buf[i + 4] = color & 0xFF
-                buf[i + 5] = (color >> 8) & 0xFF
-                buf[i + 6] = (color >> 16) & 0xFF
-                buf[i + 7] = (color >> 24) & 0xFF
-                buf[i + 8] = 0x0A
-                i += 9
+        The rest of the screen keeps what was last sent, unless it was cleared to default_color.
+        """
 
+        width, height = self._width, self._height
+        sent = self._sent
+        pack = _DRAW_EVENT.pack
+        events = []
+
+        if clear or sent[0] == _UNSENT:
+            frame = array("I", [default_color]) * (width * height)
+            for (x, y), color in pixels.items():
+                frame[y * width + x] = color
+            self._sent = frame
+            for y in range(height):
+                start = y * width
+                new_row = frame[start : start + width]
+                old_row = sent[start : start + width]
+                # Comparing whole rows runs in C; most rows of a refresh are unchanged.
+                if new_row == old_row:
+                    continue
+                for x in range(width):
+                    color = new_row[x]
+                    if color != old_row[x]:
+                        events.append(pack(y, x, color, 0x0A))
+        else:
+            for (x, y), color in pixels.items():
+                i = y * width + x
+                if sent[i] != color:
+                    sent[i] = color
+                    events.append(pack(y, x, color, 0x0A))
+
+        if not events:
+            return
         if self.subprocess.stdin is None:
             raise ValueError("VNC subprocess stdin is not available")
-        self.subprocess.stdin.write(buf)
+        self.subprocess.stdin.write(b"".join(events))
         self.subprocess.stdin.flush()
 
     def can_read(self, screen: DisplayNotifier) -> None:

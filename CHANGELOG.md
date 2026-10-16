@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.3] 2026-10-15
+
+### Fixed
+
+- VNC: screen updates were slow on Stax and Flex, as every refresh sent the whole screen to the VNC server; only the pixels that changed are sent now
+- VNC: a refresh that redraws only part of the screen (e.g. a toggle) blanked the rest of it
+
 ## [0.27.2] 2026-10-08
 
 ### Fixed

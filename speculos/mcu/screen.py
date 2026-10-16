@@ -152,7 +152,7 @@ class PaintWidget(FrameBuffer, QWidget):
             qp.drawPoint(x, y)
 
         if self.vnc is not None:
-            self.vnc.redraw(self.pixels, self.default_color)
+            self.vnc.redraw(self.pixels, self.default_color, self.draw_default_color)
 
         self.update_screenshot()
 
