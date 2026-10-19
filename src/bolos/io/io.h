@@ -16,6 +16,10 @@ int sys_os_io_tx_cmd(unsigned char type, const unsigned char *buffer,
 int sys_os_io_rx_evt(unsigned char *buffer, unsigned short buffer_max_length,
                      unsigned int *timeout_ms, bool check_se_event);
 
+int sys_os_io_rx_app_evt(unsigned char *buffer,
+                         unsigned short buffer_max_length,
+                         unsigned int *timeout_ms, bool check_se_event);
+
 int sys_os_io_seph_tx(const unsigned char *buffer, unsigned short length,
                       unsigned int *timeout_ms);
 
