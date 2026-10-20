@@ -175,6 +175,7 @@
 #define SYSCALL_os_io_stop_ID_IN                              0x01000086
 #define SYSCALL_os_io_tx_cmd_ID_IN                            0x04000088
 #define SYSCALL_os_io_rx_evt_ID_IN                            0x03000089
+#define SYSCALL_os_io_rx_app_evt_ID_IN                        0x03000090
 #define SYSCALL_nvm_write_page_ID_IN                          0x0100010a
 #define SYSCALL_nvm_erase_page_ID_IN                          0x01000136
 #define SYSCALL_try_context_get_ID_IN                         0x00000087
