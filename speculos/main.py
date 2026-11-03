@@ -471,6 +471,12 @@ def main(prog=None) -> int:
     parser.add_argument("-S", "--sound", action="store_true", help="Activate Tune playing")
 
     group = parser.add_argument_group("network arguments")
+    group.add_argument(
+        "--host",
+        default=os.environ.get("SPECULOS_HOST", "127.0.0.1"),
+        help="Address to bind network listeners (default: 127.0.0.1, or SPECULOS_HOST). "
+        "Use 0.0.0.0 when publishing ports from Docker.",
+    )
     group.add_argument("--apdu-port", default=9999, type=int, help="ApduServer TCP port")
     group.add_argument(
         "--api-port",
@@ -664,7 +670,7 @@ def main(prog=None) -> int:
         if api_enabled:
             logger.warning("--automation-port is incompatible with the API server, disabling the latter")
             api_enabled = False
-        automation_server = AutomationServer(("0.0.0.0", args.automation_port), AutomationClient)  # noqa: S104
+        automation_server = AutomationServer((args.host, args.automation_port), AutomationClient)
         automation_thread = threading.Thread(target=automation_server.serve_forever, daemon=True)
         automation_thread.start()
 
@@ -682,7 +688,7 @@ def main(prog=None) -> int:
     else:
         transport_type = TransportType[args.usb.upper()]
 
-    apdu = apdu_server.ApduServer(host="0.0.0.0", port=args.apdu_port)  # noqa: S104
+    apdu = apdu_server.ApduServer(host=args.host, port=args.apdu_port)
     seph = seproxyhal.SeProxyHal(
         s2,
         args.model,
@@ -696,12 +702,12 @@ def main(prog=None) -> int:
     button = None
     if args.button_port:
         logger.warning("--button-port is deprecated, please use the REST API instead")
-        button = FakeButton(args.button_port)
+        button = FakeButton(args.button_port, host=args.host)
 
     finger = None
     if args.finger_port:
         logger.warning("--finger-port is deprecated, please use the REST API instead")
-        finger = FakeFinger(args.finger_port)
+        finger = FakeFinger(args.finger_port, host=args.host)
 
     vnc = None
     if args.vnc_port:
@@ -719,7 +725,7 @@ def main(prog=None) -> int:
 
     apirun: ApiRunner | None = None
     if api_enabled:
-        apirun = ApiRunner(args.api_port)
+        apirun = ApiRunner(args.api_port, host=args.host)
 
     display_args = DisplayArgs(args.color, args.model, args.ontop, rendering, args.keymap, zoom, x, y)
     server_args = ServerArgs(apdu, apirun, button, finger, seph, vnc)

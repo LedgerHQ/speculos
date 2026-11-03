@@ -11,5 +11,6 @@ services:
       - "5000:5000" # api
       - "40000:40000" # apdu
       - "41000:41000" # vnc
+    # SPECULOS_HOST=0.0.0.0 is set in the image so published ports remain reachable.
     command: "./apps/boil.elf --seed secret --display headless --apdu-port 40000 --vnc-port 41000"
     # Add `--vnc-password "<password>"` for macos users to use built-in vnc client.
