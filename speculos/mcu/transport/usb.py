@@ -32,6 +32,7 @@ class SephUSBConfig(enum.IntEnum):
     DISCONNECT = 0x02
     ADDR = 0x03
     ENDPOINTS = 0x04
+    ENABLE_USB_APDU_PROXY = 0x05
 
 
 class SephUSBPrepare(enum.IntEnum):
@@ -190,6 +191,13 @@ class USBTransport(TransportLayer):
             endpoint = data[2]
             if endpoint == self.endpoint_out:
                 self._flush_packets()
+
+        elif tag == SephUSBConfig.ENABLE_USB_APDU_PROXY:
+            # The SDK asks the MCU to proxy APDUs on this endpoint (64-byte zero-padded
+            # transfers). Speculos keeps using regular XFER_OUT packets: the SDK only
+            # switches to zero-padded transfers once it has seen one from the MCU.
+            self.logger.debug("USB APDU proxy %s on endpoint 0x%02x (ignored)",
+                              "enabled" if data[2] else "disabled", data[1])
 
     @abstractmethod
     def _prepare(self, data: bytes) -> bytes | None:
