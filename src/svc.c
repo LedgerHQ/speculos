@@ -76,9 +76,8 @@ static bool is_syscall_instruction(unsigned long addr)
 }
 
 /*
- * The SVC instruction pushes eight registers to the SP (and after returning
- * from the ISR, the processor automatically pops the eight registers from the
- * stack).
+ * The SVC instruction pushes eight registers to the app stack (PSP), and pops
+ * them on return. The OS handler runs on its own stack (MSP).
  *
  * Mimic this behavior to ensure that subtle stack overflow bugs happening on
  * real devices can be reproduced.
@@ -96,20 +95,9 @@ static void update_svc_stack(bool push)
     *--sp = context->uc_mcontext.arm_r2;
     *--sp = context->uc_mcontext.arm_r1;
     *--sp = context->uc_mcontext.arm_r0;
-    context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
-
-    /* the OS also saves these registers on the stack */
-    *--sp = context->uc_mcontext.arm_fp;
-    *--sp = context->uc_mcontext.arm_r10;
-    *--sp = context->uc_mcontext.arm_r9;
-    *--sp = context->uc_mcontext.arm_r8;
-    *--sp = context->uc_mcontext.arm_r7;
-    *--sp = context->uc_mcontext.arm_r6;
-    *--sp = context->uc_mcontext.arm_r5;
-    *--sp = context->uc_mcontext.arm_r4;
-    context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
+    context->uc_mcontext.arm_sp -= SVC_STACK_FRAME_SIZE;
   } else {
-    context->uc_mcontext.arm_sp += 16 * sizeof(unsigned long);
+    context->uc_mcontext.arm_sp += SVC_STACK_FRAME_SIZE;
   }
 }
 

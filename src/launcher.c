@@ -24,8 +24,6 @@
 #define MAIN_APP_NAME "main"
 
 #define APP_STACK_CANARY_MAGIC 0xDEAD0031u
-/* r0-r3, r12, lr, pc, xpsr stacked by the SVC, then r4-r11 by the OS */
-#define SVC_STACK_FRAME_SIZE (16 * sizeof(unsigned long))
 
 #ifndef GIT_REVISION
 #warning GIT_REVISION is not defined
