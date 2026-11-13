@@ -7,9 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.27.5] 2026-11-13
 
+### Added
+
+- App stack overflow detection: the stack pointer and a stack canary are checked at each syscall, and a memory fault below the app RAM is reported with its address, `pc`, `lr` and `sp` instead of a bare QEMU segmentation fault
+
 ### Changed
 
 - Docker image: Python 3.12 instead of 3.10, so that recent Ragger versions (1.48 and later) can be installed in it
+
+### Fixed
+
+- Syscalls reserved 16 registers on the app stack; only the 8 registers stacked by the SVC instruction are reserved now, the OS saving the others outside the app stack
 
 ## [0.27.4] 2026-10-19
 
