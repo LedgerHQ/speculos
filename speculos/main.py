@@ -38,6 +38,8 @@ class ElfInfo:
     text_size: int = 0
     stack_addr: int = 0
     stack_size: int = 0
+    stack_limit: int = 0
+    stack_canary_addr: int = 0
     ram_addr: int = 0
     ram_size: int = 0
     text_addr: int = 0
@@ -99,6 +101,16 @@ def get_elf_infos(app_path, use_bagl, args):
             logger.error("failed to find _estack/END_STACK symbol")
             sys.exit(1)
         estack = sym_estack[0]["st_value"]
+        # Lowest address the stack may reach: the end of the app globals, canary included
+        sym_canary = symtab_section.get_symbol_by_name("app_stack_canary")
+        sym_ebss = symtab_section.get_symbol_by_name("_ebss")
+        if sym_canary is not None:
+            ei.stack_canary_addr = sym_canary[0]["st_value"]
+            ei.stack_limit = ei.stack_canary_addr + 4
+        elif sym_ebss is not None:
+            ei.stack_limit = sym_ebss[0]["st_value"]
+        else:
+            ei.stack_limit = ei.stack_addr
 
         # Look for the symbols SVC_Call and SVC_cx_call
         # if they are found, save their addresses to patch them to replace the SYSCALL later
@@ -303,7 +315,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
                 sys.exit(1)
             extra_ram = arg
         lib_arg = f"{name}:{lib_path}:{ei.text_offset:#x}:{ei.text_size:#x}"
-        lib_arg += f":{ei.stack_addr:#x}:{ei.stack_size:#x}:{ei.svc_call_addr:#x}"
+        lib_arg += f":{ei.stack_addr:#x}:{ei.stack_size:#x}"
+        lib_arg += f":{ei.stack_limit:#x}:{ei.stack_canary_addr:#x}:{ei.svc_call_addr:#x}"
         lib_arg += f":{ei.svc_cx_call_addr:#x}:{ei.text_addr:#x}"
         lib_arg += f":{fonts_addr:#x}:{fonts_size:#x}"
         lib_arg += f":{ei.app_nvram_addr:#x}:{ei.app_nvram_size:#x}"

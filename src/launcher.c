@@ -23,6 +23,8 @@
 #define MAX_APP       64
 #define MAIN_APP_NAME "main"
 
+#define APP_STACK_CANARY_MAGIC 0xDEAD0031u
+
 #ifndef GIT_REVISION
 #warning GIT_REVISION is not defined
 #define GIT_REVISION "00000000"
@@ -38,6 +40,8 @@ struct elf_info_s {
   unsigned long load_size;
   unsigned long stack_addr;
   unsigned long stack_size;
+  unsigned long stack_limit;
+  unsigned long stack_canary_addr;
   unsigned long svc_call_addr;
   unsigned long svc_cx_call_addr;
   unsigned long text_load_addr;
@@ -151,6 +155,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
   apps[napp].elf.stack_size = elf->stack_size;
+  apps[napp].elf.stack_limit = elf->stack_limit;
+  apps[napp].elf.stack_canary_addr = elf->stack_canary_addr;
   apps[napp].elf.svc_call_addr = elf->svc_call_addr;
   apps[napp].elf.svc_cx_call_addr = elf->svc_cx_call_addr;
   apps[napp].elf.text_load_addr = elf->text_load_addr;
@@ -217,6 +223,143 @@ unsigned long get_app_derivation_path(uint8_t **derivationPath)
   // use the derivation of the app, not libs
   *derivationPath = apps[0].elf.derivation_path;
   return apps[0].elf.derivation_path_len;
+}
+
+/* Translate an app RAM address from its link address to its load address. */
+static unsigned long ram_link_to_load(const struct app_s *app,
+                                      unsigned long addr)
+{
+  if (app->elf.stack_addr == LINK_RAM_ADDR) {
+    return addr - LINK_RAM_ADDR + LOAD_RAM_ADDR;
+  }
+  return addr;
+}
+
+/* Translate an app RAM address from its load address to its link address. */
+static unsigned long ram_load_to_link(const struct app_s *app,
+                                      unsigned long addr)
+{
+  if (app->elf.stack_addr == LINK_RAM_ADDR) {
+    return addr - LOAD_RAM_ADDR + LINK_RAM_ADDR;
+  }
+  return addr;
+}
+
+/* Translate a code address to its link address, if it belongs to the app. */
+static unsigned long code_load_to_link(const struct app_s *app,
+                                       unsigned long addr)
+{
+  unsigned long start = (unsigned long)memory.code;
+
+  if (memory.code != MAP_FAILED && addr >= start &&
+      addr < start + memory.code_size) {
+    return addr - start + app->elf.text_load_addr;
+  }
+  return addr;
+}
+
+/* Translate an address to its link address, if it belongs to the app code or
+ * RAM; any other address is returned unchanged. */
+static unsigned long addr_to_link(const struct app_s *app, unsigned long addr)
+{
+  unsigned long ram = (unsigned long)memory.data;
+
+  if (memory.data != MAP_FAILED && addr >= ram &&
+      addr < ram + memory.data_size) {
+    return ram_load_to_link(app, addr);
+  }
+  return code_load_to_link(app, addr);
+}
+
+static const struct app_s *canary_app;
+static bool canary_armed;
+
+/*
+ * Check the app stack at syscall entry: the stack pointer must leave room for
+ * the SVC frame above the app globals, and the main app canary must be intact.
+ * Libraries share the caller RAM, so their canary is never written.
+ */
+void check_app_stack(unsigned long sp, unsigned long pc, unsigned long lr)
+{
+  const struct app_s *app = current_app;
+  unsigned long limit;
+  uint32_t *canary;
+  bool switched;
+
+  if (app == NULL) {
+    return;
+  }
+
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  if (sp < limit + SVC_STACK_FRAME_SIZE) {
+    fprintf(stderr,
+            "[-] Stack overflow in app \"%s\": sp=0x%08lx is below the end of "
+            "the app globals 0x%08lx (+%u bytes for the syscall frame)\n",
+            app->name, addr_to_link(app, sp), app->elf.stack_limit,
+            (unsigned int)SVC_STACK_FRAME_SIZE);
+    fprintf(stderr, "    syscall at pc=0x%08lx, lr=0x%08lx\n",
+            code_load_to_link(app, pc), code_load_to_link(app, lr));
+    fprintf(stderr, "    the stack has overwritten the app globals (.bss)\n");
+    _exit(1);
+  }
+
+  /* (Re)arm the canary on the first syscall after each app switch */
+  switched = (canary_app != app);
+  canary_app = app;
+  if (app->elf.stack_canary_addr == 0 ||
+      strcmp(app->name, MAIN_APP_NAME) != 0) {
+    return;
+  }
+
+  canary = (uint32_t *)ram_link_to_load(app, app->elf.stack_canary_addr);
+  if (switched) {
+    canary_armed = ((unsigned long)canary + sizeof(*canary) <= sp);
+    if (canary_armed) {
+      *canary = APP_STACK_CANARY_MAGIC;
+    }
+    return;
+  }
+
+  if (canary_armed && *canary != APP_STACK_CANARY_MAGIC) {
+    fprintf(stderr,
+            "[-] Stack overflow in app \"%s\": canary app_stack_canary=0x%08lx "
+            "overwritten (0x%08x instead of 0x%08x)\n",
+            app->name, app->elf.stack_canary_addr, *canary,
+            APP_STACK_CANARY_MAGIC);
+    fprintf(stderr, "    detected at syscall pc=0x%08lx, lr=0x%08lx\n",
+            code_load_to_link(app, pc), code_load_to_link(app, lr));
+    fprintf(stderr, "    the stack has overwritten the app globals (.bss)\n");
+    _exit(1);
+  }
+}
+
+/*
+ * Describe a memory fault: tell whether it looks like a stack overflow below
+ * the app RAM.
+ */
+void describe_app_fault(unsigned long addr, unsigned long sp, unsigned long pc,
+                        unsigned long lr)
+{
+  const struct app_s *app = current_app;
+  unsigned long limit;
+
+  if (app == NULL) {
+    fprintf(stderr, "[-] Invalid memory access at 0x%08lx\n", addr);
+    return;
+  }
+
+  fprintf(stderr,
+          "[-] Invalid memory access at 0x%08lx in app \"%s\" (pc=0x%08lx, "
+          "lr=0x%08lx, sp=0x%08lx)\n",
+          addr_to_link(app, addr), app->name, addr_to_link(app, pc),
+          addr_to_link(app, lr), addr_to_link(app, sp));
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  if (sp < limit) {
+    fprintf(stderr,
+            "    stack overflow: sp is %lu bytes below the end of the app "
+            "globals 0x%08lx\n",
+            limit - sp, app->elf.stack_limit);
+  }
 }
 
 int replace_current_code(struct app_s *app)
@@ -709,13 +852,14 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
 
   ret = sscanf(arg,
                "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
-               "lx:0x%lx:0x%lx:%d:%d:%d:%[^:]",
+               "lx:0x%lx:0x%lx:0x%lx:0x%lx:%d:%d:%d:%[^:]",
                libname, *filename, &elf->load_offset, &elf->load_size,
-               &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
+               &elf->stack_addr, &elf->stack_size, &elf->stack_limit,
+               &elf->stack_canary_addr, &elf->svc_call_addr,
                &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
                &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
                &load_nvram_i, &save_nvram_i, &elf->use_nbgl, derivation_path);
-  if (ret != 17) {
+  if (ret != 19) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);

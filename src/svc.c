@@ -13,6 +13,7 @@
 #include "bolos_syscalls.h"
 #include "emulate.h"
 #include "exception.h"
+#include "launcher.h"
 #include "svc.h"
 
 #define HANDLER_STACK_SIZE (SIGSTKSZ * 4)
@@ -52,6 +53,15 @@ static void crash_handler(int sig_no)
   _exit(1);
 }
 
+static void sigsegv_handler(int sig_no, siginfo_t *info, void *vcontext)
+{
+  ucontext_t *uc = (ucontext_t *)vcontext;
+
+  describe_app_fault((unsigned long)info->si_addr, uc->uc_mcontext.arm_sp,
+                     uc->uc_mcontext.arm_pc, uc->uc_mcontext.arm_lr);
+  crash_handler(sig_no);
+}
+
 static bool is_syscall_instruction(unsigned long addr)
 {
   unsigned int i;
@@ -66,9 +76,8 @@ static bool is_syscall_instruction(unsigned long addr)
 }
 
 /*
- * The SVC instruction pushes eight registers to the SP (and after returning
- * from the ISR, the processor automatically pops the eight registers from the
- * stack).
+ * The SVC instruction pushes eight registers to the app stack (PSP), and pops
+ * them on return. The OS handler runs on its own stack (MSP).
  *
  * Mimic this behavior to ensure that subtle stack overflow bugs happening on
  * real devices can be reproduced.
@@ -86,20 +95,9 @@ static void update_svc_stack(bool push)
     *--sp = context->uc_mcontext.arm_r2;
     *--sp = context->uc_mcontext.arm_r1;
     *--sp = context->uc_mcontext.arm_r0;
-    context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
-
-    /* the OS also saves these registers on the stack */
-    *--sp = context->uc_mcontext.arm_fp;
-    *--sp = context->uc_mcontext.arm_r10;
-    *--sp = context->uc_mcontext.arm_r9;
-    *--sp = context->uc_mcontext.arm_r8;
-    *--sp = context->uc_mcontext.arm_r7;
-    *--sp = context->uc_mcontext.arm_r6;
-    *--sp = context->uc_mcontext.arm_r5;
-    *--sp = context->uc_mcontext.arm_r4;
-    context->uc_mcontext.arm_sp -= 8 * sizeof(unsigned long);
+    context->uc_mcontext.arm_sp -= SVC_STACK_FRAME_SIZE;
   } else {
-    context->uc_mcontext.arm_sp += 16 * sizeof(unsigned long);
+    context->uc_mcontext.arm_sp += SVC_STACK_FRAME_SIZE;
   }
 }
 
@@ -121,6 +119,8 @@ static void sigill_handler(int sig_no, siginfo_t *UNUSED(info), void *vcontext)
   }
 
   // fprintf(stderr, "[*] syscall: 0x%08lx (pc: 0x%08lx)\n", syscall, pc);
+
+  check_app_stack(context->uc_mcontext.arm_sp, pc, context->uc_mcontext.arm_lr);
 
   update_svc_stack(true);
 
@@ -243,8 +243,11 @@ int setup_signals(void)
     return -1;
   }
 
-  if (signal(SIGSEGV, &crash_handler) == SIG_ERR) {
-    warn("signal(SIGSEGV");
+  /* run on the alternate stack: the app stack may be the faulty one */
+  sig_action.sa_sigaction = sigsegv_handler;
+  sig_action.sa_flags = SA_SIGINFO | SA_ONSTACK;
+  if (sigaction(SIGSEGV, &sig_action, 0) != 0) {
+    warn("sigaction(SIGSEGV)");
     return -1;
   }
 
