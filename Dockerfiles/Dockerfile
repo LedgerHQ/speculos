@@ -15,7 +15,7 @@ RUN make -C build
 
 
 # Preparing final image
-FROM docker.io/library/python:3.10-slim
+FROM docker.io/library/python:3.12-slim
 
 ADD . /speculos
 WORKDIR /speculos
