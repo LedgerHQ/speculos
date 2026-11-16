@@ -3,7 +3,7 @@
 #
 # Support Debian buster & Ubuntu Bionic
 
-FROM docker.io/library/python:3.10-slim
+FROM docker.io/library/python:3.12-slim
 ENV LANG=C.UTF-8
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
