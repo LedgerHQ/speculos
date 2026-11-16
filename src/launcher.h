@@ -21,3 +21,6 @@ void save_current_context(struct sigcontext *sigcontext);
 void replace_current_context(struct sigcontext *sigcontext);
 int replace_current_code(struct app_s *app);
 int run_lib(char *name, unsigned long *parameters);
+void check_app_stack(unsigned long sp, unsigned long pc, unsigned long lr);
+void describe_app_fault(unsigned long addr, unsigned long sp, unsigned long pc,
+                        unsigned long lr);

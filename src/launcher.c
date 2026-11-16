@@ -23,6 +23,8 @@
 #define MAX_APP       64
 #define MAIN_APP_NAME "main"
 
+#define APP_STACK_CANARY_MAGIC 0xDEAD0031u
+
 #ifndef GIT_REVISION
 #warning GIT_REVISION is not defined
 #define GIT_REVISION "00000000"
@@ -38,6 +40,8 @@ struct elf_info_s {
   unsigned long load_size;
   unsigned long stack_addr;
   unsigned long stack_size;
+  unsigned long stack_limit;
+  unsigned long stack_canary_addr;
   unsigned long svc_call_addr;
   unsigned long svc_cx_call_addr;
   unsigned long text_load_addr;
@@ -151,6 +155,8 @@ static int open_app(char *name, char *filename, struct elf_info_s *elf,
   apps[napp].elf.load_size = elf->load_size;
   apps[napp].elf.stack_addr = elf->stack_addr;
   apps[napp].elf.stack_size = elf->stack_size;
+  apps[napp].elf.stack_limit = elf->stack_limit;
+  apps[napp].elf.stack_canary_addr = elf->stack_canary_addr;
   apps[napp].elf.svc_call_addr = elf->svc_call_addr;
   apps[napp].elf.svc_cx_call_addr = elf->svc_cx_call_addr;
   apps[napp].elf.text_load_addr = elf->text_load_addr;
@@ -219,6 +225,218 @@ unsigned long get_app_derivation_path(uint8_t **derivationPath)
   return apps[0].elf.derivation_path_len;
 }
 
+/* Translate an app RAM address from its link address to its load address. */
+static unsigned long ram_link_to_load(const struct app_s *app,
+                                      unsigned long addr)
+{
+  if (app->elf.stack_addr == LINK_RAM_ADDR) {
+    return addr - LINK_RAM_ADDR + LOAD_RAM_ADDR;
+  }
+  return addr;
+}
+
+/* Translate an app RAM address from its load address to its link address. */
+static unsigned long ram_load_to_link(const struct app_s *app,
+                                      unsigned long addr)
+{
+  if (app->elf.stack_addr == LINK_RAM_ADDR) {
+    return addr - LOAD_RAM_ADDR + LINK_RAM_ADDR;
+  }
+  return addr;
+}
+
+/* Translate a code address to its link address, if it belongs to the app. */
+static unsigned long code_load_to_link(const struct app_s *app,
+                                       unsigned long addr)
+{
+  unsigned long start = (unsigned long)memory.code;
+
+  if (memory.code != MAP_FAILED && addr >= start &&
+      addr < start + memory.code_size) {
+    return addr - start + app->elf.text_load_addr;
+  }
+  return addr;
+}
+
+/* Translate an address to its link address, if it belongs to the app code or
+ * RAM; any other address is returned unchanged. */
+static unsigned long addr_to_link(const struct app_s *app, unsigned long addr)
+{
+  unsigned long ram = (unsigned long)memory.data;
+
+  if (memory.data != MAP_FAILED && addr >= ram &&
+      addr < ram + memory.data_size) {
+    return ram_load_to_link(app, addr);
+  }
+  return code_load_to_link(app, addr);
+}
+
+static bool stack_guard;
+static unsigned long stack_guard_addr; /* load address of the guard page */
+static unsigned long stack_shift;      /* offset added to the app stack */
+
+static const struct app_s *canary_app;
+static bool canary_armed;
+
+/*
+ * Place a guard page right below the main app stack: the stack is moved up so
+ * that its bottom starts at a page boundary, the app globals stay in place.
+ */
+static void setup_stack_guard(const struct app_s *app)
+{
+  size_t page_size = sysconf(_SC_PAGESIZE);
+  unsigned long limit;
+
+  if (!stack_guard || strcmp(app->name, MAIN_APP_NAME) != 0) {
+    return;
+  }
+  if (app->elf.stack_limit == app->elf.stack_addr) {
+    warnx("end of the app globals unknown, stack guard disabled");
+    return;
+  }
+
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  stack_guard_addr = (limit + page_size - 1) & ~(page_size - 1);
+  stack_shift = stack_guard_addr + page_size - limit;
+}
+
+/* Arm the guard page for the main app; libraries share its RAM, disarm it. */
+static void update_stack_guard(const struct app_s *app)
+{
+  int prot = PROT_READ | PROT_WRITE;
+
+  if (stack_guard_addr == 0) {
+    return;
+  }
+  if (strcmp(app->name, MAIN_APP_NAME) == 0) {
+    prot = PROT_NONE;
+  }
+  if (mprotect((void *)stack_guard_addr, sysconf(_SC_PAGESIZE), prot) != 0) {
+    warn("mprotect stack guard");
+    _exit(1);
+  }
+}
+
+/* Translate a stack address to its value on a device. */
+static unsigned long stack_to_device(unsigned long addr)
+{
+  if (stack_shift != 0 && addr >= stack_guard_addr) {
+    return addr - stack_shift;
+  }
+  return addr;
+}
+
+static void print_stack_guard_hint(const struct app_s *app)
+{
+  if (!stack_guard && strcmp(app->name, MAIN_APP_NAME) == 0) {
+    fprintf(stderr, "    rerun with --stack-guard to stop at the instruction "
+                    "that overflows the stack\n");
+  }
+}
+
+/*
+ * Check the app stack at syscall entry: the stack pointer must leave room for
+ * the SVC frame above the app globals, and the main app canary must be intact.
+ * Libraries share the caller RAM, so their canary is never written.
+ */
+void check_app_stack(unsigned long sp, unsigned long pc, unsigned long lr)
+{
+  const struct app_s *app = current_app;
+  unsigned long limit;
+  uint32_t *canary;
+  bool switched;
+
+  if (app == NULL) {
+    return;
+  }
+
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  if (stack_to_device(sp) < limit + SVC_STACK_FRAME_SIZE) {
+    fprintf(stderr,
+            "[-] Stack overflow in app \"%s\": sp=0x%08lx is below the end of "
+            "the app globals 0x%08lx (+%u bytes for the syscall frame)\n",
+            app->name, addr_to_link(app, stack_to_device(sp)),
+            app->elf.stack_limit, (unsigned int)SVC_STACK_FRAME_SIZE);
+    fprintf(stderr, "    syscall at pc=0x%08lx, lr=0x%08lx\n",
+            code_load_to_link(app, pc), code_load_to_link(app, lr));
+    fprintf(stderr, "    the stack has overwritten the app globals (.bss)\n");
+    print_stack_guard_hint(app);
+    _exit(1);
+  }
+
+  /* (Re)arm the canary on the first syscall after each app switch */
+  switched = (canary_app != app);
+  canary_app = app;
+  if (app->elf.stack_canary_addr == 0 ||
+      strcmp(app->name, MAIN_APP_NAME) != 0) {
+    return;
+  }
+
+  canary = (uint32_t *)ram_link_to_load(app, app->elf.stack_canary_addr);
+  if (switched) {
+    canary_armed = ((unsigned long)canary + sizeof(*canary) <= sp);
+    if (canary_armed) {
+      *canary = APP_STACK_CANARY_MAGIC;
+    }
+    return;
+  }
+
+  if (canary_armed && *canary != APP_STACK_CANARY_MAGIC) {
+    fprintf(stderr,
+            "[-] Stack overflow in app \"%s\": canary app_stack_canary=0x%08lx "
+            "overwritten (0x%08x instead of 0x%08x)\n",
+            app->name, app->elf.stack_canary_addr, *canary,
+            APP_STACK_CANARY_MAGIC);
+    fprintf(stderr, "    detected at syscall pc=0x%08lx, lr=0x%08lx\n",
+            code_load_to_link(app, pc), code_load_to_link(app, lr));
+    fprintf(stderr, "    the stack has overwritten the app globals (.bss)\n");
+    print_stack_guard_hint(app);
+    _exit(1);
+  }
+}
+
+/*
+ * Describe a memory fault: tell whether it looks like a stack overflow below
+ * the app RAM.
+ */
+void describe_app_fault(unsigned long addr, unsigned long sp, unsigned long pc,
+                        unsigned long lr)
+{
+  const struct app_s *app = current_app;
+  unsigned long limit, dev_addr;
+
+  if (app == NULL) {
+    fprintf(stderr, "[-] Invalid memory access at 0x%08lx\n", addr);
+    return;
+  }
+
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  if (stack_guard_addr != 0 && addr >= stack_guard_addr &&
+      addr < stack_guard_addr + sysconf(_SC_PAGESIZE)) {
+    dev_addr = stack_to_device(addr);
+    fprintf(stderr,
+            "[-] Stack overflow in app \"%s\": access at 0x%08lx, %lu bytes "
+            "below the end of the app globals 0x%08lx\n",
+            app->name, addr_to_link(app, dev_addr), limit - dev_addr,
+            app->elf.stack_limit);
+    fprintf(stderr, "    faulty instruction at pc=0x%08lx, lr=0x%08lx\n",
+            addr_to_link(app, pc), addr_to_link(app, lr));
+    return;
+  }
+
+  fprintf(stderr,
+          "[-] Invalid memory access at 0x%08lx in app \"%s\" (pc=0x%08lx, "
+          "lr=0x%08lx, sp=0x%08lx)\n",
+          addr_to_link(app, addr), app->name, addr_to_link(app, pc),
+          addr_to_link(app, lr), addr_to_link(app, stack_to_device(sp)));
+  if (stack_to_device(sp) < limit) {
+    fprintf(stderr,
+            "    stack overflow: sp is %lu bytes below the end of the app "
+            "globals 0x%08lx\n",
+            limit - stack_to_device(sp), app->elf.stack_limit);
+  }
+}
+
 int replace_current_code(struct app_s *app)
 {
   int flags, prot;
@@ -284,6 +502,7 @@ int replace_current_code(struct app_s *app)
   }
 
   memory.code_size = app->elf.load_size;
+  update_stack_guard(app);
   current_app = app;
 
   // Parse fonts and build bitmap -> character table
@@ -365,8 +584,10 @@ static void *load_app(char *name)
     goto error;
   }
 
-  /* setup data */
+  /* setup data, with room for the stack guard */
   if (memory.data == MAP_FAILED) {
+    setup_stack_guard(app);
+    data_size = get_upper_page_aligned_size(data_size + stack_shift);
     if (mmap(data_addr, data_size, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
       warn("mmap data");
@@ -480,6 +701,7 @@ static void *load_app(char *name)
     memory.data_size = data_size;
   }
 
+  update_stack_guard(app);
   current_app = app;
 
   // Parse fonts and build bitmap -> character table
@@ -644,7 +866,7 @@ static int run_app(char *name, unsigned long *parameters)
     // Emulate RAM relocation
     stack_end = LOAD_RAM_ADDR;
   }
-  stack_start = stack_end + app->elf.stack_size;
+  stack_start = stack_end + app->elf.stack_size + stack_shift;
   if (g_api_level >= 23) {
     // initialize shared library PIC
     pic_init = (pic_init_t)pic_init_addr;
@@ -709,13 +931,14 @@ static char *parse_app_infos(char *arg, char **filename, struct elf_info_s *elf,
 
   ret = sscanf(arg,
                "%[^:]:%[^:]:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%lx:0x%"
-               "lx:0x%lx:0x%lx:%d:%d:%d:%[^:]",
+               "lx:0x%lx:0x%lx:0x%lx:0x%lx:%d:%d:%d:%[^:]",
                libname, *filename, &elf->load_offset, &elf->load_size,
-               &elf->stack_addr, &elf->stack_size, &elf->svc_call_addr,
+               &elf->stack_addr, &elf->stack_size, &elf->stack_limit,
+               &elf->stack_canary_addr, &elf->svc_call_addr,
                &elf->svc_cx_call_addr, &elf->text_load_addr, &elf->fonts_addr,
                &elf->fonts_size, &elf->app_nvram_addr, &elf->app_nvram_size,
                &load_nvram_i, &save_nvram_i, &elf->use_nbgl, derivation_path);
-  if (ret != 17) {
+  if (ret != 19) {
     warnx("failed to parse app infos (\"%s\", %d)", arg, ret);
     free(libname);
     free(*filename);
@@ -770,7 +993,8 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -m <model>:           Optional string representing the device model being emula-\n\
                         ted. Currently supports \"nanosp\", \"nanox\", \"stax\", \"flex\" and \"apex_p\".\n\
-  -a <api_level>:       A string representing the SDK api level to be used, like \"22\".\n");
+  -a <api_level>:       A string representing the SDK api level to be used, like \"22\".\n\
+  -G:                   Place a guard page below the main app stack.\n");
   exit(EXIT_FAILURE);
 }
 
@@ -787,7 +1011,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:pl:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:pl:G")) != -1) {
     switch (opt) {
     case 'f':
       fonts_path = optarg;
@@ -822,6 +1046,9 @@ int main(int argc, char *argv[])
       break;
     case 'l':
       app_flags = atol(optarg);
+      break;
+    case 'G':
+      stack_guard = true;
       break;
     default:
       usage(argv[0]);

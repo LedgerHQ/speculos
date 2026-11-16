@@ -64,3 +64,13 @@ int run_lib(char *UNUSED(name), unsigned long *UNUSED(parameters))
 {
   return 0;
 }
+
+void check_app_stack(unsigned long UNUSED(sp), unsigned long UNUSED(pc),
+                     unsigned long UNUSED(lr))
+{
+}
+
+void describe_app_fault(unsigned long UNUSED(addr), unsigned long UNUSED(sp),
+                        unsigned long UNUSED(pc), unsigned long UNUSED(lr))
+{
+}

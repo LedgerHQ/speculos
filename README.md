@@ -95,6 +95,31 @@ uint32_t display_value = *((uint32_t*) (buffer + 1));
 PRINTF("display_value: %d\n", display_value);
 ```
 
+### Stack overflow
+
+The app stack sits at the top of the app RAM and grows down towards the app
+globals (`.bss`). Speculos stops the app with an explicit message when:
+
+- at a syscall entry, the stack pointer is below the end of the app globals
+  (`app_stack_canary`, or `_ebss` when the app has no canary);
+- at a syscall entry, the `app_stack_canary` word placed just below the stack
+  was overwritten. Speculos sets this canary itself, whatever the app build
+  options, for the main app only (libraries share the caller RAM);
+- the app accesses memory below the app RAM.
+
+These checks only run at syscall entry: an overflow that does not reach the
+canary and recovers before the next syscall goes unnoticed.
+
+To find the instruction that overflows the stack, run Speculos with
+`--stack-guard`: the main app stack is moved up so that a guard page sits right
+below it, and the first access below the stack stops the app with its `pc`.
+Reported addresses are translated back to the device ones. With this option:
+
+- the stack no longer ends at `_stack` / `_estack`: code reading these symbols
+  (`DEBUG_OS_STACK_CONSUMPTION`, stack margin checks against `&_stack`) sees a
+  stack different from the device one, and may hit the guard page;
+- the guard page is disabled while a library runs through `os_lib_call`.
+
 ### Watchdog
 
 NanoX, Flex, Apex+ and Stax devices use an internal watchdog enforcing usage of regular
