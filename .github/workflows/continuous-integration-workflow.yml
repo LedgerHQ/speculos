@@ -187,3 +187,19 @@ jobs:
     with:
       app_repository: LedgerHQ/app-boilerplate-rust
       app_branch_name: main
+
+  package_and_test_docker_libcall:
+    name: Build and test the Speculos docker with a libcall (swap)
+    uses: ./.github/workflows/reusable_ragger_tests_latest_speculos.yml
+    permissions:
+      contents: read
+      actions: write        # Needed for upload-artifact
+      pull-requests: write  # Needed by reusable_build.yml
+      packages: read        # Needed to pull the app-builder image
+    with:
+      app_repository: LedgerHQ/app-boilerplate
+      app_branch_name: master
+      artifact_prefix: libcall-
+      run_for_devices: '["nanox"]'
+      test_filter: swap_valid_1
+      swap: true
