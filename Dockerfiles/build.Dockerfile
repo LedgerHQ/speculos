@@ -3,7 +3,7 @@
 #
 # Support Debian buster & Ubuntu Bionic
 
-FROM docker.io/library/python:3.10-slim
+FROM docker.io/library/python:3.12-slim
 ENV LANG=C.UTF-8
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
@@ -21,7 +21,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
   rm -rf /var/lib/apt/lists/
 
 # There are issues with PYTHONHOME if using distro packages, use pip instead.
-RUN pip3 install construct flake8 flask flask_restful jsonschema mnemonic pbkdf2 Pillow pycrypto pyelftools pytest requests
+RUN pip3 install construct flake8 flask flask_restful jsonschema mnemonic pbkdf2 Pillow pyelftools pytest requests
 
 # Create SHA256SUMS, download dependencies and verify their integrity
 RUN \

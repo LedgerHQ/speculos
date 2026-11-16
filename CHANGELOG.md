@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Python 3.11 or later is required, Python 3.10 is no longer supported
+- Pillow 13 is required
+- Builder image: Python 3.12 instead of 3.10
+- The documentation is no longer deployed when a tag is pushed
+
 ## [0.27.5] 2026-11-13
 
 ### Added
