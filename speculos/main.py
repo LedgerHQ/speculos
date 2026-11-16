@@ -348,6 +348,8 @@ def run_qemu(s1: socket.socket, s2: socket.socket, args: argparse.Namespace) -> 
     else:
         app_flags = int(app_flags, 16)
     argv += ["-l", str(app_flags)]
+    if args.stack_guard:
+        argv += ["-G"]
 
     pid = os.fork()
     if pid != 0:
@@ -461,6 +463,12 @@ def main(prog=None) -> int:
         help='BIP39 mnemonic or hex seed. Default to mnemonic: to use a hex seed, prefix it with "hex:"',
     )
     parser.add_argument("-t", "--trace", action="store_true", help="Trace syscalls")
+    parser.add_argument(
+        "--stack-guard",
+        action="store_true",
+        help="Place a guard page below the app stack, to stop at the instruction that overflows it "
+        "(stack addresses differ from the device)",
+    )
     parser.add_argument(
         "-u",
         "--usb",

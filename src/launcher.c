@@ -271,8 +271,68 @@ static unsigned long addr_to_link(const struct app_s *app, unsigned long addr)
   return code_load_to_link(app, addr);
 }
 
+static bool stack_guard;
+static unsigned long stack_guard_addr; /* load address of the guard page */
+static unsigned long stack_shift;      /* offset added to the app stack */
+
 static const struct app_s *canary_app;
 static bool canary_armed;
+
+/*
+ * Place a guard page right below the main app stack: the stack is moved up so
+ * that its bottom starts at a page boundary, the app globals stay in place.
+ */
+static void setup_stack_guard(const struct app_s *app)
+{
+  size_t page_size = sysconf(_SC_PAGESIZE);
+  unsigned long limit;
+
+  if (!stack_guard || strcmp(app->name, MAIN_APP_NAME) != 0) {
+    return;
+  }
+  if (app->elf.stack_limit == app->elf.stack_addr) {
+    warnx("end of the app globals unknown, stack guard disabled");
+    return;
+  }
+
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  stack_guard_addr = (limit + page_size - 1) & ~(page_size - 1);
+  stack_shift = stack_guard_addr + page_size - limit;
+}
+
+/* Arm the guard page for the main app; libraries share its RAM, disarm it. */
+static void update_stack_guard(const struct app_s *app)
+{
+  int prot = PROT_READ | PROT_WRITE;
+
+  if (stack_guard_addr == 0) {
+    return;
+  }
+  if (strcmp(app->name, MAIN_APP_NAME) == 0) {
+    prot = PROT_NONE;
+  }
+  if (mprotect((void *)stack_guard_addr, sysconf(_SC_PAGESIZE), prot) != 0) {
+    warn("mprotect stack guard");
+    _exit(1);
+  }
+}
+
+/* Translate a stack address to its value on a device. */
+static unsigned long stack_to_device(unsigned long addr)
+{
+  if (stack_shift != 0 && addr >= stack_guard_addr) {
+    return addr - stack_shift;
+  }
+  return addr;
+}
+
+static void print_stack_guard_hint(const struct app_s *app)
+{
+  if (!stack_guard && strcmp(app->name, MAIN_APP_NAME) == 0) {
+    fprintf(stderr, "    rerun with --stack-guard to stop at the instruction "
+                    "that overflows the stack\n");
+  }
+}
 
 /*
  * Check the app stack at syscall entry: the stack pointer must leave room for
@@ -291,15 +351,16 @@ void check_app_stack(unsigned long sp, unsigned long pc, unsigned long lr)
   }
 
   limit = ram_link_to_load(app, app->elf.stack_limit);
-  if (sp < limit + SVC_STACK_FRAME_SIZE) {
+  if (stack_to_device(sp) < limit + SVC_STACK_FRAME_SIZE) {
     fprintf(stderr,
             "[-] Stack overflow in app \"%s\": sp=0x%08lx is below the end of "
             "the app globals 0x%08lx (+%u bytes for the syscall frame)\n",
-            app->name, addr_to_link(app, sp), app->elf.stack_limit,
-            (unsigned int)SVC_STACK_FRAME_SIZE);
+            app->name, addr_to_link(app, stack_to_device(sp)),
+            app->elf.stack_limit, (unsigned int)SVC_STACK_FRAME_SIZE);
     fprintf(stderr, "    syscall at pc=0x%08lx, lr=0x%08lx\n",
             code_load_to_link(app, pc), code_load_to_link(app, lr));
     fprintf(stderr, "    the stack has overwritten the app globals (.bss)\n");
+    print_stack_guard_hint(app);
     _exit(1);
   }
 
@@ -329,6 +390,7 @@ void check_app_stack(unsigned long sp, unsigned long pc, unsigned long lr)
     fprintf(stderr, "    detected at syscall pc=0x%08lx, lr=0x%08lx\n",
             code_load_to_link(app, pc), code_load_to_link(app, lr));
     fprintf(stderr, "    the stack has overwritten the app globals (.bss)\n");
+    print_stack_guard_hint(app);
     _exit(1);
   }
 }
@@ -341,10 +403,24 @@ void describe_app_fault(unsigned long addr, unsigned long sp, unsigned long pc,
                         unsigned long lr)
 {
   const struct app_s *app = current_app;
-  unsigned long limit;
+  unsigned long limit, dev_addr;
 
   if (app == NULL) {
     fprintf(stderr, "[-] Invalid memory access at 0x%08lx\n", addr);
+    return;
+  }
+
+  limit = ram_link_to_load(app, app->elf.stack_limit);
+  if (stack_guard_addr != 0 && addr >= stack_guard_addr &&
+      addr < stack_guard_addr + sysconf(_SC_PAGESIZE)) {
+    dev_addr = stack_to_device(addr);
+    fprintf(stderr,
+            "[-] Stack overflow in app \"%s\": access at 0x%08lx, %lu bytes "
+            "below the end of the app globals 0x%08lx\n",
+            app->name, addr_to_link(app, dev_addr), limit - dev_addr,
+            app->elf.stack_limit);
+    fprintf(stderr, "    faulty instruction at pc=0x%08lx, lr=0x%08lx\n",
+            addr_to_link(app, pc), addr_to_link(app, lr));
     return;
   }
 
@@ -352,13 +428,12 @@ void describe_app_fault(unsigned long addr, unsigned long sp, unsigned long pc,
           "[-] Invalid memory access at 0x%08lx in app \"%s\" (pc=0x%08lx, "
           "lr=0x%08lx, sp=0x%08lx)\n",
           addr_to_link(app, addr), app->name, addr_to_link(app, pc),
-          addr_to_link(app, lr), addr_to_link(app, sp));
-  limit = ram_link_to_load(app, app->elf.stack_limit);
-  if (sp < limit) {
+          addr_to_link(app, lr), addr_to_link(app, stack_to_device(sp)));
+  if (stack_to_device(sp) < limit) {
     fprintf(stderr,
             "    stack overflow: sp is %lu bytes below the end of the app "
             "globals 0x%08lx\n",
-            limit - sp, app->elf.stack_limit);
+            limit - stack_to_device(sp), app->elf.stack_limit);
   }
 }
 
@@ -427,6 +502,7 @@ int replace_current_code(struct app_s *app)
   }
 
   memory.code_size = app->elf.load_size;
+  update_stack_guard(app);
   current_app = app;
 
   // Parse fonts and build bitmap -> character table
@@ -508,8 +584,10 @@ static void *load_app(char *name)
     goto error;
   }
 
-  /* setup data */
+  /* setup data, with room for the stack guard */
   if (memory.data == MAP_FAILED) {
+    setup_stack_guard(app);
+    data_size = get_upper_page_aligned_size(data_size + stack_shift);
     if (mmap(data_addr, data_size, PROT_READ | PROT_WRITE,
              MAP_PRIVATE | MAP_FIXED | MAP_ANONYMOUS, -1, 0) == MAP_FAILED) {
       warn("mmap data");
@@ -623,6 +701,7 @@ static void *load_app(char *name)
     memory.data_size = data_size;
   }
 
+  update_stack_guard(app);
   current_app = app;
 
   // Parse fonts and build bitmap -> character table
@@ -787,7 +866,7 @@ static int run_app(char *name, unsigned long *parameters)
     // Emulate RAM relocation
     stack_end = LOAD_RAM_ADDR;
   }
-  stack_start = stack_end + app->elf.stack_size;
+  stack_start = stack_end + app->elf.stack_size + stack_shift;
   if (g_api_level >= 23) {
     // initialize shared library PIC
     pic_init = (pic_init_t)pic_init_addr;
@@ -914,7 +993,8 @@ static void usage(char *argv0)
   fprintf(stderr, "\n\
   -m <model>:           Optional string representing the device model being emula-\n\
                         ted. Currently supports \"nanosp\", \"nanox\", \"stax\", \"flex\" and \"apex_p\".\n\
-  -a <api_level>:       A string representing the SDK api level to be used, like \"22\".\n");
+  -a <api_level>:       A string representing the SDK api level to be used, like \"22\".\n\
+  -G:                   Place a guard page below the main app stack.\n");
   exit(EXIT_FAILURE);
 }
 
@@ -931,7 +1011,7 @@ int main(int argc, char *argv[])
 
   fprintf(stderr, "[*] speculos launcher revision: " GIT_REVISION "\n");
 
-  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:pl:")) != -1) {
+  while ((opt = getopt(argc, argv, "c:tr:s:m:k:a:f:pl:G")) != -1) {
     switch (opt) {
     case 'f':
       fonts_path = optarg;
@@ -966,6 +1046,9 @@ int main(int argc, char *argv[])
       break;
     case 'l':
       app_flags = atol(optarg);
+      break;
+    case 'G':
+      stack_guard = true;
       break;
     default:
       usage(argv[0]);
