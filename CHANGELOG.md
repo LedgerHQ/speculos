@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- CI: `os_lib_call` is tested with the app-boilerplate swap tests, Exchange calling the boilerplate as a library
+
 ### Changed
 
 - Python 3.11 or later is required, Python 3.10 is no longer supported
