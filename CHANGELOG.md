@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Client: `apdu_exchange_with_status` and `ApduResponse.receive_with_status` return the response data and its status word without checking it
 - Client: `get_next_event` and `wait_for_text_event` take an optional `timeout` and raise `TimeoutError` when it expires; events are read by a background thread
+- API: `GET /model` endpoint returning the device model name and its screen size
+- Web interface: on touchscreen models, clicking the screen sends a tap and dragging sends a swipe; the physical button controls are hidden and the screen is reloaded periodically
 - CI: `os_lib_call` is tested with the app-boilerplate swap tests, Exchange calling the boilerplate as a library
 
 ### Changed
@@ -23,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - NBGL text lines holding invalid UTF-8 no longer stop Speculos: undecodable bytes are replaced and a warning is logged
+- Apex: `/screenshot` returns the screen as of the last refresh and caches it, as on Stax and Flex, instead of encoding a new image on each request
+- Touchscreen models: concurrent `/screenshot` requests can no longer leave an outdated screenshot cached
 
 ## [0.27.5] 2026-11-13
 
