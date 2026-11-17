@@ -403,10 +403,7 @@ class SeProxyHal(IODevice):
 
         elif tag == SephTag.NBGL_SEND_SPECULOS_TEXT_LINE:
             self.nbgl_speculos_text_lines_enabled = True
-            # Extract text content. The text is controlled by the app and may
-            # contain invalid UTF-8 (e.g. a buggy app rendering a
-            # non-NUL-terminated string sends trailing garbage bytes): replace
-            # undecodable bytes instead of crashing speculos.
+            # Extract text content, replacing the bytes that are not valid UTF-8.
             try:
                 text = data[:-8].decode("utf-8")
             except UnicodeDecodeError:
