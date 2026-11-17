@@ -49,6 +49,12 @@ def test_boil_get_version_with_status(client):
         raise ValueError(f"Unexpected response to an unknown instruction: {data.hex()} 0x{sw:04x}")
 
 
+def test_boil_wait_for_text_event_timeout(client):
+    """Waiting for a text that is never displayed times out."""
+    with pytest.raises(TimeoutError):
+        client.wait_for_text_event("Never displayed", timeout=0.5)
+
+
 def test_boil_get_public_key_with_user_approval(client, app):
     """Ask for the public key, compare screenshots and press reject."""
 

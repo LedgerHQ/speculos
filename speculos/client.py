@@ -1,8 +1,10 @@
 import json
 import logging
+import queue
 import socket
 import subprocess
 import sys
+import threading
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -77,61 +79,114 @@ def screenshot_equal(
     return diff_img.getbbox() is None
 
 
+def _read_event(stream: Response) -> dict:
+    """
+    A subset of the event stream format is recognized by this function and the event is expected to be encoded in
+    JSON.
+
+    https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream
+    """
+    data = b""
+    while True:
+        line = stream.raw.readline()
+        if line == b"\n":
+            break
+        if not line.startswith(b"data: "):
+            raise ClientException(f"unexpected stream event line ({line!r})")
+        data += line[6:]
+
+    event = json.loads(data)
+    if not isinstance(event, dict):
+        raise ClientException(f"Invalid event ({event})")
+
+    return event
+
+
+def _read_events(stream: Response, events: "queue.Queue[dict | Exception]") -> None:
+    """Push the events read from the stream into the queue until the first error, then close the stream."""
+    try:
+        while True:
+            events.put(_read_event(stream))
+    except Exception as e:
+        events.put(e)
+    finally:
+        stream.close()
+
+
+def _shutdown_stream(stream: Response) -> None:
+    """Shut the stream connection down, waking up a pending read."""
+    try:
+        with socket.fromfd(stream.raw.fileno(), socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.shutdown(socket.SHUT_RDWR)
+    except (OSError, ValueError):
+        pass
+
+
 class Api:
     def __init__(self, api_url: str) -> None:
         self.api_url = api_url
         self.timeout = 2000
         self.session = requests.Session()
         self.stream: Response | None = None
+        self._events: queue.Queue[dict | Exception] = queue.Queue()
+        self._reader: threading.Thread | None = None
 
     def open_stream(self) -> None:
         if self.stream is not None:
             raise AssertionError("Stream is already open")
         self.stream = self.session.get(f"{self.api_url}/events?stream=true", stream=True)
         check_status_code(self.stream, "/events")
+        self._events = queue.Queue()
+        self._reader = threading.Thread(target=_read_events, args=(self.stream, self._events), daemon=True)
+        self._reader.start()
 
     def close_stream(self) -> None:
-        if self.stream:
-            self.stream.close()
-        self.stream = None
+        """Close the event stream. The reader thread closes the response once its pending read returns."""
+        stream, self.stream = self.stream, None
+        if stream is None:
+            return
+        if self._reader is None or not self._reader.is_alive():
+            stream.close()
+            return
+        _shutdown_stream(stream)
+        self._reader.join(timeout=1)
 
     def get_current_screen_content(self) -> dict:
         with self.session.get(f"{self.api_url}/events?currentscreenonly=true") as response:
             check_status_code(response, "/events")
             return response.json()
 
-    def get_next_event(self) -> dict:
+    def get_next_event(self, timeout: float | None = None) -> dict:
         """
-        A subset of the event stream format is recognized by this function and the event is expected to be encoded in
-        JSON.
+        Return the next event of the stream, waiting at most `timeout` seconds (forever if None).
 
-        https://html.spec.whatwg.org/multipage/server-sent-events.html#parsing-an-event-stream
+        Raise TimeoutError if no event is received in time.
         """
         if self.stream is None:
             raise AssertionError("Stream is not open")
-        data = b""
-        while True:
-            line = self.stream.raw.readline()
-            if line == b"\n":
-                break
-            if not line.startswith(b"data: "):
-                raise ClientException(f"unexpected stream event line ({line!r})")
-            data += line[6:]
-
-        event = json.loads(data)
-        if not isinstance(event, dict):
-            raise ClientException(f"Invalid event ({event})")
-
+        try:
+            event = self._events.get(timeout=timeout)
+        except queue.Empty:
+            raise TimeoutError(f"No event received within {timeout} s") from None
+        if isinstance(event, Exception):
+            # Keep the error for the next calls: the stream reader has stopped.
+            self._events.put(event)
+            raise event
         return event
 
-    def wait_for_text_event(self, text: str) -> dict:
-        """Wait until an event containing the specified text is received."""
+    def wait_for_text_event(self, text: str, timeout: float | None = None) -> dict:
+        """
+        Wait until an event containing the specified text is received, at most `timeout` seconds
+        (forever if None).
 
+        Raise TimeoutError if no such event is received in time.
+        """
+        deadline = None if timeout is None else time.monotonic() + timeout
         while True:
-            event = self.get_next_event()
+            remaining = None if deadline is None else max(0.0, deadline - time.monotonic())
+            event = self.get_next_event(remaining)
             if text in event["text"]:
-                break
-        return event
+                return event
 
     def press_and_release(self, button: str) -> None:
         if button not in ["left", "right", "both"]:
