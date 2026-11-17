@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NBGL text lines holding invalid UTF-8 no longer stop Speculos: undecodable bytes are replaced and a warning is logged
 - Apex: `/screenshot` returns the screen as of the last refresh and caches it, as on Stax and Flex, instead of encoding a new image on each request
 - Touchscreen models: concurrent `/screenshot` requests can no longer leave an outdated screenshot cached
+- App NVRAM (e.g. the settings of the app) was reset to its initial content when the app called a library with `os_lib_call`
 
 ## [0.27.5] 2026-11-13
 

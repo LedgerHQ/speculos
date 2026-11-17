@@ -94,6 +94,17 @@ uint64_t app_flags = 0;
 
 static struct app_s *current_app;
 
+/* NVRAM of the apps suspended by an os_lib_call, the last suspended first */
+struct nvram_backup_s {
+  struct nvram_backup_s *prev;
+  const struct app_s *app;
+  size_t offset;
+  size_t size;
+  uint8_t data[];
+};
+
+static struct nvram_backup_s *nvram_backups;
+
 static void *get_lower_page_aligned_addr(uintptr_t vaddr)
 {
   return (void *)((uintptr_t)vaddr & ~((uintptr_t)sysconf(_SC_PAGESIZE) - 1u));
@@ -437,6 +448,60 @@ void describe_app_fault(unsigned long addr, unsigned long sp, unsigned long pc,
   }
 }
 
+/*
+ * The code of an app is mapped from its file: unmapping it drops the NVRAM
+ * written since the app was loaded. Keep it to restore it once the app is
+ * mapped again.
+ */
+static void backup_app_nvram(const struct app_s *app)
+{
+  struct nvram_backup_s *backup;
+  size_t offset, size;
+
+  if (app->elf.app_nvram_addr == 0 || app->elf.app_nvram_size == 0) {
+    return;
+  }
+
+  offset = app->elf.app_nvram_addr - app->elf.text_load_addr;
+  size = app->elf.app_nvram_size;
+  if (offset > app->elf.load_size || size > app->elf.load_size - offset) {
+    warnx("NVRAM of app %s is out of its code, it will not be preserved",
+          app->name);
+    return;
+  }
+
+  backup = malloc(sizeof(*backup) + size);
+  if (backup == NULL) {
+    warn("malloc NVRAM backup");
+    _exit(1);
+  }
+
+  backup->prev = nvram_backups;
+  backup->app = app;
+  backup->offset = offset;
+  backup->size = size;
+  memcpy(backup->data, (uint8_t *)memory.code + offset, size);
+  nvram_backups = backup;
+}
+
+/*
+ * Put back the NVRAM saved by backup_app_nvram() in the code of the app.
+ * Nothing to do when the app has no saved NVRAM: the last backup then belongs
+ * to an app suspended earlier.
+ */
+static void restore_app_nvram(const struct app_s *app)
+{
+  struct nvram_backup_s *backup = nvram_backups;
+
+  if (backup == NULL || backup->app != app) {
+    return;
+  }
+
+  memcpy((uint8_t *)memory.code + backup->offset, backup->data, backup->size);
+  nvram_backups = backup->prev;
+  free(backup);
+}
+
 int replace_current_code(struct app_s *app)
 {
   int flags, prot;
@@ -496,6 +561,8 @@ int replace_current_code(struct app_s *app)
     }
   }
 
+  restore_app_nvram(app);
+
   if (mprotect(memory.code, app->elf.load_size, PROT_READ | PROT_EXEC) != 0) {
     warn("could not update mprotect in rx mode for app");
     _exit(1);
@@ -514,6 +581,12 @@ int replace_current_code(struct app_s *app)
 
 void unload_running_app(bool unload_data)
 {
+  /* An app whose data stays mapped is only suspended: replace_current_code()
+   * brings it back, with its NVRAM */
+  if (!unload_data) {
+    backup_app_nvram(current_app);
+  }
+
   if (munmap(memory.code, memory.code_size) != 0) {
     warn("munmap code");
   }
