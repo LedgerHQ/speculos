@@ -274,8 +274,20 @@ function zoom_screenshot() {
 function setup_touch(screen_width, screen_height) {
   var element = document.getElementById("screenshot");
   var start = null;
+  var poll_timer = null;
 
   g_touch_device = true;
+
+  // The screen can change without any text event (switches, refresh after the
+  // events): reload it periodically, one pending reload at a time.
+  var POLL_INTERVAL_MS = 300;
+  function schedule_refresh() {
+    clearTimeout(poll_timer);
+    poll_timer = setTimeout(refresh_screen, POLL_INTERVAL_MS);
+  }
+  element.addEventListener("load", schedule_refresh);
+  element.addEventListener("error", schedule_refresh);
+  schedule_refresh();
 
   // A tap and a very short drag should be equivalent: below this distance
   // (in screen pixels), the gesture is sent as a single-position touch.
