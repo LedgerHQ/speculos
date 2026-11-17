@@ -86,6 +86,7 @@ class FrameBuffer:
         self.pixels: PixelColorMapping = {}
         self.screenshot_pixels: PixelColorMapping = {}
         self.screenshot_pixels_lock = Lock()
+        self.public_screenshot_lock = Lock()
         self.default_color = 0
         self.draw_default_color = False
         self.reset_screeshot_pixels = False
@@ -160,25 +161,27 @@ class FrameBuffer:
             self.screenshot_pixels.update(self.pixels)
 
     def update_public_screenshot(self) -> None:
-        # Stax/Flex only
+        # Touchscreen models only
         # As we lazyly evaluate the published screenshot, we only flag the evaluation update as necessary
         self.recreate_public_screenshot = True
 
     @property
     def public_screenshot_value(self) -> bytes:
-        # Stax/Flex only
+        # Touchscreen models only
         # Lazy calculation of the published screenshot, as it is a costly operation
         # and not necessary if no one tries to read the value
-        if self.recreate_public_screenshot:
-            self.recreate_public_screenshot = False
-            self._public_screenshot_value = self._get_screenshot_iobytes_value()
+        # Serialized so that a slower encoding of an older frame cannot overwrite a newer one
+        with self.public_screenshot_lock:
+            if self.recreate_public_screenshot:
+                self.recreate_public_screenshot = False
+                self._public_screenshot_value = self._get_screenshot_iobytes_value()
 
-        return self._public_screenshot_value
+            return self._public_screenshot_value
 
     def get_public_screenshot(self) -> bytes:
-        if self.model == "stax" or self.model == "flex":
-            # On Stax/Flex, we only make the screenshot public on the RESTFUL api when it is consistent with events
-            # On top of this, take_screenshot is time consuming on stax/flex, so we'll do as few as possible
+        if not self.model.startswith("nano"):
+            # On touchscreen models, we only make the screenshot public on the RESTFUL api when it is consistent with events
+            # On top of this, take_screenshot is time consuming on these models, so we'll do as few as possible
             # We return the value calculated last time update_public_screenshot was called
             return self.public_screenshot_value
         # On nano we have no knowledge of screen refreshes so we can't be scarce on publishes
