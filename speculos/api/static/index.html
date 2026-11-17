@@ -281,10 +281,15 @@ function setup_touch(screen_width, screen_height) {
   // (in screen pixels), the gesture is sent as a single-position touch.
   var SWIPE_THRESHOLD = 5;
 
+  // Map a pointer position to screen pixels, relative to the image content box (without its padding).
   function to_screen_coords(event) {
     var rect = element.getBoundingClientRect();
-    var x = Math.round((event.clientX - rect.left) * screen_width / rect.width);
-    var y = Math.round((event.clientY - rect.top) * screen_height / rect.height);
+    var style = window.getComputedStyle(element);
+    var pad_left = parseFloat(style.paddingLeft), pad_top = parseFloat(style.paddingTop);
+    var width = element.clientWidth - pad_left - parseFloat(style.paddingRight);
+    var height = element.clientHeight - pad_top - parseFloat(style.paddingBottom);
+    var x = Math.floor((event.clientX - rect.left - element.clientLeft - pad_left) * screen_width / width);
+    var y = Math.floor((event.clientY - rect.top - element.clientTop - pad_top) * screen_height / height);
     x = Math.min(Math.max(x, 0), screen_width - 1);
     y = Math.min(Math.max(y, 0), screen_height - 1);
     return [x, y];
@@ -295,16 +300,22 @@ function setup_touch(screen_width, screen_height) {
   buttons.textContent = "click = tap, drag = swipe";
   buttons.className += " touch-hint";
   element.style.cursor = "pointer";
-  // Dragging must swipe, not drag the image itself.
+  // Keep the browser from scrolling or dragging the image during a swipe.
+  element.style.touchAction = "none";
   element.ondragstart = function (e) { e.preventDefault(); };
 
-  element.addEventListener("mousedown", function (e) {
-    if (e.button == 0) {
+  // Pointer events cover mouse, finger and pen; the capture keeps the release on the image.
+  element.addEventListener("pointerdown", function (e) {
+    if (e.isPrimary && e.button == 0) {
       start = to_screen_coords(e);
+      element.setPointerCapture(e.pointerId);
     }
   });
-  document.addEventListener("mouseup", function (e) {
-    if (start === null || e.button != 0) {
+  element.addEventListener("pointercancel", function () {
+    start = null;
+  });
+  element.addEventListener("pointerup", function (e) {
+    if (start === null || !e.isPrimary || e.button != 0) {
       return;
     }
     var end = to_screen_coords(e);
