@@ -36,9 +36,14 @@ class ApduResponse:
     def __init__(self, response: requests.Response) -> None:
         self.response = response
 
-    def receive(self) -> bytes:
+    def receive_with_status(self) -> tuple[bytes, int]:
+        """Return the response data and its status word, without checking the status word."""
         check_status_code(self.response, "/apdu")
-        data, status = split_apdu(bytes.fromhex(self.response.json()["data"]))
+        return split_apdu(bytes.fromhex(self.response.json()["data"]))
+
+    def receive(self) -> bytes:
+        """Return the response data, raising ApduException if the status word is not 0x9000."""
+        data, status = self.receive_with_status()
         if status != 0x9000:
             raise ApduException(status, data)
         return data
@@ -183,11 +188,16 @@ class Api:
             return response.content
 
     def _apdu_exchange(self, data: bytes, tick_timeout: int = 5 * 60 * 10) -> bytes:
+        data, status = self._apdu_exchange_with_status(data, tick_timeout)
+        if status != 0x9000:
+            raise ApduException(status, data)
+        return data
+
+    def _apdu_exchange_with_status(self, data: bytes, tick_timeout: int = 5 * 60 * 10) -> tuple[bytes, int]:
         try:
             data_payload = {"data": data.hex(), "tick_timeout": tick_timeout}
             with self.session.post(f"{self.api_url}/apdu", json=data_payload) as response:
-                apdu_response = ApduResponse(response)
-                return apdu_response.receive()
+                return ApduResponse(response).receive_with_status()
 
         # TimeoutError exception in exchange function raises ChunkedEncodingError exception
         except requests.exceptions.ChunkedEncodingError:
@@ -301,6 +311,19 @@ class SpeculosClient(Api, SpeculosInstance):
     ) -> bytes:
         apdu = bytes([cla, ins, p1, p2, len(data)]) + data
         return Api._apdu_exchange(self, apdu, tick_timeout)
+
+    def apdu_exchange_with_status(
+        self,
+        cla: int,
+        ins: int,
+        data: bytes = b"",
+        p1: int = 0,
+        p2: int = 0,
+        tick_timeout: int = 5 * 60 * 10,
+    ) -> tuple[bytes, int]:
+        """Exchange an APDU and return the response data and its status word, without checking it."""
+        apdu = bytes([cla, ins, p1, p2, len(data)]) + data
+        return Api._apdu_exchange_with_status(self, apdu, tick_timeout)
 
     @contextmanager
     def apdu_exchange_nowait(
