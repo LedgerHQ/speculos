@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Builder image: Python 3.12 instead of 3.10
 - The documentation is no longer deployed when a tag is pushed
 
+### Fixed
+
+- NBGL text lines holding invalid UTF-8 no longer stop Speculos: undecodable bytes are replaced and a warning is logged
+
 ## [0.27.5] 2026-11-13
 
 ### Added
