@@ -54,7 +54,10 @@ the Speculos command.
 **`docker run` starts but I can't reach the web UI / API**
 Publish the port *and* tell Speculos to listen on it:
 `docker run ... -p 5000:5000 speculos --api-port 5000 ...`. A published port that
-the app isn't listening on does nothing.
+the app isn't listening on does nothing. The official image sets
+`SPECULOS_HOST=0.0.0.0` so published ports stay reachable; if you override the
+entrypoint or run Speculos on the host, pass `--host 0.0.0.0` when you need
+LAN/Docker access (the default bind is `127.0.0.1`).
 
 **`exec format error` / wrong architecture on Apple Silicon**
 The official image is multi-arch and runs natively on `arm64`; pull the latest

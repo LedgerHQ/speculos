@@ -54,10 +54,10 @@ class FakeButtonClient(IODevice):
 
 
 class FakeButton(IODevice):
-    def __init__(self, port: int):
+    def __init__(self, port: int, host: str = "127.0.0.1"):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.socket.bind(("0.0.0.0", port))  # lgtm [py/bind-socket-all-network-interfaces]  # noqa: S104
+        self.socket.bind((host, port))
         self.socket.listen(5)
         self.logger = logging.getLogger("button")
 
