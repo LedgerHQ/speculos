@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.7] 2026-11-19
+
+### Fixed
+
+- Rust apps: the `.nvm_data` segment is mapped with the app code. When it ended past the mapped code, its end (e.g. the relocation marker) was read from and written to unrelated memory, which could skip the relocation of the app on its second `os_lib_call` and make it crash
+
 ## [0.27.6] 2026-11-17
 
 ### Added
