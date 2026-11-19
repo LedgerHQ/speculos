@@ -75,6 +75,22 @@ def set_pdeath(sig):
     libc.prctl(PR_SET_PDEATHSIG, sig)
 
 
+def get_flash_load_size(segments, text_seg):
+    """
+    Size to map from the start of the text segment: it also covers the segments
+    laid out right after it in the file, at the same distance in memory (e.g. the
+    .nvm_data of Rust apps).
+    """
+    size = text_seg["p_filesz"]
+    for seg in segments:
+        if seg["p_type"] != "PT_LOAD" or seg["p_filesz"] == 0:
+            continue
+        offset = seg["p_offset"] - text_seg["p_offset"]
+        if offset > 0 and offset == seg["p_vaddr"] - text_seg["p_vaddr"]:
+            size = max(size, offset + seg["p_filesz"])
+    return size
+
+
 def get_elf_infos(app_path, use_bagl, args):
     ei = ElfInfo()
     with open(app_path, "rb") as fp:
@@ -91,7 +107,7 @@ def get_elf_infos(app_path, use_bagl, args):
         symtab_section = elf.get_section_by_name(".symtab")
         bss_section = elf.get_section_by_name(".bss")
         ei.text_offset = text_seg["p_offset"]
-        ei.text_size = text_seg["p_filesz"]
+        ei.text_size = get_flash_load_size(elf.iter_segments(), text_seg)
         ei.text_addr = text_section["sh_addr"]
         ei.stack_addr = bss_section["sh_addr"]
         sym_estack = symtab_section.get_symbol_by_name("_estack")
