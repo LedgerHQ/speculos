@@ -268,8 +268,8 @@ function zoom_screenshot() {
 
 /*
  * Touchscreen support (Stax, Flex, Apex): forward clicks on the screenshot to
- * the /finger endpoint. A click is a tap; a drag is a swipe (press at the
- * start position, release at the end position).
+ * the /finger endpoint. A click is a tap, a held click is a long press, and a
+ * drag is a swipe (press at the start position, release at the end position).
  */
 function setup_touch(screen_width, screen_height) {
   var element = document.getElementById("screenshot");
@@ -309,36 +309,58 @@ function setup_touch(screen_width, screen_height) {
 
   // Replace the physical buttons: touch devices have none.
   var buttons = document.getElementsByClassName("buttons")[0];
-  buttons.textContent = "click = tap, drag = swipe";
+  buttons.textContent = "click = tap, hold = long press, drag = swipe";
   buttons.className += " touch-hint";
   element.style.cursor = "pointer";
   // Keep the browser from scrolling or dragging the image during a swipe.
   element.style.touchAction = "none";
   element.ondragstart = function (e) { e.preventDefault(); };
 
+  // Send /finger requests one at a time, so that a release never overtakes its press.
+  var finger_queue = [];
+  function send_finger(data) {
+    finger_queue.push(data);
+    if (finger_queue.length == 1) {
+      send_next_finger();
+    }
+  }
+  function send_next_finger() {
+    var http = new XMLHttpRequest();
+    http.open("POST", "/finger", true);
+    http.setRequestHeader("Content-type", "application/json");
+    http.onloadend = function () {
+      finger_queue.shift();
+      if (finger_queue.length > 0) {
+        send_next_finger();
+      }
+    };
+    http.send(JSON.stringify(finger_queue[0]));
+  }
+
   // Pointer events cover mouse, finger and pen; the capture keeps the release on the image.
+  // The press is sent on pointerdown and the release on pointerup, so holding the pointer holds the finger.
   element.addEventListener("pointerdown", function (e) {
-    if (e.isPrimary && e.button == 0) {
+    if (start === null && e.isPrimary && e.button == 0) {
       start = to_screen_coords(e);
       element.setPointerCapture(e.pointerId);
+      send_finger({"action": "press", "x": start[0], "y": start[1]});
     }
   });
-  element.addEventListener("pointercancel", function () {
-    start = null;
-  });
-  element.addEventListener("pointerup", function (e) {
-    if (start === null || !e.isPrimary || e.button != 0) {
+  function release(e) {
+    if (start === null || !e.isPrimary) {
       return;
     }
-    var end = to_screen_coords(e);
-    var data = {"action": "press-and-release", "x": start[0], "y": start[1]};
-    if (Math.abs(end[0] - start[0]) > SWIPE_THRESHOLD || Math.abs(end[1] - start[1]) > SWIPE_THRESHOLD) {
-      data["x2"] = end[0];
-      data["y2"] = end[1];
+    // A cancelled pointer has no meaningful position: release where it was pressed.
+    var end = e.type == "pointercancel" ? start : to_screen_coords(e);
+    // Below the threshold, release at the press position: a tap, not a tiny swipe.
+    if (Math.abs(end[0] - start[0]) <= SWIPE_THRESHOLD && Math.abs(end[1] - start[1]) <= SWIPE_THRESHOLD) {
+      end = start;
     }
     start = null;
-    post_request("/finger", data, null);
-  });
+    send_finger({"action": "release", "x": end[0], "y": end[1]});
+  }
+  element.addEventListener("pointerup", release);
+  element.addEventListener("pointercancel", release);
 }
 
 function main() {
